@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,8 +27,8 @@ import { ServiceForm } from "@/components/servicos/ServiceForm";
 import { ServicePackageForm } from "@/components/servicos/ServicePackageForm";
 import { ServiceMetrics } from "@/components/servicos/ServiceMetrics";
 import { ServiceCommissionDialog } from "@/components/servicos/ServiceCommissionDialog";
+import { ServiceCharts } from "@/components/servicos/ServiceCharts";
 
-// Mock data for demonstration
 const mockServices: Service[] = [
   {
     id: 1,
@@ -69,7 +68,6 @@ const mockServices: Service[] = [
   },
 ];
 
-// Mock data for professionals
 const mockProfessionals = [
   { id: 1, name: "Ana Silva" },
   { id: 2, name: "João Santos" },
@@ -84,7 +82,6 @@ export default function Servicos() {
   const [isPackageFormOpen, setIsPackageFormOpen] = useState(false);
   const [selectedService, setSelectedService] = useState<Service | undefined>();
 
-  // Normally these would come from an API
   const mockMetrics = {
     totalServices: mockServices.length,
     activeServices: mockServices.filter((s) => s.status === "active").length,
@@ -93,7 +90,6 @@ export default function Servicos() {
   };
 
   const handleServiceSubmit = (service: Partial<Service>) => {
-    // Here you would normally make an API call
     console.log("Service submitted:", service);
     toast({
       title: selectedService ? "Serviço atualizado" : "Serviço criado",
@@ -102,7 +98,6 @@ export default function Servicos() {
   };
 
   const handlePackageSubmit = (pkg: Partial<ServicePackage>) => {
-    // Here you would normally make an API call
     console.log("Package submitted:", pkg);
     toast({
       title: "Pacote criado",
@@ -116,7 +111,6 @@ export default function Servicos() {
   };
 
   const handleDeleteService = (serviceId: number) => {
-    // Here you would normally make an API call
     toast({
       title: "Serviço excluído",
       description: "O serviço foi excluído com sucesso!",
@@ -124,7 +118,6 @@ export default function Servicos() {
   };
 
   const handleCommissionSave = (serviceId: number, commissions: any[]) => {
-    // Here you would normally make an API call
     console.log("Commissions saved:", { serviceId, commissions });
     toast({
       title: "Comissões atualizadas",
@@ -134,7 +127,6 @@ export default function Servicos() {
 
   return (
     <div className="space-y-6 p-4 md:p-6">
-      {/* Header */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-neutral">Serviços</h1>
@@ -161,10 +153,14 @@ export default function Servicos() {
         </div>
       </div>
 
-      {/* Metrics */}
       <ServiceMetrics {...mockMetrics} />
 
-      {/* Filters */}
+      <ServiceCharts 
+        services={mockServices}
+        commissions={[]} // Aqui você passaria as comissões reais
+        professionals={mockProfessionals}
+      />
+
       <Card className="p-4">
         <div className="flex flex-col gap-4 md:flex-row md:items-center">
           <div className="relative flex-1">
@@ -194,7 +190,6 @@ export default function Servicos() {
         </div>
       </Card>
 
-      {/* Services Table */}
       <Card>
         <Table>
           <TableHeader>
