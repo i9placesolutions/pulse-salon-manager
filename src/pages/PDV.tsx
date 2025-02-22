@@ -1,7 +1,7 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
@@ -75,7 +75,6 @@ interface Sale {
   status: 'completed' | 'canceled';
 }
 
-// Mock data - será substituído pela integração com o backend
 const mockProducts: Product[] = [
   { id: 1, name: "Corte Masculino", price: 45.00, category: "Serviço", quantity: -1 },
   { id: 2, name: "Shampoo Profissional", price: 89.90, category: "Produto", quantity: 15 },
