@@ -42,3 +42,30 @@ export interface ReferralProgram {
   rewardsEarned: number;
   lastReferralDate?: string;
 }
+
+export interface WhatsAppDispatch {
+  id: number;
+  status: 'pending' | 'in_progress' | 'paused' | 'completed' | 'failed';
+  type: 'manual' | 'automatic';
+  recipients: number;
+  delivered: number;
+  failed: number;
+  messageContent: string;
+  hasImage: boolean;
+  imageUrl?: string;
+  scheduledFor?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface MessageHistory {
+  id: number;
+  dispatchId: number;
+  recipientId: number;
+  recipientType: 'client' | 'contact';
+  status: 'sent' | 'delivered' | 'read' | 'failed';
+  errorMessage?: string;
+  sentAt: string;
+  deliveredAt?: string;
+  readAt?: string;
+}
