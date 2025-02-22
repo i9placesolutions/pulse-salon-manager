@@ -1,6 +1,6 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Package, Scissors, DollarSign, Users } from "lucide-react";
+import { Scissors, Users, Package, TrendingUp } from "lucide-react";
 
 interface ServiceMetricsProps {
   totalServices: number;
@@ -24,22 +24,18 @@ export function ServiceMetrics({
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">{totalServices}</div>
-          <p className="text-xs text-muted-foreground">
-            serviços cadastrados
-          </p>
+          <p className="text-xs text-muted-foreground">serviços cadastrados</p>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">Serviços Ativos</CardTitle>
-          <DollarSign className="h-4 w-4 text-muted-foreground" />
+          <TrendingUp className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">{activeServices}</div>
-          <p className="text-xs text-muted-foreground">
-            serviços disponíveis
-          </p>
+          <p className="text-xs text-muted-foreground">disponíveis para agendamento</p>
         </CardContent>
       </Card>
 
@@ -50,9 +46,7 @@ export function ServiceMetrics({
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">{totalProfessionals}</div>
-          <p className="text-xs text-muted-foreground">
-            profissionais ativos
-          </p>
+          <p className="text-xs text-muted-foreground">realizando serviços</p>
         </CardContent>
       </Card>
 
@@ -63,9 +57,7 @@ export function ServiceMetrics({
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">{totalPackages}</div>
-          <p className="text-xs text-muted-foreground">
-            pacotes promocionais
-          </p>
+          <p className="text-xs text-muted-foreground">combos disponíveis</p>
         </CardContent>
       </Card>
     </div>

@@ -58,36 +58,35 @@ export function ServicePackageForm({
           </DialogTitle>
           <DialogDescription>
             {servicePackage
-              ? "Atualize as informações do pacote de serviços."
-              : "Crie um novo pacote de serviços com desconto."}
+              ? "Atualize as informações do pacote."
+              : "Preencha as informações para cadastrar um novo pacote."}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <label htmlFor="name">Nome do Pacote *</label>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label htmlFor="name">Nome do Pacote</label>
               <Input
                 id="name"
                 value={formData.name}
                 onChange={(e) =>
                   setFormData((prev) => ({ ...prev, name: e.target.value }))
                 }
-                required
               />
             </div>
-            <div className="grid gap-2">
+            <div className="space-y-2">
               <label htmlFor="description">Descrição</label>
               <textarea
                 id="description"
-                className="min-h-[80px] rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                className="min-h-[100px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                 value={formData.description}
                 onChange={(e) =>
                   setFormData((prev) => ({ ...prev, description: e.target.value }))
                 }
               />
             </div>
-            <div className="grid gap-2">
-              <label htmlFor="discount">Desconto (%) *</label>
+            <div className="space-y-2">
+              <label htmlFor="discount">Desconto (%)</label>
               <Input
                 id="discount"
                 type="number"
@@ -100,22 +99,20 @@ export function ServicePackageForm({
                     discount: Number(e.target.value),
                   }))
                 }
-                required
               />
             </div>
-            <div className="grid gap-2">
-              <label htmlFor="status">Status *</label>
+            <div className="space-y-2">
+              <label htmlFor="status">Status</label>
               <select
                 id="status"
-                className="rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                 value={formData.status}
                 onChange={(e) =>
                   setFormData((prev) => ({
                     ...prev,
-                    status: e.target.value as 'active' | 'inactive',
+                    status: e.target.value as "active" | "inactive",
                   }))
                 }
-                required
               >
                 <option value="active">Ativo</option>
                 <option value="inactive">Inativo</option>
@@ -124,7 +121,7 @@ export function ServicePackageForm({
           </div>
           <DialogFooter>
             <Button type="submit">
-              {servicePackage ? "Salvar Alterações" : "Criar Pacote"}
+              {servicePackage ? "Salvar Alterações" : "Cadastrar Pacote"}
             </Button>
           </DialogFooter>
         </form>
