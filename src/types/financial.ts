@@ -4,7 +4,7 @@ export interface Payment {
   client: string;
   service: string;
   value: number;
-  method: string;
+  method: 'Pix' | 'Cartão' | 'Dinheiro' | 'Boleto';
   date: string;
   status: 'Pago' | 'Pendente' | 'Cancelado';
 }
@@ -37,7 +37,17 @@ export interface Expense {
   name: string;
   value: number;
   date: string;
-  category: string;
+  category: 'Fixo' | 'Variável';
   status: 'Pago' | 'Pendente' | 'Vencido';
   isRecurring: boolean;
+}
+
+export interface Supplier {
+  id: number;
+  name: string;
+  document: string;
+  phone: string;
+  email: string;
+  paymentMethods: ('Pix' | 'Cartão' | 'Boleto')[];
+  status: 'Ativo' | 'Inativo';
 }
