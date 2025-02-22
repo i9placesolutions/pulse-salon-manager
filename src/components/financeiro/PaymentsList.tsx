@@ -1,6 +1,6 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { QrCode, CreditCard, FileText } from "lucide-react";
+import { QrCode, CreditCard, FileText, BanknoteIcon } from "lucide-react";
 import { formatCurrency } from "@/utils/currency";
 import { Payment } from "@/types/financial";
 
@@ -34,8 +34,16 @@ export const PaymentsList = ({ payments }: PaymentsListProps) => {
                   {payment.method === "Pix" && <QrCode className="h-3 w-3" />}
                   {payment.method === "Cartão" && <CreditCard className="h-3 w-3" />}
                   {payment.method === "Boleto" && <FileText className="h-3 w-3" />}
+                  {payment.method === "Dinheiro" && <BanknoteIcon className="h-3 w-3" />}
                   {payment.method}
                 </div>
+                <p className={`text-sm ${
+                  payment.status === "Cancelado" ? "text-destructive" : 
+                  payment.status === "Pago" ? "text-green-600" : 
+                  "text-yellow-600"
+                }`}>
+                  {payment.status}
+                </p>
               </div>
             </div>
           ))}

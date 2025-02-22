@@ -1,5 +1,6 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/utils/currency";
 import { Professional } from "@/types/financial";
 
@@ -33,8 +34,10 @@ export const ProfessionalsList = ({ professionals }: ProfessionalsListProps) => 
                 <p className="font-medium">
                   {formatCurrency(professional.commission)}
                 </p>
-                <p className="text-sm text-muted-foreground">
-                  a receber
+                <p className={`text-sm ${
+                  professional.status === "A Pagar" ? "text-yellow-600" : "text-green-600"
+                }`}>
+                  {professional.status}
                 </p>
               </div>
             </div>
