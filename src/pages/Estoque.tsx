@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -14,7 +13,8 @@ import {
   Edit,
   Trash2,
   FileText,
-  TrendingUp
+  TrendingUp,
+  Settings
 } from "lucide-react";
 import { formatCurrency } from "@/utils/currency";
 import { Product, StockMovement, Supplier } from "@/types/stock";
@@ -25,6 +25,7 @@ import { StockMovementForm } from "@/components/estoque/StockMovementForm";
 import { FornecedorList } from "@/components/estoque/FornecedorList";
 import { FornecedorForm } from "@/components/estoque/FornecedorForm";
 import { EstoqueCharts } from "@/components/estoque/EstoqueCharts";
+import { CommissionDialog } from "@/components/estoque/CommissionDialog";
 
 const mockProducts: Product[] = [
   {
@@ -116,6 +117,12 @@ const mockSuppliers: Supplier[] = [
   }
 ];
 
+const mockProfessionals = [
+  { id: 1, name: "João Silva" },
+  { id: 2, name: "Maria Santos" },
+  { id: 3, name: "Pedro Oliveira" },
+];
+
 const Estoque = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [products] = useState<Product[]>(mockProducts);
@@ -164,6 +171,16 @@ const Estoque = () => {
       description: selectedSupplier
         ? "O fornecedor foi atualizado com sucesso!"
         : "O novo fornecedor foi cadastrado com sucesso!",
+    });
+  };
+
+  const handleCommissionUpdate = (
+    productId: number,
+    commissions: { professionalId: number; type: 'fixed' | 'percentage'; value: number }[]
+  ) => {
+    toast({
+      title: "Comissões atualizadas",
+      description: "As comissões do produto foram atualizadas com sucesso!",
     });
   };
 
@@ -269,6 +286,11 @@ const Estoque = () => {
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
+                      <CommissionDialog 
+                        product={product}
+                        professionals={mockProfessionals}
+                        onSave={(commissions) => handleCommissionUpdate(product.id, commissions)}
+                      />
                       <Button 
                         variant="ghost" 
                         size="icon"
