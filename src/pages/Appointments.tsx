@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { AppointmentDialog } from "@/components/appointments/AppointmentDialog";
 import { AppointmentFilters } from "@/components/appointments/AppointmentFilters";
-import { AppointmentList } from "@/components/appointments/AppointmentList";
+import { WeeklyCalendar } from "@/components/appointments/WeeklyCalendar";
 
 // Temporary mock data
 const professionals = [
@@ -15,18 +15,18 @@ const appointments = [
   {
     id: 1,
     client: "João Paulo",
-    service: "Corte de Cabelo",
     professional: "Ana Silva",
-    time: "10:00",
-    status: "confirmed",
+    startTime: "10:00",
+    endTime: "11:00",
+    date: new Date(),
   },
   {
     id: 2,
     client: "Maria Clara",
-    service: "Coloração",
     professional: "Maria Oliveira",
-    time: "14:30",
-    status: "waiting",
+    startTime: "14:30",
+    endTime: "15:30",
+    date: new Date(),
   },
 ];
 
@@ -42,19 +42,20 @@ const Appointments = () => {
         <AppointmentDialog />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-12">
-        <AppointmentFilters
+      <AppointmentFilters
+        selectedDate={selectedDate}
+        setSelectedDate={setSelectedDate}
+        selectedProfessional={selectedProfessional}
+        setSelectedProfessional={setSelectedProfessional}
+        professionals={professionals}
+      />
+
+      {selectedDate && (
+        <WeeklyCalendar
           selectedDate={selectedDate}
-          setSelectedDate={setSelectedDate}
-          selectedProfessional={selectedProfessional}
-          setSelectedProfessional={setSelectedProfessional}
-          professionals={professionals}
-        />
-        <AppointmentList
           appointments={appointments}
-          selectedDate={selectedDate}
         />
-      </div>
+      )}
     </div>
   );
 };
