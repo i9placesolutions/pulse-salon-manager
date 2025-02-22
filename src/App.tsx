@@ -22,6 +22,7 @@ import Configuracoes from "./pages/Configuracoes";
 import Servicos from "./pages/Servicos";
 import Profissionais from "./pages/Profissionais";
 import Mensalidade from "./pages/Mensalidade";
+import ProfissionalDashboard from "./pages/ProfissionalDashboard";
 import NotFound from "./pages/NotFound";
 import Profile from "./pages/Profile";
 
@@ -100,6 +101,11 @@ const App = () => (
           <Route path="/mensalidade" element={
             <AppLayout>
               <Mensalidade />
+            </AppLayout>
+          } />
+          <Route path="/profissional-dashboard" element={
+            <AppLayout>
+              <ProfissionalDashboard />
             </AppLayout>
           } />
           <Route path="/profile" element={
