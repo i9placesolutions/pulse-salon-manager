@@ -5,6 +5,9 @@ import { DashboardHeader } from "@/components/profissionais/dashboard/DashboardH
 import { MetricsCards } from "@/components/profissionais/dashboard/MetricsCards";
 import { DashboardTabs } from "@/components/profissionais/dashboard/DashboardTabs";
 import { ProfessionalHeader } from "@/components/profissionais/dashboard/ProfessionalHeader";
+import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
+import { User } from "lucide-react";
 import { Professional, ProfessionalCommission, ProfessionalAppointment } from "@/types/professional";
 
 // Mock data para teste
@@ -84,6 +87,7 @@ const mockAppointments: ProfessionalAppointment[] = [
 export default function ProfissionalDashboard() {
   const [isWorkingHoursOpen, setIsWorkingHoursOpen] = useState(false);
   const [agendaOpen, setAgendaOpen] = useState(true);
+  const navigate = useNavigate();
 
   const handleToggleAgenda = () => {
     setAgendaOpen(!agendaOpen);
@@ -95,11 +99,21 @@ export default function ProfissionalDashboard() {
       
       <main className="container mx-auto px-4 py-6 max-w-7xl">
         <div className="space-y-6">
-          <DashboardHeader
-            agendaOpen={agendaOpen}
-            onToggleAgenda={handleToggleAgenda}
-            onManageHours={() => setIsWorkingHoursOpen(true)}
-          />
+          <div className="flex items-center justify-between">
+            <DashboardHeader
+              agendaOpen={agendaOpen}
+              onToggleAgenda={handleToggleAgenda}
+              onManageHours={() => setIsWorkingHoursOpen(true)}
+            />
+            <Button
+              variant="outline"
+              onClick={() => navigate("/profissional-profile")}
+              className="flex items-center gap-2 hover:bg-primary/5 hover:text-primary transition-colors"
+            >
+              <User className="h-4 w-4" />
+              Meu Perfil
+            </Button>
+          </div>
 
           <MetricsCards 
             professional={mockProfessional}

@@ -20,14 +20,14 @@ export default function Profile() {
       <div className="container mx-auto px-4 py-6 space-y-6">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <div className="flex items-center gap-2 mb-2">
+            <div className="flex items-center gap-2 mb-4">
               <Button 
-                variant="ghost" 
-                size="sm" 
+                variant="secondary" 
+                size="sm"
                 onClick={() => navigate("/profissional-dashboard")}
-                className="hover:bg-secondary"
+                className="hover:bg-secondary/80 transition-colors"
               >
-                <ArrowLeft className="h-4 w-4 mr-1" />
+                <ArrowLeft className="h-4 w-4 mr-2" />
                 Voltar ao Dashboard
               </Button>
             </div>
