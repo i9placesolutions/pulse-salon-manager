@@ -16,7 +16,6 @@ import {
   Scissors,
   UserSquare2,
   CreditCard,
-  Moon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -199,13 +198,6 @@ export const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
         {/* Footer */}
         <div className="absolute bottom-0 left-0 right-0 p-2 border-t dark:border-neutral-800 bg-white dark:bg-neutral-900">
           <div className="space-y-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="w-full flex items-center justify-center hover:bg-primary/5 dark:hover:bg-white/5"
-            >
-              <Moon className="w-5 h-5" />
-            </Button>
             <button
               className={cn(
                 "w-full flex items-center gap-2 px-3 py-2 rounded-lg",
