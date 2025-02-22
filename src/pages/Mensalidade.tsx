@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { TabsContent, Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -229,6 +228,7 @@ export default function Mensalidade() {
           <TabsTrigger value="plans">Planos</TabsTrigger>
           <TabsTrigger value="subscription">Minha Assinatura</TabsTrigger>
           <TabsTrigger value="invoices">Faturas</TabsTrigger>
+          <TabsTrigger value="notifications">Notificações</TabsTrigger>
         </TabsList>
 
         <TabsContent value="plans" className="space-y-4">
@@ -265,7 +265,11 @@ export default function Mensalidade() {
                       </li>
                     ))}
                   </ul>
-                  <Button className="w-full" variant={plan.highlight ? "default" : "outline"}>
+                  <Button
+                    className="w-full"
+                    variant={plan.highlight ? "default" : "outline"}
+                    onClick={() => handlePlanSelect(plan)}
+                  >
                     Assinar Plano {plan.name}
                   </Button>
                 </CardContent>
@@ -276,94 +280,42 @@ export default function Mensalidade() {
 
         <TabsContent value="subscription">
           <div className="grid gap-4 md:grid-cols-2">
-            <Card>
-              <CardHeader>
-                <CardTitle>Status da Assinatura</CardTitle>
-                <CardDescription>Detalhes do seu plano atual</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid gap-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">Plano Atual</span>
-                    <Badge>Período de Teste</Badge>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">Expira em</span>
-                    <span className="text-sm">3 dias</span>
-                  </div>
-                  <Button className="mt-4">
-                    <CreditCard className="mr-2 h-4 w-4" />
-                    Atualizar Método de Pagamento
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Limites do Plano</CardTitle>
-                <CardDescription>Uso atual dos recursos</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Users className="h-4 w-4" />
-                      <span className="text-sm">Usuários</span>
-                    </div>
-                    <span className="text-sm">1 de 1</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Calendar className="h-4 w-4" />
-                      <span className="text-sm">Agendamentos</span>
-                    </div>
-                    <span className="text-sm">50 de 100</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <MessageSquare className="h-4 w-4" />
-                      <span className="text-sm">Suporte</span>
-                    </div>
-                    <span className="text-sm">E-mail</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <CurrentPlanDetails
+              subscription={mockSubscription}
+              plan={plans.find(p => p.id === mockSubscription.planId)!}
+              onRenewChange={handleAutoRenewChange}
+              onCancelSubscription={() => setCancelDialogOpen(true)}
+            />
+            <PaymentMethodForm onSubmit={handlePaymentSubmit} />
           </div>
         </TabsContent>
 
         <TabsContent value="invoices">
-          <Card>
-            <CardHeader>
-              <CardTitle>Histórico de Faturas</CardTitle>
-              <CardDescription>Todas as suas faturas e pagamentos</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                {mockInvoices.map((fatura, index) => (
-                  <div key={index} className="flex items-center justify-between p-2 border rounded">
-                    <div className="flex items-center gap-4">
-                      <div>
-                        <p className="font-medium">{fatura.date}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {formatCurrency(fatura.amount)}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant="secondary">{fatura.status}</Badge>
-                      <Button variant="ghost" size="icon">
-                        <Download className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+          <PaymentHistory invoices={mockInvoices} />
+        </TabsContent>
+
+        <TabsContent value="notifications">
+          <NotificationPreferences
+            preferences={notificationPrefs}
+            onPreferenceChange={handleNotificationPreferenceChange}
+          />
         </TabsContent>
       </Tabs>
+
+      {selectedPlan && (
+        <SubscriptionConfirmDialog
+          open={confirmDialogOpen}
+          onOpenChange={setConfirmDialogOpen}
+          plan={selectedPlan}
+          onConfirm={handleSubscriptionConfirm}
+        />
+      )}
+
+      <CancelSubscriptionDialog
+        open={cancelDialogOpen}
+        onOpenChange={setCancelDialogOpen}
+        onConfirm={handleCancelSubscription}
+      />
     </div>
   );
 }
