@@ -1,3 +1,4 @@
+
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
@@ -38,13 +39,6 @@ export const ProfessionalDetails = ({
   performance,
 }: ProfessionalDetailsProps) => {
   const { toast } = useToast();
-
-  const handlePayCommission = (commission: ProfessionalCommission) => {
-    toast({
-      title: "Comissão paga",
-      description: "A comissão foi registrada como paga com sucesso!",
-    });
-  };
 
   const handleRegisterPayment = (payment: ProfessionalPayment) => {
     toast({
@@ -119,10 +113,7 @@ export const ProfessionalDetails = ({
           </TabsContent>
 
           <TabsContent value="commissions">
-            <CommissionManagement
-              commissions={commissions}
-              onPayCommission={handlePayCommission}
-            />
+            <CommissionManagement commissions={commissions} />
           </TabsContent>
 
           <TabsContent value="payments">
