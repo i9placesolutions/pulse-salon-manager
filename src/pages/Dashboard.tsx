@@ -1,3 +1,4 @@
+
 import { Calendar, Loader2, Plus, Users, Package, DollarSign } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -37,6 +38,10 @@ const Dashboard = () => {
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <h1 className="text-2xl font-semibold text-neutral">Dashboard</h1>
         <div className="flex flex-wrap gap-2">
+          <Button size="sm">
+            <Plus className="mr-2 h-4 w-4" />
+            Novo Agendamento
+          </Button>
           <Button size="sm" variant="outline">
             <Users className="mr-2 h-4 w-4" />
             Novo Cliente
