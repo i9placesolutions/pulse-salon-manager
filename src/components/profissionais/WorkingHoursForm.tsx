@@ -3,9 +3,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Calendar } from "@/components/ui/calendar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { WorkingHours, DaySchedule, BlockedDate } from "@/types/professional";
 
@@ -18,14 +16,14 @@ interface WorkingHoursFormProps {
 }
 
 const DAYS_OF_WEEK = [
-  { id: "monday", label: "Segunda-feira" },
-  { id: "tuesday", label: "Terça-feira" },
-  { id: "wednesday", label: "Quarta-feira" },
-  { id: "thursday", label: "Quinta-feira" },
-  { id: "friday", label: "Sexta-feira" },
-  { id: "saturday", label: "Sábado" },
-  { id: "sunday", label: "Domingo" },
-] as const;
+  { id: "monday" as const, label: "Segunda-feira" },
+  { id: "tuesday" as const, label: "Terça-feira" },
+  { id: "wednesday" as const, label: "Quarta-feira" },
+  { id: "thursday" as const, label: "Quinta-feira" },
+  { id: "friday" as const, label: "Sexta-feira" },
+  { id: "saturday" as const, label: "Sábado" },
+  { id: "sunday" as const, label: "Domingo" },
+];
 
 export const WorkingHoursForm = ({
   open,
