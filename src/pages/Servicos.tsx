@@ -27,6 +27,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ServiceForm } from "@/components/servicos/ServiceForm";
 import { ServicePackageForm } from "@/components/servicos/ServicePackageForm";
 import { ServiceMetrics } from "@/components/servicos/ServiceMetrics";
+import { ServiceCommissionDialog } from "@/components/servicos/ServiceCommissionDialog";
 
 // Mock data for demonstration
 const mockServices: Service[] = [
@@ -66,6 +67,13 @@ const mockServices: Service[] = [
       { productId: 4, quantity: 2 },
     ],
   },
+];
+
+// Mock data for professionals
+const mockProfessionals = [
+  { id: 1, name: "Ana Silva" },
+  { id: 2, name: "João Santos" },
+  { id: 3, name: "Maria Oliveira" },
 ];
 
 export default function Servicos() {
@@ -112,6 +120,15 @@ export default function Servicos() {
     toast({
       title: "Serviço excluído",
       description: "O serviço foi excluído com sucesso!",
+    });
+  };
+
+  const handleCommissionSave = (serviceId: number, commissions: any[]) => {
+    // Here you would normally make an API call
+    console.log("Commissions saved:", { serviceId, commissions });
+    toast({
+      title: "Comissões atualizadas",
+      description: "As comissões foram atualizadas com sucesso!",
     });
   };
 
@@ -186,6 +203,7 @@ export default function Servicos() {
               <TableHead>Categoria</TableHead>
               <TableHead>Duração</TableHead>
               <TableHead>Valor</TableHead>
+              <TableHead>Comissão</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="text-right">Ações</TableHead>
             </TableRow>
@@ -212,6 +230,20 @@ export default function Servicos() {
                   <div className="flex items-center gap-1">
                     <DollarSign className="h-4 w-4 text-muted-foreground" />
                     {service.price.toFixed(2)}
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-2">
+                    <span>
+                      {service.commission.type === "percentage"
+                        ? `${service.commission.value}%`
+                        : `R$ ${service.commission.value}`}
+                    </span>
+                    <ServiceCommissionDialog
+                      service={service}
+                      professionals={mockProfessionals}
+                      onSave={(commissions) => handleCommissionSave(service.id, commissions)}
+                    />
                   </div>
                 </TableCell>
                 <TableCell>
