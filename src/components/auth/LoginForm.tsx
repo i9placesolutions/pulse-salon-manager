@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
@@ -12,6 +12,7 @@ const LoginForm = () => {
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,6 +34,22 @@ const LoginForm = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleTestLogin = () => {
+    setIsLoading(true);
+    setTimeout(() => {
+      navigate("/dashboard");
+      toast({
+        title: "Login de teste realizado",
+        description: "Você está usando uma conta de demonstração.",
+      });
+    }, 1000);
+  };
+
+  const handleQuickFill = () => {
+    setEmail("teste@pulse.com");
+    setPassword("123456");
   };
 
   return (
@@ -82,17 +99,38 @@ const LoginForm = () => {
         </Link>
       </div>
 
-      <Button
-        type="submit"
-        className="btn-primary w-full"
-        disabled={isLoading}
-      >
-        {isLoading ? (
-          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-        ) : (
-          "Entrar"
-        )}
-      </Button>
+      <div className="space-y-3">
+        <Button
+          type="submit"
+          className="btn-primary w-full"
+          disabled={isLoading}
+        >
+          {isLoading ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            "Entrar"
+          )}
+        </Button>
+
+        <div className="flex gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full"
+            onClick={handleQuickFill}
+          >
+            Preencher Teste
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full"
+            onClick={handleTestLogin}
+          >
+            Login Rápido
+          </Button>
+        </div>
+      </div>
 
       <div className="relative">
         <div className="absolute inset-0 flex items-center">
