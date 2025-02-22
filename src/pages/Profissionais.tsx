@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -52,7 +51,6 @@ import { Professional } from "@/types/professional";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency } from "@/utils/currency";
 
-// Mock data
 const mockProfessionals: Professional[] = [
   {
     id: 1,
@@ -82,17 +80,100 @@ const mockProfessionals: Professional[] = [
   },
 ];
 
+const mockAppointments: ProfessionalAppointment[] = [
+  {
+    id: 1,
+    date: "2024-03-10",
+    clientName: "Maria Silva",
+    serviceName: "Corte de Cabelo",
+    value: 80,
+    commission: 24,
+  },
+  {
+    id: 2,
+    date: "2024-03-09",
+    clientName: "João Santos",
+    serviceName: "Barba",
+    value: 40,
+    commission: 12,
+  },
+];
+
+const mockCommissions: ProfessionalCommission[] = [
+  {
+    id: 1,
+    paymentDate: "2024-03-01",
+    value: 450,
+    referenceType: "service",
+    referenceName: "Corte de Cabelo",
+    status: "paid",
+  },
+  {
+    id: 2,
+    paymentDate: "2024-03-01",
+    value: 150,
+    referenceType: "product",
+    referenceName: "Shampoo Profissional",
+    status: "pending",
+  },
+];
+
+const mockPayments: ProfessionalPayment[] = [
+  {
+    id: 1,
+    professionalId: 1,
+    value: 2500,
+    referenceMonth: "2024-02",
+    status: "paid",
+    paymentDate: "2024-03-05",
+  },
+  {
+    id: 2,
+    professionalId: 1,
+    value: 2800,
+    referenceMonth: "2024-03",
+    status: "pending",
+  },
+];
+
+const mockPerformance: ProfessionalPerformance = {
+  totalAppointments: 450,
+  topServices: [
+    { serviceName: "Corte de Cabelo", count: 200 },
+    { serviceName: "Coloração", count: 150 },
+    { serviceName: "Hidratação", count: 100 },
+  ],
+  monthlyRevenue: [
+    { month: "Jan", revenue: 4500 },
+    { month: "Fev", revenue: 5000 },
+    { month: "Mar", revenue: 4800 },
+  ],
+  rating: 4.8,
+  clientReturnRate: 0.75,
+};
+
 const Profissionais = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [specialtyFilter, setSpecialtyFilter] = useState<string>("");
   const [sortBy, setSortBy] = useState<string>("");
+  const [isNewProfessionalOpen, setIsNewProfessionalOpen] = useState(false);
+  const [selectedProfessional, setSelectedProfessional] = useState<Professional | null>(null);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const { toast } = useToast();
 
   const handleNewProfessional = () => {
-    toast({
-      title: "Em desenvolvimento",
-      description: "O cadastro de novos profissionais estará disponível em breve.",
-    });
+    setSelectedProfessional(null);
+    setIsNewProfessionalOpen(true);
+  };
+
+  const handleEditProfessional = (professional: Professional) => {
+    setSelectedProfessional(professional);
+    setIsNewProfessionalOpen(true);
+  };
+
+  const handleShowDetails = (professional: Professional) => {
+    setSelectedProfessional(professional);
+    setIsDetailsOpen(true);
   };
 
   const handleGenerateReport = () => {
@@ -107,6 +188,16 @@ const Profissionais = () => {
       title: "Profissional desativado",
       description: "O profissional foi desativado com sucesso.",
     });
+  };
+
+  const handleProfessionalSubmit = (data: Partial<Professional>) => {
+    toast({
+      title: selectedProfessional ? "Profissional atualizado" : "Profissional cadastrado",
+      description: selectedProfessional
+        ? "Os dados do profissional foram atualizados com sucesso!"
+        : "Novo profissional cadastrado com sucesso!",
+    });
+    setIsNewProfessionalOpen(false);
   };
 
   const filteredProfessionals = mockProfessionals.filter((professional) => {
@@ -133,7 +224,6 @@ const Profissionais = () => {
 
   return (
     <div className="space-y-6 p-4 md:p-6">
-      {/* Header */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-neutral">Profissionais</h1>
@@ -153,7 +243,6 @@ const Profissionais = () => {
         </div>
       </div>
 
-      {/* Metrics Cards */}
       <div className="grid gap-4 md:grid-cols-4">
         <Card>
           <CardContent className="flex flex-col items-center justify-center p-6">
@@ -210,7 +299,6 @@ const Profissionais = () => {
         </Card>
       </div>
 
-      {/* Filters */}
       <div className="flex flex-col gap-4 md:flex-row">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -251,7 +339,6 @@ const Profissionais = () => {
         </Select>
       </div>
 
-      {/* Professionals Table */}
       <Card>
         <CardHeader>
           <CardTitle>Lista de Profissionais</CardTitle>
@@ -308,9 +395,13 @@ const Profissionais = () => {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleShowDetails(professional)}>
                           <FileText className="mr-2 h-4 w-4" />
                           Ver Detalhes
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleEditProfessional(professional)}>
+                          <FileText className="mr-2 h-4 w-4" />
+                          Editar
                         </DropdownMenuItem>
                         <DropdownMenuItem>
                           <BarChart className="mr-2 h-4 w-4" />
@@ -336,6 +427,25 @@ const Profissionais = () => {
           </Table>
         </CardContent>
       </Card>
+
+      <ProfessionalForm
+        open={isNewProfessionalOpen}
+        onOpenChange={setIsNewProfessionalOpen}
+        onSubmit={handleProfessionalSubmit}
+        professional={selectedProfessional || undefined}
+      />
+
+      {selectedProfessional && (
+        <ProfessionalDetails
+          open={isDetailsOpen}
+          onOpenChange={setIsDetailsOpen}
+          professional={selectedProfessional}
+          appointments={mockAppointments}
+          commissions={mockCommissions}
+          payments={mockPayments}
+          performance={mockPerformance}
+        />
+      )}
     </div>
   );
 };
