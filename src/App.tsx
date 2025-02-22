@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -20,6 +21,7 @@ import Marketing from "./pages/Marketing";
 import Configuracoes from "./pages/Configuracoes";
 import Servicos from "./pages/Servicos";
 import Profissionais from "./pages/Profissionais";
+import Mensalidade from "./pages/Mensalidade";
 import NotFound from "./pages/NotFound";
 import Profile from "./pages/Profile";
 
@@ -93,6 +95,11 @@ const App = () => (
           <Route path="/configuracoes" element={
             <AppLayout>
               <Configuracoes />
+            </AppLayout>
+          } />
+          <Route path="/mensalidade" element={
+            <AppLayout>
+              <Mensalidade />
             </AppLayout>
           } />
           <Route path="/profile" element={

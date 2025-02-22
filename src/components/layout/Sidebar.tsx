@@ -15,6 +15,7 @@ import {
   MessageSquare,
   Scissors,
   UserSquare2,
+  CreditCard
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -30,6 +31,7 @@ const menuItems = [
   { icon: ShoppingCart, label: "PDV", path: "/pdv" },
   { icon: BarChart, label: "Relatórios", path: "/relatorios" },
   { icon: MessageSquare, label: "Marketing", path: "/marketing" },
+  { icon: CreditCard, label: "Mensalidade", path: "/mensalidade" },
   { icon: Settings, label: "Configurações", path: "/configuracoes" },
 ];
 
