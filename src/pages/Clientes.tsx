@@ -7,9 +7,10 @@ import { UserPlus, Users, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { ClientList } from "@/components/clients/ClientList";
 import { ClientStatistics } from "@/components/clients/ClientStatistics";
+import { Client } from "@/types/client";
 
 // Dados mockados para demonstração
-const mockClients = [
+const mockClients: Partial<Client>[] = [
   {
     id: 1,
     name: "Maria Silva",
@@ -17,7 +18,7 @@ const mockClients = [
     phone: "(11) 99999-9999",
     birthDate: "1990-01-01",
     firstVisit: "2023-01-15",
-    status: "active" as const,
+    status: "active",
     points: 150,
     lastVisit: "2024-03-01",
   },
@@ -28,9 +29,20 @@ const mockClients = [
     phone: "(11) 98888-8888",
     birthDate: "1985-05-10",
     firstVisit: "2023-02-20",
-    status: "vip" as const,
+    status: "vip",
     points: 300,
     lastVisit: "2024-03-10",
+  },
+  {
+    id: 3,
+    name: "Ana Oliveira",
+    email: "ana@email.com",
+    phone: "(11) 97777-7777",
+    birthDate: "1988-07-15",
+    firstVisit: "2023-03-25",
+    status: "inactive",
+    points: 50,
+    lastVisit: "2023-08-10",
   },
 ];
 
@@ -90,7 +102,7 @@ export default function Clientes() {
         </TabsContent>
 
         <TabsContent value="inativos" className="space-y-4">
-          <ClientList clients={mockClients.filter(client => client.status === ('inactive' as const))} />
+          <ClientList clients={mockClients.filter(client => client.status === 'inactive')} />
         </TabsContent>
 
         <TabsContent value="aniversarios" className="space-y-4">
