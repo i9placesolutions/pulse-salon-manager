@@ -27,6 +27,7 @@ export function EstoqueMetrics({
           <p className="text-xs text-muted-foreground">
             produtos cadastrados
           </p>
+        </div>
         </CardContent>
       </Card>
 
