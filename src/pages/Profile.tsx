@@ -167,10 +167,33 @@ export default function Profile() {
                     </div>
                     <Switch />
                   </div>
+                  <div className="ml-6 space-y-4">
+                    <div className="flex items-center gap-2">
+                      <input type="radio" name="2fa-method" id="2fa-sms" />
+                      <Label htmlFor="2fa-sms">SMS</Label>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input type="radio" name="2fa-method" id="2fa-app" />
+                      <Label htmlFor="2fa-app">App Autenticador</Label>
+                    </div>
+                  </div>
                   <Button variant="outline" className="w-full justify-start">
                     <Lock className="mr-2 h-4 w-4" />
                     Alterar Senha
                   </Button>
+                </div>
+
+                <div className="space-y-4">
+                  <h4 className="font-medium">Perguntas de Segurança</h4>
+                  <div className="space-y-2">
+                    <Label>Pergunta 1</Label>
+                    <select className="w-full p-2 border rounded-md">
+                      <option>Qual o nome do seu primeiro animal de estimação?</option>
+                      <option>Qual sua cidade natal?</option>
+                      <option>Qual o nome da sua mãe?</option>
+                    </select>
+                    <Input type="text" placeholder="Sua resposta" className="mt-2" />
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -219,33 +242,84 @@ export default function Profile() {
             <CardHeader>
               <CardTitle>Preferências de Notificação</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Notificações por E-mail</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Receba atualizações importantes no seu e-mail
-                  </p>
+            <CardContent className="space-y-6">
+              <div className="space-y-4">
+                <h4 className="font-medium">Canais de Comunicação</h4>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label>E-mail</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Receba atualizações importantes no seu e-mail
+                      </p>
+                    </div>
+                    <Switch />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label>WhatsApp</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Receba mensagens importantes via WhatsApp
+                      </p>
+                    </div>
+                    <Switch />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label>Sistema</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Receba alertas dentro do sistema
+                      </p>
+                    </div>
+                    <Switch />
+                  </div>
                 </div>
-                <Switch />
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Notificações por WhatsApp</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Receba mensagens importantes via WhatsApp
-                  </p>
+
+                <Separator className="my-4" />
+
+                <h4 className="font-medium">Tipos de Notificação</h4>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label>Lembrete de Agendamentos</Label>
+                      <p className="text-sm text-muted-foreground">
+                        24h antes do horário marcado
+                      </p>
+                    </div>
+                    <Switch />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label>Aniversário de Clientes</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Mensagem automática de felicitação
+                      </p>
+                    </div>
+                    <Switch />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label>Pagamentos e Comissões</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Alertas sobre transações financeiras
+                      </p>
+                    </div>
+                    <Switch />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label>Atualizações do Sistema</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Novidades e melhorias na plataforma
+                      </p>
+                    </div>
+                    <Switch />
+                  </div>
                 </div>
-                <Switch />
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Notificações no Sistema</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Receba alertas dentro do sistema
-                  </p>
-                </div>
-                <Switch />
+
+                <Button variant="outline" className="w-full mt-4">
+                  Testar Notificações
+                </Button>
               </div>
             </CardContent>
           </Card>
@@ -304,10 +378,31 @@ export default function Profile() {
 
         <TabsContent value="activity">
           <Card>
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Histórico de Atividades</CardTitle>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm">
+                  PDF
+                </Button>
+                <Button variant="outline" size="sm">
+                  Excel
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
+              <div className="space-y-4 mb-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <Input type="date" placeholder="Data Inicial" />
+                  <Input type="date" placeholder="Data Final" />
+                  <select className="w-full p-2 border rounded-md">
+                    <option value="">Todos os tipos</option>
+                    <option value="login">Login</option>
+                    <option value="security">Segurança</option>
+                    <option value="profile">Perfil</option>
+                  </select>
+                </div>
+              </div>
+
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -330,11 +425,15 @@ export default function Profile() {
                   ))}
                 </TableBody>
               </Table>
-              <div className="mt-4 flex justify-end">
-                <Button variant="outline">
-                  <History className="mr-2 h-4 w-4" />
-                  Ver Histórico Completo
-                </Button>
+              
+              <div className="mt-4 flex justify-between items-center">
+                <div className="text-sm text-muted-foreground">
+                  Mostrando 10 de 50 registros
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm">Anterior</Button>
+                  <Button variant="outline" size="sm">Próxima</Button>
+                </div>
               </div>
             </CardContent>
           </Card>
