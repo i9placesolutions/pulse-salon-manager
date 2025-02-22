@@ -1,14 +1,9 @@
 
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { TabsContent, Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
-import { Calendar, Clock, Users, DollarSign, ChartBar, Lock, Unlock } from "lucide-react";
-import { formatCurrency } from "@/utils/currency";
 import { WorkingHoursForm } from "@/components/profissionais/WorkingHoursForm";
-import { AppointmentHistory } from "@/components/profissionais/AppointmentHistory";
-import { PerformanceMetrics } from "@/components/profissionais/PerformanceMetrics";
-import { CommissionManagement } from "@/components/profissionais/CommissionManagement";
+import { DashboardHeader } from "@/components/profissionais/dashboard/DashboardHeader";
+import { MetricsCards } from "@/components/profissionais/dashboard/MetricsCards";
+import { DashboardTabs } from "@/components/profissionais/dashboard/DashboardTabs";
 import { Professional, ProfessionalCommission, ProfessionalAppointment } from "@/types/professional";
 
 // Mock data para teste
@@ -95,126 +90,23 @@ export default function ProfissionalDashboard() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-neutral">Dashboard do Profissional</h1>
-          <p className="text-sm text-muted-foreground">
-            Gerencie sua agenda, comissões e desempenho
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button 
-            variant={agendaOpen ? "destructive" : "default"}
-            onClick={handleToggleAgenda}
-          >
-            {agendaOpen ? (
-              <>
-                <Lock className="mr-2 h-4 w-4" />
-                Fechar Agenda
-              </>
-            ) : (
-              <>
-                <Unlock className="mr-2 h-4 w-4" />
-                Abrir Agenda
-              </>
-            )}
-          </Button>
-          <Button variant="outline" onClick={() => setIsWorkingHoursOpen(true)}>
-            <Clock className="mr-2 h-4 w-4" />
-            Gerenciar Horários
-          </Button>
-        </div>
-      </div>
+      <DashboardHeader
+        agendaOpen={agendaOpen}
+        onToggleAgenda={handleToggleAgenda}
+        onManageHours={() => setIsWorkingHoursOpen(true)}
+      />
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Total de Atendimentos
-            </CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{mockPerformance.totalAppointments}</div>
-            <p className="text-xs text-muted-foreground">
-              +20% em relação ao mês anterior
-            </p>
-          </CardContent>
-        </Card>
+      <MetricsCards 
+        professional={mockProfessional}
+        performance={mockPerformance}
+      />
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              {mockProfessional.paymentModel === 'fixed' ? 'Salário Fixo' : 'Comissões do Mês'}
-            </CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {formatCurrency(mockProfessional.paymentModel === 'fixed' 
-                ? mockProfessional.fixedSalary || 0 
-                : 3500)}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {mockProfessional.paymentModel === 'fixed' 
-                ? 'Salário base mensal'
-                : '+15% em relação ao mês anterior'}
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Próximos Atendimentos
-            </CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">8</div>
-            <p className="text-xs text-muted-foreground">
-              Agendamentos para hoje
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Taxa de Retorno
-            </CardTitle>
-            <ChartBar className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{(mockPerformance.clientReturnRate * 100)}%</div>
-            <p className="text-xs text-muted-foreground">
-              Clientes que retornam
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      <Tabs defaultValue="performance" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="performance">Desempenho</TabsTrigger>
-          <TabsTrigger value="appointments">Atendimentos</TabsTrigger>
-          <TabsTrigger value="commissions">
-            {mockProfessional.paymentModel === 'fixed' ? 'Pagamentos' : 'Comissões'}
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="performance">
-          <PerformanceMetrics performance={mockPerformance} />
-        </TabsContent>
-
-        <TabsContent value="appointments">
-          <AppointmentHistory appointments={mockAppointments} />
-        </TabsContent>
-
-        <TabsContent value="commissions">
-          <CommissionManagement commissions={mockCommissions} />
-        </TabsContent>
-      </Tabs>
+      <DashboardTabs
+        professional={mockProfessional}
+        performance={mockPerformance}
+        appointments={mockAppointments}
+        commissions={mockCommissions}
+      />
 
       <WorkingHoursForm
         open={isWorkingHoursOpen}
