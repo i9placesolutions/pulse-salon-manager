@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { 
@@ -34,6 +33,7 @@ import {
   Bell
 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
 
 export default function Configuracoes() {
   const [isLoading, setIsLoading] = useState(false);
@@ -316,11 +316,37 @@ export default function Configuracoes() {
                 Configure as permissões e acesso dos usuários
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              {/* Implementar lista de usuários e gerenciamento de permissões */}
-              <p className="text-sm text-muted-foreground">
-                Funcionalidade em desenvolvimento
-              </p>
+            <CardContent className="space-y-4">
+              <div className="flex justify-end">
+                <Button>
+                  <Users className="mr-2 h-4 w-4" />
+                  Adicionar Usuário
+                </Button>
+              </div>
+              
+              <div className="space-y-4">
+                {[
+                  { nome: 'João Silva', cargo: 'Administrador', email: 'joao@exemplo.com', status: 'Ativo' },
+                  { nome: 'Maria Santos', cargo: 'Profissional', email: 'maria@exemplo.com', status: 'Ativo' },
+                  { nome: 'Pedro Costa', cargo: 'Recepcionista', email: 'pedro@exemplo.com', status: 'Inativo' }
+                ].map((usuario, index) => (
+                  <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
+                    <div className="space-y-1">
+                      <p className="font-medium">{usuario.nome}</p>
+                      <p className="text-sm text-muted-foreground">{usuario.email}</p>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <Badge variant={usuario.status === 'Ativo' ? 'default' : 'secondary'}>
+                        {usuario.status}
+                      </Badge>
+                      <p className="text-sm">{usuario.cargo}</p>
+                      <Button variant="ghost" size="sm">
+                        Editar
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -333,47 +359,180 @@ export default function Configuracoes() {
                 Configure os modelos de mensagens automáticas
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              {/* Implementar templates de mensagens */}
-              <p className="text-sm text-muted-foreground">
-                Funcionalidade em desenvolvimento
-              </p>
+            <CardContent className="space-y-6">
+              <div className="grid gap-4">
+                {[
+                  {
+                    titulo: 'Confirmação de Agendamento',
+                    descricao: 'Mensagem enviada após confirmar um horário',
+                    variaveis: ['nome_cliente', 'data_horario', 'servico']
+                  },
+                  {
+                    titulo: 'Lembrete de Consulta',
+                    descricao: 'Mensagem enviada 24h antes do horário',
+                    variaveis: ['nome_cliente', 'data_horario', 'profissional']
+                  },
+                  {
+                    titulo: 'Aniversário',
+                    descricao: 'Mensagem de felicitação de aniversário',
+                    variaveis: ['nome_cliente', 'cupom_desconto']
+                  }
+                ].map((template, index) => (
+                  <div key={index} className="space-y-4">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h4 className="font-medium">{template.titulo}</h4>
+                        <p className="text-sm text-muted-foreground">{template.descricao}</p>
+                      </div>
+                      <Button variant="outline" size="sm">Editar</Button>
+                    </div>
+                    <div>
+                      <Label>Variáveis disponíveis</Label>
+                      <div className="flex gap-2 mt-2">
+                        {template.variaveis.map((variavel, idx) => (
+                          <Badge key={idx} variant="secondary">
+                            {variavel}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                    <Separator />
+                  </div>
+                ))}
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
 
         <TabsContent value="pagamentos">
-          <Card>
-            <CardHeader>
-              <CardTitle>Métodos de Pagamento</CardTitle>
-              <CardDescription>
-                Configure as formas de pagamento aceitas
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {/* Implementar configurações de pagamento */}
-              <p className="text-sm text-muted-foreground">
-                Funcionalidade em desenvolvimento
-              </p>
-            </CardContent>
-          </Card>
+          <div className="grid gap-4 md:grid-cols-2">
+            <Card>
+              <CardHeader>
+                <CardTitle>Métodos de Pagamento</CardTitle>
+                <CardDescription>
+                  Configure as formas de pagamento aceitas
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {[
+                  { metodo: 'Dinheiro', taxa: '0%' },
+                  { metodo: 'Cartão de Débito', taxa: '2%' },
+                  { metodo: 'Cartão de Crédito', taxa: '3%' },
+                  { metodo: 'PIX', taxa: '1%' }
+                ].map((pagamento, index) => (
+                  <div key={index} className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Switch id={`pagamento-${index}`} />
+                      <div>
+                        <Label htmlFor={`pagamento-${index}`}>{pagamento.metodo}</Label>
+                        <p className="text-sm text-muted-foreground">Taxa: {pagamento.taxa}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Parcelamento</CardTitle>
+                <CardDescription>
+                  Configure as opções de parcelamento
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid gap-2">
+                  <Label>Número máximo de parcelas</Label>
+                  <select className="w-full p-2 border rounded-md">
+                    <option>1x</option>
+                    <option>2x</option>
+                    <option>3x</option>
+                    <option>4x</option>
+                    <option>5x</option>
+                    <option>6x</option>
+                    <option>12x</option>
+                  </select>
+                </div>
+                <div className="grid gap-2">
+                  <Label>Valor mínimo para parcelamento</Label>
+                  <Input type="number" placeholder="R$ 0,00" />
+                </div>
+                <div className="flex items-center gap-2">
+                  <Switch id="juros" />
+                  <Label htmlFor="juros">Cobrar juros no parcelamento</Label>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
 
         <TabsContent value="relatorios">
-          <Card>
-            <CardHeader>
-              <CardTitle>Configurações de Relatórios</CardTitle>
-              <CardDescription>
-                Configure os relatórios do sistema
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {/* Implementar configurações de relatórios */}
-              <p className="text-sm text-muted-foreground">
-                Funcionalidade em desenvolvimento
-              </p>
-            </CardContent>
-          </Card>
+          <div className="grid gap-4 md:grid-cols-2">
+            <Card>
+              <CardHeader>
+                <CardTitle>Configurações de Relatórios</CardTitle>
+                <CardDescription>
+                  Personalize seus relatórios
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid gap-4">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label>Relatório Diário</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Resumo do dia anterior
+                      </p>
+                    </div>
+                    <Switch />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label>Relatório Semanal</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Resumo da semana anterior
+                      </p>
+                    </div>
+                    <Switch />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label>Relatório Mensal</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Resumo do mês anterior
+                      </p>
+                    </div>
+                    <Switch />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Destinatários</CardTitle>
+                <CardDescription>
+                  Quem receberá os relatórios
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="grid gap-2">
+                    <Label>E-mails</Label>
+                    <Input placeholder="Digite os e-mails separados por vírgula" />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Switch id="export-pdf" />
+                    <Label htmlFor="export-pdf">Exportar como PDF</Label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Switch id="export-excel" />
+                    <Label htmlFor="export-excel">Exportar como Excel</Label>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
 
         <TabsContent value="backup">
@@ -385,7 +544,6 @@ export default function Configuracoes() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {/* Implementar backup e restauração */}
               <p className="text-sm text-muted-foreground">
                 Funcionalidade em desenvolvimento
               </p>
