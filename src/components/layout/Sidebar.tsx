@@ -18,7 +18,7 @@ import { Button } from "@/components/ui/button";
 
 const menuItems = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
-  { icon: Calendar, label: "Agendamentos", path: "/agendamentos" },
+  { icon: Calendar, label: "Agendamentos", path: "/appointments" },
   { icon: Users, label: "Clientes", path: "/clientes" },
   { icon: DollarSign, label: "Financeiro", path: "/financeiro" },
   { icon: Package, label: "Estoque", path: "/estoque" },
