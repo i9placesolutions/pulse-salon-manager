@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Download, FileText, MessageSquare, Plus } from "lucide-react";
 import { SummaryCards } from "@/components/financeiro/SummaryCards";
 import { RevenueChart } from "@/components/financeiro/RevenueChart";
