@@ -27,9 +27,8 @@ export function EstoqueMetrics({
           <p className="text-xs text-muted-foreground">
             produtos cadastrados
           </p>
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
