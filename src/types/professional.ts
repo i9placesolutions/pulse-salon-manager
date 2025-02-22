@@ -12,6 +12,33 @@ export interface Professional {
   totalAppointments: number;
   totalCommission: number;
   averageMonthlyRevenue: number;
+  workingHours?: WorkingHours;
+  blockedDates?: BlockedDate[];
+}
+
+export interface WorkingHours {
+  monday?: DaySchedule;
+  tuesday?: DaySchedule;
+  wednesday?: DaySchedule;
+  thursday?: DaySchedule;
+  friday?: DaySchedule;
+  saturday?: DaySchedule;
+  sunday?: DaySchedule;
+}
+
+export interface DaySchedule {
+  isWorking: boolean;
+  startTime?: string;
+  endTime?: string;
+  breakStart?: string;
+  breakEnd?: string;
+}
+
+export interface BlockedDate {
+  id: number;
+  startDate: string;
+  endDate: string;
+  reason: string;
 }
 
 export interface ProfessionalAppointment {
