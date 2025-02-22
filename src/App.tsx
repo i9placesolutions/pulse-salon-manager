@@ -10,15 +10,8 @@ import Register from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
 import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
+import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
-
-// Temporary dashboard page for testing layout
-const DashboardPage = () => (
-  <div className="p-4">
-    <h1 className="text-2xl font-semibold">Dashboard</h1>
-    <p>Welcome to your dashboard!</p>
-  </div>
-);
 
 const queryClient = new QueryClient();
 
@@ -39,7 +32,7 @@ const App = () => (
           {/* Protected routes */}
           <Route path="/dashboard" element={
             <AppLayout>
-              <DashboardPage />
+              <Dashboard />
             </AppLayout>
           } />
           
