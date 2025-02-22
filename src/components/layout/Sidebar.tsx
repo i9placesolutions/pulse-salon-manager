@@ -1,4 +1,3 @@
-
 import { Link, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -12,6 +11,7 @@ import {
   LogOut,
   ChevronLeft,
   ChevronRight,
+  MessageSquare,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -24,6 +24,7 @@ const menuItems = [
   { icon: Package, label: "Estoque", path: "/estoque" },
   { icon: ShoppingCart, label: "PDV", path: "/pdv" },
   { icon: BarChart, label: "Relatórios", path: "/relatorios" },
+  { icon: MessageSquare, label: "Marketing", path: "/marketing" },
   { icon: Settings, label: "Configurações", path: "/configuracoes" },
 ];
 
