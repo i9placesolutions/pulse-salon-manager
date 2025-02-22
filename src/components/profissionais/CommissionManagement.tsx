@@ -13,19 +13,16 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
 import { ProfessionalCommission } from "@/types/professional";
 import { formatCurrency } from "@/utils/currency";
 import { format } from "date-fns";
 
 interface CommissionManagementProps {
   commissions: ProfessionalCommission[];
-  onPayCommission: (commission: ProfessionalCommission) => void;
 }
 
 export const CommissionManagement = ({
   commissions,
-  onPayCommission,
 }: CommissionManagementProps) => {
   const totalPending = commissions
     .filter((c) => c.status === "pending")
@@ -63,7 +60,6 @@ export const CommissionManagement = ({
               <TableHead>Tipo</TableHead>
               <TableHead className="text-right">Valor</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -89,16 +85,6 @@ export const CommissionManagement = ({
                   >
                     {commission.status === "paid" ? "Pago" : "Pendente"}
                   </span>
-                </TableCell>
-                <TableCell>
-                  {commission.status === "pending" && (
-                    <Button
-                      size="sm"
-                      onClick={() => onPayCommission(commission)}
-                    >
-                      Pagar
-                    </Button>
-                  )}
                 </TableCell>
               </TableRow>
             ))}

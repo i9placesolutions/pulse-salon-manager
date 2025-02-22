@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TabsContent, Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -11,7 +10,6 @@ import { PerformanceMetrics } from "@/components/profissionais/PerformanceMetric
 import { CommissionManagement } from "@/components/profissionais/CommissionManagement";
 import { ProfessionalCommission } from "@/types/professional";
 
-// Dados mockados para exemplo
 const mockPerformance = {
   totalAppointments: 45,
   topServices: [
@@ -70,10 +68,6 @@ const mockAppointments = [
 export default function ProfissionalDashboard() {
   const [isWorkingHoursOpen, setIsWorkingHoursOpen] = useState(false);
 
-  const handlePayCommission = (commission: ProfessionalCommission) => {
-    console.log("Pagar comissão:", commission);
-  };
-
   return (
     <div className="space-y-6 p-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -91,7 +85,6 @@ export default function ProfissionalDashboard() {
         </div>
       </div>
 
-      {/* Cards de Métricas */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -172,10 +165,7 @@ export default function ProfissionalDashboard() {
         </TabsContent>
 
         <TabsContent value="commissions">
-          <CommissionManagement 
-            commissions={mockCommissions}
-            onPayCommission={handlePayCommission}
-          />
+          <CommissionManagement commissions={mockCommissions} />
         </TabsContent>
       </Tabs>
 
