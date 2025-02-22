@@ -13,6 +13,7 @@ import Privacy from "./pages/Privacy";
 import Dashboard from "./pages/Dashboard";
 import Appointments from "./pages/Appointments";
 import Financeiro from "./pages/Financeiro";
+import Estoque from "./pages/Estoque";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -45,6 +46,11 @@ const App = () => (
           <Route path="/financeiro" element={
             <AppLayout>
               <Financeiro />
+            </AppLayout>
+          } />
+          <Route path="/estoque" element={
+            <AppLayout>
+              <Estoque />
             </AppLayout>
           } />
           
