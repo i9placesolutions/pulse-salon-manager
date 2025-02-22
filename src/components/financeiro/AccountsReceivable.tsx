@@ -1,7 +1,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { WhatsappIcon } from "lucide-react";
+import { MessageSquare } from "lucide-react";
 import { formatCurrency } from "@/utils/currency";
 import { AccountReceivable } from "@/types/financial";
 
@@ -49,7 +49,7 @@ export const AccountsReceivable = ({ accounts, onWhatsApp }: AccountsReceivableP
                   size="icon"
                   onClick={() => onWhatsApp(account)}
                 >
-                  <WhatsappIcon className="h-4 w-4" />
+                  <MessageSquare className="h-4 w-4" />
                 </Button>
               </div>
             </div>

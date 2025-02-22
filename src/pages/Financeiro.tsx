@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Download, FileText, WhatsappIcon } from "lucide-react";
+import { Download, FileText, MessageSquare } from "lucide-react";
 import { SummaryCards } from "@/components/financeiro/SummaryCards";
 import { RevenueChart } from "@/components/financeiro/RevenueChart";
 import { PaymentsList } from "@/components/financeiro/PaymentsList";
@@ -71,7 +71,7 @@ const Financeiro = () => {
         <h1 className="text-2xl font-semibold text-neutral">Gestão Financeira</h1>
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => handleWhatsApp()}>
-            <WhatsappIcon className="mr-2 h-4 w-4" />
+            <MessageSquare className="mr-2 h-4 w-4" />
             Enviar Cobranças
           </Button>
           <Button onClick={() => handleExport()}>
