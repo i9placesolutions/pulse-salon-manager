@@ -14,6 +14,8 @@ export interface Appointment {
   paymentStatus: 'pending' | 'partial' | 'paid';
   notes?: string;
   totalValue: number;
+  history?: AppointmentHistory[];
+  recurrence?: AppointmentRecurrence;
 }
 
 export interface Service {
@@ -33,6 +35,31 @@ export interface Professional {
       end: string;
     };
   };
+  blockedTimes?: BlockedTime[];
+}
+
+export interface BlockedTime {
+  id: number;
+  professionalId: number;
+  date: Date;
+  startTime: string;
+  endTime: string;
+  reason?: string;
+}
+
+export interface AppointmentHistory {
+  id: number;
+  appointmentId: number;
+  action: 'created' | 'updated' | 'cancelled' | 'rescheduled' | 'confirmed';
+  timestamp: Date;
+  details: string;
+}
+
+export interface AppointmentRecurrence {
+  type: 'daily' | 'weekly' | 'monthly';
+  interval: number;
+  endDate?: Date;
+  occurrences?: number;
 }
 
 export interface WaitingList {
