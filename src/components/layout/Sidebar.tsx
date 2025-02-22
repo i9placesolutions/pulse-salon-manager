@@ -14,6 +14,7 @@ import {
   ChevronRight,
   MessageSquare,
   Scissors,
+  UserSquare2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -23,6 +24,7 @@ const menuItems = [
   { icon: Calendar, label: "Agendamentos", path: "/appointments" },
   { icon: Users, label: "Clientes", path: "/clientes" },
   { icon: Scissors, label: "Serviços", path: "/servicos" },
+  { icon: UserSquare2, label: "Profissionais", path: "/profissionais" },
   { icon: DollarSign, label: "Financeiro", path: "/financeiro" },
   { icon: Package, label: "Estoque", path: "/estoque" },
   { icon: ShoppingCart, label: "PDV", path: "/pdv" },
