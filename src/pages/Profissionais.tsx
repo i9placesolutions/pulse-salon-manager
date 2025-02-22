@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -47,7 +48,15 @@ import {
   DollarSign,
   TrendingUp,
 } from "lucide-react";
-import { Professional } from "@/types/professional";
+import { 
+  Professional,
+  ProfessionalAppointment,
+  ProfessionalCommission,
+  ProfessionalPayment,
+  ProfessionalPerformance 
+} from "@/types/professional";
+import { ProfessionalForm } from "@/components/profissionais/ProfessionalForm";
+import { ProfessionalDetails } from "@/components/profissionais/ProfessionalDetails";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency } from "@/utils/currency";
 
