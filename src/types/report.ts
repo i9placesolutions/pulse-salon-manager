@@ -1,4 +1,3 @@
-
 export interface ReportMetric {
   label: string;
   value: number;
@@ -26,4 +25,27 @@ export interface ServicePerformance {
   revenue: number;
   quantity: number;
   avgRating: number;
+}
+
+export interface CommissionReport {
+  professionalId: number;
+  professionalName: string;
+  totalEarnings: number;
+  servicesCount: number;
+  commissions: {
+    serviceId: number;
+    serviceName: string;
+    commissionsEarned: number;
+    quantity: number;
+  }[];
+}
+
+export interface ServiceReport {
+  serviceId: number;
+  serviceName: string;
+  totalRevenue: number;
+  totalCommissions: number;
+  serviceCost: number;
+  netProfit: number;
+  quantity: number;
 }
