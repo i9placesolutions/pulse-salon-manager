@@ -8,7 +8,7 @@ import { WorkingHoursForm } from "@/components/profissionais/WorkingHoursForm";
 import { AppointmentHistory } from "@/components/profissionais/AppointmentHistory";
 import { PerformanceMetrics } from "@/components/profissionais/PerformanceMetrics";
 import { CommissionManagement } from "@/components/profissionais/CommissionManagement";
-import { Professional, ProfessionalCommission } from "@/types/professional";
+import { Professional, ProfessionalCommission, ProfessionalAppointment } from "@/types/professional";
 
 // Mock data para teste
 const mockProfessional: Professional = {
