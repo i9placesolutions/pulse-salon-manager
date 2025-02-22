@@ -72,6 +72,8 @@ const mockProfessionals: Professional[] = [
     totalAppointments: 450,
     totalCommission: 15000,
     averageMonthlyRevenue: 5000,
+    paymentModel: "commission",
+    commissionRate: 30
   },
   {
     id: 2,
@@ -85,6 +87,8 @@ const mockProfessionals: Professional[] = [
     totalAppointments: 280,
     totalCommission: 8500,
     averageMonthlyRevenue: 3500,
+    paymentModel: "fixed",
+    fixedSalary: 3000
   },
 ];
 
@@ -96,6 +100,7 @@ const mockAppointments: ProfessionalAppointment[] = [
     serviceName: "Corte de Cabelo",
     value: 80,
     commission: 24,
+    status: "confirmed"
   },
   {
     id: 2,
@@ -104,6 +109,7 @@ const mockAppointments: ProfessionalAppointment[] = [
     serviceName: "Barba",
     value: 40,
     commission: 12,
+    status: "pending"
   },
 ];
 
@@ -114,7 +120,7 @@ const mockCommissions: ProfessionalCommission[] = [
     value: 450,
     referenceType: "service",
     referenceName: "Corte de Cabelo",
-    status: "paid",
+    status: "paid"
   },
   {
     id: 2,
@@ -122,7 +128,7 @@ const mockCommissions: ProfessionalCommission[] = [
     value: 150,
     referenceType: "product",
     referenceName: "Shampoo Profissional",
-    status: "pending",
+    status: "pending"
   },
 ];
 
@@ -134,6 +140,7 @@ const mockPayments: ProfessionalPayment[] = [
     referenceMonth: "2024-02",
     status: "paid",
     paymentDate: "2024-03-05",
+    type: "commission"
   },
   {
     id: 2,
@@ -141,6 +148,7 @@ const mockPayments: ProfessionalPayment[] = [
     value: 2800,
     referenceMonth: "2024-03",
     status: "pending",
+    type: "salary"
   },
 ];
 
