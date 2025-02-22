@@ -1,29 +1,19 @@
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-
-interface Appointment {
-  id: number;
-  client: string;
-  service: string;
-  professional: string;
-  time: string;
-  status: string;
-}
+import type { Appointment } from "@/types/appointment";
+import { format } from "date-fns";
 
 interface AppointmentListProps {
   appointments: Appointment[];
-  selectedDate: Date | undefined;
+  onStatusChange: (appointmentId: number, status: Appointment["status"]) => void;
+  onReschedule: (appointmentId: number) => void;
 }
 
-export const AppointmentList = ({ appointments, selectedDate }: AppointmentListProps) => {
+export const AppointmentList = ({ appointments, onStatusChange, onReschedule }: AppointmentListProps) => {
   return (
-    <Card className="p-4 lg:col-span-9">
+    <Card className="p-4">
       <div className="space-y-4">
-        <h2 className="font-semibold text-neutral">
-          Agendamentos para {selectedDate?.toLocaleDateString()}
-        </h2>
-
         <div className="grid gap-4">
           {appointments.map((appointment) => (
             <div
@@ -31,16 +21,34 @@ export const AppointmentList = ({ appointments, selectedDate }: AppointmentListP
               className="flex items-center justify-between rounded-lg border p-4"
             >
               <div className="space-y-1">
-                <p className="font-medium">{appointment.client}</p>
+                <p className="font-medium">{appointment.clientName}</p>
                 <p className="text-sm text-muted-foreground">
-                  {appointment.service} com {appointment.professional}
+                  {appointment.services.map(s => s.name).join(", ")} com {appointment.professionalName}
                 </p>
               </div>
               <div className="flex items-center gap-4">
-                <span className="text-sm font-medium">{appointment.time}</span>
-                <Button variant="outline" size="sm">
-                  Detalhes
-                </Button>
+                <span className="text-sm font-medium">
+                  {format(appointment.date, "dd/MM/yyyy")} {appointment.startTime}
+                </span>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onStatusChange(
+                      appointment.id,
+                      appointment.status === "confirmed" ? "canceled" : "confirmed"
+                    )}
+                  >
+                    {appointment.status === "confirmed" ? "Cancelar" : "Confirmar"}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onReschedule(appointment.id)}
+                  >
+                    Reagendar
+                  </Button>
+                </div>
               </div>
             </div>
           ))}
