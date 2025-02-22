@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,7 +30,9 @@ import {
   Ban,
   History,
   Receipt,
-  AlertTriangle
+  AlertTriangle,
+  Percent,
+  X
 } from "lucide-react";
 import { formatCurrency } from "@/utils/currency";
 import { useToast } from "@/hooks/use-toast";
@@ -63,20 +64,128 @@ const PDV = () => {
   const [isOpenCashierDialog, setIsOpenCashierDialog] = useState(false);
   const [isCloseCashierDialog, setIsCloseCashierDialog] = useState(false);
   const [openingAmount, setOpeningAmount] = useState("");
+
   const [searchTerm, setSearchTerm] = useState("");
-  const [cart, setCart] = useState<any[]>([]);
+  const [cart, setCart] = useState<SaleItem[]>([]);
   const [selectedClient, setSelectedClient] = useState<any | null>(null);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
-  const [isNewClientOpen, setIsNewClientOpen] = useState(false);
-  const [isCashierOpen, setIsCashierOpen] = useState(false);
-  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
-  const [cashierOperation, setCashierOperation] = useState<any | null>(null);
-  const [paymentMethods, setPaymentMethods] = useState<string[]>([]);
-  const [paymentValues, setPaymentValues] = useState<number[]>([]);
-  const [installments, setInstallments] = useState(1);
-  const [cartDiscount, setCartDiscount] = useState(0);
+  const [isClientDialogOpen, setIsClientDialogOpen] = useState(false);
+  const [paymentMethods, setPaymentMethods] = useState<Payment[]>([]);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>("cash");
+  const [paymentAmount, setPaymentAmount] = useState<string>("");
+  const [cartTotal, setCartTotal] = useState(0);
+  const [remainingAmount, setRemainingAmount] = useState(0);
   const [changeAmount, setChangeAmount] = useState(0);
-  const [dailySales, setDailySales] = useState<any[]>([]);
+
+  const addToCart = (product: any) => {
+    const newItem: SaleItem = {
+      id: Date.now(),
+      type: product.category.toLowerCase() === "serviço" ? "service" : "product",
+      name: product.name,
+      quantity: 1,
+      unitPrice: product.price,
+      totalPrice: product.price
+    };
+
+    setCart(prev => [...prev, newItem]);
+    updateCartTotal([...cart, newItem]);
+  };
+
+  const updateCartTotal = (items: SaleItem[]) => {
+    const total = items.reduce((acc, item) => acc + item.totalPrice, 0);
+    setCartTotal(total);
+    setRemainingAmount(total);
+  };
+
+  const removeFromCart = (itemId: number) => {
+    const updatedCart = cart.filter(item => item.id !== itemId);
+    setCart(updatedCart);
+    updateCartTotal(updatedCart);
+  };
+
+  const applyDiscount = (itemId: number, discountValue: number, discountType: 'percentage' | 'fixed') => {
+    const updatedCart = cart.map(item => {
+      if (item.id === itemId) {
+        const discount = discountType === 'percentage' 
+          ? (item.unitPrice * discountValue) / 100
+          : discountValue;
+        
+        return {
+          ...item,
+          discount: discountValue,
+          discountType: discountType,
+          totalPrice: item.unitPrice - discount
+        };
+      }
+      return item;
+    });
+
+    setCart(updatedCart);
+    updateCartTotal(updatedCart);
+  };
+
+  const addPayment = () => {
+    if (!paymentAmount || Number(paymentAmount) <= 0) return;
+
+    const amount = Number(paymentAmount);
+    const newPayment: Payment = {
+      id: Date.now(),
+      method: selectedPaymentMethod as any,
+      amount,
+      status: 'completed',
+      date: new Date()
+    };
+
+    if (selectedPaymentMethod === 'cash' && amount > remainingAmount) {
+      setChangeAmount(amount - remainingAmount);
+    }
+
+    setPaymentMethods(prev => [...prev, newPayment]);
+    setRemainingAmount(prev => Math.max(0, prev - amount));
+    setPaymentAmount("");
+  };
+
+  const finalizeSale = () => {
+    if (remainingAmount > 0) {
+      toast({
+        title: "Erro ao finalizar venda",
+        description: "Ainda há valor pendente para pagamento",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const newSale: Sale = {
+      id: Date.now(),
+      items: cart,
+      total: cartTotal,
+      subtotal: cartTotal,
+      payments: paymentMethods,
+      status: 'completed',
+      date: new Date(),
+      cashierSessionId: state.cashierSession?.id || 0,
+      client: selectedClient
+    };
+
+    setState(prev => ({
+      ...prev,
+      recentSales: [...prev.recentSales, newSale]
+    }));
+
+    // Limpar o carrinho e estados relacionados
+    setCart([]);
+    setPaymentMethods([]);
+    setSelectedClient(null);
+    setCartTotal(0);
+    setRemainingAmount(0);
+    setChangeAmount(0);
+    setIsCheckoutOpen(false);
+
+    toast({
+      title: "Venda finalizada",
+      description: "Venda realizada com sucesso!",
+    });
+  };
 
   // Efeito para verificar se o caixa está aberto ao carregar a página
   useEffect(() => {
@@ -218,6 +327,10 @@ const PDV = () => {
             />
           </div>
           <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setIsClientDialogOpen(true)}>
+              <User className="mr-2 h-4 w-4" />
+              {selectedClient ? selectedClient.name : "Selecionar Cliente"}
+            </Button>
             <Button variant="outline" onClick={() => setIsCloseCashierDialog(true)}>
               <CircleDollarSign className="mr-2 h-4 w-4" />
               Fechar Caixa
@@ -227,7 +340,11 @@ const PDV = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {mockProducts.map((product) => (
-            <Card key={product.id} className="cursor-pointer hover:bg-secondary/50 transition-colors">
+            <Card 
+              key={product.id} 
+              className="cursor-pointer hover:bg-secondary/50 transition-colors"
+              onClick={() => addToCart(product)}
+            >
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">
                   {product.name}
@@ -265,10 +382,227 @@ const PDV = () => {
                 <ShoppingCart className="h-5 w-5" />
                 Carrinho
               </h2>
+              {selectedClient && (
+                <span className="text-sm text-muted-foreground">
+                  Cliente: {selectedClient.name}
+                </span>
+              )}
             </div>
+          </div>
+
+          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            {cart.map((item) => (
+              <Card key={item.id}>
+                <CardContent className="p-4">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h3 className="font-medium">{item.name}</h3>
+                      <p className="text-sm text-muted-foreground">
+                        {formatCurrency(item.unitPrice)} x {item.quantity}
+                      </p>
+                      {item.discount && (
+                        <p className="text-sm text-green-500">
+                          Desconto: {item.discountType === 'percentage' ? `${item.discount}%` : formatCurrency(item.discount)}
+                        </p>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button 
+                        size="icon" 
+                        variant="ghost"
+                        onClick={() => {
+                          const value = prompt("Digite o valor do desconto:");
+                          const type = confirm("Desconto em porcentagem?") ? 'percentage' : 'fixed';
+                          if (value) applyDiscount(item.id, Number(value), type);
+                        }}
+                      >
+                        <Percent className="h-4 w-4" />
+                      </Button>
+                      <Button 
+                        size="icon" 
+                        variant="ghost"
+                        onClick={() => removeFromCart(item.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          <div className="border-t p-4 space-y-4">
+            <div className="flex justify-between items-center">
+              <span className="text-sm font-medium">Total</span>
+              <span className="text-2xl font-bold">{formatCurrency(cartTotal)}</span>
+            </div>
+
+            <Button 
+              className="w-full" 
+              size="lg"
+              disabled={cart.length === 0}
+              onClick={() => setIsCheckoutOpen(true)}
+            >
+              Finalizar Venda
+            </Button>
           </div>
         </div>
       </div>
+
+      {/* Dialog de Pagamento */}
+      <Dialog open={isCheckoutOpen} onOpenChange={setIsCheckoutOpen}>
+        <DialogContent className="max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Finalizar Venda</DialogTitle>
+            <DialogDescription>
+              Total a pagar: {formatCurrency(cartTotal)}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-6">
+            {/* Formas de Pagamento */}
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  variant={selectedPaymentMethod === 'cash' ? 'default' : 'outline'}
+                  onClick={() => setSelectedPaymentMethod('cash')}
+                >
+                  <BanknoteIcon className="mr-2 h-4 w-4" />
+                  Dinheiro
+                </Button>
+                <Button
+                  variant={selectedPaymentMethod === 'credit' ? 'default' : 'outline'}
+                  onClick={() => setSelectedPaymentMethod('credit')}
+                >
+                  <CreditCard className="mr-2 h-4 w-4" />
+                  Crédito
+                </Button>
+                <Button
+                  variant={selectedPaymentMethod === 'debit' ? 'default' : 'outline'}
+                  onClick={() => setSelectedPaymentMethod('debit')}
+                >
+                  <CreditCard className="mr-2 h-4 w-4" />
+                  Débito
+                </Button>
+                <Button
+                  variant={selectedPaymentMethod === 'pix' ? 'default' : 'outline'}
+                  onClick={() => setSelectedPaymentMethod('pix')}
+                >
+                  <QrCode className="mr-2 h-4 w-4" />
+                  PIX
+                </Button>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Valor do Pagamento</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={paymentAmount}
+                  onChange={(e) => setPaymentAmount(e.target.value)}
+                  placeholder={formatCurrency(remainingAmount)}
+                />
+              </div>
+
+              <Button 
+                className="w-full"
+                onClick={addPayment}
+                disabled={!paymentAmount || Number(paymentAmount) <= 0}
+              >
+                Adicionar Pagamento
+              </Button>
+            </div>
+
+            {/* Lista de Pagamentos */}
+            {paymentMethods.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-sm">Pagamentos Registrados</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {paymentMethods.map((payment) => (
+                    <div key={payment.id} className="flex justify-between items-center">
+                      <span className="capitalize">{payment.method}</span>
+                      <span>{formatCurrency(payment.amount)}</span>
+                    </div>
+                  ))}
+                  {changeAmount > 0 && (
+                    <div className="flex justify-between items-center text-primary">
+                      <span>Troco</span>
+                      <span>{formatCurrency(changeAmount)}</span>
+                    </div>
+                  )}
+                  <div className="pt-2 border-t">
+                    <div className="flex justify-between items-center font-medium">
+                      <span>Restante</span>
+                      <span>{formatCurrency(remainingAmount)}</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button
+              variant="outline"
+              className="sm:flex-1"
+              onClick={() => setIsCheckoutOpen(false)}
+            >
+              Cancelar
+            </Button>
+            <Button 
+              className="sm:flex-1"
+              onClick={finalizeSale}
+              disabled={remainingAmount > 0}
+            >
+              Finalizar Venda
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog de Seleção de Cliente */}
+      <Dialog open={isClientDialogOpen} onOpenChange={setIsClientDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Selecionar Cliente</DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <Input
+              placeholder="Buscar cliente..."
+              className="w-full"
+            />
+            
+            <div className="space-y-2">
+              {mockClients.map((client) => (
+                <Card 
+                  key={client.id}
+                  className="cursor-pointer hover:bg-secondary/50 transition-colors"
+                  onClick={() => {
+                    setSelectedClient(client);
+                    setIsClientDialogOpen(false);
+                  }}
+                >
+                  <CardContent className="p-4">
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <h3 className="font-medium">{client.name}</h3>
+                        <p className="text-sm text-muted-foreground">{client.phone}</p>
+                      </div>
+                      <Button size="icon" variant="ghost">
+                        <ChevronsRight className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Dialog de Fechamento de Caixa */}
       <Dialog open={isCloseCashierDialog} onOpenChange={setIsCloseCashierDialog}>
@@ -310,22 +644,71 @@ const PDV = () => {
               </Card>
             </div>
 
-            <DialogFooter className="flex-col sm:flex-row gap-2">
-              <Button
-                variant="outline"
-                className="sm:flex-1"
-                onClick={() => setIsCloseCashierDialog(false)}
-              >
-                Cancelar
-              </Button>
-              <Button 
-                className="sm:flex-1"
-                onClick={handleCloseCashier}
-              >
-                Confirmar Fechamento
-              </Button>
-            </DialogFooter>
+            {/* Resumo por forma de pagamento */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm">Por Forma de Pagamento</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <div className="flex justify-between">
+                  <span>Dinheiro</span>
+                  <span>{formatCurrency(
+                    state.recentSales.reduce((acc, sale) => 
+                      acc + sale.payments
+                        .filter(p => p.method === 'cash')
+                        .reduce((sum, p) => sum + p.amount, 0)
+                    , 0)
+                  )}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Cartão de Crédito</span>
+                  <span>{formatCurrency(
+                    state.recentSales.reduce((acc, sale) => 
+                      acc + sale.payments
+                        .filter(p => p.method === 'credit')
+                        .reduce((sum, p) => sum + p.amount, 0)
+                    , 0)
+                  )}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Cartão de Débito</span>
+                  <span>{formatCurrency(
+                    state.recentSales.reduce((acc, sale) => 
+                      acc + sale.payments
+                        .filter(p => p.method === 'debit')
+                        .reduce((sum, p) => sum + p.amount, 0)
+                    , 0)
+                  )}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>PIX</span>
+                  <span>{formatCurrency(
+                    state.recentSales.reduce((acc, sale) => 
+                      acc + sale.payments
+                        .filter(p => p.method === 'pix')
+                        .reduce((sum, p) => sum + p.amount, 0)
+                    , 0)
+                  )}</span>
+                </div>
+              </CardContent>
+            </Card>
           </div>
+
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button
+              variant="outline"
+              className="sm:flex-1"
+              onClick={() => setIsCloseCashierDialog(false)}
+            >
+              Cancelar
+            </Button>
+            <Button 
+              className="sm:flex-1"
+              onClick={handleCloseCashier}
+            >
+              Confirmar Fechamento
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
