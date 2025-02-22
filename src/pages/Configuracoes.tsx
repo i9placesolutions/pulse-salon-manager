@@ -27,8 +27,13 @@ import {
   Shield, 
   Cloud,
   Save,
-  Undo
+  Undo,
+  Phone,
+  Mail,
+  Calendar,
+  Bell
 } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
 
 export default function Configuracoes() {
   const [isLoading, setIsLoading] = useState(false);
@@ -121,6 +126,19 @@ export default function Configuracoes() {
                   </div>
                 </div>
                 <div className="grid gap-2">
+                  <Label>Contatos</Label>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Phone className="h-4 w-4" />
+                      <Input placeholder="Telefone do salão" />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Mail className="h-4 w-4" />
+                      <Input placeholder="E-mail do salão" />
+                    </div>
+                  </div>
+                </div>
+                <div className="grid gap-2">
                   <Label>Tema do Sistema</Label>
                   <div className="flex items-center space-x-2">
                     <Switch id="dark-mode" />
@@ -139,7 +157,21 @@ export default function Configuracoes() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {/* Implementar grade de horários */}
+              <div className="space-y-4">
+                {['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo'].map((dia) => (
+                  <div key={dia} className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Switch id={`dia-${dia}`} />
+                      <Label htmlFor={`dia-${dia}`}>{dia}</Label>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Input type="time" className="w-24" />
+                      <span>às</span>
+                      <Input type="time" className="w-24" />
+                    </div>
+                  </div>
+                ))}
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -166,31 +198,199 @@ export default function Configuracoes() {
               </div>
             </CardContent>
           </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Mensagens Automáticas</CardTitle>
+              <CardDescription>
+                Configure mensagens automáticas para seus clientes
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>Confirmação de Agendamento</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Enviar mensagem quando um novo agendamento for realizado
+                    </p>
+                  </div>
+                  <Switch />
+                </div>
+                <Separator />
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>Lembrete de Agendamento</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Enviar lembrete 24h antes do horário marcado
+                    </p>
+                  </div>
+                  <Switch />
+                </div>
+                <Separator />
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>Aniversário</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Enviar mensagem de felicitação no aniversário do cliente
+                    </p>
+                  </div>
+                  <Switch />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
-        {/* Outras abas serão implementadas conforme necessário */}
+        <TabsContent value="seguranca" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Autenticação</CardTitle>
+              <CardDescription>
+                Configure as políticas de segurança do sistema
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>Autenticação de Dois Fatores</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Exigir 2FA para todos os usuários
+                    </p>
+                  </div>
+                  <Switch />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>Senha Forte</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Exigir senhas com números, letras e caracteres especiais
+                    </p>
+                  </div>
+                  <Switch />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Backup Automático</CardTitle>
+              <CardDescription>
+                Configure a frequência dos backups do sistema
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-4">
+                <div className="grid gap-2">
+                  <Label>Frequência</Label>
+                  <select className="w-full p-2 border rounded-md">
+                    <option value="daily">Diário</option>
+                    <option value="weekly">Semanal</option>
+                    <option value="monthly">Mensal</option>
+                  </select>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>Backup Automático</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Realizar backup automático do sistema
+                    </p>
+                  </div>
+                  <Switch />
+                </div>
+                <Button variant="secondary" className="w-full">
+                  Fazer Backup Manual
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         <TabsContent value="usuarios">
-          {/* Implementar gerenciamento de usuários */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Gerenciamento de Usuários</CardTitle>
+              <CardDescription>
+                Configure as permissões e acesso dos usuários
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {/* Implementar lista de usuários e gerenciamento de permissões */}
+              <p className="text-sm text-muted-foreground">
+                Funcionalidade em desenvolvimento
+              </p>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="mensagens">
-          {/* Implementar templates de mensagens */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Templates de Mensagens</CardTitle>
+              <CardDescription>
+                Configure os modelos de mensagens automáticas
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {/* Implementar templates de mensagens */}
+              <p className="text-sm text-muted-foreground">
+                Funcionalidade em desenvolvimento
+              </p>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="pagamentos">
-          {/* Implementar configurações de pagamento */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Métodos de Pagamento</CardTitle>
+              <CardDescription>
+                Configure as formas de pagamento aceitas
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {/* Implementar configurações de pagamento */}
+              <p className="text-sm text-muted-foreground">
+                Funcionalidade em desenvolvimento
+              </p>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="relatorios">
-          {/* Implementar configurações de relatórios */}
-        </TabsContent>
-
-        <TabsContent value="seguranca">
-          {/* Implementar configurações de segurança */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Configurações de Relatórios</CardTitle>
+              <CardDescription>
+                Configure os relatórios do sistema
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {/* Implementar configurações de relatórios */}
+              <p className="text-sm text-muted-foreground">
+                Funcionalidade em desenvolvimento
+              </p>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="backup">
-          {/* Implementar configurações de backup */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Backup e Restauração</CardTitle>
+              <CardDescription>
+                Gerencie os backups do seu sistema
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {/* Implementar backup e restauração */}
+              <p className="text-sm text-muted-foreground">
+                Funcionalidade em desenvolvimento
+              </p>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>
