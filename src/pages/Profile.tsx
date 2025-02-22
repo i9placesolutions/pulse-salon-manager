@@ -1,24 +1,41 @@
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
 import { ProfessionalHeader } from "@/components/profissionais/dashboard/ProfessionalHeader";
 import { PersonalInfo } from "@/components/profissionais/profile/PersonalInfo";
 import { SecuritySettings } from "@/components/profissionais/profile/SecuritySettings";
 import { NotificationPreferences } from "@/components/profissionais/profile/NotificationPreferences";
 import { ActivityHistory } from "@/components/profissionais/profile/ActivityHistory";
 import { DangerZone } from "@/components/profissionais/profile/DangerZone";
-import { User, Lock, Bell, History } from "lucide-react";
+import { User, Lock, Bell, History, ArrowLeft } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 export default function Profile() {
+  const navigate = useNavigate();
+
   return (
     <div>
       <ProfessionalHeader />
       
       <div className="container mx-auto px-4 py-6 space-y-6">
-        <div>
-          <h1 className="text-2xl font-semibold text-neutral">Meu Perfil</h1>
-          <p className="text-sm text-muted-foreground">
-            Gerencie suas informações pessoais e preferências
-          </p>
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => navigate("/profissional-dashboard")}
+                className="hover:bg-secondary"
+              >
+                <ArrowLeft className="h-4 w-4 mr-1" />
+                Voltar ao Dashboard
+              </Button>
+            </div>
+            <h1 className="text-2xl font-semibold text-neutral">Meu Perfil</h1>
+            <p className="text-sm text-muted-foreground">
+              Gerencie suas informações pessoais e preferências
+            </p>
+          </div>
         </div>
 
         <Tabs defaultValue="personal" className="space-y-4">
