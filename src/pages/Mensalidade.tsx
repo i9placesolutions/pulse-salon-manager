@@ -1,20 +1,15 @@
-
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { TabsContent, Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
-import { 
-  CreditCard, 
-  Users, 
-  Calendar, 
-  MessageSquare, 
-  Check, 
-  Download,
-  AlertTriangle
-} from "lucide-react";
-import { formatCurrency } from "@/utils/currency";
-import { SubscriptionPlan, SubscriptionStatus } from "@/types/subscription";
+import { PaymentMethodForm } from "@/components/mensalidade/PaymentMethodForm";
+import { SubscriptionConfirmDialog } from "@/components/mensalidade/SubscriptionConfirmDialog";
+import { CurrentPlanDetails } from "@/components/mensalidade/CurrentPlanDetails";
+import { CancelSubscriptionDialog } from "@/components/mensalidade/CancelSubscriptionDialog";
+import { PaymentHistory } from "@/components/mensalidade/PaymentHistory";
+import { NotificationPreferences } from "@/components/mensalidade/NotificationPreferences";
+import { SubscriptionStatusWidget } from "@/components/mensalidade/SubscriptionStatusWidget";
+import { useToast } from "@/hooks/use-toast";
+import { SubscriptionPlan, SubscriptionStatus, PaymentMethod, Invoice } from "@/types/subscription";
 
 const plans: SubscriptionPlan[] = [
   {
@@ -93,14 +88,119 @@ const plans: SubscriptionPlan[] = [
   }
 ];
 
-// Mock data - substituir pela integração real depois
-const subscriptionStatus: SubscriptionStatus = "trial";
-const trialDaysLeft = 3;
+const mockInvoices: Invoice[] = [
+  {
+    id: "1",
+    date: "2024-03-01",
+    dueDate: "2024-03-10",
+    amount: 99.90,
+    status: "paid",
+    paymentMethod: "credit_card",
+    downloadUrl: "#"
+  },
+  {
+    id: "2",
+    date: "2024-02-01",
+    dueDate: "2024-02-10",
+    amount: 99.90,
+    status: "paid",
+    paymentMethod: "credit_card",
+    downloadUrl: "#"
+  },
+  {
+    id: "3",
+    date: "2024-01-01",
+    dueDate: "2024-01-10",
+    amount: 99.90,
+    status: "paid",
+    paymentMethod: "credit_card",
+    downloadUrl: "#"
+  }
+];
+
+const mockSubscription = {
+  id: "1",
+  planId: "basic",
+  status: "trial" as SubscriptionStatus,
+  startDate: "2024-03-01",
+  endDate: "2024-04-01",
+  trialEndsAt: "2024-03-15",
+  paymentMethod: "credit_card" as PaymentMethod,
+  autoRenew: true,
+  lastPayment: {
+    date: "2024-03-01",
+    amount: 99.90,
+    status: "success" as const
+  }
+};
+
+const mockNotificationPreferences = {
+  email: true,
+  push: false,
+  paymentReminders: true,
+  trialEnding: true,
+  newsAndUpdates: false
+};
 
 export default function Mensalidade() {
+  const { toast } = useToast();
   const [selectedTab, setSelectedTab] = useState("plans");
+  const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan | null>(null);
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+  const [notificationPrefs, setNotificationPrefs] = useState(mockNotificationPreferences);
 
-  const showTrialWarning = subscriptionStatus === "trial" && trialDaysLeft <= 3;
+  const handlePlanSelect = (plan: SubscriptionPlan) => {
+    setSelectedPlan(plan);
+    setConfirmDialogOpen(true);
+  };
+
+  const handlePaymentSubmit = (data: { method: PaymentMethod; [key: string]: any }) => {
+    console.log("Payment data:", data);
+    toast({
+      title: "Pagamento processado",
+      description: "Seu pagamento está sendo processado.",
+    });
+  };
+
+  const handleSubscriptionConfirm = () => {
+    setConfirmDialogOpen(false);
+    toast({
+      title: "Assinatura confirmada",
+      description: "Sua assinatura foi confirmada com sucesso!",
+    });
+  };
+
+  const handleCancelSubscription = (reason: string) => {
+    console.log("Cancelamento - motivo:", reason);
+    setCancelDialogOpen(false);
+    toast({
+      title: "Assinatura cancelada",
+      description: "Sua assinatura foi cancelada com sucesso.",
+      variant: "destructive",
+    });
+  };
+
+  const handleAutoRenewChange = (autoRenew: boolean) => {
+    console.log("Auto renovação:", autoRenew);
+    toast({
+      title: "Preferência atualizada",
+      description: autoRenew 
+        ? "Renovação automática ativada"
+        : "Renovação automática desativada",
+    });
+  };
+
+  const handleNotificationPreferenceChange = (
+    key: keyof typeof notificationPrefs,
+    value: boolean
+  ) => {
+    setNotificationPrefs((prev) => ({ ...prev, [key]: value }));
+    toast({
+      title: "Preferências atualizadas",
+      description: "Suas preferências de notificação foram atualizadas.",
+    });
+  };
 
   return (
     <div className="space-y-6 p-6">
@@ -112,19 +212,11 @@ export default function Mensalidade() {
           </p>
         </div>
         
-        {showTrialWarning && (
-          <Card className="bg-yellow-50 border-yellow-200">
-            <CardContent className="flex items-center gap-2 py-3">
-              <AlertTriangle className="h-4 w-4 text-yellow-600" />
-              <span className="text-sm text-yellow-700">
-                Seu período de teste expira em {trialDaysLeft} dias
-              </span>
-              <Button size="sm" variant="default" className="ml-4">
-                Assinar Agora
-              </Button>
-            </CardContent>
-          </Card>
-        )}
+        <SubscriptionStatusWidget
+          status={mockSubscription.status}
+          trialDaysLeft={3}
+          onAction={() => setSelectedTab("plans")}
+        />
       </div>
 
       <Tabs value={selectedTab} onValueChange={setSelectedTab} className="space-y-4">
@@ -244,17 +336,13 @@ export default function Mensalidade() {
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
-                {[
-                  { data: '01/03/2024', valor: 99.90, status: 'Pago' },
-                  { data: '01/02/2024', valor: 99.90, status: 'Pago' },
-                  { data: '01/01/2024', valor: 99.90, status: 'Pago' }
-                ].map((fatura, index) => (
+                {mockInvoices.map((fatura, index) => (
                   <div key={index} className="flex items-center justify-between p-2 border rounded">
                     <div className="flex items-center gap-4">
                       <div>
-                        <p className="font-medium">{fatura.data}</p>
+                        <p className="font-medium">{fatura.date}</p>
                         <p className="text-sm text-muted-foreground">
-                          {formatCurrency(fatura.valor)}
+                          {formatCurrency(fatura.amount)}
                         </p>
                       </div>
                     </div>
