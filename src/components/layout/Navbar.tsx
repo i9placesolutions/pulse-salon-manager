@@ -33,7 +33,7 @@ export const Navbar = ({
             <Menu className="h-5 w-5" />
           </Button>
           <div>
-            <h1 className="font-semibold text-neutral">Agendamentos</h1>
+            <h1 className="font-semibold text-neutral">Barbearia Silva</h1>
             <p className="text-xs text-muted-foreground animate-pulse-soft">{todaysQuote}</p>
           </div>
         </div>
