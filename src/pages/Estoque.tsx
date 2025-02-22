@@ -13,7 +13,8 @@ import {
   ArrowDownCircle,
   Edit,
   Trash2,
-  FileText
+  FileText,
+  TrendingUp
 } from "lucide-react";
 import { formatCurrency } from "@/utils/currency";
 import { Product } from "@/types/stock";
@@ -28,31 +29,54 @@ const mockProducts: Product[] = [
     id: 1,
     name: "Shampoo Professional",
     description: "Shampoo para cabelos normais",
+    barcode: "7891234567890",
+    category: "Cabelo",
+    measurementUnit: "unit",
+    supplierId: 1,
+    purchasePrice: 30.90,
+    salePrice: 45.90,
     quantity: 15,
     minQuantity: 20,
-    price: 45.90,
-    category: "Cabelo",
-    lastUpdated: "2024-03-07"
+    lastUpdated: "2024-03-07",
+    commission: {
+      type: "percentage",
+      defaultValue: 10
+    }
   },
   {
     id: 2,
     name: "Condicionador Hidratante",
     description: "Condicionador para cabelos secos",
+    category: "Cabelo",
+    measurementUnit: "unit",
+    supplierId: 1,
+    purchasePrice: 25.90,
+    salePrice: 39.90,
     quantity: 25,
     minQuantity: 15,
-    price: 39.90,
-    category: "Cabelo",
-    lastUpdated: "2024-03-07"
+    lastUpdated: "2024-03-07",
+    commission: {
+      type: "percentage",
+      defaultValue: 10
+    }
   },
   {
     id: 3,
     name: "Máscara Capilar",
     description: "Máscara de tratamento intensivo",
+    category: "Tratamento",
+    measurementUnit: "grams",
+    measurementValue: 500,
+    supplierId: 2,
+    purchasePrice: 40.90,
+    salePrice: 59.90,
     quantity: 8,
     minQuantity: 10,
-    price: 59.90,
-    category: "Tratamento",
-    lastUpdated: "2024-03-06"
+    lastUpdated: "2024-03-06",
+    commission: {
+      type: "percentage",
+      defaultValue: 12
+    }
   }
 ];
 
@@ -132,7 +156,7 @@ const Estoque = () => {
         totalProducts={products.length}
         inStockProducts={products.filter(p => p.quantity > 0).length}
         lowStockProducts={lowStockProducts.length}
-        totalSuppliers={5} // Mock value
+        topSellingProducts={5}
       />
 
       {lowStockProducts.length > 0 && (
@@ -178,7 +202,7 @@ const Estoque = () => {
                       <h3 className="font-semibold">{product.name}</h3>
                       <p className="text-sm text-muted-foreground">{product.description}</p>
                       <div className="mt-1 flex items-center gap-2">
-                        <span className="text-sm font-medium">{formatCurrency(product.price)}</span>
+                        <span className="text-sm font-medium">{formatCurrency(product.salePrice)}</span>
                         <span className="text-sm text-muted-foreground">•</span>
                         <span className="text-sm text-muted-foreground">{product.category}</span>
                       </div>

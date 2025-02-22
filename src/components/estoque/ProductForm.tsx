@@ -26,10 +26,16 @@ export function ProductForm({ open, onOpenChange, onSubmit, product }: ProductFo
     product || {
       name: "",
       description: "",
+      category: "",
+      measurementUnit: "unit",
+      purchasePrice: 0,
+      salePrice: 0,
       quantity: 0,
       minQuantity: 0,
-      price: 0,
-      category: "",
+      commission: {
+        type: "percentage",
+        defaultValue: 0,
+      },
     }
   );
 
@@ -78,6 +84,83 @@ export function ProductForm({ open, onOpenChange, onSubmit, product }: ProductFo
                 }
               />
             </div>
+            <div className="space-y-2">
+              <label htmlFor="category">Categoria</label>
+              <Input
+                id="category"
+                value={formData.category}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, category: e.target.value }))
+                }
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label htmlFor="measurementUnit">Unidade de Medida</label>
+                <select
+                  id="measurementUnit"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  value={formData.measurementUnit}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      measurementUnit: e.target.value as Product["measurementUnit"],
+                    }))
+                  }
+                >
+                  <option value="unit">Unidade</option>
+                  <option value="grams">Gramas</option>
+                  <option value="milliliters">Mililitros</option>
+                  <option value="package">Pacote</option>
+                </select>
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="measurementValue">Valor da Medida</label>
+                <Input
+                  id="measurementValue"
+                  type="number"
+                  value={formData.measurementValue}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      measurementValue: Number(e.target.value),
+                    }))
+                  }
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label htmlFor="purchasePrice">Preço de Compra</label>
+                <Input
+                  id="purchasePrice"
+                  type="number"
+                  step="0.01"
+                  value={formData.purchasePrice}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      purchasePrice: Number(e.target.value),
+                    }))
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="salePrice">Preço de Venda</label>
+                <Input
+                  id="salePrice"
+                  type="number"
+                  step="0.01"
+                  value={formData.salePrice}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      salePrice: Number(e.target.value),
+                    }))
+                  }
+                />
+              </div>
+            </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label htmlFor="quantity">Quantidade</label>
@@ -108,32 +191,23 @@ export function ProductForm({ open, onOpenChange, onSubmit, product }: ProductFo
                 />
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label htmlFor="price">Preço</label>
-                <Input
-                  id="price"
-                  type="number"
-                  step="0.01"
-                  value={formData.price}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      price: Number(e.target.value),
-                    }))
-                  }
-                />
-              </div>
-              <div className="space-y-2">
-                <label htmlFor="category">Categoria</label>
-                <Input
-                  id="category"
-                  value={formData.category}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, category: e.target.value }))
-                  }
-                />
-              </div>
+            <div className="space-y-2">
+              <label htmlFor="commission">Comissão Padrão (%)</label>
+              <Input
+                id="commission"
+                type="number"
+                step="0.1"
+                value={formData.commission?.defaultValue}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    commission: {
+                      type: "percentage",
+                      defaultValue: Number(e.target.value),
+                    },
+                  }))
+                }
+              />
             </div>
           </div>
           <DialogFooter>
