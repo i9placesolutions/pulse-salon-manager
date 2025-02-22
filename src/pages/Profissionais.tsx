@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -163,8 +162,8 @@ const mockPerformance: ProfessionalPerformance = {
 
 const Profissionais = () => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [specialtyFilter, setSpecialtyFilter] = useState<string>("");
-  const [sortBy, setSortBy] = useState<string>("");
+  const [specialtyFilter, setSpecialtyFilter] = useState<string | null>(null);
+  const [sortBy, setSortBy] = useState<string | null>(null);
   const [isNewProfessionalOpen, setIsNewProfessionalOpen] = useState(false);
   const [selectedProfessional, setSelectedProfessional] = useState<Professional | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
@@ -318,28 +317,34 @@ const Profissionais = () => {
             className="pl-9"
           />
         </div>
-        <Select value={specialtyFilter} onValueChange={setSpecialtyFilter}>
+        <Select 
+          value={specialtyFilter || "all"} 
+          onValueChange={(value) => setSpecialtyFilter(value === "all" ? null : value)}
+        >
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="Especialidade" />
           </SelectTrigger>
           <SelectContent>
             <SelectGroup>
               <SelectLabel>Especialidade</SelectLabel>
-              <SelectItem value="">Todas</SelectItem>
+              <SelectItem value="all">Todas</SelectItem>
               <SelectItem value="Cabeleireira">Cabeleireira</SelectItem>
               <SelectItem value="Barbeiro">Barbeiro</SelectItem>
               <SelectItem value="Manicure">Manicure</SelectItem>
             </SelectGroup>
           </SelectContent>
         </Select>
-        <Select value={sortBy} onValueChange={setSortBy}>
+        <Select 
+          value={sortBy || "none"} 
+          onValueChange={(value) => setSortBy(value === "none" ? null : value)}
+        >
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="Ordenar por" />
           </SelectTrigger>
           <SelectContent>
             <SelectGroup>
               <SelectLabel>Ordenar por</SelectLabel>
-              <SelectItem value="">Nenhum</SelectItem>
+              <SelectItem value="none">Nenhum</SelectItem>
               <SelectItem value="appointments">Atendimentos</SelectItem>
               <SelectItem value="commission">Comissão</SelectItem>
               <SelectItem value="revenue">Faturamento</SelectItem>
