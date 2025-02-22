@@ -1,19 +1,19 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Download, FileText, MessageSquare, Plus } from "lucide-react";
+import { Download, FileText, MessageSquare } from "lucide-react";
 import { SummaryCards } from "@/components/financeiro/SummaryCards";
 import { RevenueChart } from "@/components/financeiro/RevenueChart";
 import { PaymentsList } from "@/components/financeiro/PaymentsList";
 import { ProfessionalsList } from "@/components/financeiro/ProfessionalsList";
 import { AccountsReceivable } from "@/components/financeiro/AccountsReceivable";
 import { ExpensesList } from "@/components/financeiro/ExpensesList";
+import { NewRevenueDialog } from "@/components/financeiro/NewRevenueDialog";
+import { NewExpenseDialog } from "@/components/financeiro/NewExpenseDialog";
 import { Payment, Professional, RevenueData, AccountReceivable, Expense } from "@/types/financial";
 import { useToast } from "@/hooks/use-toast";
 
-// Mock data - Replace with real data from your backend
 const revenueData: RevenueData[] = [
   { date: "01/03", revenue: 1200, expenses: 800 },
   { date: "02/03", revenue: 1800, expenses: 900 },
@@ -65,40 +65,19 @@ const Financeiro = () => {
     });
   };
 
-  const handleNewTransaction = (type: 'receita' | 'despesa') => {
-    toast({
-      title: `Nova ${type}`,
-      description: `Registrando nova ${type}...`,
-    });
-  };
-
   return (
     <div className="space-y-6 p-4 md:p-6">
       {/* Header */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <h1 className="text-2xl font-semibold text-neutral">Gestão Financeira</h1>
         <div className="flex flex-wrap gap-2">
-          <Button 
-            variant="outline" 
-            onClick={() => handleNewTransaction('receita')}
-            className="bg-green-50 hover:bg-green-100 text-green-700"
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            Nova Receita
-          </Button>
-          <Button 
-            variant="outline" 
-            onClick={() => handleNewTransaction('despesa')}
-            className="bg-red-50 hover:bg-red-100 text-red-700"
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            Nova Despesa
-          </Button>
-          <Button variant="outline" onClick={() => handleWhatsApp()}>
+          <NewRevenueDialog />
+          <NewExpenseDialog />
+          <Button variant="outline" onClick={handleWhatsApp}>
             <MessageSquare className="mr-2 h-4 w-4" />
             Enviar Cobranças
           </Button>
-          <Button onClick={() => handleExport()}>
+          <Button onClick={handleExport}>
             <Download className="mr-2 h-4 w-4" />
             Exportar Relatório
           </Button>
