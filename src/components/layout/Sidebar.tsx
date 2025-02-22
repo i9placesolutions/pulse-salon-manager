@@ -16,7 +16,6 @@ import {
   Scissors,
   UserSquare2,
   CreditCard,
-  Sun,
   Moon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -26,7 +25,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
 interface MenuItem {
   icon: any;
@@ -57,17 +56,7 @@ interface SidebarProps {
 
 export const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
   const location = useLocation();
-  const [isDarkMode, setIsDarkMode] = useState(false);
   const [pinnedItems, setPinnedItems] = useState<string[]>([]);
-
-  // Efeito para aplicar o modo escuro
-  useEffect(() => {
-    if (isDarkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, [isDarkMode]);
 
   // Agrupar itens do menu por categoria
   const groupedMenuItems = menuItems.reduce((acc, item) => {
@@ -214,13 +203,8 @@ export const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
               variant="ghost"
               size="icon"
               className="w-full flex items-center justify-center hover:bg-primary/5 dark:hover:bg-white/5"
-              onClick={() => setIsDarkMode(!isDarkMode)}
             >
-              {isDarkMode ? (
-                <Sun className="w-5 h-5" />
-              ) : (
-                <Moon className="w-5 h-5" />
-              )}
+              <Moon className="w-5 h-5" />
             </Button>
             <button
               className={cn(
