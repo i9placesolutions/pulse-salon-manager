@@ -1,6 +1,10 @@
+
 import { useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { TabsContent, Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Check, CreditCard, Users, Calendar, MessageSquare, Download } from "lucide-react";
 import { PaymentMethodForm } from "@/components/mensalidade/PaymentMethodForm";
 import { SubscriptionConfirmDialog } from "@/components/mensalidade/SubscriptionConfirmDialog";
 import { CurrentPlanDetails } from "@/components/mensalidade/CurrentPlanDetails";
@@ -9,6 +13,7 @@ import { PaymentHistory } from "@/components/mensalidade/PaymentHistory";
 import { NotificationPreferences } from "@/components/mensalidade/NotificationPreferences";
 import { SubscriptionStatusWidget } from "@/components/mensalidade/SubscriptionStatusWidget";
 import { useToast } from "@/hooks/use-toast";
+import { formatCurrency } from "@/utils/currency";
 import { SubscriptionPlan, SubscriptionStatus, PaymentMethod, Invoice } from "@/types/subscription";
 
 const plans: SubscriptionPlan[] = [
