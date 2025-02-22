@@ -28,6 +28,9 @@ import { ServicePackageForm } from "@/components/servicos/ServicePackageForm";
 import { ServiceMetrics } from "@/components/servicos/ServiceMetrics";
 import { ServiceCommissionDialog } from "@/components/servicos/ServiceCommissionDialog";
 import { ServiceCharts } from "@/components/servicos/ServiceCharts";
+import { QuickPOS } from "@/components/servicos/QuickPOS";
+import { CommissionHistory } from "@/components/servicos/CommissionHistory";
+import { ProfessionalPerformance } from "@/types/professional";
 
 const mockServices: Service[] = [
   {
@@ -72,6 +75,36 @@ const mockProfessionals = [
   { id: 1, name: "Ana Silva" },
   { id: 2, name: "João Santos" },
   { id: 3, name: "Maria Oliveira" },
+];
+
+const mockPerformance: ProfessionalPerformance[] = [
+  {
+    id: 1,
+    professionalId: 1,
+    serviceId: 1,
+    date: "2024-03-01",
+    revenue: 80,
+    commission: 40,
+    clientSatisfaction: 5,
+  },
+  {
+    id: 2,
+    professionalId: 2,
+    serviceId: 1,
+    date: "2024-03-01",
+    revenue: 80,
+    commission: 40,
+    clientSatisfaction: 4,
+  },
+  {
+    id: 3,
+    professionalId: 1,
+    serviceId: 2,
+    date: "2024-03-02",
+    revenue: 150,
+    commission: 60,
+    clientSatisfaction: 5,
+  },
 ];
 
 export default function Servicos() {
@@ -125,6 +158,26 @@ export default function Servicos() {
     });
   };
 
+  const handleQuickSale = (data: {
+    serviceId: number;
+    professionalId: number;
+    price: number;
+  }) => {
+    console.log("Quick sale:", data);
+    toast({
+      title: "Venda registrada",
+      description: "O serviço foi registrado com sucesso!",
+    });
+  };
+
+  const handleExportCommissions = () => {
+    console.log("Exporting commissions...");
+    toast({
+      title: "Relatório exportado",
+      description: "O relatório foi exportado com sucesso!",
+    });
+  };
+
   return (
     <div className="space-y-6 p-4 md:p-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -155,10 +208,33 @@ export default function Servicos() {
 
       <ServiceMetrics {...mockMetrics} />
 
-      <ServiceCharts 
-        services={mockServices}
-        commissions={[]} // Aqui você passaria as comissões reais
+      <div className="grid gap-4 md:grid-cols-2">
+        <QuickPOS
+          services={mockServices}
+          professionals={mockProfessionals}
+          onSale={handleQuickSale}
+        />
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Visão Geral</CardTitle>
+            <CardDescription>Dados consolidados dos serviços</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ServiceCharts
+              services={mockServices}
+              commissions={[]} // TODO: Adicionar dados reais
+              professionals={mockProfessionals}
+            />
+          </CardContent>
+        </Card>
+      </div>
+
+      <CommissionHistory
+        performance={mockPerformance}
+        services={mockServices.map(s => ({ id: s.id, name: s.name }))}
         professionals={mockProfessionals}
+        onExport={handleExportCommissions}
       />
 
       <Card className="p-4">
