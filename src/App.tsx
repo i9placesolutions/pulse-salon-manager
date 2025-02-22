@@ -12,6 +12,7 @@ import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
 import Dashboard from "./pages/Dashboard";
 import Appointments from "./pages/Appointments";
+import Financeiro from "./pages/Financeiro";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -39,6 +40,11 @@ const App = () => (
           <Route path="/appointments" element={
             <AppLayout>
               <Appointments />
+            </AppLayout>
+          } />
+          <Route path="/financeiro" element={
+            <AppLayout>
+              <Financeiro />
             </AppLayout>
           } />
           
