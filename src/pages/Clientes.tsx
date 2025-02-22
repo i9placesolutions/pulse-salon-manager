@@ -1,16 +1,19 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { UserPlus, Users, Search } from "lucide-react";
+import { UserPlus, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { ClientList } from "@/components/clients/ClientList";
 import { ClientStatistics } from "@/components/clients/ClientStatistics";
-import { Client } from "@/types/client";
+import { ClientForm } from "@/components/clients/ClientForm";
+import { ClientDetails } from "@/components/clients/ClientDetails";
+import { Client, ClientService, ClientPreference } from "@/types/client";
+import { useToast } from "@/components/ui/use-toast";
 
 // Dados mockados para demonstração
-const mockClients: Partial<Client>[] = [
+const mockClients: Client[] = [
   {
     id: 1,
     name: "Maria Silva",
@@ -46,8 +49,69 @@ const mockClients: Partial<Client>[] = [
   },
 ];
 
+// Mock de serviços
+const mockServices: ClientService[] = [
+  {
+    id: 1,
+    clientId: 1,
+    date: "2024-03-01",
+    professional: "João Silva",
+    service: "Corte de Cabelo",
+    value: 80,
+    paymentMethod: "Cartão de Crédito",
+  },
+  {
+    id: 2,
+    clientId: 1,
+    date: "2024-02-15",
+    professional: "Maria Santos",
+    service: "Manicure",
+    value: 50,
+    paymentMethod: "PIX",
+  },
+];
+
+// Mock de preferências
+const mockPreferences: ClientPreference[] = [
+  {
+    id: 1,
+    clientId: 1,
+    category: "Coloração",
+    description: "Prefere tons mais naturais",
+  },
+  {
+    id: 2,
+    clientId: 1,
+    category: "Atendimento",
+    description: "Gosta de ser atendida pela Maria",
+  },
+];
+
 export default function Clientes() {
   const [searchQuery, setSearchQuery] = useState("");
+  const [isNewClientOpen, setIsNewClientOpen] = useState(false);
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const { toast } = useToast();
+
+  const handleSaveClient = (client: Partial<Client>) => {
+    // Aqui você implementaria a lógica para salvar o cliente
+    toast({
+      title: "Cliente salvo com sucesso!",
+      description: "Os dados do cliente foram atualizados.",
+    });
+  };
+
+  const handleViewProfile = (client: Client) => {
+    setSelectedClient(client);
+    setIsDetailsOpen(true);
+  };
+
+  const filteredClients = mockClients.filter(client =>
+    client.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    client.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    client.phone.includes(searchQuery)
+  );
 
   return (
     <div className="space-y-6">
@@ -59,7 +123,7 @@ export default function Clientes() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button>
+          <Button onClick={() => setIsNewClientOpen(true)}>
             <UserPlus className="mr-2 h-4 w-4" />
             Novo Cliente
           </Button>
@@ -94,27 +158,50 @@ export default function Clientes() {
         </div>
 
         <TabsContent value="todos" className="space-y-4">
-          <ClientList clients={mockClients} />
+          <ClientList clients={filteredClients} onViewProfile={handleViewProfile} />
         </TabsContent>
 
         <TabsContent value="vip" className="space-y-4">
-          <ClientList clients={mockClients.filter(client => client.status === 'vip')} />
+          <ClientList
+            clients={filteredClients.filter(client => client.status === "vip")}
+            onViewProfile={handleViewProfile}
+          />
         </TabsContent>
 
         <TabsContent value="inativos" className="space-y-4">
-          <ClientList clients={mockClients.filter(client => client.status === 'inactive')} />
+          <ClientList
+            clients={filteredClients.filter(client => client.status === "inactive")}
+            onViewProfile={handleViewProfile}
+          />
         </TabsContent>
 
         <TabsContent value="aniversarios" className="space-y-4">
-          <ClientList 
-            clients={mockClients.filter(client => {
+          <ClientList
+            clients={filteredClients.filter(client => {
               const birthMonth = new Date(client.birthDate).getMonth();
               const currentMonth = new Date().getMonth();
               return birthMonth === currentMonth;
-            })} 
+            })}
+            onViewProfile={handleViewProfile}
           />
         </TabsContent>
       </Tabs>
+
+      <ClientForm
+        isOpen={isNewClientOpen}
+        onClose={() => setIsNewClientOpen(false)}
+        onSave={handleSaveClient}
+      />
+
+      {selectedClient && (
+        <ClientDetails
+          isOpen={isDetailsOpen}
+          onClose={() => setIsDetailsOpen(false)}
+          client={selectedClient}
+          services={mockServices.filter(s => s.clientId === selectedClient.id)}
+          preferences={mockPreferences.filter(p => p.clientId === selectedClient.id)}
+        />
+      )}
     </div>
   );
 }
