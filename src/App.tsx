@@ -11,6 +11,7 @@ import ForgotPassword from "./pages/ForgotPassword";
 import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
 import Dashboard from "./pages/Dashboard";
+import Appointments from "./pages/Appointments";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -33,6 +34,11 @@ const App = () => (
           <Route path="/dashboard" element={
             <AppLayout>
               <Dashboard />
+            </AppLayout>
+          } />
+          <Route path="/appointments" element={
+            <AppLayout>
+              <Appointments />
             </AppLayout>
           } />
           
