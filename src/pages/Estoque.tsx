@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,7 +17,7 @@ import {
   TrendingUp
 } from "lucide-react";
 import { formatCurrency } from "@/utils/currency";
-import { Product } from "@/types/stock";
+import { Product, StockMovement, Supplier } from "@/types/stock";
 import { useToast } from "@/hooks/use-toast";
 import { EstoqueMetrics } from "@/components/estoque/EstoqueMetrics";
 import { ProductForm } from "@/components/estoque/ProductForm";
