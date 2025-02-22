@@ -15,6 +15,7 @@ import Appointments from "./pages/Appointments";
 import Financeiro from "./pages/Financeiro";
 import Estoque from "./pages/Estoque";
 import PDV from "./pages/PDV";
+import Clientes from "./pages/Clientes";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -42,6 +43,11 @@ const App = () => (
           <Route path="/appointments" element={
             <AppLayout>
               <Appointments />
+            </AppLayout>
+          } />
+          <Route path="/clientes" element={
+            <AppLayout>
+              <Clientes />
             </AppLayout>
           } />
           <Route path="/financeiro" element={
