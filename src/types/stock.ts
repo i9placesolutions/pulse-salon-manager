@@ -34,6 +34,7 @@ export interface StockMovement {
   responsibleId?: number;
   supplierId?: number;
   invoiceNumber?: string;
+  invoiceFile?: string;
   unitCost?: number;
   totalCost?: number;
   notes?: string;

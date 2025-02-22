@@ -24,9 +24,18 @@ export function StockMovementForm({
   type,
 }: StockMovementFormProps) {
   const { toast } = useToast();
+  const [formData, setFormData] = useState({
+    product: "",
+    quantity: 0,
+    supplier: "",
+    invoice: "",
+    invoiceFile: null as File | null,
+    reason: "uso",
+  });
   
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    // TODO: Implementar lógica de envio do arquivo
     toast({
       title: "Movimentação registrada",
       description: `A ${type} foi registrada com sucesso!`,
@@ -64,8 +73,27 @@ export function StockMovementForm({
                   <Input id="supplier" placeholder="Selecione o fornecedor" />
                 </div>
                 <div className="space-y-2">
-                  <label htmlFor="invoice">Nota Fiscal (opcional)</label>
-                  <Input id="invoice" type="text" />
+                  <label htmlFor="invoice">Número da Nota Fiscal</label>
+                  <Input 
+                    id="invoice" 
+                    type="text"
+                    value={formData.invoice}
+                    onChange={(e) => setFormData(prev => ({ ...prev, invoice: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label htmlFor="invoiceFile">Anexar Nota Fiscal (PDF)</label>
+                  <Input
+                    id="invoiceFile"
+                    type="file"
+                    accept=".pdf"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        setFormData(prev => ({ ...prev, invoiceFile: file }));
+                      }
+                    }}
+                  />
                 </div>
               </>
             ) : (
@@ -74,9 +102,12 @@ export function StockMovementForm({
                 <select
                   id="reason"
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  value={formData.reason}
+                  onChange={(e) => setFormData(prev => ({ ...prev, reason: e.target.value }))}
                 >
                   <option value="uso">Uso Interno</option>
                   <option value="venda">Venda</option>
+                  <option value="servico">Serviço</option>
                   <option value="descarte">Descarte</option>
                   <option value="perda">Perda</option>
                 </select>
