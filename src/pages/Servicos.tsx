@@ -12,7 +12,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
-  Scissors,
   Search,
   Plus,
   Edit,
@@ -23,7 +22,11 @@ import {
   Users,
   Package,
 } from "lucide-react";
-import { Service } from "@/types/service";
+import { Service, ServicePackage } from "@/types/service";
+import { useToast } from "@/hooks/use-toast";
+import { ServiceForm } from "@/components/servicos/ServiceForm";
+import { ServicePackageForm } from "@/components/servicos/ServicePackageForm";
+import { ServiceMetrics } from "@/components/servicos/ServiceMetrics";
 
 // Mock data for demonstration
 const mockServices: Service[] = [
@@ -66,8 +69,51 @@ const mockServices: Service[] = [
 ];
 
 export default function Servicos() {
+  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
+  const [isServiceFormOpen, setIsServiceFormOpen] = useState(false);
+  const [isPackageFormOpen, setIsPackageFormOpen] = useState(false);
+  const [selectedService, setSelectedService] = useState<Service | undefined>();
+
+  // Normally these would come from an API
+  const mockMetrics = {
+    totalServices: mockServices.length,
+    activeServices: mockServices.filter((s) => s.status === "active").length,
+    totalProfessionals: 5,
+    totalPackages: 3,
+  };
+
+  const handleServiceSubmit = (service: Partial<Service>) => {
+    // Here you would normally make an API call
+    console.log("Service submitted:", service);
+    toast({
+      title: selectedService ? "Serviço atualizado" : "Serviço criado",
+      description: "As alterações foram salvas com sucesso!",
+    });
+  };
+
+  const handlePackageSubmit = (pkg: Partial<ServicePackage>) => {
+    // Here you would normally make an API call
+    console.log("Package submitted:", pkg);
+    toast({
+      title: "Pacote criado",
+      description: "O pacote foi criado com sucesso!",
+    });
+  };
+
+  const handleEditService = (service: Service) => {
+    setSelectedService(service);
+    setIsServiceFormOpen(true);
+  };
+
+  const handleDeleteService = (serviceId: number) => {
+    // Here you would normally make an API call
+    toast({
+      title: "Serviço excluído",
+      description: "O serviço foi excluído com sucesso!",
+    });
+  };
 
   return (
     <div className="space-y-6 p-4 md:p-6">
@@ -79,11 +125,27 @@ export default function Servicos() {
             Gerencie os serviços oferecidos pelo seu salão
           </p>
         </div>
-        <Button className="gap-2">
-          <Plus className="h-4 w-4" />
-          Novo Serviço
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline"
+            className="gap-2"
+            onClick={() => setIsPackageFormOpen(true)}
+          >
+            <Package className="h-4 w-4" />
+            Novo Pacote
+          </Button>
+          <Button className="gap-2" onClick={() => {
+            setSelectedService(undefined);
+            setIsServiceFormOpen(true);
+          }}>
+            <Plus className="h-4 w-4" />
+            Novo Serviço
+          </Button>
+        </div>
       </div>
+
+      {/* Metrics */}
+      <ServiceMetrics {...mockMetrics} />
 
       {/* Filters */}
       <Card className="p-4">
@@ -131,25 +193,53 @@ export default function Servicos() {
           <TableBody>
             {mockServices.map((service) => (
               <TableRow key={service.id}>
-                <TableCell>{service.name}</TableCell>
-                <TableCell>{service.category}</TableCell>
-                <TableCell>{service.duration}min</TableCell>
-                <TableCell>R$ {service.price.toFixed(2)}</TableCell>
                 <TableCell>
-                  <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
-                    service.status === 'active' 
-                      ? 'bg-green-50 text-green-700' 
-                      : 'bg-red-50 text-red-700'
-                  }`}>
-                    {service.status === 'active' ? 'Ativo' : 'Inativo'}
+                  <div>
+                    <div className="font-medium">{service.name}</div>
+                    <div className="text-sm text-muted-foreground">
+                      {service.description}
+                    </div>
+                  </div>
+                </TableCell>
+                <TableCell>{service.category}</TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-1">
+                    <Clock className="h-4 w-4 text-muted-foreground" />
+                    {service.duration}min
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-1">
+                    <DollarSign className="h-4 w-4 text-muted-foreground" />
+                    {service.price.toFixed(2)}
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <span
+                    className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
+                      service.status === "active"
+                        ? "bg-green-50 text-green-700"
+                        : "bg-red-50 text-red-700"
+                    }`}
+                  >
+                    {service.status === "active" ? "Ativo" : "Inativo"}
                   </span>
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex items-center justify-end gap-2">
-                    <Button variant="ghost" size="icon">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleEditService(service)}
+                    >
                       <Edit className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" className="text-red-500">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="text-red-500"
+                      onClick={() => handleDeleteService(service.id)}
+                    >
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
@@ -159,6 +249,19 @@ export default function Servicos() {
           </TableBody>
         </Table>
       </Card>
+
+      <ServiceForm
+        open={isServiceFormOpen}
+        onOpenChange={setIsServiceFormOpen}
+        onSubmit={handleServiceSubmit}
+        service={selectedService}
+      />
+
+      <ServicePackageForm
+        open={isPackageFormOpen}
+        onOpenChange={setIsPackageFormOpen}
+        onSubmit={handlePackageSubmit}
+      />
     </div>
   );
 }
