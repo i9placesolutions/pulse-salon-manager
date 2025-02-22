@@ -4,6 +4,7 @@ import { WorkingHoursForm } from "@/components/profissionais/WorkingHoursForm";
 import { DashboardHeader } from "@/components/profissionais/dashboard/DashboardHeader";
 import { MetricsCards } from "@/components/profissionais/dashboard/MetricsCards";
 import { DashboardTabs } from "@/components/profissionais/dashboard/DashboardTabs";
+import { ProfessionalHeader } from "@/components/profissionais/dashboard/ProfessionalHeader";
 import { Professional, ProfessionalCommission, ProfessionalAppointment } from "@/types/professional";
 
 // Mock data para teste
@@ -89,34 +90,42 @@ export default function ProfissionalDashboard() {
   };
 
   return (
-    <div className="space-y-6">
-      <DashboardHeader
-        agendaOpen={agendaOpen}
-        onToggleAgenda={handleToggleAgenda}
-        onManageHours={() => setIsWorkingHoursOpen(true)}
-      />
+    <div className="min-h-screen bg-gray-50">
+      <ProfessionalHeader />
+      
+      <main className="container mx-auto px-4 py-6 max-w-7xl">
+        <div className="space-y-6">
+          <DashboardHeader
+            agendaOpen={agendaOpen}
+            onToggleAgenda={handleToggleAgenda}
+            onManageHours={() => setIsWorkingHoursOpen(true)}
+          />
 
-      <MetricsCards 
-        professional={mockProfessional}
-        performance={mockPerformance}
-      />
+          <MetricsCards 
+            professional={mockProfessional}
+            performance={mockPerformance}
+          />
 
-      <DashboardTabs
-        professional={mockProfessional}
-        performance={mockPerformance}
-        appointments={mockAppointments}
-        commissions={mockCommissions}
-      />
+          <div className="bg-white p-6 rounded-lg shadow">
+            <DashboardTabs
+              professional={mockProfessional}
+              performance={mockPerformance}
+              appointments={mockAppointments}
+              commissions={mockCommissions}
+            />
+          </div>
+        </div>
 
-      <WorkingHoursForm
-        open={isWorkingHoursOpen}
-        onOpenChange={setIsWorkingHoursOpen}
-        onSave={(workingHours, blockedDates) => {
-          console.log("Horários salvos:", workingHours);
-          console.log("Datas bloqueadas:", blockedDates);
-          setIsWorkingHoursOpen(false);
-        }}
-      />
+        <WorkingHoursForm
+          open={isWorkingHoursOpen}
+          onOpenChange={setIsWorkingHoursOpen}
+          onSave={(workingHours, blockedDates) => {
+            console.log("Horários salvos:", workingHours);
+            console.log("Datas bloqueadas:", blockedDates);
+            setIsWorkingHoursOpen(false);
+          }}
+        />
+      </main>
     </div>
   );
 }
