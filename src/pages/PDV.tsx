@@ -1,4 +1,5 @@
-import { useState } from "react";
+<lov-code>
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -29,82 +30,182 @@ import {
   ArrowDownUp,
   Ban,
   History,
-  Receipt
+  Receipt,
+  AlertTriangle
 } from "lucide-react";
 import { formatCurrency } from "@/utils/currency";
 import { useToast } from "@/hooks/use-toast";
+import type { PDVState, Sale, SaleItem, Payment, CashierSession } from "@/types/pdv";
 
-interface Product {
-  id: number;
-  name: string;
-  price: number;
-  category: string;
-  quantity: number;
-}
-
-interface CartItem extends Product {
-  cartQuantity: number;
-  discount?: number;
-}
-
-interface Client {
-  id: number;
-  name: string;
-  phone: string;
-  email: string;
-  cpf: string;
-}
-
-interface CashierOperation {
-  type: 'open' | 'close' | 'withdrawal' | 'supply';
-  amount: number;
-  date: Date;
-  reason?: string;
-}
-
-interface Sale {
-  id: number;
-  items: CartItem[];
-  total: number;
-  discount: number;
-  finalTotal: number;
-  paymentMethod: string[];
-  paymentValues: number[];
-  client?: Client;
-  date: Date;
-  status: 'completed' | 'canceled';
-}
-
-const mockProducts: Product[] = [
+// Mock data para demonstração
+const mockProducts = [
   { id: 1, name: "Corte Masculino", price: 45.00, category: "Serviço", quantity: -1 },
   { id: 2, name: "Shampoo Profissional", price: 89.90, category: "Produto", quantity: 15 },
   { id: 3, name: "Hidratação", price: 120.00, category: "Serviço", quantity: -1 },
   { id: 4, name: "Tintura", price: 150.00, category: "Serviço", quantity: -1 },
 ];
 
-const mockClients: Client[] = [
+const mockClients = [
   { id: 1, name: "João Silva", phone: "(11) 99999-9999", email: "joao@email.com", cpf: "123.456.789-00" },
   { id: 2, name: "Maria Santos", phone: "(11) 88888-8888", email: "maria@email.com", cpf: "987.654.321-00" },
 ];
 
 const PDV = () => {
+  const { toast } = useToast();
+  const [state, setState] = useState<PDVState>({
+    cashierSession: null,
+    currentSale: null,
+    recentSales: [],
+    isDayStarted: false,
+    isProcessingPayment: false
+  });
+
+  const [isOpenCashierDialog, setIsOpenCashierDialog] = useState(false);
+  const [isCloseCashierDialog, setIsCloseCashierDialog] = useState(false);
+  const [openingAmount, setOpeningAmount] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
-  const [cart, setCart] = useState<CartItem[]>([]);
-  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [cart, setCart] = useState<any[]>([]);
+  const [selectedClient, setSelectedClient] = useState<any | null>(null);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [isNewClientOpen, setIsNewClientOpen] = useState(false);
   const [isCashierOpen, setIsCashierOpen] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
-  const [cashierOperation, setCashierOperation] = useState<CashierOperation | null>(null);
+  const [cashierOperation, setCashierOperation] = useState<any | null>(null);
   const [paymentMethods, setPaymentMethods] = useState<string[]>([]);
   const [paymentValues, setPaymentValues] = useState<number[]>([]);
   const [installments, setInstallments] = useState(1);
   const [cartDiscount, setCartDiscount] = useState(0);
   const [changeAmount, setChangeAmount] = useState(0);
-  const [dailySales, setDailySales] = useState<Sale[]>([]);
-  const { toast } = useToast();
+  const [dailySales, setDailySales] = useState<any[]>([]);
 
-  const addToCart = (product: Product) => {
+  // Efeito para verificar se o caixa está aberto ao carregar a página
+  useEffect(() => {
+    // Aqui verificaríamos com o backend se existe um caixa aberto
+    // Por enquanto, apenas simulamos que não há caixa aberto
+    setState(prev => ({ ...prev, isDayStarted: false }));
+  }, []);
+
+  const handleOpenCashier = () => {
+    if (!openingAmount || Number(openingAmount) <= 0) {
+      toast({
+        title: "Erro ao abrir caixa",
+        description: "Informe um valor inicial válido.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const newSession: CashierSession = {
+      id: Date.now(),
+      openingDate: new Date(),
+      initialAmount: Number(openingAmount),
+      status: 'open',
+      userId: 1, // Mock user ID
+      sales: [],
+      withdrawals: [],
+      supplies: [],
+    };
+
+    setState(prev => ({
+      ...prev,
+      cashierSession: newSession,
+      isDayStarted: true
+    }));
+
+    setIsOpenCashierDialog(false);
+    toast({
+      title: "Caixa aberto",
+      description: `Caixa aberto com saldo inicial de ${formatCurrency(Number(openingAmount))}`,
+    });
+  };
+
+  const handleCloseCashier = () => {
+    if (!state.cashierSession) return;
+
+    const totalSales = state.recentSales.reduce((acc, sale) => acc + sale.total, 0);
+    const finalAmount = state.cashierSession.initialAmount + totalSales;
+
+    setState(prev => ({
+      ...prev,
+      cashierSession: {
+        ...prev.cashierSession!,
+        status: 'closed',
+        closingDate: new Date(),
+        finalAmount,
+        differences: {
+          expected: finalAmount,
+          actual: finalAmount, // Em um caso real, este valor seria informado pelo usuário
+          difference: 0
+        }
+      },
+      isDayStarted: false
+    }));
+
+    setIsCloseCashierDialog(false);
+    toast({
+      title: "Caixa fechado",
+      description: "O caixa foi fechado com sucesso!",
+    });
+  };
+
+  if (!state.isDayStarted) {
+    return (
+      <div className="flex h-[calc(100vh-4rem)] items-center justify-center">
+        <Card className="w-[400px]">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-yellow-500" />
+              Caixa Fechado
+            </CardTitle>
+            <p className="text-sm text-muted-foreground">
+              É necessário abrir o caixa para iniciar as operações do dia.
+            </p>
+          </CardHeader>
+          <CardContent>
+            <Button 
+              className="w-full" 
+              onClick={() => setIsOpenCashierDialog(true)}
+            >
+              Abrir Caixa
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Dialog open={isOpenCashierDialog} onOpenChange={setIsOpenCashierDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Abrir Caixa</DialogTitle>
+              <DialogDescription>
+                Informe o valor inicial do caixa para começar as operações do dia.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label>Valor Inicial</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={openingAmount}
+                  onChange={(e) => setOpeningAmount(e.target.value)}
+                  placeholder="0,00"
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsOpenCashierDialog(false)}>
+                Cancelar
+              </Button>
+              <Button onClick={handleOpenCashier}>
+                Abrir Caixa
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+    );
+  }
+
+  const addToCart = (product: any) => {
     setCart(currentCart => {
       const existingItem = currentCart.find(item => item.id === product.id);
       
@@ -146,24 +247,6 @@ const PDV = () => {
     product.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleOpenCashier = () => {
-    setCashierOperation({
-      type: 'open',
-      amount: 0,
-      date: new Date(),
-    });
-    setIsCashierOpen(true);
-  };
-
-  const handleCloseCashier = () => {
-    setCashierOperation({
-      type: 'close',
-      amount: total,
-      date: new Date(),
-    });
-    setIsCashierOpen(true);
-  };
-
   const handleCashierOperation = (type: 'withdrawal' | 'supply', amount: number, reason: string) => {
     setCashierOperation({
       type,
@@ -179,7 +262,7 @@ const PDV = () => {
   };
 
   const handlePayment = () => {
-    const newSale: Sale = {
+    const newSale: any = {
       id: dailySales.length + 1,
       items: [...cart],
       total: subtotal,
@@ -210,7 +293,7 @@ const PDV = () => {
     setIsCheckoutOpen(false);
   };
 
-  const handlePrintReceipt = (sale?: Sale) => {
+  const handlePrintReceipt = (sale?: any) => {
     const saleData = sale || {
       items: cart,
       total: subtotal,
@@ -845,62 +928,4 @@ const PDV = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2">
-                    {sale.items.map((item) => (
-                      <div key={item.id} className="flex justify-between text-sm">
-                        <span>
-                          {item.name} x{item.cartQuantity}
-                          {item.discount && item.discount > 0 && (
-                            <span className="text-red-500 ml-1">
-                              (-{item.discount}%)
-                            </span>
-                          )}
-                        </span>
-                        <span>
-                          {formatCurrency(
-                            item.price * 
-                            item.cartQuantity * 
-                            (1 - ((item.discount || 0) / 100))
-                          )}
-                        </span>
-                      </div>
-                    ))}
-                    {sale.discount > 0 && (
-                      <div className="flex justify-between text-sm text-red-500">
-                        <span>Desconto geral ({sale.discount}%)</span>
-                        <span>
-                          -{formatCurrency(sale.total * (sale.discount / 100))}
-                        </span>
-                      </div>
-                    )}
-                    <div className="pt-2 border-t flex justify-between font-medium">
-                      <span>Formas de Pagamento:</span>
-                      <div className="text-right">
-                        {sale.paymentMethod.map((method, index) => (
-                          <div key={method}>
-                            {method}: {formatCurrency(sale.paymentValues[index])}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-                <div className="p-4 border-t flex justify-end gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handlePrintReceipt(sale)}
-                  >
-                    <Receipt className="h-4 w-4 mr-2" />
-                    Reimprimir
-                  </Button>
-                </div>
-              </Card>
-            ))}
-          </div>
-        </DialogContent>
-      </Dialog>
-    </div>
-  );
-};
-
-export default PDV;
+                    {sale.items.map((
