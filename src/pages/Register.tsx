@@ -1,8 +1,8 @@
 
 import { Link } from "react-router-dom";
-import LoginForm from "@/components/auth/LoginForm";
+import RegisterForm from "@/components/auth/RegisterForm";
 
-const Index = () => {
+const Register = () => {
   return (
     <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-secondary to-secondary-soft p-4">
       <div className="w-full max-w-md animate-slide-up">
@@ -12,19 +12,19 @@ const Index = () => {
               <div className="w-8 h-8 rounded-full bg-primary animate-pulse-soft" />
             </div>
             <h1 className="text-2xl font-semibold text-neutral mb-2">
-              Bem-vindo ao Pulse
+              Crie sua conta
             </h1>
             <p className="text-neutral-soft text-sm">
-              Faça login para acessar sua conta
+              Comece a gerenciar seu salão agora mesmo
             </p>
           </div>
 
-          <LoginForm />
+          <RegisterForm />
 
           <p className="mt-8 text-center text-sm text-neutral-soft">
-            Não tem uma conta?{" "}
-            <Link to="/register" className="link-text font-medium">
-              Criar conta
+            Já tem uma conta?{" "}
+            <Link to="/" className="link-text font-medium">
+              Fazer login
             </Link>
           </p>
         </div>
@@ -33,4 +33,4 @@ const Index = () => {
   );
 };
 
-export default Index;
+export default Register;

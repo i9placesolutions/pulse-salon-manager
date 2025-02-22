@@ -1,8 +1,8 @@
 
 import { Link } from "react-router-dom";
-import LoginForm from "@/components/auth/LoginForm";
+import ForgotPasswordForm from "@/components/auth/ForgotPasswordForm";
 
-const Index = () => {
+const ForgotPassword = () => {
   return (
     <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-secondary to-secondary-soft p-4">
       <div className="w-full max-w-md animate-slide-up">
@@ -12,19 +12,19 @@ const Index = () => {
               <div className="w-8 h-8 rounded-full bg-primary animate-pulse-soft" />
             </div>
             <h1 className="text-2xl font-semibold text-neutral mb-2">
-              Bem-vindo ao Pulse
+              Recuperar senha
             </h1>
             <p className="text-neutral-soft text-sm">
-              Faça login para acessar sua conta
+              Enviaremos instruções para seu e-mail
             </p>
           </div>
 
-          <LoginForm />
+          <ForgotPasswordForm />
 
           <p className="mt-8 text-center text-sm text-neutral-soft">
-            Não tem uma conta?{" "}
-            <Link to="/register" className="link-text font-medium">
-              Criar conta
+            Lembrou sua senha?{" "}
+            <Link to="/" className="link-text font-medium">
+              Voltar ao login
             </Link>
           </p>
         </div>
@@ -33,4 +33,4 @@ const Index = () => {
   );
 };
 
-export default Index;
+export default ForgotPassword;
