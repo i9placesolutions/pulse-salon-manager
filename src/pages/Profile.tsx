@@ -14,24 +14,11 @@ import {
   User,
   Lock,
   Bell,
-  Shield,
   History,
-  LogOut,
   Camera,
-  Mail,
-  Phone,
-  Calendar,
-  MapPin,
-  Briefcase,
-  SmartphoneNfc,
   AlertTriangle,
-  CheckCircle2,
-  XCircle,
   Laptop,
   Smartphone,
-  Tablet,
-  Eye,
-  EyeOff
 } from "lucide-react";
 
 const connectedDevices = [
@@ -86,7 +73,7 @@ export default function Profile() {
         </div>
 
         <Tabs defaultValue="personal" className="space-y-4">
-          <TabsList className="grid grid-cols-2 md:grid-cols-5 w-full">
+          <TabsList className="grid grid-cols-4 w-full">
             <TabsTrigger value="personal">
               <User className="h-4 w-4 mr-2" />
               Dados Pessoais
@@ -98,10 +85,6 @@ export default function Profile() {
             <TabsTrigger value="notifications">
               <Bell className="h-4 w-4 mr-2" />
               Notificações
-            </TabsTrigger>
-            <TabsTrigger value="permissions">
-              <Shield className="h-4 w-4 mr-2" />
-              Permissões
             </TabsTrigger>
             <TabsTrigger value="activity">
               <History className="h-4 w-4 mr-2" />
@@ -187,19 +170,6 @@ export default function Profile() {
                       <Lock className="mr-2 h-4 w-4" />
                       Alterar Senha
                     </Button>
-                  </div>
-
-                  <div className="space-y-4">
-                    <h4 className="font-medium">Perguntas de Segurança</h4>
-                    <div className="space-y-2">
-                      <Label>Pergunta 1</Label>
-                      <select className="w-full p-2 border rounded-md">
-                        <option>Qual o nome do seu primeiro animal de estimação?</option>
-                        <option>Qual sua cidade natal?</option>
-                        <option>Qual o nome da sua mãe?</option>
-                      </select>
-                      <Input type="text" placeholder="Sua resposta" className="mt-2" />
-                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -296,15 +266,6 @@ export default function Profile() {
                     </div>
                     <div className="flex items-center justify-between">
                       <div className="space-y-0.5">
-                        <Label>Aniversário de Clientes</Label>
-                        <p className="text-sm text-muted-foreground">
-                          Mensagem automática de felicitação
-                        </p>
-                      </div>
-                      <Switch />
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-0.5">
                         <Label>Pagamentos e Comissões</Label>
                         <p className="text-sm text-muted-foreground">
                           Alertas sobre transações financeiras
@@ -312,72 +273,8 @@ export default function Profile() {
                       </div>
                       <Switch />
                     </div>
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-0.5">
-                        <Label>Atualizações do Sistema</Label>
-                        <p className="text-sm text-muted-foreground">
-                          Novidades e melhorias na plataforma
-                        </p>
-                      </div>
-                      <Switch />
-                    </div>
-                  </div>
-
-                  <Button variant="outline" className="w-full mt-4">
-                    Testar Notificações
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="permissions">
-            <Card>
-              <CardHeader>
-                <CardTitle>Permissões do Usuário</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>Acesso ao Financeiro</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Visualizar e gerenciar informações financeiras
-                      </p>
-                    </div>
-                    <Switch disabled />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>Gerenciamento de Usuários</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Criar e editar outros usuários do sistema
-                      </p>
-                    </div>
-                    <Switch disabled />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>Relatórios Avançados</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Acessar relatórios detalhados e análises
-                      </p>
-                    </div>
-                    <Switch disabled />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>Configurações do Sistema</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Modificar configurações gerais do sistema
-                      </p>
-                    </div>
-                    <Switch disabled />
                   </div>
                 </div>
-                <p className="text-sm text-muted-foreground">
-                  * As permissões são definidas pelo administrador do sistema
-                </p>
               </CardContent>
             </Card>
           </TabsContent>
