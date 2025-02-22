@@ -18,6 +18,7 @@ import PDV from "./pages/PDV";
 import Clientes from "./pages/Clientes";
 import Relatorios from "./pages/Relatorios";
 import Marketing from "./pages/Marketing";
+import Configuracoes from "./pages/Configuracoes";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -75,6 +76,11 @@ const App = () => (
           <Route path="/marketing" element={
             <AppLayout>
               <Marketing />
+            </AppLayout>
+          } />
+          <Route path="/configuracoes" element={
+            <AppLayout>
+              <Configuracoes />
             </AppLayout>
           } />
           
