@@ -40,3 +40,22 @@ export interface ServicePackage {
   discount: number;
   status: 'active' | 'inactive';
 }
+
+export interface ProfessionalGoal {
+  id: number;
+  professionalId: number;
+  month: string; // formato YYYY-MM
+  serviceTarget: number; // meta de quantidade de serviços
+  revenueTarget: number; // meta de faturamento
+  commissionsTarget: number; // meta de comissões
+}
+
+export interface ProfessionalPerformance {
+  id: number;
+  professionalId: number;
+  serviceId: number;
+  date: string;
+  revenue: number;
+  commission: number;
+  clientSatisfaction: number; // 0-5
+}
