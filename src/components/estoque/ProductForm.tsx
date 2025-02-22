@@ -191,23 +191,53 @@ export function ProductForm({ open, onOpenChange, onSubmit, product }: ProductFo
                 />
               </div>
             </div>
-            <div className="space-y-2">
-              <label htmlFor="commission">Comissão Padrão (%)</label>
-              <Input
-                id="commission"
-                type="number"
-                step="0.1"
-                value={formData.commission?.defaultValue}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    commission: {
-                      type: "percentage",
-                      defaultValue: Number(e.target.value),
-                    },
-                  }))
-                }
-              />
+            <div className="space-y-4">
+              <label className="font-medium">Comissão</label>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label htmlFor="commissionType">Tipo</label>
+                  <select
+                    id="commissionType"
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    value={formData.commission?.type}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        commission: {
+                          ...prev.commission!,
+                          type: e.target.value as 'percentage' | 'fixed',
+                        },
+                      }))
+                    }
+                  >
+                    <option value="percentage">Porcentagem</option>
+                    <option value="fixed">Valor Fixo</option>
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <label htmlFor="commissionValue">Valor Padrão</label>
+                  <Input
+                    id="commissionValue"
+                    type="number"
+                    step="0.01"
+                    value={formData.commission?.defaultValue}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        commission: {
+                          ...prev.commission!,
+                          defaultValue: Number(e.target.value),
+                        },
+                      }))
+                    }
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm text-muted-foreground">
+                  Você poderá definir comissões específicas por profissional após salvar o produto.
+                </label>
+              </div>
             </div>
           </div>
           <DialogFooter>
