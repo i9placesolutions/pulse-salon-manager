@@ -1,42 +1,18 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Search,
-  ShoppingCart,
-  Plus,
-  Trash2,
-  CreditCard,
-  User,
-  QrCode,
-  FileText,
-  BanknoteIcon,
-  ChevronsRight,
-  Printer,
-  Send,
-  CircleDollarSign,
-  ArrowDownUp,
-  Ban,
-  History,
-  Receipt,
-  AlertTriangle,
-  Percent,
-  X
-} from "lucide-react";
+import { Search, ShoppingCart, User, CircleDollarSign, AlertTriangle } from "lucide-react";
 import { formatCurrency } from "@/utils/currency";
 import { useToast } from "@/hooks/use-toast";
 import type { PDVState, Sale, SaleItem, Payment, CashierSession } from "@/types/pdv";
+
+import { CashierOpenDialog } from "@/components/pdv/CashierOpenDialog";
+import { ProductCard } from "@/components/pdv/ProductCard";
+import { CartItem } from "@/components/pdv/CartItem";
+import { PaymentDialog } from "@/components/pdv/PaymentDialog";
+import { CashierCloseDialog } from "@/components/pdv/CashierCloseDialog";
+import { ClientSelectDialog } from "@/components/pdv/ClientSelectDialog";
 
 // Mock data para demonstração
 const mockProducts = [
@@ -172,7 +148,6 @@ const PDV = () => {
       recentSales: [...prev.recentSales, newSale]
     }));
 
-    // Limpar o carrinho e estados relacionados
     setCart([]);
     setPaymentMethods([]);
     setSelectedClient(null);
@@ -187,7 +162,6 @@ const PDV = () => {
     });
   };
 
-  // Efeito para verificar se o caixa está aberto ao carregar a página
   useEffect(() => {
     setState(prev => ({ ...prev, isDayStarted: false }));
   }, []);
@@ -278,36 +252,13 @@ const PDV = () => {
           </CardContent>
         </Card>
 
-        <Dialog open={isOpenCashierDialog} onOpenChange={setIsOpenCashierDialog}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Abrir Caixa</DialogTitle>
-              <DialogDescription>
-                Informe o valor inicial do caixa para começar as operações do dia.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label>Valor Inicial</Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  value={openingAmount}
-                  onChange={(e) => setOpeningAmount(e.target.value)}
-                  placeholder="0,00"
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsOpenCashierDialog(false)}>
-                Cancelar
-              </Button>
-              <Button onClick={handleOpenCashier}>
-                Abrir Caixa
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <CashierOpenDialog
+          isOpen={isOpenCashierDialog}
+          onOpenChange={setIsOpenCashierDialog}
+          openingAmount={openingAmount}
+          onOpeningAmountChange={setOpeningAmount}
+          onConfirm={handleOpenCashier}
+        />
       </div>
     );
   }
@@ -340,35 +291,11 @@ const PDV = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {mockProducts.map((product) => (
-            <Card 
-              key={product.id} 
-              className="cursor-pointer hover:bg-secondary/50 transition-colors"
+            <ProductCard
+              key={product.id}
+              product={product}
               onClick={() => addToCart(product)}
-            >
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
-                  {product.name}
-                </CardTitle>
-                <Button size="icon" variant="ghost">
-                  <Plus className="h-4 w-4" />
-                </Button>
-              </CardHeader>
-              <CardContent>
-                <div className="flex justify-between items-center">
-                  <span className="text-2xl font-bold text-primary">
-                    {formatCurrency(product.price)}
-                  </span>
-                  <span className="text-sm text-muted-foreground">
-                    {product.category}
-                  </span>
-                </div>
-                {product.quantity >= 0 && (
-                  <p className="text-sm text-muted-foreground mt-2">
-                    Em estoque: {product.quantity}
-                  </p>
-                )}
-              </CardContent>
-            </Card>
+            />
           ))}
         </div>
       </div>
@@ -392,43 +319,12 @@ const PDV = () => {
 
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
             {cart.map((item) => (
-              <Card key={item.id}>
-                <CardContent className="p-4">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h3 className="font-medium">{item.name}</h3>
-                      <p className="text-sm text-muted-foreground">
-                        {formatCurrency(item.unitPrice)} x {item.quantity}
-                      </p>
-                      {item.discount && (
-                        <p className="text-sm text-green-500">
-                          Desconto: {item.discountType === 'percentage' ? `${item.discount}%` : formatCurrency(item.discount)}
-                        </p>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Button 
-                        size="icon" 
-                        variant="ghost"
-                        onClick={() => {
-                          const value = prompt("Digite o valor do desconto:");
-                          const type = confirm("Desconto em porcentagem?") ? 'percentage' : 'fixed';
-                          if (value) applyDiscount(item.id, Number(value), type);
-                        }}
-                      >
-                        <Percent className="h-4 w-4" />
-                      </Button>
-                      <Button 
-                        size="icon" 
-                        variant="ghost"
-                        onClick={() => removeFromCart(item.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+              <CartItem
+                key={item.id}
+                item={item}
+                onRemove={removeFromCart}
+                onDiscount={applyDiscount}
+              />
             ))}
           </div>
 
@@ -450,267 +346,35 @@ const PDV = () => {
         </div>
       </div>
 
-      {/* Dialog de Pagamento */}
-      <Dialog open={isCheckoutOpen} onOpenChange={setIsCheckoutOpen}>
-        <DialogContent className="max-w-[600px]">
-          <DialogHeader>
-            <DialogTitle>Finalizar Venda</DialogTitle>
-            <DialogDescription>
-              Total a pagar: {formatCurrency(cartTotal)}
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-6">
-            {/* Formas de Pagamento */}
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-2">
-                <Button
-                  variant={selectedPaymentMethod === 'cash' ? 'default' : 'outline'}
-                  onClick={() => setSelectedPaymentMethod('cash')}
-                >
-                  <BanknoteIcon className="mr-2 h-4 w-4" />
-                  Dinheiro
-                </Button>
-                <Button
-                  variant={selectedPaymentMethod === 'credit' ? 'default' : 'outline'}
-                  onClick={() => setSelectedPaymentMethod('credit')}
-                >
-                  <CreditCard className="mr-2 h-4 w-4" />
-                  Crédito
-                </Button>
-                <Button
-                  variant={selectedPaymentMethod === 'debit' ? 'default' : 'outline'}
-                  onClick={() => setSelectedPaymentMethod('debit')}
-                >
-                  <CreditCard className="mr-2 h-4 w-4" />
-                  Débito
-                </Button>
-                <Button
-                  variant={selectedPaymentMethod === 'pix' ? 'default' : 'outline'}
-                  onClick={() => setSelectedPaymentMethod('pix')}
-                >
-                  <QrCode className="mr-2 h-4 w-4" />
-                  PIX
-                </Button>
-              </div>
+      <PaymentDialog
+        isOpen={isCheckoutOpen}
+        onOpenChange={setIsCheckoutOpen}
+        cartTotal={cartTotal}
+        selectedPaymentMethod={selectedPaymentMethod}
+        onSelectPaymentMethod={setSelectedPaymentMethod}
+        paymentAmount={paymentAmount}
+        onPaymentAmountChange={setPaymentAmount}
+        onAddPayment={addPayment}
+        paymentMethods={paymentMethods}
+        remainingAmount={remainingAmount}
+        changeAmount={changeAmount}
+        onFinalize={finalizeSale}
+      />
 
-              <div className="space-y-2">
-                <Label>Valor do Pagamento</Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  value={paymentAmount}
-                  onChange={(e) => setPaymentAmount(e.target.value)}
-                  placeholder={formatCurrency(remainingAmount)}
-                />
-              </div>
+      <ClientSelectDialog
+        isOpen={isClientDialogOpen}
+        onOpenChange={setIsClientDialogOpen}
+        clients={mockClients}
+        onSelect={setSelectedClient}
+      />
 
-              <Button 
-                className="w-full"
-                onClick={addPayment}
-                disabled={!paymentAmount || Number(paymentAmount) <= 0}
-              >
-                Adicionar Pagamento
-              </Button>
-            </div>
-
-            {/* Lista de Pagamentos */}
-            {paymentMethods.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-sm">Pagamentos Registrados</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  {paymentMethods.map((payment) => (
-                    <div key={payment.id} className="flex justify-between items-center">
-                      <span className="capitalize">{payment.method}</span>
-                      <span>{formatCurrency(payment.amount)}</span>
-                    </div>
-                  ))}
-                  {changeAmount > 0 && (
-                    <div className="flex justify-between items-center text-primary">
-                      <span>Troco</span>
-                      <span>{formatCurrency(changeAmount)}</span>
-                    </div>
-                  )}
-                  <div className="pt-2 border-t">
-                    <div className="flex justify-between items-center font-medium">
-                      <span>Restante</span>
-                      <span>{formatCurrency(remainingAmount)}</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-          </div>
-
-          <DialogFooter className="flex-col sm:flex-row gap-2">
-            <Button
-              variant="outline"
-              className="sm:flex-1"
-              onClick={() => setIsCheckoutOpen(false)}
-            >
-              Cancelar
-            </Button>
-            <Button 
-              className="sm:flex-1"
-              onClick={finalizeSale}
-              disabled={remainingAmount > 0}
-            >
-              Finalizar Venda
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Dialog de Seleção de Cliente */}
-      <Dialog open={isClientDialogOpen} onOpenChange={setIsClientDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Selecionar Cliente</DialogTitle>
-          </DialogHeader>
-          
-          <div className="space-y-4">
-            <Input
-              placeholder="Buscar cliente..."
-              className="w-full"
-            />
-            
-            <div className="space-y-2">
-              {mockClients.map((client) => (
-                <Card 
-                  key={client.id}
-                  className="cursor-pointer hover:bg-secondary/50 transition-colors"
-                  onClick={() => {
-                    setSelectedClient(client);
-                    setIsClientDialogOpen(false);
-                  }}
-                >
-                  <CardContent className="p-4">
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <h3 className="font-medium">{client.name}</h3>
-                        <p className="text-sm text-muted-foreground">{client.phone}</p>
-                      </div>
-                      <Button size="icon" variant="ghost">
-                        <ChevronsRight className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Dialog de Fechamento de Caixa */}
-      <Dialog open={isCloseCashierDialog} onOpenChange={setIsCloseCashierDialog}>
-        <DialogContent className="max-w-[600px]">
-          <DialogHeader>
-            <DialogTitle>Fechar Caixa</DialogTitle>
-            <DialogDescription>
-              Confira o resumo das operações do dia antes de fechar o caixa.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-sm">Vendas Totais</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-2xl font-bold">
-                    {formatCurrency(
-                      state.recentSales.reduce((acc, sale) => acc + sale.total, 0)
-                    )}
-                  </p>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-sm">Saldo Final</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-2xl font-bold">
-                    {formatCurrency(
-                      (state.cashierSession?.initialAmount || 0) +
-                      state.recentSales.reduce((acc, sale) => acc + sale.total, 0)
-                    )}
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Resumo por forma de pagamento */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm">Por Forma de Pagamento</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <div className="flex justify-between">
-                  <span>Dinheiro</span>
-                  <span>{formatCurrency(
-                    state.recentSales.reduce((acc, sale) => 
-                      acc + sale.payments
-                        .filter(p => p.method === 'cash')
-                        .reduce((sum, p) => sum + p.amount, 0)
-                    , 0)
-                  )}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Cartão de Crédito</span>
-                  <span>{formatCurrency(
-                    state.recentSales.reduce((acc, sale) => 
-                      acc + sale.payments
-                        .filter(p => p.method === 'credit')
-                        .reduce((sum, p) => sum + p.amount, 0)
-                    , 0)
-                  )}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Cartão de Débito</span>
-                  <span>{formatCurrency(
-                    state.recentSales.reduce((acc, sale) => 
-                      acc + sale.payments
-                        .filter(p => p.method === 'debit')
-                        .reduce((sum, p) => sum + p.amount, 0)
-                    , 0)
-                  )}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>PIX</span>
-                  <span>{formatCurrency(
-                    state.recentSales.reduce((acc, sale) => 
-                      acc + sale.payments
-                        .filter(p => p.method === 'pix')
-                        .reduce((sum, p) => sum + p.amount, 0)
-                    , 0)
-                  )}</span>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          <DialogFooter className="flex-col sm:flex-row gap-2">
-            <Button
-              variant="outline"
-              className="sm:flex-1"
-              onClick={() => setIsCloseCashierDialog(false)}
-            >
-              Cancelar
-            </Button>
-            <Button 
-              className="sm:flex-1"
-              onClick={handleCloseCashier}
-            >
-              Confirmar Fechamento
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <CashierCloseDialog
+        isOpen={isCloseCashierDialog}
+        onOpenChange={setIsCloseCashierDialog}
+        initialAmount={state.cashierSession?.initialAmount || 0}
+        sales={state.recentSales}
+        onConfirm={handleCloseCashier}
+      />
     </div>
   );
 };
