@@ -52,4 +52,63 @@ export function PaymentMethodsPanel({ config }: PaymentMethodsPanelProps) {
                     </div>
                   )}
                 </div>
-              </div
+              </div>
+
+              {method.type === "Pix" && method.pixKeys && (
+                <div className="space-y-4">
+                  <h4 className="font-medium">Chaves PIX</h4>
+                  <div className="space-y-2">
+                    {method.pixKeys.map((key, index) => (
+                      <div key={index} className="flex items-center gap-2">
+                        <Input value={key.key} readOnly />
+                        <span className="text-sm text-muted-foreground">
+                          ({key.type})
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                  <Button variant="outline" size="sm">
+                    Adicionar Chave PIX
+                  </Button>
+                </div>
+              )}
+
+              {method.type === "Cartão" && method.cardBrands && (
+                <div className="space-y-4">
+                  <h4 className="font-medium">Bandeiras</h4>
+                  <div className="space-y-4">
+                    {method.cardBrands.map((brand) => (
+                      <div key={brand.name} className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <Label>{brand.name}</Label>
+                          <Switch checked={brand.enabled} />
+                        </div>
+                        <div className="grid gap-4 md:grid-cols-2">
+                          <div className="space-y-2">
+                            <Label>Parcelas Máximas</Label>
+                            <Input
+                              type="number"
+                              value={brand.maxInstallments}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Valor Mínimo</Label>
+                            <Input
+                              type="number"
+                              value={brand.minValue}
+                              step="0.01"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
+}
