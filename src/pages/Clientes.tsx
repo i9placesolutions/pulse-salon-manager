@@ -90,7 +90,7 @@ export default function Clientes() {
         </TabsContent>
 
         <TabsContent value="inativos" className="space-y-4">
-          <ClientList clients={mockClients.filter(client => client.status === 'inactive')} />
+          <ClientList clients={mockClients.filter(client => client.status === ('inactive' as const))} />
         </TabsContent>
 
         <TabsContent value="aniversarios" className="space-y-4">
