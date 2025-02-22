@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Download, FileText, MessageSquare } from "lucide-react";
 import { SummaryCards } from "@/components/financeiro/SummaryCards";
 import { RevenueChart } from "@/components/financeiro/RevenueChart";
@@ -11,9 +10,24 @@ import { AccountsReceivable } from "@/components/financeiro/AccountsReceivable";
 import { ExpensesList } from "@/components/financeiro/ExpensesList";
 import { NewRevenueDialog } from "@/components/financeiro/NewRevenueDialog";
 import { NewExpenseDialog } from "@/components/financeiro/NewExpenseDialog";
-import { Payment, Professional, RevenueData, AccountReceivable, Expense } from "@/types/financial";
-import { useToast } from "@/hooks/use-toast";
 import { NewSupplierDialog } from "@/components/financeiro/NewSupplierDialog";
+import { CommissionConfigDialog } from "@/components/financeiro/CommissionConfigDialog";
+import { CashFlowPanel } from "@/components/financeiro/CashFlowPanel";
+import { CostControlPanel } from "@/components/financeiro/CostControlPanel";
+import { TaxManagementPanel } from "@/components/financeiro/TaxManagementPanel";
+import { PaymentMethodsPanel } from "@/components/financeiro/PaymentMethodsPanel";
+import { useToast } from "@/hooks/use-toast";
+import {
+  Payment,
+  Professional,
+  RevenueData,
+  AccountReceivable,
+  Expense,
+  CashFlow,
+  TaxRecord,
+  PaymentMethodConfig,
+  CommissionConfig
+} from "@/types/financial";
 
 const revenueData: RevenueData[] = [
   { date: "01/03", revenue: 1200, expenses: 800 },
@@ -48,6 +62,119 @@ const expenses: Expense[] = [
   { id: 3, name: "Água/Luz", value: 800, date: "2024-03-15", category: "Fixo", status: "Pendente", isRecurring: true },
 ];
 
+const cashFlowData: CashFlow[] = [
+  {
+    id: 1,
+    date: "2024-03-07",
+    type: "entrada",
+    category: "Serviços",
+    description: "Serviços do dia",
+    value: 1500,
+    status: "realizado",
+    paymentMethod: "Pix",
+  },
+  {
+    id: 2,
+    date: "2024-03-08",
+    type: "saida",
+    category: "Fornecedores",
+    description: "Produtos de beleza",
+    value: 800,
+    status: "previsto",
+    paymentMethod: "Boleto",
+    relatedDocument: "NF-123456",
+  },
+];
+
+const taxRecords: TaxRecord[] = [
+  {
+    id: 1,
+    name: "ISS",
+    type: "Municipal",
+    value: 150,
+    baseValue: 3000,
+    rate: 5,
+    dueDate: "2024-03-15",
+    status: "Pendente",
+  },
+  {
+    id: 2,
+    name: "SIMPLES",
+    type: "Federal",
+    value: 450,
+    baseValue: 15000,
+    rate: 3,
+    dueDate: "2024-03-20",
+    status: "Pendente",
+  },
+];
+
+const paymentMethodsConfig: PaymentMethodConfig[] = [
+  {
+    type: "Pix",
+    enabled: true,
+    fees: {
+      percentage: 0.99,
+    },
+    pixKeys: [
+      {
+        key: "exemplo@email.com",
+        type: "Email",
+      },
+    ],
+  },
+  {
+    type: "Cartão",
+    enabled: true,
+    fees: {
+      percentage: 2.99,
+    },
+    cardBrands: [
+      {
+        name: "Mastercard",
+        enabled: true,
+        maxInstallments: 12,
+        minValue: 10,
+        fees: {
+          percentage: 2.99,
+        },
+      },
+      {
+        name: "Visa",
+        enabled: true,
+        maxInstallments: 12,
+        minValue: 10,
+        fees: {
+          percentage: 2.99,
+        },
+      },
+    ],
+  },
+];
+
+const commissionConfigs: CommissionConfig[] = [
+  {
+    id: 1,
+    name: "Corte Masculino",
+    type: "service",
+    commissionType: "percentage",
+    defaultValue: 50,
+    customValues: [
+      {
+        professionalId: 1,
+        value: 60,
+      },
+    ],
+  },
+  {
+    id: 2,
+    name: "Produtos de Revenda",
+    type: "product",
+    commissionType: "percentage",
+    defaultValue: 10,
+  },
+];
+
 const Financeiro = () => {
   const [period, setPeriod] = useState("daily");
   const { toast } = useToast();
@@ -68,12 +195,12 @@ const Financeiro = () => {
 
   return (
     <div className="space-y-6 p-4 md:p-6">
-      {/* Header */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <h1 className="text-2xl font-semibold text-neutral">Gestão Financeira</h1>
         <div className="flex flex-wrap gap-2">
           <NewRevenueDialog />
           <NewExpenseDialog />
+          <CommissionConfigDialog configs={commissionConfigs} />
           <Button variant="outline" onClick={handleWhatsApp}>
             <MessageSquare className="mr-2 h-4 w-4" />
             Enviar Cobranças
@@ -90,30 +217,42 @@ const Financeiro = () => {
       <Tabs defaultValue="overview" className="space-y-4">
         <TabsList className="w-full justify-start">
           <TabsTrigger value="overview">Visão Geral</TabsTrigger>
+          <TabsTrigger value="cashflow">Fluxo de Caixa</TabsTrigger>
           <TabsTrigger value="receivables">Contas a Receber</TabsTrigger>
           <TabsTrigger value="expenses">Despesas</TabsTrigger>
           <TabsTrigger value="commissions">Comissões</TabsTrigger>
           <TabsTrigger value="suppliers">Fornecedores</TabsTrigger>
+          <TabsTrigger value="taxes">Impostos</TabsTrigger>
+          <TabsTrigger value="payments">Meios de Pagamento</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="overview" className="space-y-4">
-          <RevenueChart data={revenueData} period={period} setPeriod={setPeriod} />
-          <PaymentsList payments={payments} />
+        <TabsContent value="overview">
+          <div className="space-y-4">
+            <RevenueChart data={revenueData} period={period} setPeriod={setPeriod} />
+            <PaymentsList payments={payments} />
+          </div>
         </TabsContent>
 
-        <TabsContent value="receivables" className="space-y-4">
+        <TabsContent value="cashflow">
+          <CashFlowPanel data={cashFlowData} />
+        </TabsContent>
+
+        <TabsContent value="receivables">
           <AccountsReceivable accounts={accountsReceivable} onWhatsApp={handleWhatsApp} />
         </TabsContent>
 
-        <TabsContent value="expenses" className="space-y-4">
-          <ExpensesList expenses={expenses} />
+        <TabsContent value="expenses">
+          <div className="space-y-4">
+            <ExpensesList expenses={expenses} />
+            <CostControlPanel expenses={expenses} />
+          </div>
         </TabsContent>
 
-        <TabsContent value="commissions" className="space-y-4">
+        <TabsContent value="commissions">
           <ProfessionalsList professionals={professionals} />
         </TabsContent>
 
-        <TabsContent value="suppliers" className="space-y-4">
+        <TabsContent value="suppliers">
           <div className="flex justify-between items-center mb-4">
             <div>
               <h2 className="text-lg font-semibold">Fornecedores</h2>
@@ -123,17 +262,14 @@ const Financeiro = () => {
             </div>
             <NewSupplierDialog />
           </div>
-          <Card>
-            <CardHeader>
-              <CardTitle>Lista de Fornecedores</CardTitle>
-              <CardDescription>Em desenvolvimento</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">
-                O módulo de fornecedores estará disponível em breve.
-              </p>
-            </CardContent>
-          </Card>
+        </TabsContent>
+
+        <TabsContent value="taxes">
+          <TaxManagementPanel taxes={taxRecords} />
+        </TabsContent>
+
+        <TabsContent value="payments">
+          <PaymentMethodsPanel config={paymentMethodsConfig} />
         </TabsContent>
       </Tabs>
     </div>
