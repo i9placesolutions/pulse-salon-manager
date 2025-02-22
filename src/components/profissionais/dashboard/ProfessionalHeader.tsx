@@ -35,7 +35,7 @@ export function ProfessionalHeader() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuItem onClick={() => navigate('/profile')} className="cursor-pointer text-neutral hover:text-primary hover:bg-primary/5">
+              <DropdownMenuItem onClick={() => navigate('/profissional-profile')} className="cursor-pointer text-neutral hover:text-primary hover:bg-primary/5">
                 <User className="w-4 h-4 mr-2" />
                 <span>Meu Perfil</span>
               </DropdownMenuItem>

@@ -42,8 +42,9 @@ const App = () => (
           <Route path="/terms" element={<Terms />} />
           <Route path="/privacy" element={<Privacy />} />
           
-          {/* Professional dashboard without sidebar */}
+          {/* Professional routes without sidebar */}
           <Route path="/profissional-dashboard" element={<ProfissionalDashboard />} />
+          <Route path="/profissional-profile" element={<Profile />} />
           
           {/* Protected routes with sidebar */}
           <Route path="/dashboard" element={
