@@ -11,7 +11,6 @@ import { ExpensesList } from "@/components/financeiro/ExpensesList";
 import { NewRevenueDialog } from "@/components/financeiro/NewRevenueDialog";
 import { NewExpenseDialog } from "@/components/financeiro/NewExpenseDialog";
 import { NewSupplierDialog } from "@/components/financeiro/NewSupplierDialog";
-import { CommissionConfigDialog } from "@/components/financeiro/CommissionConfigDialog";
 import { CashFlowPanel } from "@/components/financeiro/CashFlowPanel";
 import { CostControlPanel } from "@/components/financeiro/CostControlPanel";
 import { TaxManagementPanel } from "@/components/financeiro/TaxManagementPanel";
@@ -25,8 +24,7 @@ import {
   Expense,
   CashFlow,
   TaxRecord,
-  PaymentMethodConfig,
-  CommissionConfig
+  PaymentMethodConfig
 } from "@/types/financial";
 
 const revenueData: RevenueData[] = [
@@ -152,29 +150,6 @@ const paymentMethodsConfig: PaymentMethodConfig[] = [
   },
 ];
 
-const commissionConfigs: CommissionConfig[] = [
-  {
-    id: 1,
-    name: "Corte Masculino",
-    type: "service",
-    commissionType: "percentage",
-    defaultValue: 50,
-    customValues: [
-      {
-        professionalId: 1,
-        value: 60,
-      },
-    ],
-  },
-  {
-    id: 2,
-    name: "Produtos de Revenda",
-    type: "product",
-    commissionType: "percentage",
-    defaultValue: 10,
-  },
-];
-
 const Financeiro = () => {
   const [period, setPeriod] = useState("daily");
   const { toast } = useToast();
@@ -200,7 +175,6 @@ const Financeiro = () => {
         <div className="flex flex-wrap gap-2">
           <NewRevenueDialog />
           <NewExpenseDialog />
-          <CommissionConfigDialog configs={commissionConfigs} />
           <Button variant="outline" onClick={handleWhatsApp}>
             <MessageSquare className="mr-2 h-4 w-4" />
             Enviar Cobranças
