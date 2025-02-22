@@ -14,6 +14,18 @@ export interface Professional {
   averageMonthlyRevenue: number;
   workingHours?: WorkingHours;
   blockedDates?: BlockedDate[];
+  paymentModel: 'commission' | 'fixed';
+  fixedSalary?: number;
+  commissionRate?: number;
+  benefits?: ProfessionalBenefit[];
+}
+
+export interface ProfessionalBenefit {
+  id: number;
+  name: string;
+  value: number;
+  type: 'monthly' | 'yearly' | 'one-time';
+  description?: string;
 }
 
 export interface WorkingHours {
@@ -49,6 +61,7 @@ export interface ProfessionalAppointment {
   value: number;
   commission: number;
   notes?: string;
+  status: 'pending' | 'confirmed' | 'canceled' | 'completed';
 }
 
 export interface ProfessionalCommission {
@@ -68,6 +81,7 @@ export interface ProfessionalPayment {
   status: 'pending' | 'partial' | 'paid';
   paymentDate?: string;
   notes?: string;
+  type: 'salary' | 'commission' | 'benefit';
 }
 
 export interface ProfessionalPerformance {

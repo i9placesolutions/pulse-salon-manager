@@ -3,13 +3,30 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TabsContent, Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Calendar, Clock, Users, DollarSign, ChartBar } from "lucide-react";
+import { Calendar, Clock, Users, DollarSign, ChartBar, Lock, Unlock } from "lucide-react";
 import { formatCurrency } from "@/utils/currency";
 import { WorkingHoursForm } from "@/components/profissionais/WorkingHoursForm";
 import { AppointmentHistory } from "@/components/profissionais/AppointmentHistory";
 import { PerformanceMetrics } from "@/components/profissionais/PerformanceMetrics";
 import { CommissionManagement } from "@/components/profissionais/CommissionManagement";
-import { ProfessionalCommission } from "@/types/professional";
+import { Professional, ProfessionalCommission } from "@/types/professional";
+
+// Mock data para teste
+const mockProfessional: Professional = {
+  id: 1,
+  name: "João Silva",
+  email: "joao@example.com",
+  phone: "(11) 99999-9999",
+  specialty: "Cabelereiro",
+  hiringDate: "2024-01-01",
+  experienceLevel: "expert",
+  status: "active",
+  totalAppointments: 150,
+  totalCommission: 5000,
+  averageMonthlyRevenue: 8000,
+  paymentModel: "commission",
+  commissionRate: 50
+};
 
 const mockPerformance = {
   totalAppointments: 45,
@@ -54,7 +71,8 @@ const mockAppointments = [
     serviceName: "Corte + Barba",
     value: 80,
     commission: 40,
-    notes: "Cliente prefere corte mais curto"
+    notes: "Cliente prefere corte mais curto",
+    status: "confirmed"
   },
   {
     id: 2,
@@ -62,12 +80,18 @@ const mockAppointments = [
     clientName: "Maria Santos",
     serviceName: "Coloração",
     value: 150,
-    commission: 75
+    commission: 75,
+    status: "pending"
   }
 ];
 
 export default function ProfissionalDashboard() {
   const [isWorkingHoursOpen, setIsWorkingHoursOpen] = useState(false);
+  const [agendaOpen, setAgendaOpen] = useState(true);
+
+  const handleToggleAgenda = () => {
+    setAgendaOpen(!agendaOpen);
+  };
 
   return (
     <div className="space-y-6">
@@ -79,6 +103,22 @@ export default function ProfissionalDashboard() {
           </p>
         </div>
         <div className="flex gap-2">
+          <Button 
+            variant={agendaOpen ? "destructive" : "default"}
+            onClick={handleToggleAgenda}
+          >
+            {agendaOpen ? (
+              <>
+                <Lock className="mr-2 h-4 w-4" />
+                Fechar Agenda
+              </>
+            ) : (
+              <>
+                <Unlock className="mr-2 h-4 w-4" />
+                Abrir Agenda
+              </>
+            )}
+          </Button>
           <Button variant="outline" onClick={() => setIsWorkingHoursOpen(true)}>
             <Clock className="mr-2 h-4 w-4" />
             Gerenciar Horários
@@ -105,16 +145,20 @@ export default function ProfissionalDashboard() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              Comissões do Mês
+              {mockProfessional.paymentModel === 'fixed' ? 'Salário Fixo' : 'Comissões do Mês'}
             </CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {formatCurrency(3500)}
+              {formatCurrency(mockProfessional.paymentModel === 'fixed' 
+                ? mockProfessional.fixedSalary || 0 
+                : 3500)}
             </div>
             <p className="text-xs text-muted-foreground">
-              +15% em relação ao mês anterior
+              {mockProfessional.paymentModel === 'fixed' 
+                ? 'Salário base mensal'
+                : '+15% em relação ao mês anterior'}
             </p>
           </CardContent>
         </Card>
@@ -142,7 +186,7 @@ export default function ProfissionalDashboard() {
             <ChartBar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">75%</div>
+            <div className="text-2xl font-bold">{(mockPerformance.clientReturnRate * 100)}%</div>
             <p className="text-xs text-muted-foreground">
               Clientes que retornam
             </p>
@@ -154,7 +198,9 @@ export default function ProfissionalDashboard() {
         <TabsList>
           <TabsTrigger value="performance">Desempenho</TabsTrigger>
           <TabsTrigger value="appointments">Atendimentos</TabsTrigger>
-          <TabsTrigger value="commissions">Comissões</TabsTrigger>
+          <TabsTrigger value="commissions">
+            {mockProfessional.paymentModel === 'fixed' ? 'Pagamentos' : 'Comissões'}
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="performance">
