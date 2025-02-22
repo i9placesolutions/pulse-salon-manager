@@ -1,3 +1,4 @@
+
 import { Link, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -12,6 +13,7 @@ import {
   ChevronLeft,
   ChevronRight,
   MessageSquare,
+  Scissors,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -20,6 +22,7 @@ const menuItems = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
   { icon: Calendar, label: "Agendamentos", path: "/appointments" },
   { icon: Users, label: "Clientes", path: "/clientes" },
+  { icon: Scissors, label: "Serviços", path: "/servicos" },
   { icon: DollarSign, label: "Financeiro", path: "/financeiro" },
   { icon: Package, label: "Estoque", path: "/estoque" },
   { icon: ShoppingCart, label: "PDV", path: "/pdv" },

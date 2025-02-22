@@ -19,6 +19,7 @@ import Clientes from "./pages/Clientes";
 import Relatorios from "./pages/Relatorios";
 import Marketing from "./pages/Marketing";
 import Configuracoes from "./pages/Configuracoes";
+import Servicos from "./pages/Servicos";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -51,6 +52,11 @@ const App = () => (
           <Route path="/clientes" element={
             <AppLayout>
               <Clientes />
+            </AppLayout>
+          } />
+          <Route path="/servicos" element={
+            <AppLayout>
+              <Servicos />
             </AppLayout>
           } />
           <Route path="/financeiro" element={
