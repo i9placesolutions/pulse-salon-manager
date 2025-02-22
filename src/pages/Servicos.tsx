@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -213,35 +214,6 @@ export default function Servicos() {
 
       <ServiceMetrics {...mockMetrics} />
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <QuickPOS
-          services={mockServices}
-          professionals={mockProfessionals}
-          onSale={handleQuickSale}
-        />
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Visão Geral</CardTitle>
-            <CardDescription>Dados consolidados dos serviços</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ServiceCharts
-              services={mockServices}
-              commissions={[]} // TODO: Adicionar dados reais
-              professionals={mockProfessionals}
-            />
-          </CardContent>
-        </Card>
-      </div>
-
-      <CommissionHistory
-        performance={mockPerformance}
-        services={mockServices.map(s => ({ id: s.id, name: s.name }))}
-        professionals={mockProfessionals}
-        onExport={handleExportCommissions}
-      />
-
       <Card className="p-4">
         <div className="flex flex-col gap-4 md:flex-row md:items-center">
           <div className="relative flex-1">
@@ -357,6 +329,35 @@ export default function Servicos() {
           </TableBody>
         </Table>
       </Card>
+
+      <div className="grid gap-4 md:grid-cols-2">
+        <QuickPOS
+          services={mockServices}
+          professionals={mockProfessionals}
+          onSale={handleQuickSale}
+        />
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Visão Geral</CardTitle>
+            <CardDescription>Dados consolidados dos serviços</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ServiceCharts
+              services={mockServices}
+              commissions={[]}
+              professionals={mockProfessionals}
+            />
+          </CardContent>
+        </Card>
+      </div>
+
+      <CommissionHistory
+        performance={mockPerformance}
+        services={mockServices.map(s => ({ id: s.id, name: s.name }))}
+        professionals={mockProfessionals}
+        onExport={handleExportCommissions}
+      />
 
       <ServiceForm
         open={isServiceFormOpen}
