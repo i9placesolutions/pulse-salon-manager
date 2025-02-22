@@ -1,7 +1,13 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -21,7 +27,7 @@ import {
   Users,
   Package,
 } from "lucide-react";
-import { Service, ServicePackage } from "@/types/service";
+import { Service, ServicePackage, ProfessionalPerformance } from "@/types/service";
 import { useToast } from "@/hooks/use-toast";
 import { ServiceForm } from "@/components/servicos/ServiceForm";
 import { ServicePackageForm } from "@/components/servicos/ServicePackageForm";
@@ -30,7 +36,6 @@ import { ServiceCommissionDialog } from "@/components/servicos/ServiceCommission
 import { ServiceCharts } from "@/components/servicos/ServiceCharts";
 import { QuickPOS } from "@/components/servicos/QuickPOS";
 import { CommissionHistory } from "@/components/servicos/CommissionHistory";
-import { ProfessionalPerformance } from "@/types/professional";
 
 const mockServices: Service[] = [
   {

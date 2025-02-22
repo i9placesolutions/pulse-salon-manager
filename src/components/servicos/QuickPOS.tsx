@@ -27,7 +27,7 @@ interface QuickPOSProps {
 export function QuickPOS({ services, professionals, onSale }: QuickPOSProps) {
   const { toast } = useToast();
   const [selectedService, setSelectedService] = useState<Service | null>(null);
-  const [selectedProfessional, setSelectedProfessional] = useState<number | "">("");
+  const [selectedProfessional, setSelectedProfessional] = useState<number | "">(""); 
   const [searchTerm, setSearchTerm] = useState("");
 
   const filteredServices = services.filter((service) =>
@@ -99,7 +99,7 @@ export function QuickPOS({ services, professionals, onSale }: QuickPOSProps) {
             <label className="text-sm font-medium">Profissional</label>
             <select
               value={selectedProfessional}
-              onChange={(e) => setSelectedProfessional(e.target.value)}
+              onChange={(e) => setSelectedProfessional(Number(e.target.value) || "")}
               className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
             >
               <option value="">Selecione um profissional...</option>
