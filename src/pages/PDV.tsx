@@ -3,8 +3,6 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Search, ShoppingCart, Plus, Trash2, CreditCard, User, QrCode, FileText, BanknoteIcon, ChevronsRight, Printer, Send } from "lucide-react";
-import { formatCurrency } from "@/utils/currency";
 import {
   Dialog,
   DialogContent,
@@ -13,6 +11,27 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Search,
+  ShoppingCart,
+  Plus,
+  Trash2,
+  CreditCard,
+  User,
+  QrCode,
+  FileText,
+  BanknoteIcon,
+  ChevronsRight,
+  Printer,
+  Send,
+  CircleDollarSign,
+  ArrowDownUp,
+  Ban,
+  History,
+  Receipt
+} from "lucide-react";
+import { formatCurrency } from "@/utils/currency";
 import { useToast } from "@/hooks/use-toast";
 
 interface Product {
@@ -25,6 +44,7 @@ interface Product {
 
 interface CartItem extends Product {
   cartQuantity: number;
+  discount?: number;
 }
 
 interface Client {
@@ -36,11 +56,23 @@ interface Client {
 }
 
 interface CashierOperation {
-  type: 'open' | 'close';
-  initialAmount?: number;
-  finalAmount?: number;
-  difference?: number;
+  type: 'open' | 'close' | 'withdrawal' | 'supply';
+  amount: number;
   date: Date;
+  reason?: string;
+}
+
+interface Sale {
+  id: number;
+  items: CartItem[];
+  total: number;
+  discount: number;
+  finalTotal: number;
+  paymentMethod: string[];
+  paymentValues: number[];
+  client?: Client;
+  date: Date;
+  status: 'completed' | 'canceled';
 }
 
 // Mock data - será substituído pela integração com o backend
@@ -63,8 +95,14 @@ const PDV = () => {
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [isNewClientOpen, setIsNewClientOpen] = useState(false);
   const [isCashierOpen, setIsCashierOpen] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<string>("");
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [cashierOperation, setCashierOperation] = useState<CashierOperation | null>(null);
+  const [paymentMethods, setPaymentMethods] = useState<string[]>([]);
+  const [paymentValues, setPaymentValues] = useState<number[]>([]);
+  const [installments, setInstallments] = useState(1);
+  const [cartDiscount, setCartDiscount] = useState(0);
+  const [changeAmount, setChangeAmount] = useState(0);
+  const [dailySales, setDailySales] = useState<Sale[]>([]);
   const { toast } = useToast();
 
   const addToCart = (product: Product) => {
@@ -87,16 +125,32 @@ const PDV = () => {
     setCart(currentCart => currentCart.filter(item => item.id !== productId));
   };
 
+  const updateItemDiscount = (productId: number, discount: number) => {
+    setCart(currentCart => 
+      currentCart.map(item => 
+        item.id === productId
+          ? { ...item, discount }
+          : item
+      )
+    );
+  };
+
+  const subtotal = cart.reduce((total, item) => {
+    const itemTotal = item.price * item.cartQuantity;
+    const itemDiscount = item.discount || 0;
+    return total + (itemTotal - (itemTotal * itemDiscount / 100));
+  }, 0);
+
+  const total = subtotal - (subtotal * cartDiscount / 100);
+
   const filteredProducts = mockProducts.filter(product =>
     product.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const cartTotal = cart.reduce((total, item) => total + (item.price * item.cartQuantity), 0);
-
   const handleOpenCashier = () => {
     setCashierOperation({
       type: 'open',
-      initialAmount: 0,
+      amount: 0,
       date: new Date(),
     });
     setIsCashierOpen(true);
@@ -105,24 +159,70 @@ const PDV = () => {
   const handleCloseCashier = () => {
     setCashierOperation({
       type: 'close',
-      finalAmount: cartTotal,
-      difference: 0,
+      amount: total,
       date: new Date(),
     });
     setIsCashierOpen(true);
   };
 
+  const handleCashierOperation = (type: 'withdrawal' | 'supply', amount: number, reason: string) => {
+    setCashierOperation({
+      type,
+      amount,
+      date: new Date(),
+      reason,
+    });
+    toast({
+      title: type === 'withdrawal' ? "Sangria realizada" : "Suprimento realizado",
+      description: `Operação no valor de ${formatCurrency(amount)} registrada com sucesso.`,
+    });
+    setIsCashierOpen(false);
+  };
+
   const handlePayment = () => {
+    const newSale: Sale = {
+      id: dailySales.length + 1,
+      items: [...cart],
+      total: subtotal,
+      discount: cartDiscount,
+      finalTotal: total,
+      paymentMethod: paymentMethods,
+      paymentValues: paymentValues,
+      client: selectedClient || undefined,
+      date: new Date(),
+      status: 'completed'
+    };
+
+    setDailySales([...dailySales, newSale]);
+    
     toast({
       title: "Venda finalizada",
-      description: `Venda no valor de ${formatCurrency(cartTotal)} realizada com sucesso!`,
+      description: `Venda no valor de ${formatCurrency(total)} realizada com sucesso!`,
     });
+    
+    // Reset cart state
     setCart([]);
     setSelectedClient(null);
+    setPaymentMethods([]);
+    setPaymentValues([]);
+    setCartDiscount(0);
+    setInstallments(1);
+    setChangeAmount(0);
     setIsCheckoutOpen(false);
   };
 
-  const handlePrintReceipt = () => {
+  const handlePrintReceipt = (sale?: Sale) => {
+    const saleData = sale || {
+      items: cart,
+      total: subtotal,
+      discount: cartDiscount,
+      finalTotal: total,
+      paymentMethod: paymentMethods,
+      paymentValues,
+      client: selectedClient,
+      date: new Date()
+    };
+
     toast({
       title: "Imprimindo comprovante",
       description: "O comprovante será impresso em breve.",
@@ -130,9 +230,33 @@ const PDV = () => {
   };
 
   const handleSendWhatsApp = () => {
+    if (!selectedClient) {
+      toast({
+        title: "Erro",
+        description: "Selecione um cliente para enviar o comprovante.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     toast({
       title: "Enviando comprovante",
       description: "O comprovante será enviado por WhatsApp.",
+    });
+  };
+
+  const handleCancelSale = (saleId: number) => {
+    setDailySales(sales => 
+      sales.map(sale => 
+        sale.id === saleId
+          ? { ...sale, status: 'canceled' }
+          : sale
+      )
+    );
+
+    toast({
+      title: "Venda cancelada",
+      description: "A venda foi cancelada com sucesso.",
     });
   };
 
@@ -151,8 +275,18 @@ const PDV = () => {
             />
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={handleOpenCashier}>Abrir Caixa</Button>
-            <Button variant="outline" onClick={handleCloseCashier}>Fechar Caixa</Button>
+            <Button variant="outline" onClick={() => setIsHistoryOpen(true)}>
+              <History className="mr-2 h-4 w-4" />
+              Histórico
+            </Button>
+            <Button variant="outline" onClick={handleOpenCashier}>
+              <CircleDollarSign className="mr-2 h-4 w-4" />
+              Abrir Caixa
+            </Button>
+            <Button variant="outline" onClick={handleCloseCashier}>
+              <ArrowDownUp className="mr-2 h-4 w-4" />
+              Fechar Caixa
+            </Button>
           </div>
         </div>
 
@@ -217,13 +351,25 @@ const PDV = () => {
               <div key={item.id} className="flex items-center justify-between bg-white p-3 rounded-lg shadow-sm">
                 <div>
                   <p className="font-medium">{item.name}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {item.cartQuantity}x {formatCurrency(item.price)}
-                  </p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm text-muted-foreground">
+                      {item.cartQuantity}x {formatCurrency(item.price)}
+                    </p>
+                    <Input
+                      type="number"
+                      placeholder="Desconto %"
+                      value={item.discount || ""}
+                      onChange={(e) => updateItemDiscount(item.id, Number(e.target.value))}
+                      className="w-20 h-6 text-xs"
+                    />
+                  </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <p className="font-medium">
-                    {formatCurrency(item.price * item.cartQuantity)}
+                    {formatCurrency(
+                      (item.price * item.cartQuantity) * 
+                      (1 - ((item.discount || 0) / 100))
+                    )}
                   </p>
                   <Button 
                     size="icon" 
@@ -239,11 +385,27 @@ const PDV = () => {
           </div>
 
           <div className="border-t p-4 space-y-4">
-            <div className="flex justify-between items-center">
-              <span className="text-lg font-medium">Total</span>
-              <span className="text-2xl font-bold text-primary">
-                {formatCurrency(cartTotal)}
-              </span>
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <span>Subtotal</span>
+                <span>{formatCurrency(subtotal)}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span>Desconto Geral</span>
+                <Input
+                  type="number"
+                  value={cartDiscount}
+                  onChange={(e) => setCartDiscount(Number(e.target.value))}
+                  className="w-20"
+                />
+                <span>%</span>
+              </div>
+              <div className="flex justify-between items-center font-bold">
+                <span>Total</span>
+                <span className="text-2xl text-primary">
+                  {formatCurrency(total)}
+                </span>
+              </div>
             </div>
             <Button 
               className="w-full" 
@@ -309,60 +471,204 @@ const PDV = () => {
           </DialogHeader>
           
           <div className="space-y-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
-              <Button
-                variant={paymentMethod === "pix" ? "default" : "outline"}
-                className="h-24 flex flex-col items-center justify-center"
-                onClick={() => setPaymentMethod("pix")}
-              >
-                <QrCode className="h-8 w-8 mb-2" />
-                PIX
-              </Button>
-              <Button
-                variant={paymentMethod === "cartao" ? "default" : "outline"}
-                className="h-24 flex flex-col items-center justify-center"
-                onClick={() => setPaymentMethod("cartao")}
-              >
-                <CreditCard className="h-8 w-8 mb-2" />
-                Cartão
-              </Button>
-              <Button
-                variant={paymentMethod === "dinheiro" ? "default" : "outline"}
-                className="h-24 flex flex-col items-center justify-center"
-                onClick={() => setPaymentMethod("dinheiro")}
-              >
-                <BanknoteIcon className="h-8 w-8 mb-2" />
-                Dinheiro
-              </Button>
-              <Button
-                variant={paymentMethod === "boleto" ? "default" : "outline"}
-                className="h-24 flex flex-col items-center justify-center"
-                onClick={() => setPaymentMethod("boleto")}
-              >
-                <FileText className="h-8 w-8 mb-2" />
-                Boleto
-              </Button>
-            </div>
+            <Tabs defaultValue="payment" className="space-y-4">
+              <TabsList>
+                <TabsTrigger value="payment">Pagamento</TabsTrigger>
+                <TabsTrigger value="preview">Pré-visualizar</TabsTrigger>
+              </TabsList>
 
-            <div className="border-t pt-4">
-              <div className="flex justify-between mb-2">
-                <span>Subtotal:</span>
-                <span>{formatCurrency(cartTotal)}</span>
-              </div>
-              <div className="flex justify-between font-bold">
-                <span>Total:</span>
-                <span className="text-primary text-xl">
-                  {formatCurrency(cartTotal)}
-                </span>
-              </div>
-            </div>
+              <TabsContent value="payment" className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <Button
+                    variant={paymentMethods.includes("pix") ? "default" : "outline"}
+                    className="h-24 flex flex-col items-center justify-center"
+                    onClick={() => {
+                      setPaymentMethods(["pix"]);
+                      setPaymentValues([total]);
+                      setInstallments(1);
+                    }}
+                  >
+                    <QrCode className="h-8 w-8 mb-2" />
+                    PIX
+                  </Button>
+                  <Button
+                    variant={paymentMethods.includes("cartao") ? "default" : "outline"}
+                    className="h-24 flex flex-col items-center justify-center"
+                    onClick={() => {
+                      setPaymentMethods(["cartao"]);
+                      setPaymentValues([total]);
+                    }}
+                  >
+                    <CreditCard className="h-8 w-8 mb-2" />
+                    Cartão
+                  </Button>
+                  <Button
+                    variant={paymentMethods.includes("dinheiro") ? "default" : "outline"}
+                    className="h-24 flex flex-col items-center justify-center"
+                    onClick={() => {
+                      setPaymentMethods(["dinheiro"]);
+                      setPaymentValues([total]);
+                      setInstallments(1);
+                    }}
+                  >
+                    <BanknoteIcon className="h-8 w-8 mb-2" />
+                    Dinheiro
+                  </Button>
+                  <Button
+                    variant={paymentMethods.includes("boleto") ? "default" : "outline"}
+                    className="h-24 flex flex-col items-center justify-center"
+                    onClick={() => {
+                      setPaymentMethods(["boleto"]);
+                      setPaymentValues([total]);
+                      setInstallments(1);
+                    }}
+                  >
+                    <FileText className="h-8 w-8 mb-2" />
+                    Boleto
+                  </Button>
+                </div>
+
+                {paymentMethods.includes("cartao") && (
+                  <div className="space-y-2">
+                    <Label>Número de Parcelas</Label>
+                    <select
+                      className="w-full rounded-md border border-input px-3 py-2"
+                      value={installments}
+                      onChange={(e) => setInstallments(Number(e.target.value))}
+                    >
+                      {Array.from({ length: 12 }, (_, i) => i + 1).map((n) => (
+                        <option key={n} value={n}>
+                          {n}x de {formatCurrency(total / n)}
+                          {n === 1 ? " à vista" : ""}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {paymentMethods.includes("dinheiro") && (
+                  <div className="space-y-2">
+                    <Label>Valor Recebido</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={total + changeAmount}
+                      onChange={(e) => setChangeAmount(Number(e.target.value) - total)}
+                    />
+                    {changeAmount > 0 && (
+                      <p className="text-sm text-muted-foreground">
+                        Troco: {formatCurrency(changeAmount)}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                <div className="space-y-2">
+                  <Label>Dividir Pagamento</Label>
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => {
+                      const newMethod = paymentMethods.length < 2 ? "dinheiro" : "";
+                      if (newMethod) {
+                        setPaymentMethods([...paymentMethods, newMethod]);
+                        setPaymentValues([...paymentValues, 0]);
+                      }
+                    }}
+                  >
+                    Adicionar Forma de Pagamento
+                  </Button>
+                </div>
+
+                {paymentMethods.length > 1 && (
+                  <div className="space-y-2">
+                    {paymentMethods.map((method, index) => (
+                      <div key={index} className="flex items-center gap-2">
+                        <select
+                          className="flex-1 rounded-md border border-input px-3 py-2"
+                          value={method}
+                          onChange={(e) => {
+                            const newMethods = [...paymentMethods];
+                            newMethods[index] = e.target.value;
+                            setPaymentMethods(newMethods);
+                          }}
+                        >
+                          <option value="dinheiro">Dinheiro</option>
+                          <option value="cartao">Cartão</option>
+                          <option value="pix">PIX</option>
+                        </select>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          value={paymentValues[index]}
+                          onChange={(e) => {
+                            const newValues = [...paymentValues];
+                            newValues[index] = Number(e.target.value);
+                            setPaymentValues(newValues);
+                          }}
+                          className="w-32"
+                        />
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => {
+                            setPaymentMethods(methods => methods.filter((_, i) => i !== index));
+                            setPaymentValues(values => values.filter((_, i) => i !== index));
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </TabsContent>
+
+              <TabsContent value="preview">
+                <div className="space-y-4">
+                  <div className="border rounded-lg p-4">
+                    <h3 className="font-medium mb-2">Cupom Não Fiscal</h3>
+                    {selectedClient && (
+                      <div className="text-sm mb-4">
+                        <p>Cliente: {selectedClient.name}</p>
+                        <p>CPF: {selectedClient.cpf}</p>
+                      </div>
+                    )}
+                    <div className="space-y-2">
+                      {cart.map((item) => (
+                        <div key={item.id} className="text-sm flex justify-between">
+                          <span>{item.name} x{item.cartQuantity}</span>
+                          <span>{formatCurrency(item.price * item.cartQuantity)}</span>
+                        </div>
+                      ))}
+                      <div className="border-t pt-2">
+                        <div className="flex justify-between">
+                          <span>Subtotal:</span>
+                          <span>{formatCurrency(subtotal)}</span>
+                        </div>
+                        {cartDiscount > 0 && (
+                          <div className="flex justify-between text-red-500">
+                            <span>Desconto ({cartDiscount}%):</span>
+                            <span>-{formatCurrency(subtotal * (cartDiscount / 100))}</span>
+                          </div>
+                        )}
+                        <div className="flex justify-between font-bold mt-2">
+                          <span>Total:</span>
+                          <span>{formatCurrency(total)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </TabsContent>
+            </Tabs>
           </div>
 
           <DialogFooter className="flex-col sm:flex-row gap-2">
             <Button
               variant="outline"
               className="sm:flex-1"
-              onClick={handlePrintReceipt}
+              onClick={() => handlePrintReceipt()}
             >
               <Printer className="mr-2 h-4 w-4" />
               Imprimir
@@ -371,6 +677,7 @@ const PDV = () => {
               variant="outline"
               className="sm:flex-1"
               onClick={handleSendWhatsApp}
+              disabled={!selectedClient}
             >
               <Send className="mr-2 h-4 w-4" />
               WhatsApp
@@ -378,7 +685,7 @@ const PDV = () => {
             <Button 
               className="sm:flex-1"
               onClick={handlePayment}
-              disabled={!paymentMethod}
+              disabled={paymentMethods.length === 0}
             >
               Confirmar Pagamento
             </Button>
@@ -391,64 +698,117 @@ const PDV = () => {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {cashierOperation?.type === 'open' ? 'Abrir Caixa' : 'Fechar Caixa'}
+              {cashierOperation?.type === 'open' ? 'Abrir Caixa' :
+               cashierOperation?.type === 'close' ? 'Fechar Caixa' :
+               cashierOperation?.type === 'withdrawal' ? 'Sangria' : 'Suprimento'}
             </DialogTitle>
             <DialogDescription>
               {cashierOperation?.type === 'open' 
                 ? 'Informe o valor inicial do caixa'
-                : 'Confira os valores e finalize o caixa'}
+                : cashierOperation?.type === 'close'
+                ? 'Confira os valores e finalize o caixa'
+                : 'Informe o valor e o motivo da operação'}
             </DialogDescription>
           </DialogHeader>
           
           <div className="space-y-4 py-4">
-            {cashierOperation?.type === 'open' ? (
+            <div className="space-y-2">
+              <Label>
+                {cashierOperation?.type === 'open' ? 'Valor Inicial' :
+                 cashierOperation?.type === 'close' ? 'Valor em Caixa' :
+                 'Valor da Operação'}
+              </Label>
+              <Input
+                type="number"
+                step="0.01"
+                value={cashierOperation?.amount || 0}
+                onChange={(e) => setCashierOperation(current => 
+                  current ? { ...current, amount: Number(e.target.value) } : null
+                )}
+              />
+            </div>
+
+            {(cashierOperation?.type === 'withdrawal' || cashierOperation?.type === 'supply') && (
               <div className="space-y-2">
-                <label htmlFor="initialAmount">Valor Inicial</label>
+                <Label>Motivo</Label>
                 <Input
-                  id="initialAmount"
-                  type="number"
-                  placeholder="0,00"
-                  step="0.01"
+                  value={cashierOperation?.reason || ""}
+                  onChange={(e) => setCashierOperation(current =>
+                    current ? { ...current, reason: e.target.value } : null
+                  )}
                 />
               </div>
-            ) : (
-              <>
-                <div className="space-y-4">
-                  <div className="flex justify-between">
-                    <span>Total em Vendas:</span>
-                    <span>{formatCurrency(cartTotal)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Dinheiro em Caixa:</span>
-                    <Input
-                      type="number"
-                      placeholder="0,00"
-                      step="0.01"
-                      className="w-32"
-                    />
-                  </div>
+            )}
+
+            {cashierOperation?.type === 'close' && (
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span>Total em Vendas:</span>
+                  <span>{formatCurrency(
+                    dailySales
+                      .filter(sale => 
+                        sale.status === 'completed' && 
+                        sale.date.toDateString() === new Date().toDateString()
+                      )
+                      .reduce((acc, sale) => acc + sale.finalTotal, 0)
+                  )}</span>
                 </div>
-              </>
+                <div className="flex justify-between text-sm">
+                  <span>Sangrias:</span>
+                  <span className="text-red-500">-{formatCurrency(0)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span>Suprimentos:</span>
+                  <span className="text-green-500">+{formatCurrency(0)}</span>
+                </div>
+              </div>
             )}
           </div>
 
           <DialogFooter>
-            <Button onClick={() => {
-              toast({
-                title: cashierOperation?.type === 'open' ? "Caixa aberto" : "Caixa fechado",
-                description: cashierOperation?.type === 'open' 
-                  ? "O caixa foi aberto com sucesso!"
-                  : "O caixa foi fechado com sucesso!",
-              });
-              setIsCashierOpen(false);
-            }}>
-              {cashierOperation?.type === 'open' ? 'Abrir Caixa' : 'Fechar Caixa'}
-            </Button>
+            {cashierOperation?.type === 'open' || cashierOperation?.type === 'close' ? (
+              <Button onClick={() => {
+                toast({
+                  title: cashierOperation?.type === 'open' ? "Caixa aberto" : "Caixa fechado",
+                  description: cashierOperation?.type === 'open' 
+                    ? "O caixa foi aberto com sucesso!"
+                    : "O caixa foi fechado com sucesso!",
+                });
+                setIsCashierOpen(false);
+              }}>
+                {cashierOperation?.type === 'open' ? 'Abrir Caixa' : 'Fechar Caixa'}
+              </Button>
+            ) : (
+              <Button onClick={() => {
+                if (cashierOperation?.type && cashierOperation.amount > 0) {
+                  handleCashierOperation(
+                    cashierOperation.type === 'withdrawal' ? 'withdrawal' : 'supply',
+                    cashierOperation.amount,
+                    cashierOperation.reason || ""
+                  );
+                }
+              }}>
+                Confirmar
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
-  );
-};
 
-export default PDV;
+      {/* Modal de Histórico */}
+      <Dialog open={isHistoryOpen} onOpenChange={setIsHistoryOpen}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Histórico de Vendas</DialogTitle>
+            <DialogDescription>
+              Vendas realizadas hoje
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            {dailySales.map((sale) => (
+              <Card key={sale.id} className={
+                sale.status === 'canceled' ? "opacity-75 bg-red-50" : ""
+              }>
+                <CardHeader>
+                  <div className="flex items-center
