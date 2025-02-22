@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/utils/currency";
 import { Professional } from "@/types/financial";
+import { PayCommissionDialog } from "./PayCommissionDialog";
 
 interface ProfessionalsListProps {
   professionals: Professional[];
@@ -30,15 +31,20 @@ export const ProfessionalsList = ({ professionals }: ProfessionalsListProps) => 
                   {professional.services} serviços realizados
                 </p>
               </div>
-              <div className="text-right">
-                <p className="font-medium">
-                  {formatCurrency(professional.commission)}
-                </p>
-                <p className={`text-sm ${
-                  professional.status === "A Pagar" ? "text-yellow-600" : "text-green-600"
-                }`}>
-                  {professional.status}
-                </p>
+              <div className="flex items-center gap-4">
+                <div className="text-right">
+                  <p className="font-medium">
+                    {formatCurrency(professional.commission)}
+                  </p>
+                  <p className={`text-sm ${
+                    professional.status === "A Pagar" ? "text-yellow-600" : "text-green-600"
+                  }`}>
+                    {professional.status}
+                  </p>
+                </div>
+                {professional.status === "A Pagar" && (
+                  <PayCommissionDialog professional={professional} />
+                )}
               </div>
             </div>
           ))}
@@ -46,4 +52,4 @@ export const ProfessionalsList = ({ professionals }: ProfessionalsListProps) => 
       </CardContent>
     </Card>
   );
-};
+}

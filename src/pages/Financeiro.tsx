@@ -13,6 +13,7 @@ import { NewRevenueDialog } from "@/components/financeiro/NewRevenueDialog";
 import { NewExpenseDialog } from "@/components/financeiro/NewExpenseDialog";
 import { Payment, Professional, RevenueData, AccountReceivable, Expense } from "@/types/financial";
 import { useToast } from "@/hooks/use-toast";
+import { NewSupplierDialog } from "@/components/financeiro/NewSupplierDialog";
 
 const revenueData: RevenueData[] = [
   { date: "01/03", revenue: 1200, expenses: 800 },
@@ -113,9 +114,18 @@ const Financeiro = () => {
         </TabsContent>
 
         <TabsContent value="suppliers" className="space-y-4">
+          <div className="flex justify-between items-center mb-4">
+            <div>
+              <h2 className="text-lg font-semibold">Fornecedores</h2>
+              <p className="text-sm text-muted-foreground">
+                Gerencie seus fornecedores e pagamentos
+              </p>
+            </div>
+            <NewSupplierDialog />
+          </div>
           <Card>
             <CardHeader>
-              <CardTitle>Fornecedores</CardTitle>
+              <CardTitle>Lista de Fornecedores</CardTitle>
               <CardDescription>Em desenvolvimento</CardDescription>
             </CardHeader>
             <CardContent>
