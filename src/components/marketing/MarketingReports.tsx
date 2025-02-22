@@ -2,13 +2,21 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
-  BarChart,
-  LineChart,
-  PieChart,
+  BarChart as BarChartIcon,
+  PieChart as PieChartIcon,
   Download,
   FileText
 } from "lucide-react";
-import { ResponsiveContainer, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
+import { 
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer
+} from 'recharts';
 
 // Dados mockados para demonstração
 const campaignData = [
@@ -73,7 +81,7 @@ export function MarketingReports() {
             </CardHeader>
             <CardContent>
               <div className="h-[200px] flex items-center justify-center">
-                <PieChart className="h-32 w-32 text-muted-foreground" />
+                <PieChartIcon className="h-32 w-32 text-muted-foreground" />
               </div>
             </CardContent>
           </Card>
@@ -84,7 +92,7 @@ export function MarketingReports() {
             </CardHeader>
             <CardContent>
               <div className="h-[200px] flex items-center justify-center">
-                <BarChart className="h-32 w-32 text-muted-foreground" />
+                <BarChartIcon className="h-32 w-32 text-muted-foreground" />
               </div>
             </CardContent>
           </Card>
