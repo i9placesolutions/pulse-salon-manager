@@ -37,12 +37,6 @@ export const Navbar = ({ onMenuClick }: NavbarProps) => {
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Quick Actions */}
-          <Button size="sm" className="hidden md:flex">
-            <Plus className="w-4 h-4 mr-2" />
-            Novo Agendamento
-          </Button>
-
           {/* Notifications */}
           <Button variant="ghost" size="icon" className="relative">
             <Bell className="h-5 w-5" />
