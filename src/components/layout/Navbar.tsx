@@ -1,39 +1,20 @@
-
 import { Link } from "react-router-dom";
-import {
-  Menu,
-  Bell,
-  Plus,
-  User,
-  LogOut,
-} from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { Menu, Bell, Plus, User, LogOut } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-
 interface NavbarProps {
   onMenuClick: () => void;
 }
-
-export const Navbar = ({ onMenuClick }: NavbarProps) => {
-  return (
-    <header className="h-16 bg-white border-b sticky top-0 z-30">
+export const Navbar = ({
+  onMenuClick
+}: NavbarProps) => {
+  return <header className="h-16 bg-white border-b sticky top-0 z-30">
       <div className="h-full px-4 flex items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="lg:hidden"
-            onClick={onMenuClick}
-          >
+          <Button variant="ghost" size="icon" className="lg:hidden" onClick={onMenuClick}>
             <Menu className="h-5 w-5" />
           </Button>
-          <h1 className="font-semibold text-neutral">Dashboard</h1>
+          <h1 className="font-semibold text-neutral">Agendamentos</h1>
         </div>
 
         <div className="flex items-center gap-2">
@@ -46,10 +27,7 @@ export const Navbar = ({ onMenuClick }: NavbarProps) => {
           {/* User Menu */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                className="gap-2"
-              >
+              <Button variant="ghost" className="gap-2">
                 <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
                   <User className="w-4 h-4 text-primary" />
                 </div>
@@ -72,6 +50,5 @@ export const Navbar = ({ onMenuClick }: NavbarProps) => {
           </DropdownMenu>
         </div>
       </div>
-    </header>
-  );
+    </header>;
 };
