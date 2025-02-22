@@ -9,6 +9,7 @@ import { WorkingHoursForm } from "@/components/profissionais/WorkingHoursForm";
 import { AppointmentHistory } from "@/components/profissionais/AppointmentHistory";
 import { PerformanceMetrics } from "@/components/profissionais/PerformanceMetrics";
 import { CommissionManagement } from "@/components/profissionais/CommissionManagement";
+import { ProfessionalCommission } from "@/types/professional";
 
 // Dados mockados para exemplo
 const mockPerformance = {
@@ -27,7 +28,7 @@ const mockPerformance = {
   clientReturnRate: 0.75
 };
 
-const mockCommissions = [
+const mockCommissions: ProfessionalCommission[] = [
   {
     id: 1,
     paymentDate: "2024-03-01",
@@ -44,7 +45,7 @@ const mockCommissions = [
     referenceName: "Coloração",
     status: "pending"
   }
-] as const;
+];
 
 const mockAppointments = [
   {
@@ -69,7 +70,7 @@ const mockAppointments = [
 export default function ProfissionalDashboard() {
   const [isWorkingHoursOpen, setIsWorkingHoursOpen] = useState(false);
 
-  const handlePayCommission = (commission: typeof mockCommissions[0]) => {
+  const handlePayCommission = (commission: ProfessionalCommission) => {
     console.log("Pagar comissão:", commission);
   };
 
