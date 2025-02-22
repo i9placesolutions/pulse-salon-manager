@@ -28,33 +28,9 @@ export interface StockAlert {
   supplier: string;
 }
 
-export interface ClientReview {
-  id: number;
-  client: string;
-  rating: number;
-  comment: string;
-  service: string;
-  professional: string;
-  date: string;
-}
-
-export interface Birthday {
-  id: number;
-  client: string;
-  date: string;
-  lastService: string;
-  couponCode?: string;
-}
-
 export interface ServiceDistribution {
   name: string;
   value: number;
-}
-
-export interface PaymentMethod {
-  method: string;
-  value: number;
-  percentage: number;
 }
 
 export interface TopProduct {
@@ -62,3 +38,4 @@ export interface TopProduct {
   quantity: number;
   revenue: number;
 }
+
