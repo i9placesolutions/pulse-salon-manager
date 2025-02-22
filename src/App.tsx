@@ -42,7 +42,10 @@ const App = () => (
           <Route path="/terms" element={<Terms />} />
           <Route path="/privacy" element={<Privacy />} />
           
-          {/* Protected routes */}
+          {/* Professional dashboard without sidebar */}
+          <Route path="/profissional-dashboard" element={<ProfissionalDashboard />} />
+          
+          {/* Protected routes with sidebar */}
           <Route path="/dashboard" element={
             <AppLayout>
               <Dashboard />
@@ -101,11 +104,6 @@ const App = () => (
           <Route path="/mensalidade" element={
             <AppLayout>
               <Mensalidade />
-            </AppLayout>
-          } />
-          <Route path="/profissional-dashboard" element={
-            <AppLayout>
-              <ProfissionalDashboard />
             </AppLayout>
           } />
           <Route path="/profile" element={
