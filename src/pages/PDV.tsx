@@ -811,4 +811,97 @@ const PDV = () => {
                 sale.status === 'canceled' ? "opacity-75 bg-red-50" : ""
               }>
                 <CardHeader>
-                  <div className="flex items-center
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="font-medium">
+                        Venda #{sale.id}
+                      </h3>
+                      <p className="text-sm text-muted-foreground">
+                        {sale.date.toLocaleString()}
+                      </p>
+                      {sale.client && (
+                        <p className="text-sm text-muted-foreground">
+                          Cliente: {sale.client.name}
+                        </p>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-2xl font-bold">
+                        {formatCurrency(sale.finalTotal)}
+                      </span>
+                      {sale.status === 'completed' ? (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="text-red-500"
+                          onClick={() => handleCancelSale(sale.id)}
+                        >
+                          <Ban className="h-4 w-4" />
+                        </Button>
+                      ) : (
+                        <span className="text-red-500 text-sm">Cancelada</span>
+                      )}
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {sale.items.map((item) => (
+                      <div key={item.id} className="flex justify-between text-sm">
+                        <span>
+                          {item.name} x{item.cartQuantity}
+                          {item.discount && item.discount > 0 && (
+                            <span className="text-red-500 ml-1">
+                              (-{item.discount}%)
+                            </span>
+                          )}
+                        </span>
+                        <span>
+                          {formatCurrency(
+                            item.price * 
+                            item.cartQuantity * 
+                            (1 - ((item.discount || 0) / 100))
+                          )}
+                        </span>
+                      </div>
+                    ))}
+                    {sale.discount > 0 && (
+                      <div className="flex justify-between text-sm text-red-500">
+                        <span>Desconto geral ({sale.discount}%)</span>
+                        <span>
+                          -{formatCurrency(sale.total * (sale.discount / 100))}
+                        </span>
+                      </div>
+                    )}
+                    <div className="pt-2 border-t flex justify-between font-medium">
+                      <span>Formas de Pagamento:</span>
+                      <div className="text-right">
+                        {sale.paymentMethod.map((method, index) => (
+                          <div key={method}>
+                            {method}: {formatCurrency(sale.paymentValues[index])}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+                <div className="p-4 border-t flex justify-end gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handlePrintReceipt(sale)}
+                  >
+                    <Receipt className="h-4 w-4 mr-2" />
+                    Reimprimir
+                  </Button>
+                </div>
+              </Card>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+};
+
+export default PDV;
