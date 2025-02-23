@@ -1,12 +1,12 @@
 
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Send } from "lucide-react";
 import { MessageForm } from "./MessageForm";
 import { RecipientSelector } from "./RecipientSelector";
 import { ScheduleForm } from "./ScheduleForm";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 
 interface MessageCampaignData {
   title: string;
@@ -54,16 +54,16 @@ export function MessageCampaignDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
-        <DialogHeader>
-          <DialogTitle>Nova Mensagem</DialogTitle>
-          <DialogDescription>
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent className="w-[500px] sm:w-[540px]">
+        <SheetHeader>
+          <SheetTitle>Nova Mensagem</SheetTitle>
+          <SheetDescription>
             Configure e envie mensagens para seus clientes via WhatsApp
-          </DialogDescription>
-        </DialogHeader>
+          </SheetDescription>
+        </SheetHeader>
 
-        <div className="mt-4 space-y-6">
+        <div className="mt-6 space-y-6">
           <MessageForm 
             title={data.title}
             message={data.message}
@@ -100,7 +100,7 @@ export function MessageCampaignDialog({
             </Button>
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   );
 }
