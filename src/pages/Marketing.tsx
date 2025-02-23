@@ -1,3 +1,4 @@
+<lov-code>
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -25,6 +26,27 @@ import {
   Filter,
   Settings,
 } from "lucide-react";
+
+interface MessageFormData {
+  title: string;
+  message: string;
+  recipients: 'all' | 'vip' | 'inactive' | 'custom';
+  selectedClients: string[];
+  channels: string[];
+  scheduledFor?: string;
+}
+
+interface ScheduleFormData {
+  title: string;
+  type: 'message' | 'discount' | 'coupon';
+  message?: string;
+  discountType?: 'percentage' | 'fixed';
+  discountValue?: number;
+  startDate: string;
+  endDate: string;
+  recipients: 'all' | 'vip' | 'inactive' | 'custom';
+  channels: string[];
+}
 
 const marketingMetrics = [
   {
@@ -163,6 +185,25 @@ export default function Marketing() {
     channels: [],
   });
 
+  const [showMessageForm, setShowMessageForm] = useState(false);
+  const [messageFormData, setMessageFormData] = useState<MessageFormData>({
+    title: '',
+    message: '',
+    recipients: 'all',
+    selectedClients: [],
+    channels: [],
+  });
+
+  const [showScheduleForm, setShowScheduleForm] = useState(false);
+  const [scheduleFormData, setScheduleFormData] = useState<ScheduleFormData>({
+    title: '',
+    type: 'message',
+    startDate: '',
+    endDate: '',
+    recipients: 'all',
+    channels: [],
+  });
+
   const handleCreateCampaign = () => {
     setShowCampaignForm(true);
   };
@@ -175,6 +216,14 @@ export default function Marketing() {
     setShowAutomationForm(true);
   };
 
+  const handleNewMessage = () => {
+    setShowMessageForm(true);
+  };
+
+  const handleScheduleCampaign = () => {
+    setShowScheduleForm(true);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -185,16 +234,384 @@ export default function Marketing() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button>
+          <Button onClick={handleNewMessage}>
             <MessageSquare className="mr-2 h-4 w-4" />
             Nova Mensagem
           </Button>
-          <Button variant="outline">
+          <Button variant="outline" onClick={handleScheduleCampaign}>
             <Calendar className="mr-2 h-4 w-4" />
             Agendar Campanha
           </Button>
         </div>
       </div>
+
+      {showMessageForm && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Nova Mensagem</CardTitle>
+            <CardDescription>Envie uma mensagem personalizada para seus clientes</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="grid gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="message-title">Título</Label>
+                <Input 
+                  id="message-title"
+                  placeholder="Ex: Novidades da Semana"
+                  value={messageFormData.title}
+                  onChange={(e) => setMessageFormData({
+                    ...messageFormData,
+                    title: e.target.value
+                  })}
+                />
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="message-content">Mensagem</Label>
+                <Textarea 
+                  id="message-content"
+                  placeholder="Digite sua mensagem..."
+                  className="min-h-[100px]"
+                  value={messageFormData.message}
+                  onChange={(e) => setMessageFormData({
+                    ...messageFormData,
+                    message: e.target.value
+                  })}
+                />
+              </div>
+
+              <div className="space-y-4">
+                <Label>Destinatários</Label>
+                <RadioGroup
+                  value={messageFormData.recipients}
+                  onValueChange={(value: 'all' | 'vip' | 'inactive' | 'custom') => 
+                    setMessageFormData({
+                      ...messageFormData,
+                      recipients: value
+                    })
+                  }
+                >
+                  <div className="grid gap-2">
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="all" id="recipients-all" />
+                      <Label htmlFor="recipients-all">Todos os clientes</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="vip" id="recipients-vip" />
+                      <Label htmlFor="recipients-vip">Clientes VIP</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="inactive" id="recipients-inactive" />
+                      <Label htmlFor="recipients-inactive">Clientes Inativos</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="custom" id="recipients-custom" />
+                      <Label htmlFor="recipients-custom">Seleção Personalizada</Label>
+                    </div>
+                  </div>
+                </RadioGroup>
+              </div>
+
+              <div className="space-y-4">
+                <Label>Canais de Envio</Label>
+                <div className="space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <Switch 
+                      id="msg-channel-whatsapp"
+                      checked={messageFormData.channels.includes('whatsapp')}
+                      onCheckedChange={(checked) => {
+                        const channels = checked 
+                          ? [...messageFormData.channels, 'whatsapp']
+                          : messageFormData.channels.filter(c => c !== 'whatsapp');
+                        setMessageFormData({ ...messageFormData, channels });
+                      }}
+                    />
+                    <Label htmlFor="msg-channel-whatsapp">WhatsApp</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Switch 
+                      id="msg-channel-email"
+                      checked={messageFormData.channels.includes('email')}
+                      onCheckedChange={(checked) => {
+                        const channels = checked 
+                          ? [...messageFormData.channels, 'email']
+                          : messageFormData.channels.filter(c => c !== 'email');
+                        setMessageFormData({ ...messageFormData, channels });
+                      }}
+                    />
+                    <Label htmlFor="msg-channel-email">E-mail</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Switch 
+                      id="msg-channel-notification"
+                      checked={messageFormData.channels.includes('notification')}
+                      onCheckedChange={(checked) => {
+                        const channels = checked 
+                          ? [...messageFormData.channels, 'notification']
+                          : messageFormData.channels.filter(c => c !== 'notification');
+                        setMessageFormData({ ...messageFormData, channels });
+                      }}
+                    />
+                    <Label htmlFor="msg-channel-notification">Notificação no Sistema</Label>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="schedule-time">Agendar Envio (Opcional)</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  <Input 
+                    id="schedule-time" 
+                    type="date"
+                    value={messageFormData.scheduledFor}
+                    onChange={(e) => setMessageFormData({
+                      ...messageFormData,
+                      scheduledFor: e.target.value
+                    })}
+                  />
+                  <Input type="time" defaultValue="09:00" />
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setShowMessageForm(false)}>
+                Cancelar
+              </Button>
+              <Button>
+                <Send className="mr-2 h-4 w-4" />
+                Enviar Mensagem
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {showScheduleForm && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Agendar Campanha</CardTitle>
+            <CardDescription>Configure uma campanha para ser executada automaticamente</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="grid gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="schedule-title">Título da Campanha</Label>
+                <Input 
+                  id="schedule-title"
+                  placeholder="Ex: Promoção de Fim de Semana"
+                  value={scheduleFormData.title}
+                  onChange={(e) => setScheduleFormData({
+                    ...scheduleFormData,
+                    title: e.target.value
+                  })}
+                />
+              </div>
+
+              <div className="space-y-4">
+                <Label>Tipo de Campanha</Label>
+                <RadioGroup
+                  value={scheduleFormData.type}
+                  onValueChange={(value: 'message' | 'discount' | 'coupon') => 
+                    setScheduleFormData({
+                      ...scheduleFormData,
+                      type: value
+                    })
+                  }
+                >
+                  <div className="grid gap-2">
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="message" id="type-message" />
+                      <Label htmlFor="type-message">Mensagem</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="discount" id="type-discount" />
+                      <Label htmlFor="type-discount">Desconto</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="coupon" id="type-coupon" />
+                      <Label htmlFor="type-coupon">Cupom</Label>
+                    </div>
+                  </div>
+                </RadioGroup>
+              </div>
+
+              {scheduleFormData.type === 'message' && (
+                <div className="grid gap-2">
+                  <Label htmlFor="schedule-message">Mensagem</Label>
+                  <Textarea 
+                    id="schedule-message"
+                    placeholder="Digite sua mensagem..."
+                    className="min-h-[100px]"
+                    value={scheduleFormData.message}
+                    onChange={(e) => setScheduleFormData({
+                      ...scheduleFormData,
+                      message: e.target.value
+                    })}
+                  />
+                </div>
+              )}
+
+              {(scheduleFormData.type === 'discount' || scheduleFormData.type === 'coupon') && (
+                <div className="space-y-4">
+                  <div className="grid gap-2">
+                    <Label>Tipo de Desconto</Label>
+                    <RadioGroup
+                      value={scheduleFormData.discountType}
+                      onValueChange={(value: 'percentage' | 'fixed') => 
+                        setScheduleFormData({
+                          ...scheduleFormData,
+                          discountType: value
+                        })
+                      }
+                    >
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="percentage" id="discount-percentage" />
+                        <Label htmlFor="discount-percentage">Porcentagem (%)</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="fixed" id="discount-fixed" />
+                        <Label htmlFor="discount-fixed">Valor Fixo (R$)</Label>
+                      </div>
+                    </RadioGroup>
+                  </div>
+
+                  <div className="grid gap-2">
+                    <Label htmlFor="discount-value">Valor do Desconto</Label>
+                    <Input 
+                      id="discount-value"
+                      type="number"
+                      placeholder={scheduleFormData.discountType === 'percentage' ? '10' : '50'}
+                      value={scheduleFormData.discountValue}
+                      onChange={(e) => setScheduleFormData({
+                        ...scheduleFormData,
+                        discountValue: Number(e.target.value)
+                      })}
+                    />
+                  </div>
+                </div>
+              )}
+
+              <div className="grid gap-2">
+                <Label>Período da Campanha</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="grid gap-2">
+                    <Label htmlFor="schedule-start">Data de Início</Label>
+                    <Input 
+                      id="schedule-start"
+                      type="date"
+                      value={scheduleFormData.startDate}
+                      onChange={(e) => setScheduleFormData({
+                        ...scheduleFormData,
+                        startDate: e.target.value
+                      })}
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="schedule-end">Data de Término</Label>
+                    <Input 
+                      id="schedule-end"
+                      type="date"
+                      value={scheduleFormData.endDate}
+                      onChange={(e) => setScheduleFormData({
+                        ...scheduleFormData,
+                        endDate: e.target.value
+                      })}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <Label>Público-alvo</Label>
+                <RadioGroup
+                  value={scheduleFormData.recipients}
+                  onValueChange={(value: 'all' | 'vip' | 'inactive' | 'custom') => 
+                    setScheduleFormData({
+                      ...scheduleFormData,
+                      recipients: value
+                    })
+                  }
+                >
+                  <div className="grid gap-2">
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="all" id="schedule-all" />
+                      <Label htmlFor="schedule-all">Todos os clientes</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="vip" id="schedule-vip" />
+                      <Label htmlFor="schedule-vip">Clientes VIP</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="inactive" id="schedule-inactive" />
+                      <Label htmlFor="schedule-inactive">Clientes Inativos</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="custom" id="schedule-custom" />
+                      <Label htmlFor="schedule-custom">Seleção Personalizada</Label>
+                    </div>
+                  </div>
+                </RadioGroup>
+              </div>
+
+              <div className="space-y-4">
+                <Label>Canais de Comunicação</Label>
+                <div className="space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <Switch 
+                      id="schedule-channel-whatsapp"
+                      checked={scheduleFormData.channels.includes('whatsapp')}
+                      onCheckedChange={(checked) => {
+                        const channels = checked 
+                          ? [...scheduleFormData.channels, 'whatsapp']
+                          : scheduleFormData.channels.filter(c => c !== 'whatsapp');
+                        setScheduleFormData({ ...scheduleFormData, channels });
+                      }}
+                    />
+                    <Label htmlFor="schedule-channel-whatsapp">WhatsApp</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Switch 
+                      id="schedule-channel-email"
+                      checked={scheduleFormData.channels.includes('email')}
+                      onCheckedChange={(checked) => {
+                        const channels = checked 
+                          ? [...scheduleFormData.channels, 'email']
+                          : scheduleFormData.channels.filter(c => c !== 'email');
+                        setScheduleFormData({ ...scheduleFormData, channels });
+                      }}
+                    />
+                    <Label htmlFor="schedule-channel-email">E-mail</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Switch 
+                      id="schedule-channel-notification"
+                      checked={scheduleFormData.channels.includes('notification')}
+                      onCheckedChange={(checked) => {
+                        const channels = checked 
+                          ? [...scheduleFormData.channels, 'notification']
+                          : scheduleFormData.channels.filter(c => c !== 'notification');
+                        setScheduleFormData({ ...scheduleFormData, channels });
+                      }}
+                    />
+                    <Label htmlFor="schedule-channel-notification">Notificação no Sistema</Label>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setShowScheduleForm(false)}>
+                Cancelar
+              </Button>
+              <Button>
+                <Calendar className="mr-2 h-4 w-4" />
+                Agendar Campanha
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {marketingMetrics.map((metric, index) => (
@@ -539,490 +956,3 @@ export default function Marketing() {
                         <div className="grid gap-2">
                           <Label htmlFor="coupon-value">
                             {couponFormData.type === 'percentage' ? 'Porcentagem de Desconto' : 'Valor do Desconto'}
-                          </Label>
-                          <Input 
-                            id="coupon-value"
-                            type="number"
-                            placeholder={couponFormData.type === 'percentage' ? '10' : '50'}
-                            value={couponFormData.value}
-                            onChange={(e) => setCouponFormData({
-                              ...couponFormData,
-                              value: Number(e.target.value)
-                            })}
-                          />
-                        </div>
-
-                        <div className="grid gap-4 sm:grid-cols-2">
-                          <div className="grid gap-2">
-                            <Label htmlFor="coupon-start">Válido a partir de</Label>
-                            <Input 
-                              id="coupon-start" 
-                              type="date"
-                              value={couponFormData.startDate}
-                              onChange={(e) => setCouponFormData({
-                                ...couponFormData,
-                                startDate: e.target.value
-                              })}
-                            />
-                          </div>
-                          <div className="grid gap-2">
-                            <Label htmlFor="coupon-end">Válido até</Label>
-                            <Input 
-                              id="coupon-end" 
-                              type="date"
-                              value={couponFormData.endDate}
-                              onChange={(e) => setCouponFormData({
-                                ...couponFormData,
-                                endDate: e.target.value
-                              })}
-                            />
-                          </div>
-                        </div>
-
-                        <div className="grid gap-2">
-                          <Label htmlFor="coupon-max-uses">Limite de Usos</Label>
-                          <Input 
-                            id="coupon-max-uses"
-                            type="number"
-                            placeholder="100"
-                            value={couponFormData.maxUses}
-                            onChange={(e) => setCouponFormData({
-                              ...couponFormData,
-                              maxUses: Number(e.target.value)
-                            })}
-                          />
-                        </div>
-
-                        <div className="grid gap-2">
-                          <Label htmlFor="min-purchase">Valor Mínimo da Compra</Label>
-                          <Input 
-                            id="min-purchase"
-                            type="number"
-                            placeholder="0"
-                            value={couponFormData.minPurchaseValue}
-                            onChange={(e) => setCouponFormData({
-                              ...couponFormData,
-                              minPurchaseValue: Number(e.target.value)
-                            })}
-                          />
-                        </div>
-                      </div>
-
-                      <div className="flex justify-end gap-2">
-                        <Button variant="outline" onClick={() => setShowCouponForm(false)}>
-                          Cancelar
-                        </Button>
-                        <Button>
-                          Criar Cupom
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-
-                {!showCouponForm && (
-                  <div className="rounded-lg border">
-                    <div className="p-4 text-sm text-center text-muted-foreground">
-                      Nenhum cupom criado ainda
-                    </div>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="aniversarios">
-          <Card>
-            <CardHeader>
-              <CardTitle>Mensagens de Aniversário</CardTitle>
-              <CardDescription>
-                Configure mensagens automáticas para aniversariantes
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-4">
-                <div className="flex items-center space-x-2">
-                  <Switch id="birthday-active" />
-                  <Label htmlFor="birthday-active">Ativar mensagens de aniversário</Label>
-                </div>
-
-                <div className="grid gap-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="birthday-message">Mensagem Personalizada</Label>
-                    <Textarea 
-                      id="birthday-message"
-                      placeholder="Ex: Feliz aniversário! Como presente especial, preparamos um desconto exclusivo para você..."
-                    />
-                  </div>
-
-                  <div className="grid gap-2">
-                    <Label>Canais de Envio</Label>
-                    <div className="space-y-2">
-                      <div className="flex items-center space-x-2">
-                        <Switch id="birthday-whatsapp" />
-                        <Label htmlFor="birthday-whatsapp">WhatsApp</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Switch id="birthday-email" />
-                        <Label htmlFor="birthday-email">E-mail</Label>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="grid gap-2">
-                    <Label htmlFor="birthday-time">Horário de Envio</Label>
-                    <Input type="time" id="birthday-time" defaultValue="09:00" />
-                  </div>
-
-                  <div className="grid gap-2">
-                    <Label>Benefício de Aniversário</Label>
-                    <div className="space-y-2">
-                      <div className="flex items-center space-x-2">
-                        <Switch id="birthday-discount" />
-                        <Label htmlFor="birthday-discount">Oferecer desconto especial</Label>
-                      </div>
-                      <Input 
-                        type="number" 
-                        placeholder="Valor do desconto em %" 
-                        className="max-w-[200px]"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex justify-end gap-2">
-                  <Button variant="outline">
-                    Testar Mensagem
-                  </Button>
-                  <Button>
-                    Salvar Configurações
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="automacao">
-          <Card>
-            <CardHeader>
-              <CardTitle>Automação de Marketing</CardTitle>
-              <CardDescription>
-                Configure regras automáticas para suas campanhas
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <Button onClick={handleCreateAutomation}>
-                <Zap className="mr-2 h-4 w-4" />
-                Criar Nova Automação
-              </Button>
-
-              {showAutomationForm && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Nova Regra de Automação</CardTitle>
-                    <CardDescription>Configure as condições e ações da automação</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    <div className="grid gap-4">
-                      <div className="grid gap-2">
-                        <Label htmlFor="automation-name">Nome da Regra</Label>
-                        <Input 
-                          id="automation-name"
-                          placeholder="Ex: Reativação de Clientes Inativos"
-                          value={automationRule.name}
-                          onChange={(e) => setAutomationRule({
-                            ...automationRule,
-                            name: e.target.value
-                          })}
-                        />
-                      </div>
-
-                      <div className="space-y-4">
-                        <Label>Gatilho da Automação</Label>
-                        <RadioGroup
-                          value={automationRule.trigger}
-                          onValueChange={(value: 'inactive' | 'birthday' | 'after_service' | 'vip_status') =>
-                            setAutomationRule({
-                              ...automationRule,
-                              trigger: value
-                            })
-                          }
-                        >
-                          <div className="grid gap-2">
-                            <div className="flex items-center space-x-2">
-                              <RadioGroupItem value="inactive" id="trigger-inactive" />
-                              <Label htmlFor="trigger-inactive">Cliente Inativo</Label>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <RadioGroupItem value="birthday" id="trigger-birthday" />
-                              <Label htmlFor="trigger-birthday">Aniversário</Label>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <RadioGroupItem value="after_service" id="trigger-service" />
-                              <Label htmlFor="trigger-service">Após Atendimento</Label>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <RadioGroupItem value="vip_status" id="trigger-vip" />
-                              <Label htmlFor="trigger-vip">Status VIP Atingido</Label>
-                            </div>
-                          </div>
-                        </RadioGroup>
-                      </div>
-
-                      <div className="grid gap-2">
-                        <Label htmlFor="automation-days">Dias para Ativação</Label>
-                        <Input 
-                          id="automation-days"
-                          type="number"
-                          placeholder="30"
-                          value={automationRule.days}
-                          onChange={(e) => setAutomationRule({
-                            ...automationRule,
-                            days: Number(e.target.value)
-                          })}
-                        />
-                      </div>
-
-                      <div className="space-y-4">
-                        <Label>Ação</Label>
-                        <RadioGroup
-                          value={automationRule.action}
-                          onValueChange={(value: 'discount' | 'message' | 'coupon') =>
-                            setAutomationRule({
-                              ...automationRule,
-                              action: value
-                            })
-                          }
-                        >
-                          <div className="grid gap-2">
-                            <div className="flex items-center space-x-2">
-                              <RadioGroupItem value="discount" id="action-discount" />
-                              <Label htmlFor="action-discount">Aplicar Desconto</Label>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <RadioGroupItem value="message" id="action-message" />
-                              <Label htmlFor="action-message">Enviar Mensagem</Label>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <RadioGroupItem value="coupon" id="action-coupon" />
-                              <Label htmlFor="action-coupon">Gerar Cupom</Label>
-                            </div>
-                          </div>
-                        </RadioGroup>
-                      </div>
-
-                      {automationRule.action === 'message' && (
-                        <div className="grid gap-2">
-                          <Label htmlFor="automation-message">Mensagem</Label>
-                          <Textarea 
-                            id="automation-message"
-                            placeholder="Digite sua mensagem..."
-                            value={automationRule.message}
-                            onChange={(e) => setAutomationRule({
-                              ...automationRule,
-                              message: e.target.value
-                            })}
-                          />
-                        </div>
-                      )}
-
-                      {(automationRule.action === 'discount' || automationRule.action === 'coupon') && (
-                        <div className="grid gap-2">
-                          <Label htmlFor="automation-value">
-                            {automationRule.action === 'discount' ? 'Porcentagem de Desconto' : 'Valor do Cupom'}
-                          </Label>
-                          <Input 
-                            id="automation-value"
-                            type="number"
-                            placeholder="10"
-                            value={automationRule.value}
-                            onChange={(e) => setAutomationRule({
-                              ...automationRule,
-                              value: Number(e.target.value)
-                            })}
-                          />
-                        </div>
-                      )}
-
-                      <div className="space-y-4">
-                        <Label>Canais de Comunicação</Label>
-                        <div className="space-y-2">
-                          <div className="flex items-center space-x-2">
-                            <Switch 
-                              id="channel-whatsapp"
-                              checked={automationRule.channels.includes('whatsapp')}
-                              onCheckedChange={(checked) => {
-                                const channels = checked 
-                                  ? [...automationRule.channels, 'whatsapp']
-                                  : automationRule.channels.filter(c => c !== 'whatsapp');
-                                setAutomationRule({ ...automationRule, channels });
-                              }}
-                            />
-                            <Label htmlFor="channel-whatsapp">WhatsApp</Label>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <Switch 
-                              id="channel-email"
-                              checked={automationRule.channels.includes('email')}
-                              onCheckedChange={(checked) => {
-                                const channels = checked 
-                                  ? [...automationRule.channels, 'email']
-                                  : automationRule.channels.filter(c => c !== 'email');
-                                setAutomationRule({ ...automationRule, channels });
-                              }}
-                            />
-                            <Label htmlFor="channel-email">E-mail</Label>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <Switch 
-                              id="channel-notification"
-                              checked={automationRule.channels.includes('notification')}
-                              onCheckedChange={(checked) => {
-                                const channels = checked 
-                                  ? [...automationRule.channels, 'notification']
-                                  : automationRule.channels.filter(c => c !== 'notification');
-                                setAutomationRule({ ...automationRule, channels });
-                              }}
-                            />
-                            <Label htmlFor="channel-notification">Notificação no Sistema</Label>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex justify-end gap-2">
-                      <Button variant="outline" onClick={() => setShowAutomationForm(false)}>
-                        Cancelar
-                      </Button>
-                      <Button>
-                        Criar Automação
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {!showAutomationForm && (
-                <div className="space-y-4">
-                  <h4 className="text-sm font-medium">Automações Ativas</h4>
-                  <div className="rounded-lg border">
-                    <div className="p-4 text-sm text-center text-muted-foreground">
-                      Nenhuma automação configurada
-                    </div>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="relatorios">
-          <div className="grid gap-4 md:grid-cols-2">
-            <Card>
-              <CardHeader>
-                <CardTitle>Desempenho de Campanhas</CardTitle>
-                <CardDescription>
-                  Visualize o desempenho das suas campanhas
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="flex gap-2">
-                  <Button>
-                    <BarChart className="mr-2 h-4 w-4" />
-                    Gerar Relatório
-                  </Button>
-                  <Button variant="outline">
-                    <Calendar className="mr-2 h-4 w-4" />
-                    Filtrar por Data
-                  </Button>
-                </div>
-
-                <div className="space-y-4">
-                  <div className="grid gap-4">
-                    <div className="grid gap-2">
-                      <Label>Período de Análise</Label>
-                      <div className="grid grid-cols-2 gap-2">
-                        <Input type="date" />
-                        <Input type="date" />
-                      </div>
-                    </div>
-
-                    <div className="grid gap-2">
-                      <Label>Tipo de Campanha</Label>
-                      <RadioGroup defaultValue="all">
-                        <div className="grid gap-2">
-                          <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="all" id="filter-all" />
-                            <Label htmlFor="filter-all">Todas</Label>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="active" id="filter-active" />
-                            <Label htmlFor="filter-active">Ativas</Label>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="completed" id="filter-completed" />
-                            <Label htmlFor="filter-completed">Concluídas</Label>
-                          </div>
-                        </div>
-                      </RadioGroup>
-                    </div>
-                  </div>
-
-                  <div className="rounded-lg border">
-                    <div className="p-4 text-sm text-center text-muted-foreground">
-                      Selecione os filtros para visualizar o relatório
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Métricas de Conversão</CardTitle>
-                <CardDescription>
-                  Acompanhe as taxas de conversão por canal
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid gap-4">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-1">
-                      <p className="text-sm font-medium">WhatsApp</p>
-                      <p className="text-xs text-muted-foreground">Taxa de abertura: 68%</p>
-                    </div>
-                    <div className="h-4 w-48 rounded-full bg-secondary">
-                      <div className="h-4 rounded-full bg-primary" style={{ width: "68%" }} />
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-1">
-                      <p className="text-sm font-medium">E-mail</p>
-                      <p className="text-xs text-muted-foreground">Taxa de abertura: 45%</p>
-                    </div>
-                    <div className="h-4 w-48 rounded-full bg-secondary">
-                      <div className="h-4 rounded-full bg-primary" style={{ width: "45%" }} />
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-1">
-                      <p className="text-sm font-medium">Notificações</p>
-                      <p className="text-xs text-muted-foreground">Taxa de abertura: 92%</p>
-                    </div>
-                    <div className="h-4 w-48 rounded-full bg-secondary">
-                      <div className="h-4 rounded-full bg-primary" style={{ width: "92%" }} />
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-      </Tabs>
-    </div>
-  );
-}
