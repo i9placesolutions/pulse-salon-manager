@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { MessageSquare, Send } from "lucide-react";
+import { MessageSquare, Send, Upload, Users } from "lucide-react";
 
 interface MessageCampaignData {
   title: string;
@@ -32,6 +32,14 @@ export function MessageCampaignDialog({
   onChange, 
   onSubmit 
 }: MessageCampaignDialogProps) {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      console.log("File selected:", file);
+      // Aqui você pode implementar o upload do arquivo
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">
@@ -65,6 +73,23 @@ export function MessageCampaignDialog({
               />
             </div>
 
+            <div className="grid gap-2">
+              <Label>Mídia</Label>
+              <div className="flex items-center gap-4">
+                <Button variant="outline" className="w-full" onClick={() => document.getElementById('file-upload')?.click()}>
+                  <Upload className="mr-2 h-4 w-4" />
+                  Adicionar Mídia
+                </Button>
+                <input
+                  type="file"
+                  id="file-upload"
+                  className="hidden"
+                  accept="image/*,video/*"
+                  onChange={handleFileChange}
+                />
+              </div>
+            </div>
+
             <div className="space-y-4">
               <Label>Destinatários</Label>
               <RadioGroup
@@ -92,6 +117,12 @@ export function MessageCampaignDialog({
                   </div>
                 </div>
               </RadioGroup>
+              {data.recipients === 'custom' && (
+                <Button variant="outline" className="w-full mt-2">
+                  <Users className="mr-2 h-4 w-4" />
+                  Selecionar Contatos
+                </Button>
+              )}
             </div>
 
             <div className="space-y-4">
