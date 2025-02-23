@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -8,6 +9,15 @@ import { CampaignCard } from "@/components/marketing/CampaignCard";
 import { CouponManagement } from "@/components/marketing/CouponManagement";
 import { BirthdayAutomation } from "@/components/marketing/BirthdayAutomation";
 import { MessageCampaignDialog } from "@/components/marketing/MessageCampaignDialog";
+
+interface MessageCampaignData {
+  title: string;
+  message: string;
+  recipients: 'all' | 'vip' | 'inactive' | 'custom';
+  channels: string[];
+  scheduleDate?: string;
+  scheduleTime?: string;
+}
 
 const marketingMetrics = [
   {
