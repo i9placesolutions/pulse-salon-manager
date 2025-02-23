@@ -11,20 +11,21 @@ import {
   Send,
   BarChart,
   Star,
-  Bell
+  Bell,
+  Calendar,
+  Percent,
+  MailCheck,
+  Target,
+  Zap,
 } from "lucide-react";
-
-import { WhatsAppConfig } from "@/components/marketing/WhatsAppConfig";
-import { LoyaltyProgram } from "@/components/marketing/LoyaltyProgram";
-import { MarketingReports } from "@/components/marketing/MarketingReports";
 
 // Dados mockados para demonstração
 const marketingMetrics = [
   {
-    title: "Mensagens Enviadas",
-    value: "1,234",
+    title: "Campanhas Ativas",
+    value: "12",
     change: 12.5,
-    icon: MessageSquare,
+    icon: Target,
     description: "este mês"
   },
   {
@@ -35,30 +36,74 @@ const marketingMetrics = [
     description: "em circulação"
   },
   {
-    title: "Clientes Retidos",
-    value: "89%",
+    title: "Taxa de Conversão",
+    value: "24%",
     change: 5.3,
-    icon: Users,
-    description: "taxa de retenção"
+    icon: Zap,
+    description: "média das campanhas"
   },
   {
-    title: "Novas Indicações",
-    value: "28",
+    title: "Economia Gerada",
+    value: "R$ 2.450",
     change: 15.8,
-    icon: UserPlus,
-    description: "este mês"
+    icon: Percent,
+    description: "para clientes"
+  },
+];
+
+// Tipos de campanha mockados para demonstração
+const campaignTypes = [
+  {
+    id: 1,
+    type: "discount",
+    title: "Desconto Direto",
+    description: "Ofereça descontos percentuais ou valores fixos",
+    icon: Percent,
+  },
+  {
+    id: 2,
+    type: "coupon",
+    title: "Cupom Promocional",
+    description: "Crie códigos promocionais exclusivos",
+    icon: Gift,
+  },
+  {
+    id: 3,
+    type: "cashback",
+    title: "Cashback",
+    description: "Recompense clientes com dinheiro de volta",
+    icon: Star,
+  },
+  {
+    id: 4,
+    type: "vip",
+    title: "Bônus VIP",
+    description: "Benefícios exclusivos para clientes VIP",
+    icon: Users,
   },
 ];
 
 export default function Marketing() {
+  const [selectedCampaignType, setSelectedCampaignType] = useState<string | null>(null);
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-neutral">Marketing e Fidelização</h1>
+          <h1 className="text-2xl font-semibold text-neutral">Marketing e Campanhas</h1>
           <p className="text-sm text-muted-foreground">
-            Gerencie suas campanhas e programas de fidelidade
+            Gerencie suas campanhas promocionais e programas de fidelidade
           </p>
+        </div>
+        <div className="flex gap-2">
+          <Button>
+            <MessageSquare className="mr-2 h-4 w-4" />
+            Nova Mensagem
+          </Button>
+          <Button variant="outline">
+            <Calendar className="mr-2 h-4 w-4" />
+            Agendar Campanha
+          </Button>
         </div>
       </div>
 
@@ -75,10 +120,10 @@ export default function Marketing() {
             <CardContent>
               <div className="text-2xl font-bold">{metric.value}</div>
               <p className="text-xs text-muted-foreground flex items-center mt-1">
-                <span className={`mr-1 ${metric.change > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                <span className={metric.change > 0 ? 'text-green-500' : 'text-red-500'}>
                   {metric.change > 0 ? '↑' : '↓'} {Math.abs(metric.change)}%
                 </span>
-                {metric.description}
+                <span className="ml-1">{metric.description}</span>
               </p>
             </CardContent>
           </Card>
@@ -86,77 +131,142 @@ export default function Marketing() {
       </div>
 
       {/* Abas de funcionalidades */}
-      <Tabs defaultValue="mensagens" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="mensagens">
-            <MessageSquare className="h-4 w-4 mr-2" />
-            Mensagens
+      <Tabs defaultValue="campanhas" className="space-y-4">
+        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-5 gap-4">
+          <TabsTrigger value="campanhas" className="gap-2">
+            <Target className="h-4 w-4" />
+            Campanhas
           </TabsTrigger>
-          <TabsTrigger value="fidelidade">
-            <Star className="h-4 w-4 mr-2" />
-            Fidelidade
+          <TabsTrigger value="cupons" className="gap-2">
+            <Gift className="h-4 w-4" />
+            Cupons
           </TabsTrigger>
-          <TabsTrigger value="automacao">
-            <Bell className="h-4 w-4 mr-2" />
+          <TabsTrigger value="aniversarios" className="gap-2">
+            <Bell className="h-4 w-4" />
+            Aniversários
+          </TabsTrigger>
+          <TabsTrigger value="automacao" className="gap-2">
+            <Zap className="h-4 w-4" />
             Automação
           </TabsTrigger>
-          <TabsTrigger value="relatorios">
-            <BarChart className="h-4 w-4 mr-2" />
+          <TabsTrigger value="relatorios" className="gap-2">
+            <BarChart className="h-4 w-4" />
             Relatórios
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="mensagens">
-          <WhatsAppConfig />
-        </TabsContent>
-
-        <TabsContent value="fidelidade">
-          <LoyaltyProgram />
-        </TabsContent>
-
-        <TabsContent value="automacao">
+        <TabsContent value="campanhas">
           <Card>
             <CardHeader>
-              <CardTitle>Automação de Mensagens</CardTitle>
+              <CardTitle>Nova Campanha</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Card>
-                  <CardContent className="pt-6">
-                    <h3 className="font-medium mb-2">Lembretes de Agendamento</h3>
-                    <p className="text-sm text-muted-foreground">Envio automático de confirmações e lembretes</p>
-                    <Button variant="link" className="mt-2 h-auto p-0">
-                      Configurar
-                    </Button>
-                  </CardContent>
-                </Card>
-                
-                <Card>
-                  <CardContent className="pt-6">
-                    <h3 className="font-medium mb-2">Aniversariantes</h3>
-                    <p className="text-sm text-muted-foreground">Mensagens automáticas de felicitação</p>
-                    <Button variant="link" className="mt-2 h-auto p-0">
-                      Configurar
-                    </Button>
-                  </CardContent>
-                </Card>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {campaignTypes.map((type) => (
+                  <Card 
+                    key={type.id}
+                    className={`cursor-pointer transition-all ${
+                      selectedCampaignType === type.type 
+                        ? 'border-primary ring-2 ring-primary/20' 
+                        : 'hover:border-primary/50'
+                    }`}
+                    onClick={() => setSelectedCampaignType(type.type)}
+                  >
+                    <CardContent className="pt-6">
+                      <div className="flex flex-col items-center text-center gap-2">
+                        <div className="p-3 bg-primary/10 rounded-full">
+                          <type.icon className="h-6 w-6 text-primary" />
+                        </div>
+                        <h3 className="font-medium">{type.title}</h3>
+                        <p className="text-sm text-muted-foreground">{type.description}</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
 
-                <Card>
-                  <CardContent className="pt-6">
-                    <h3 className="font-medium mb-2">Recuperação</h3>
-                    <p className="text-sm text-muted-foreground">Reativação de clientes inativos</p>
-                    <Button variant="link" className="mt-2 h-auto p-0">
-                      Configurar
-                    </Button>
-                  </CardContent>
-                </Card>
+              {selectedCampaignType && (
+                <div className="mt-6 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-medium">Configurar Campanha</h3>
+                    <div className="flex gap-2">
+                      <Button variant="outline">
+                        Salvar Rascunho
+                      </Button>
+                      <Button>
+                        Criar Campanha
+                      </Button>
+                    </div>
+                  </div>
+                  <Card>
+                    <CardContent className="pt-6">
+                      <p className="text-sm text-muted-foreground">
+                        Selecione "Criar Campanha" para configurar os detalhes da sua campanha {selectedCampaignType}.
+                      </p>
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="cupons">
+          <Card>
+            <CardHeader>
+              <CardTitle>Gerenciar Cupons</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <Button className="w-full sm:w-auto">
+                  <Gift className="mr-2 h-4 w-4" />
+                  Criar Novo Cupom
+                </Button>
               </div>
             </CardContent>
           </Card>
         </TabsContent>
 
+        <TabsContent value="aniversarios">
+          <Card>
+            <CardHeader>
+              <CardTitle>Mensagens de Aniversário</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Button className="w-full sm:w-auto">
+                <MailCheck className="mr-2 h-4 w-4" />
+                Configurar Mensagem Automática
+              </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="automacao">
+          <Card>
+            <CardHeader>
+              <CardTitle>Automação de Marketing</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Button className="w-full sm:w-auto">
+                <Zap className="mr-2 h-4 w-4" />
+                Criar Nova Automação
+              </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         <TabsContent value="relatorios">
-          <MarketingReports />
+          <Card>
+            <CardHeader>
+              <CardTitle>Relatórios de Campanhas</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Button className="w-full sm:w-auto">
+                <BarChart className="mr-2 h-4 w-4" />
+                Gerar Relatório
+              </Button>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>
