@@ -126,27 +126,19 @@ export function MessageCampaignDialog({
             </div>
 
             <div className="space-y-4">
-              <Label>Canais de Envio</Label>
+              <Label>Canal de Envio</Label>
               <div className="space-y-2">
-                {[
-                  { id: 'whatsapp', label: 'WhatsApp' },
-                  { id: 'email', label: 'E-mail' },
-                  { id: 'notification', label: 'Notificação no Sistema' }
-                ].map(({ id, label }) => (
-                  <div key={id} className="flex items-center space-x-2">
-                    <Switch 
-                      id={`channel-${id}`}
-                      checked={data.channels.includes(id)}
-                      onCheckedChange={(checked) => {
-                        const channels = checked 
-                          ? [...data.channels, id]
-                          : data.channels.filter(c => c !== id);
-                        onChange({ ...data, channels });
-                      }}
-                    />
-                    <Label htmlFor={`channel-${id}`}>{label}</Label>
-                  </div>
-                ))}
+                <div className="flex items-center space-x-2">
+                  <Switch 
+                    id="channel-whatsapp"
+                    checked={data.channels.includes('whatsapp')}
+                    onCheckedChange={(checked) => {
+                      const channels = checked ? ['whatsapp'] : [];
+                      onChange({ ...data, channels });
+                    }}
+                  />
+                  <Label htmlFor="channel-whatsapp">WhatsApp</Label>
+                </div>
               </div>
             </div>
 
