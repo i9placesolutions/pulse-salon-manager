@@ -1,4 +1,3 @@
-<lov-code>
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -956,3 +955,108 @@ export default function Marketing() {
                         <div className="grid gap-2">
                           <Label htmlFor="coupon-value">
                             {couponFormData.type === 'percentage' ? 'Porcentagem de Desconto' : 'Valor do Desconto'}
+                          </Label>
+                          <Input 
+                            id="coupon-value"
+                            type="number"
+                            placeholder={couponFormData.type === 'percentage' ? '10' : '50'}
+                            value={couponFormData.value}
+                            onChange={(e) => setCouponFormData({
+                              ...couponFormData,
+                              value: Number(e.target.value)
+                            })}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="flex justify-end gap-2">
+                        <Button variant="outline" onClick={() => setShowCouponForm(false)}>
+                          Cancelar
+                        </Button>
+                        <Button>
+                          Salvar
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="aniversarios">
+          <Card>
+            <CardHeader>
+              <CardTitle>Aniversários</CardTitle>
+              <CardDescription>Gerencie os aniversários dos clientes</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                <div className="flex justify-between items-center">
+                  <div className="space-x-2">
+                    <Button>
+                      <Calendar className="mr-2 h-4 w-4" />
+                      Novo Aniversário
+                    </Button>
+                  </div>
+                  <Button variant="outline" size="icon">
+                    <Settings className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="automacao">
+          <Card>
+            <CardHeader>
+              <CardTitle>Automação</CardTitle>
+              <CardDescription>Configure regras de automação</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                <div className="flex justify-between items-center">
+                  <div className="space-x-2">
+                    <Button>
+                      <Zap className="mr-2 h-4 w-4" />
+                      Nova Regra
+                    </Button>
+                  </div>
+                  <Button variant="outline" size="icon">
+                    <Settings className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="relatorios">
+          <Card>
+            <CardHeader>
+              <CardTitle>Relatórios</CardTitle>
+              <CardDescription>Visualize e analise os dados de suas campanhas</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                <div className="flex justify-between items-center">
+                  <div className="space-x-2">
+                    <Button>
+                      <BarChart className="mr-2 h-4 w-4" />
+                      Gerar Relatório
+                    </Button>
+                  </div>
+                  <Button variant="outline" size="icon">
+                    <Settings className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+}
