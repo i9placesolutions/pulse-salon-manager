@@ -1,8 +1,12 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { 
   MessageSquare, 
   Gift, 
@@ -17,9 +21,11 @@ import {
   MailCheck,
   Target,
   Zap,
+  Clock,
+  Filter,
+  Settings,
 } from "lucide-react";
 
-// Dados mockados para demonstração
 const marketingMetrics = [
   {
     title: "Campanhas Ativas",
@@ -51,7 +57,6 @@ const marketingMetrics = [
   },
 ];
 
-// Tipos de campanha mockados para demonstração
 const campaignTypes = [
   {
     id: 1,
@@ -83,8 +88,36 @@ const campaignTypes = [
   },
 ];
 
+interface CampaignFormData {
+  name: string;
+  description: string;
+  type: string;
+  startDate: string;
+  endDate: string;
+  discountType: 'percentage' | 'fixed';
+  discountValue: number;
+  targetAudience: 'all' | 'vip' | 'inactive' | 'birthday';
+  channels: string[];
+}
+
 export default function Marketing() {
   const [selectedCampaignType, setSelectedCampaignType] = useState<string | null>(null);
+  const [showCampaignForm, setShowCampaignForm] = useState(false);
+  const [campaignFormData, setCampaignFormData] = useState<CampaignFormData>({
+    name: '',
+    description: '',
+    type: '',
+    startDate: '',
+    endDate: '',
+    discountType: 'percentage',
+    discountValue: 0,
+    targetAudience: 'all',
+    channels: [],
+  });
+
+  const handleCreateCampaign = () => {
+    setShowCampaignForm(true);
+  };
 
   return (
     <div className="space-y-6">
@@ -107,7 +140,6 @@ export default function Marketing() {
         </div>
       </div>
 
-      {/* Métricas principais */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {marketingMetrics.map((metric, index) => (
           <Card key={index}>
@@ -130,7 +162,6 @@ export default function Marketing() {
         ))}
       </div>
 
-      {/* Abas de funcionalidades */}
       <Tabs defaultValue="campanhas" className="space-y-4">
         <TabsList className="grid w-full grid-cols-2 lg:grid-cols-5 gap-4">
           <TabsTrigger value="campanhas" className="gap-2">
@@ -159,6 +190,9 @@ export default function Marketing() {
           <Card>
             <CardHeader>
               <CardTitle>Nova Campanha</CardTitle>
+              <CardDescription>
+                Selecione o tipo de campanha e configure seus detalhes
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -185,24 +219,179 @@ export default function Marketing() {
                 ))}
               </div>
 
-              {selectedCampaignType && (
-                <div className="mt-6 space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-medium">Configurar Campanha</h3>
-                    <div className="flex gap-2">
-                      <Button variant="outline">
-                        Salvar Rascunho
-                      </Button>
-                      <Button>
-                        Criar Campanha
-                      </Button>
-                    </div>
-                  </div>
+              {selectedCampaignType && !showCampaignForm && (
+                <div className="mt-6">
+                  <Button onClick={handleCreateCampaign} className="w-full">
+                    Configurar Nova Campanha
+                  </Button>
+                </div>
+              )}
+
+              {showCampaignForm && (
+                <div className="mt-6 space-y-6">
                   <Card>
-                    <CardContent className="pt-6">
-                      <p className="text-sm text-muted-foreground">
-                        Selecione "Criar Campanha" para configurar os detalhes da sua campanha {selectedCampaignType}.
-                      </p>
+                    <CardHeader>
+                      <CardTitle>Detalhes da Campanha</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                      <div className="space-y-4">
+                        <h4 className="text-sm font-medium">Informações Básicas</h4>
+                        <div className="grid gap-4">
+                          <div className="grid gap-2">
+                            <Label htmlFor="campaign-name">Nome da Campanha</Label>
+                            <Input 
+                              id="campaign-name" 
+                              placeholder="Ex: Promoção Dia das Mães"
+                              value={campaignFormData.name}
+                              onChange={(e) => setCampaignFormData({
+                                ...campaignFormData,
+                                name: e.target.value
+                              })}
+                            />
+                          </div>
+                          <div className="grid gap-2">
+                            <Label htmlFor="campaign-description">Descrição</Label>
+                            <Textarea 
+                              id="campaign-description"
+                              placeholder="Descreva sua campanha"
+                              value={campaignFormData.description}
+                              onChange={(e) => setCampaignFormData({
+                                ...campaignFormData,
+                                description: e.target.value
+                              })}
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-4">
+                        <h4 className="text-sm font-medium">Período da Campanha</h4>
+                        <div className="grid gap-4 sm:grid-cols-2">
+                          <div className="grid gap-2">
+                            <Label htmlFor="start-date">Data de Início</Label>
+                            <Input 
+                              id="start-date" 
+                              type="date"
+                              value={campaignFormData.startDate}
+                              onChange={(e) => setCampaignFormData({
+                                ...campaignFormData,
+                                startDate: e.target.value
+                              })}
+                            />
+                          </div>
+                          <div className="grid gap-2">
+                            <Label htmlFor="end-date">Data de Término</Label>
+                            <Input 
+                              id="end-date" 
+                              type="date"
+                              value={campaignFormData.endDate}
+                              onChange={(e) => setCampaignFormData({
+                                ...campaignFormData,
+                                endDate: e.target.value
+                              })}
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-4">
+                        <h4 className="text-sm font-medium">Configuração do Desconto</h4>
+                        <RadioGroup
+                          value={campaignFormData.discountType}
+                          onValueChange={(value: 'percentage' | 'fixed') => 
+                            setCampaignFormData({
+                              ...campaignFormData,
+                              discountType: value
+                            })
+                          }
+                        >
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="percentage" id="percentage" />
+                            <Label htmlFor="percentage">Porcentagem (%)</Label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="fixed" id="fixed" />
+                            <Label htmlFor="fixed">Valor Fixo (R$)</Label>
+                          </div>
+                        </RadioGroup>
+                        <div className="grid gap-2">
+                          <Label htmlFor="discount-value">
+                            {campaignFormData.discountType === 'percentage' ? 'Porcentagem' : 'Valor'}
+                          </Label>
+                          <Input 
+                            id="discount-value"
+                            type="number"
+                            placeholder={campaignFormData.discountType === 'percentage' ? '10' : '50'}
+                            value={campaignFormData.discountValue}
+                            onChange={(e) => setCampaignFormData({
+                              ...campaignFormData,
+                              discountValue: Number(e.target.value)
+                            })}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-4">
+                        <h4 className="text-sm font-medium">Público-alvo</h4>
+                        <RadioGroup
+                          value={campaignFormData.targetAudience}
+                          onValueChange={(value: 'all' | 'vip' | 'inactive' | 'birthday') =>
+                            setCampaignFormData({
+                              ...campaignFormData,
+                              targetAudience: value
+                            })
+                          }
+                        >
+                          <div className="grid gap-2">
+                            <div className="flex items-center space-x-2">
+                              <RadioGroupItem value="all" id="all-clients" />
+                              <Label htmlFor="all-clients">Todos os clientes</Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <RadioGroupItem value="vip" id="vip-clients" />
+                              <Label htmlFor="vip-clients">Clientes VIP</Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <RadioGroupItem value="inactive" id="inactive-clients" />
+                              <Label htmlFor="inactive-clients">Clientes Inativos</Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <RadioGroupItem value="birthday" id="birthday-clients" />
+                              <Label htmlFor="birthday-clients">Aniversariantes do Mês</Label>
+                            </div>
+                          </div>
+                        </RadioGroup>
+                      </div>
+
+                      <div className="space-y-4">
+                        <h4 className="text-sm font-medium">Canais de Comunicação</h4>
+                        <div className="grid gap-4">
+                          <div className="flex items-center space-x-2">
+                            <Switch id="whatsapp" />
+                            <Label htmlFor="whatsapp">WhatsApp</Label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Switch id="email" />
+                            <Label htmlFor="email">E-mail</Label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Switch id="notification" />
+                            <Label htmlFor="notification">Notificação no Sistema</Label>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex justify-end gap-2">
+                        <Button variant="outline" onClick={() => setShowCampaignForm(false)}>
+                          Cancelar
+                        </Button>
+                        <Button variant="outline">
+                          Salvar Rascunho
+                        </Button>
+                        <Button>
+                          Criar Campanha
+                        </Button>
+                      </div>
                     </CardContent>
                   </Card>
                 </div>
@@ -215,13 +404,31 @@ export default function Marketing() {
           <Card>
             <CardHeader>
               <CardTitle>Gerenciar Cupons</CardTitle>
+              <CardDescription>Crie e gerencie cupons promocionais</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                <Button className="w-full sm:w-auto">
-                  <Gift className="mr-2 h-4 w-4" />
-                  Criar Novo Cupom
-                </Button>
+              <div className="space-y-6">
+                <div className="flex justify-between items-center">
+                  <div className="space-x-2">
+                    <Button>
+                      <Gift className="mr-2 h-4 w-4" />
+                      Criar Novo Cupom
+                    </Button>
+                    <Button variant="outline">
+                      <Filter className="mr-2 h-4 w-4" />
+                      Filtrar
+                    </Button>
+                  </div>
+                  <Button variant="outline" size="icon">
+                    <Settings className="h-4 w-4" />
+                  </Button>
+                </div>
+
+                <div className="rounded-lg border">
+                  <div className="p-4 text-sm text-center text-muted-foreground">
+                    Nenhum cupom criado ainda
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -231,12 +438,70 @@ export default function Marketing() {
           <Card>
             <CardHeader>
               <CardTitle>Mensagens de Aniversário</CardTitle>
+              <CardDescription>
+                Configure mensagens automáticas para aniversariantes
+              </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <Button className="w-full sm:w-auto">
-                <MailCheck className="mr-2 h-4 w-4" />
-                Configurar Mensagem Automática
-              </Button>
+            <CardContent className="space-y-6">
+              <div className="space-y-4">
+                <div className="flex items-center space-x-2">
+                  <Switch id="birthday-active" />
+                  <Label htmlFor="birthday-active">Ativar mensagens de aniversário</Label>
+                </div>
+
+                <div className="grid gap-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="birthday-message">Mensagem Personalizada</Label>
+                    <Textarea 
+                      id="birthday-message"
+                      placeholder="Ex: Feliz aniversário! Como presente especial, preparamos um desconto exclusivo para você..."
+                    />
+                  </div>
+
+                  <div className="grid gap-2">
+                    <Label>Canais de Envio</Label>
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <Switch id="birthday-whatsapp" />
+                        <Label htmlFor="birthday-whatsapp">WhatsApp</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Switch id="birthday-email" />
+                        <Label htmlFor="birthday-email">E-mail</Label>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid gap-2">
+                    <Label htmlFor="birthday-time">Horário de Envio</Label>
+                    <Input type="time" id="birthday-time" defaultValue="09:00" />
+                  </div>
+
+                  <div className="grid gap-2">
+                    <Label>Benefício de Aniversário</Label>
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <Switch id="birthday-discount" />
+                        <Label htmlFor="birthday-discount">Oferecer desconto especial</Label>
+                      </div>
+                      <Input 
+                        type="number" 
+                        placeholder="Valor do desconto em %" 
+                        className="max-w-[200px]"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-2">
+                  <Button variant="outline">
+                    Testar Mensagem
+                  </Button>
+                  <Button>
+                    Salvar Configurações
+                  </Button>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -245,12 +510,25 @@ export default function Marketing() {
           <Card>
             <CardHeader>
               <CardTitle>Automação de Marketing</CardTitle>
+              <CardDescription>
+                Configure regras automáticas para suas campanhas
+              </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <Button className="w-full sm:w-auto">
+            <CardContent className="space-y-6">
+              <Button>
                 <Zap className="mr-2 h-4 w-4" />
                 Criar Nova Automação
               </Button>
+
+              <div className="space-y-4">
+                <h4 className="text-sm font-medium">Automações Ativas</h4>
+                
+                <div className="rounded-lg border">
+                  <div className="p-4 text-sm text-center text-muted-foreground">
+                    Nenhuma automação configurada
+                  </div>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -259,12 +537,27 @@ export default function Marketing() {
           <Card>
             <CardHeader>
               <CardTitle>Relatórios de Campanhas</CardTitle>
+              <CardDescription>
+                Analise o desempenho das suas campanhas
+              </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <Button className="w-full sm:w-auto">
-                <BarChart className="mr-2 h-4 w-4" />
-                Gerar Relatório
-              </Button>
+            <CardContent className="space-y-6">
+              <div className="flex gap-2">
+                <Button>
+                  <BarChart className="mr-2 h-4 w-4" />
+                  Gerar Relatório
+                </Button>
+                <Button variant="outline">
+                  <Calendar className="mr-2 h-4 w-4" />
+                  Filtrar por Data
+                </Button>
+              </div>
+
+              <div className="rounded-lg border">
+                <div className="p-4 text-sm text-center text-muted-foreground">
+                  Selecione uma campanha para visualizar seus resultados
+                </div>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
