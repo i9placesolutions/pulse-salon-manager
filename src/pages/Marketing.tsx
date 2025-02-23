@@ -8,6 +8,7 @@ import { MetricsCard } from "@/components/marketing/MetricsCard";
 import { CampaignCard } from "@/components/marketing/CampaignCard";
 import { ScheduleForm } from "@/components/marketing/ScheduleForm";
 import { CouponManagement } from "@/components/marketing/CouponManagement";
+import { BirthdayAutomation } from "@/components/marketing/BirthdayAutomation";
 
 const marketingMetrics = [
   {
@@ -213,6 +214,10 @@ export default function Marketing() {
 
         <TabsContent value="cupons">
           <CouponManagement onCreateCoupon={() => {}} />
+        </TabsContent>
+
+        <TabsContent value="aniversarios">
+          <BirthdayAutomation />
         </TabsContent>
       </Tabs>
     </div>
