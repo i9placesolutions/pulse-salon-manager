@@ -1,98 +1,115 @@
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import {
-  BarChart as BarChartIcon,
-  PieChart as PieChartIcon,
-  Download,
-  FileText
-} from "lucide-react";
-import { 
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer
-} from 'recharts';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { BarChart, LineChart, Line, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { BarChart as BarChartIcon } from "lucide-react";
 
-// Dados mockados para demonstração
+const channelData = [
+  { name: 'WhatsApp', enviados: 1200, abertos: 980, convertidos: 450 },
+  { name: 'SMS', enviados: 800, abertos: 600, convertidos: 250 },
+  { name: 'Email', enviados: 2000, abertos: 1200, convertidos: 380 },
+];
+
 const campaignData = [
-  { month: 'Jan', mensagens: 240, conversao: 180, cupons: 45 },
-  { month: 'Fev', mensagens: 300, conversao: 200, cupons: 65 },
-  { month: 'Mar', mensagens: 280, conversao: 210, cupons: 55 },
-  { month: 'Abr', mensagens: 320, conversao: 250, cupons: 75 },
+  { name: 'Black Friday', value: 85 },
+  { name: 'Natal', value: 72 },
+  { name: 'Aniversariantes', value: 65 },
+  { name: 'Reativação', value: 58 },
 ];
 
 export function MarketingReports() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h3 className="text-lg font-medium">Relatórios de Marketing</h3>
-        <div className="flex gap-2">
-          <Button variant="outline">
-            <Download className="mr-2 h-4 w-4" />
-            Exportar PDF
-          </Button>
-          <Button variant="outline">
-            <FileText className="mr-2 h-4 w-4" />
-            Exportar Excel
-          </Button>
+        <div>
+          <h2 className="text-2xl font-bold tracking-tight">Relatórios de Marketing</h2>
+          <p className="text-sm text-muted-foreground">
+            Analise o desempenho das suas campanhas
+          </p>
         </div>
+        <Button>
+          <BarChartIcon className="mr-2 h-4 w-4" />
+          Exportar Relatório
+        </Button>
       </div>
 
       <div className="grid gap-6">
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Desempenho de Campanhas</CardTitle>
+            <CardTitle>Desempenho por Canal</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-[300px]">
+            <div className="h-[400px]">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart
-                  data={campaignData}
-                  margin={{
-                    top: 5,
-                    right: 30,
-                    left: 20,
-                    bottom: 5,
-                  }}
-                >
+                <BarChart data={channelData}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="month" />
+                  <XAxis dataKey="name" />
                   <YAxis />
                   <Tooltip />
                   <Legend />
-                  <Line type="monotone" dataKey="mensagens" stroke="#dc8c95" name="Mensagens" />
-                  <Line type="monotone" dataKey="conversao" stroke="#82ca9d" name="Conversão" />
-                  <Line type="monotone" dataKey="cupons" stroke="#8884d8" name="Cupons" />
-                </LineChart>
+                  <Bar dataKey="enviados" fill="#8884d8" name="Mensagens Enviadas" />
+                  <Bar dataKey="abertos" fill="#82ca9d" name="Mensagens Abertas" />
+                  <Bar dataKey="convertidos" fill="#ffc658" name="Conversões" />
+                </BarChart>
               </ResponsiveContainer>
             </div>
           </CardContent>
         </Card>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid gap-6 md:grid-cols-2">
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Uso de Cupons</CardTitle>
+              <CardTitle>Top Campanhas</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="h-[200px] flex items-center justify-center">
-                <PieChartIcon className="h-32 w-32 text-muted-foreground" />
+              <div className="h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={campaignData} layout="vertical">
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis type="number" domain={[0, 100]} />
+                    <YAxis type="category" dataKey="name" />
+                    <Tooltip />
+                    <Bar dataKey="value" fill="#8884d8" name="Taxa de Conversão (%)" />
+                  </BarChart>
+                </ResponsiveContainer>
               </div>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Engajamento de Clientes</CardTitle>
+              <CardTitle>Engajamento</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="h-[200px] flex items-center justify-center">
-                <BarChartIcon className="h-32 w-32 text-muted-foreground" />
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span>Taxa de Abertura</span>
+                  <span className="font-medium">75%</span>
+                </div>
+                <div className="h-2 bg-secondary rounded-full overflow-hidden">
+                  <div className="h-full bg-primary" style={{ width: '75%' }} />
+                </div>
+                <div className="flex items-center justify-between">
+                  <span>Taxa de Clique</span>
+                  <span className="font-medium">45%</span>
+                </div>
+                <div className="h-2 bg-secondary rounded-full overflow-hidden">
+                  <div className="h-full bg-primary" style={{ width: '45%' }} />
+                </div>
+                <div className="flex items-center justify-between">
+                  <span>Taxa de Conversão</span>
+                  <span className="font-medium">28%</span>
+                </div>
+                <div className="h-2 bg-secondary rounded-full overflow-hidden">
+                  <div className="h-full bg-primary" style={{ width: '28%' }} />
+                </div>
+                <div className="flex items-center justify-between">
+                  <span>ROI Médio</span>
+                  <span className="font-medium">3.2x</span>
+                </div>
+                <div className="h-2 bg-secondary rounded-full overflow-hidden">
+                  <div className="h-full bg-primary" style={{ width: '80%' }} />
+                </div>
               </div>
             </CardContent>
           </Card>

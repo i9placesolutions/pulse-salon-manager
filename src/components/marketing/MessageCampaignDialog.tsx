@@ -2,11 +2,11 @@
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { MessageSquare, Send, Upload, Users } from "lucide-react";
+import { Send, Upload, Users } from "lucide-react";
 
 interface MessageCampaignData {
   title: string;
@@ -32,11 +32,15 @@ export function MessageCampaignDialog({
   onChange, 
   onSubmit 
 }: MessageCampaignDialogProps) {
+  // WhatsApp is now always enabled and can't be disabled
+  if (!data.channels.includes('whatsapp')) {
+    onChange({ ...data, channels: ['whatsapp'] });
+  }
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       console.log("File selected:", file);
-      // Aqui você pode implementar o upload do arquivo
     }
   };
 
@@ -46,7 +50,7 @@ export function MessageCampaignDialog({
         <DialogHeader>
           <DialogTitle>Nova Mensagem</DialogTitle>
           <DialogDescription>
-            Configure e envie mensagens para seus clientes
+            Configure e envie mensagens para seus clientes via WhatsApp
           </DialogDescription>
         </DialogHeader>
 
@@ -125,33 +129,29 @@ export function MessageCampaignDialog({
               )}
             </div>
 
-            <div className="space-y-4">
+            <div className="grid gap-2">
               <Label>Canal de Envio</Label>
-              <div className="space-y-2">
-                <div className="flex items-center space-x-2">
-                  <Switch 
-                    id="channel-whatsapp"
-                    checked={data.channels.includes('whatsapp')}
-                    onCheckedChange={(checked) => {
-                      const channels = checked ? ['whatsapp'] : [];
-                      onChange({ ...data, channels });
-                    }}
-                  />
-                  <Label htmlFor="channel-whatsapp">WhatsApp</Label>
-                </div>
+              <div className="flex items-center gap-2">
+                <Switch checked={true} disabled />
+                <Label>WhatsApp</Label>
               </div>
             </div>
 
-            <div className="grid gap-2">
-              <Label>Agendamento (Opcional)</Label>
-              <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <Label htmlFor="schedule-date">Data (Opcional)</Label>
                 <Input 
                   type="date"
+                  id="schedule-date"
                   value={data.scheduleDate}
                   onChange={(e) => onChange({ ...data, scheduleDate: e.target.value })}
                 />
+              </div>
+              <div>
+                <Label htmlFor="schedule-time">Horário</Label>
                 <Input 
                   type="time"
+                  id="schedule-time"
                   value={data.scheduleTime}
                   onChange={(e) => onChange({ ...data, scheduleTime: e.target.value })}
                 />
