@@ -839,15 +839,42 @@ export default function Marketing() {
                         <h4 className="text-sm font-medium">Canais de Comunicação</h4>
                         <div className="grid gap-4">
                           <div className="flex items-center space-x-2">
-                            <Switch id="whatsapp" />
+                            <Switch 
+                              id="whatsapp"
+                              checked={campaignFormData.channels.includes('whatsapp')}
+                              onCheckedChange={(checked) => {
+                                const channels = checked 
+                                  ? [...campaignFormData.channels, 'whatsapp']
+                                  : campaignFormData.channels.filter(c => c !== 'whatsapp');
+                                setCampaignFormData({ ...campaignFormData, channels });
+                              }}
+                            />
                             <Label htmlFor="whatsapp">WhatsApp</Label>
                           </div>
                           <div className="flex items-center space-x-2">
-                            <Switch id="email" />
+                            <Switch 
+                              id="email"
+                              checked={campaignFormData.channels.includes('email')}
+                              onCheckedChange={(checked) => {
+                                const channels = checked 
+                                  ? [...campaignFormData.channels, 'email']
+                                  : campaignFormData.channels.filter(c => c !== 'email');
+                                setCampaignFormData({ ...campaignFormData, channels });
+                              }}
+                            />
                             <Label htmlFor="email">E-mail</Label>
                           </div>
                           <div className="flex items-center space-x-2">
-                            <Switch id="notification" />
+                            <Switch 
+                              id="notification"
+                              checked={campaignFormData.channels.includes('notification')}
+                              onCheckedChange={(checked) => {
+                                const channels = checked 
+                                  ? [...campaignFormData.channels, 'notification']
+                                  : campaignFormData.channels.filter(c => c !== 'notification');
+                                setCampaignFormData({ ...campaignFormData, channels });
+                              }}
+                            />
                             <Label htmlFor="notification">Notificação no Sistema</Label>
                           </div>
                         </div>
@@ -930,133 +957,4 @@ export default function Marketing() {
                           />
                         </div>
 
-                        <div className="space-y-4">
-                          <Label>Tipo de Desconto</Label>
-                          <RadioGroup
-                            value={couponFormData.type}
-                            onValueChange={(value: 'percentage' | 'fixed') => 
-                              setCouponFormData({
-                                ...couponFormData,
-                                type: value
-                              })
-                            }
-                          >
-                            <div className="flex items-center space-x-2">
-                              <RadioGroupItem value="percentage" id="coupon-percentage" />
-                              <Label htmlFor="coupon-percentage">Porcentagem (%)</Label>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <RadioGroupItem value="fixed" id="coupon-fixed" />
-                              <Label htmlFor="coupon-fixed">Valor Fixo (R$)</Label>
-                            </div>
-                          </RadioGroup>
-                        </div>
-
-                        <div className="grid gap-2">
-                          <Label htmlFor="coupon-value">
-                            {couponFormData.type === 'percentage' ? 'Porcentagem de Desconto' : 'Valor do Desconto'}
-                          </Label>
-                          <Input 
-                            id="coupon-value"
-                            type="number"
-                            placeholder={couponFormData.type === 'percentage' ? '10' : '50'}
-                            value={couponFormData.value}
-                            onChange={(e) => setCouponFormData({
-                              ...couponFormData,
-                              value: Number(e.target.value)
-                            })}
-                          />
-                        </div>
-                      </div>
-
-                      <div className="flex justify-end gap-2">
-                        <Button variant="outline" onClick={() => setShowCouponForm(false)}>
-                          Cancelar
-                        </Button>
-                        <Button>
-                          Salvar
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="aniversarios">
-          <Card>
-            <CardHeader>
-              <CardTitle>Aniversários</CardTitle>
-              <CardDescription>Gerencie os aniversários dos clientes</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
-                <div className="flex justify-between items-center">
-                  <div className="space-x-2">
-                    <Button>
-                      <Calendar className="mr-2 h-4 w-4" />
-                      Novo Aniversário
-                    </Button>
-                  </div>
-                  <Button variant="outline" size="icon">
-                    <Settings className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="automacao">
-          <Card>
-            <CardHeader>
-              <CardTitle>Automação</CardTitle>
-              <CardDescription>Configure regras de automação</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
-                <div className="flex justify-between items-center">
-                  <div className="space-x-2">
-                    <Button>
-                      <Zap className="mr-2 h-4 w-4" />
-                      Nova Regra
-                    </Button>
-                  </div>
-                  <Button variant="outline" size="icon">
-                    <Settings className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="relatorios">
-          <Card>
-            <CardHeader>
-              <CardTitle>Relatórios</CardTitle>
-              <CardDescription>Visualize e analise os dados de suas campanhas</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
-                <div className="flex justify-between items-center">
-                  <div className="space-x-2">
-                    <Button>
-                      <BarChart className="mr-2 h-4 w-4" />
-                      Gerar Relatório
-                    </Button>
-                  </div>
-                  <Button variant="outline" size="icon">
-                    <Settings className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
-    </div>
-  );
-}
+                        <div className="space
