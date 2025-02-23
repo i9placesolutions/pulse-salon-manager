@@ -74,11 +74,10 @@ const campaignTypes = [
 export default function Marketing() {
   const [selectedCampaignType, setSelectedCampaignType] = useState<string | null>(null);
   const [showMessageDialog, setShowMessageDialog] = useState(false);
-  const [messageCampaignData, setMessageCampaignData] = useState({
+  const [messageCampaignData, setMessageCampaignData] = useState<MessageCampaignData>({
     title: "",
-    type: "message" as const,
     message: "",
-    recipients: "all" as const,
+    recipients: "all",
     channels: [],
     scheduleDate: "",
     scheduleTime: ""
@@ -93,6 +92,10 @@ export default function Marketing() {
     setShowMessageDialog(false);
   };
 
+  const handleMessageChange = (newData: MessageCampaignData) => {
+    setMessageCampaignData(newData);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -105,7 +108,7 @@ export default function Marketing() {
         <div className="flex gap-2">
           <Button onClick={handleNewMessage}>
             <MessageSquare className="mr-2 h-4 w-4" />
-            Nova Mensagem / Campanha
+            Nova Mensagem
           </Button>
         </div>
       </div>
@@ -114,7 +117,7 @@ export default function Marketing() {
         open={showMessageDialog}
         onOpenChange={setShowMessageDialog}
         data={messageCampaignData}
-        onChange={setMessageCampaignData}
+        onChange={handleMessageChange}
         onSubmit={handleSubmitMessage}
       />
 

@@ -6,12 +6,10 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { MessageSquare, Calendar, Send } from "lucide-react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { MessageSquare, Send } from "lucide-react";
 
 interface MessageCampaignData {
   title: string;
-  type: 'message' | 'campaign';
   message: string;
   recipients: 'all' | 'vip' | 'inactive' | 'custom';
   channels: string[];
@@ -38,129 +36,116 @@ export function MessageCampaignDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Nova Mensagem / Campanha</DialogTitle>
+          <DialogTitle>Nova Mensagem</DialogTitle>
           <DialogDescription>
-            Configure e envie mensagens ou agende campanhas para seus clientes
+            Configure e envie mensagens para seus clientes
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs defaultValue="message" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="message" className="gap-2">
-              <MessageSquare className="h-4 w-4" />
-              Mensagem
-            </TabsTrigger>
-            <TabsTrigger value="campaign" className="gap-2">
-              <Calendar className="h-4 w-4" />
-              Campanha
-            </TabsTrigger>
-          </TabsList>
+        <div className="mt-4 space-y-6">
+          <div className="grid gap-4">
+            <div className="grid gap-2">
+              <Label htmlFor="title">Título</Label>
+              <Input 
+                id="title"
+                placeholder="Ex: Promoção Especial"
+                value={data.title}
+                onChange={(e) => onChange({ ...data, title: e.target.value })}
+              />
+            </div>
 
-          <div className="mt-4 space-y-6">
-            <div className="grid gap-4">
-              <div className="grid gap-2">
-                <Label htmlFor="title">Título</Label>
-                <Input 
-                  id="title"
-                  placeholder="Ex: Promoção Especial"
-                  value={data.title}
-                  onChange={(e) => onChange({ ...data, title: e.target.value })}
-                />
-              </div>
+            <div className="grid gap-2">
+              <Label htmlFor="message">Mensagem</Label>
+              <Textarea 
+                id="message"
+                placeholder="Digite sua mensagem..."
+                className="min-h-[120px]"
+                value={data.message}
+                onChange={(e) => onChange({ ...data, message: e.target.value })}
+              />
+            </div>
 
-              <div className="grid gap-2">
-                <Label htmlFor="message">Mensagem</Label>
-                <Textarea 
-                  id="message"
-                  placeholder="Digite sua mensagem..."
-                  className="min-h-[120px]"
-                  value={data.message}
-                  onChange={(e) => onChange({ ...data, message: e.target.value })}
-                />
-              </div>
-
-              <div className="space-y-4">
-                <Label>Destinatários</Label>
-                <RadioGroup
-                  value={data.recipients}
-                  onValueChange={(value: 'all' | 'vip' | 'inactive' | 'custom') => 
-                    onChange({ ...data, recipients: value })
-                  }
-                >
-                  <div className="grid gap-2">
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="all" id="recipients-all" />
-                      <Label htmlFor="recipients-all">Todos os clientes</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="vip" id="recipients-vip" />
-                      <Label htmlFor="recipients-vip">Clientes VIP</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="inactive" id="recipients-inactive" />
-                      <Label htmlFor="recipients-inactive">Clientes Inativos</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="custom" id="recipients-custom" />
-                      <Label htmlFor="recipients-custom">Seleção Personalizada</Label>
-                    </div>
+            <div className="space-y-4">
+              <Label>Destinatários</Label>
+              <RadioGroup
+                value={data.recipients}
+                onValueChange={(value: 'all' | 'vip' | 'inactive' | 'custom') => 
+                  onChange({ ...data, recipients: value })
+                }
+              >
+                <div className="grid gap-2">
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="all" id="recipients-all" />
+                    <Label htmlFor="recipients-all">Todos os clientes</Label>
                   </div>
-                </RadioGroup>
-              </div>
-
-              <div className="space-y-4">
-                <Label>Canais de Envio</Label>
-                <div className="space-y-2">
-                  {[
-                    { id: 'whatsapp', label: 'WhatsApp' },
-                    { id: 'email', label: 'E-mail' },
-                    { id: 'notification', label: 'Notificação no Sistema' }
-                  ].map(({ id, label }) => (
-                    <div key={id} className="flex items-center space-x-2">
-                      <Switch 
-                        id={`channel-${id}`}
-                        checked={data.channels.includes(id)}
-                        onCheckedChange={(checked) => {
-                          const channels = checked 
-                            ? [...data.channels, id]
-                            : data.channels.filter(c => c !== id);
-                          onChange({ ...data, channels });
-                        }}
-                      />
-                      <Label htmlFor={`channel-${id}`}>{label}</Label>
-                    </div>
-                  ))}
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="vip" id="recipients-vip" />
+                    <Label htmlFor="recipients-vip">Clientes VIP</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="inactive" id="recipients-inactive" />
+                    <Label htmlFor="recipients-inactive">Clientes Inativos</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="custom" id="recipients-custom" />
+                    <Label htmlFor="recipients-custom">Seleção Personalizada</Label>
+                  </div>
                 </div>
-              </div>
+              </RadioGroup>
+            </div>
 
-              <div className="grid gap-2">
-                <Label>Agendamento (Opcional)</Label>
-                <div className="grid grid-cols-2 gap-2">
-                  <Input 
-                    type="date"
-                    value={data.scheduleDate}
-                    onChange={(e) => onChange({ ...data, scheduleDate: e.target.value })}
-                  />
-                  <Input 
-                    type="time"
-                    value={data.scheduleTime}
-                    onChange={(e) => onChange({ ...data, scheduleTime: e.target.value })}
-                  />
-                </div>
+            <div className="space-y-4">
+              <Label>Canais de Envio</Label>
+              <div className="space-y-2">
+                {[
+                  { id: 'whatsapp', label: 'WhatsApp' },
+                  { id: 'email', label: 'E-mail' },
+                  { id: 'notification', label: 'Notificação no Sistema' }
+                ].map(({ id, label }) => (
+                  <div key={id} className="flex items-center space-x-2">
+                    <Switch 
+                      id={`channel-${id}`}
+                      checked={data.channels.includes(id)}
+                      onCheckedChange={(checked) => {
+                        const channels = checked 
+                          ? [...data.channels, id]
+                          : data.channels.filter(c => c !== id);
+                        onChange({ ...data, channels });
+                      }}
+                    />
+                    <Label htmlFor={`channel-${id}`}>{label}</Label>
+                  </div>
+                ))}
               </div>
             </div>
 
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => onOpenChange(false)}>
-                Cancelar
-              </Button>
-              <Button onClick={onSubmit}>
-                <Send className="mr-2 h-4 w-4" />
-                {data.scheduleDate ? "Agendar" : "Enviar"}
-              </Button>
+            <div className="grid gap-2">
+              <Label>Agendamento (Opcional)</Label>
+              <div className="grid grid-cols-2 gap-2">
+                <Input 
+                  type="date"
+                  value={data.scheduleDate}
+                  onChange={(e) => onChange({ ...data, scheduleDate: e.target.value })}
+                />
+                <Input 
+                  type="time"
+                  value={data.scheduleTime}
+                  onChange={(e) => onChange({ ...data, scheduleTime: e.target.value })}
+                />
+              </div>
             </div>
           </div>
-        </Tabs>
+
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={onSubmit}>
+              <Send className="mr-2 h-4 w-4" />
+              {data.scheduleDate ? "Agendar" : "Enviar"}
+            </Button>
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   );
