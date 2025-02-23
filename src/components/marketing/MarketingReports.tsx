@@ -1,8 +1,10 @@
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, LineChart, Line, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { BarChart as BarChartIcon } from "lucide-react";
+import { BarChart as BarChartIcon, Download } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import { Sheet, SheetClose, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 
 const channelData = [
   { name: 'WhatsApp', enviados: 1200, abertos: 980, convertidos: 450 },
@@ -73,10 +75,45 @@ export function MarketingReports() {
             Analise o desempenho das suas campanhas
           </p>
         </div>
-        <Button onClick={handleExportReport}>
-          <BarChartIcon className="mr-2 h-4 w-4" />
-          Exportar Relatório
-        </Button>
+        <Sheet>
+          <SheetTrigger asChild>
+            <Button>
+              <BarChartIcon className="mr-2 h-4 w-4" />
+              Exportar Relatório
+            </Button>
+          </SheetTrigger>
+          <SheetContent className="w-[400px]">
+            <SheetHeader>
+              <SheetTitle>Exportar Relatório</SheetTitle>
+              <SheetDescription>
+                Selecione os dados que deseja incluir no relatório
+              </SheetDescription>
+            </SheetHeader>
+            <div className="mt-6 space-y-4">
+              <div className="space-y-4">
+                <h3 className="font-medium">Dados do Relatório</h3>
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center text-sm">
+                    <span>Desempenho por Canal</span>
+                    <span className="text-muted-foreground">{channelData.length} registros</span>
+                  </div>
+                  <div className="flex justify-between items-center text-sm">
+                    <span>Top Campanhas</span>
+                    <span className="text-muted-foreground">{campaignData.length} registros</span>
+                  </div>
+                  <div className="flex justify-between items-center text-sm">
+                    <span>Métricas de Engajamento</span>
+                    <span className="text-muted-foreground">4 métricas</span>
+                  </div>
+                </div>
+              </div>
+              <Button onClick={handleExportReport} className="w-full">
+                <Download className="mr-2 h-4 w-4" />
+                Baixar CSV
+              </Button>
+            </div>
+          </SheetContent>
+        </Sheet>
       </div>
 
       <div className="grid gap-6">
