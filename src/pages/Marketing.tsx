@@ -97,6 +97,77 @@ export default function Marketing() {
         <TabsContent value="automacao">
           <AutomationSection />
         </TabsContent>
+
+        <TabsContent value="relatorios">
+          <div className="space-y-6">
+            <div className="flex justify-between items-center">
+              <div>
+                <h2 className="text-2xl font-bold tracking-tight">Relatórios de Marketing</h2>
+                <p className="text-sm text-muted-foreground">
+                  Analise o desempenho das suas campanhas
+                </p>
+              </div>
+              <Button>
+                <BarChart className="mr-2 h-4 w-4" />
+                Exportar Relatório
+              </Button>
+            </div>
+            <div className="grid gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Desempenho por Canal</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-[300px]">
+                    {/* Add ReChart component here */}
+                  </div>
+                </CardContent>
+              </Card>
+              <div className="grid gap-6 md:grid-cols-2">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Top Campanhas</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {['Black Friday', 'Natal', 'Aniversariantes', 'Reativação'].map((campaign) => (
+                        <div key={campaign} className="flex items-center justify-between">
+                          <span>{campaign}</span>
+                          <span className="text-green-600">+{Math.floor(Math.random() * 100)}%</span>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Engajamento</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <span>Taxa de Abertura</span>
+                        <span>75%</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span>Taxa de Clique</span>
+                        <span>45%</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span>Taxa de Conversão</span>
+                        <span>28%</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span>ROI Médio</span>
+                        <span>3.2x</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          </div>
+        </TabsContent>
       </Tabs>
     </div>
   );
