@@ -1,12 +1,13 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MessageSquare, Gift, Users, Star, Bell, Calendar, Percent, Target, Zap, BarChart, Filter, Settings } from "lucide-react";
+import { MessageSquare, Gift, Users, Star, Bell, Calendar, Percent, Target, Zap, BarChart } from "lucide-react";
 import { MessageForm } from "@/components/marketing/MessageForm";
 import { MetricsCard } from "@/components/marketing/MetricsCard";
 import { CampaignCard } from "@/components/marketing/CampaignCard";
+import { ScheduleForm } from "@/components/marketing/ScheduleForm";
+import { CouponManagement } from "@/components/marketing/CouponManagement";
 
 const marketingMetrics = [
   {
@@ -79,6 +80,18 @@ interface MessageFormData {
   scheduledFor?: string;
 }
 
+interface ScheduleFormData {
+  title: string;
+  type: 'message' | 'discount' | 'coupon';
+  message?: string;
+  discountType?: 'percentage' | 'fixed';
+  discountValue?: number;
+  startDate: string;
+  endDate: string;
+  recipients: 'all' | 'vip' | 'inactive' | 'custom';
+  channels: string[];
+}
+
 export default function Marketing() {
   const [selectedCampaignType, setSelectedCampaignType] = useState<string | null>(null);
   const [showMessageForm, setShowMessageForm] = useState(false);
@@ -89,9 +102,23 @@ export default function Marketing() {
     selectedClients: [],
     channels: [],
   });
+  
+  const [showScheduleForm, setShowScheduleForm] = useState(false);
+  const [scheduleFormData, setScheduleFormData] = useState<ScheduleFormData>({
+    title: '',
+    type: 'message',
+    startDate: '',
+    endDate: '',
+    recipients: 'all',
+    channels: [],
+  });
 
   const handleNewMessage = () => {
     setShowMessageForm(true);
+  };
+
+  const handleScheduleCampaign = () => {
+    setShowScheduleForm(true);
   };
 
   return (
@@ -108,7 +135,7 @@ export default function Marketing() {
             <MessageSquare className="mr-2 h-4 w-4" />
             Nova Mensagem
           </Button>
-          <Button variant="outline">
+          <Button variant="outline" onClick={handleScheduleCampaign}>
             <Calendar className="mr-2 h-4 w-4" />
             Agendar Campanha
           </Button>
@@ -120,6 +147,14 @@ export default function Marketing() {
           data={messageFormData}
           onChange={setMessageFormData}
           onClose={() => setShowMessageForm(false)}
+        />
+      )}
+
+      {showScheduleForm && (
+        <ScheduleForm 
+          data={scheduleFormData}
+          onChange={setScheduleFormData}
+          onClose={() => setShowScheduleForm(false)}
         />
       )}
 
@@ -177,29 +212,7 @@ export default function Marketing() {
         </TabsContent>
 
         <TabsContent value="cupons">
-          <Card>
-            <CardHeader>
-              <CardTitle>Gerenciar Cupons</CardTitle>
-              <CardDescription>Crie e gerencie cupons promocionais</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex justify-between items-center">
-                <div className="space-x-2">
-                  <Button>
-                    <Gift className="mr-2 h-4 w-4" />
-                    Criar Novo Cupom
-                  </Button>
-                  <Button variant="outline">
-                    <Filter className="mr-2 h-4 w-4" />
-                    Filtrar
-                  </Button>
-                </div>
-                <Button variant="outline" size="icon">
-                  <Settings className="h-4 w-4" />
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+          <CouponManagement onCreateCoupon={() => {}} />
         </TabsContent>
       </Tabs>
     </div>
