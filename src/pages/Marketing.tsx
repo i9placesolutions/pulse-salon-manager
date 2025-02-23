@@ -3,12 +3,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MessageSquare, Gift, Users, Star, Bell, Calendar, Percent, Target, Zap, BarChart } from "lucide-react";
-import { MessageForm } from "@/components/marketing/MessageForm";
 import { MetricsCard } from "@/components/marketing/MetricsCard";
 import { CampaignCard } from "@/components/marketing/CampaignCard";
-import { ScheduleForm } from "@/components/marketing/ScheduleForm";
 import { CouponManagement } from "@/components/marketing/CouponManagement";
 import { BirthdayAutomation } from "@/components/marketing/BirthdayAutomation";
+import { MessageCampaignDialog } from "@/components/marketing/MessageCampaignDialog";
 
 const marketingMetrics = [
   {
@@ -72,54 +71,26 @@ const campaignTypes = [
   },
 ];
 
-interface MessageFormData {
-  title: string;
-  message: string;
-  recipients: 'all' | 'vip' | 'inactive' | 'custom';
-  selectedClients: string[];
-  channels: string[];
-  scheduledFor?: string;
-}
-
-interface ScheduleFormData {
-  title: string;
-  type: 'message' | 'discount' | 'coupon';
-  message?: string;
-  discountType?: 'percentage' | 'fixed';
-  discountValue?: number;
-  startDate: string;
-  endDate: string;
-  recipients: 'all' | 'vip' | 'inactive' | 'custom';
-  channels: string[];
-}
-
 export default function Marketing() {
   const [selectedCampaignType, setSelectedCampaignType] = useState<string | null>(null);
-  const [showMessageForm, setShowMessageForm] = useState(false);
-  const [messageFormData, setMessageFormData] = useState<MessageFormData>({
-    title: '',
-    message: '',
-    recipients: 'all',
-    selectedClients: [],
+  const [showMessageDialog, setShowMessageDialog] = useState(false);
+  const [messageCampaignData, setMessageCampaignData] = useState({
+    title: "",
+    type: "message" as const,
+    message: "",
+    recipients: "all" as const,
     channels: [],
-  });
-  
-  const [showScheduleForm, setShowScheduleForm] = useState(false);
-  const [scheduleFormData, setScheduleFormData] = useState<ScheduleFormData>({
-    title: '',
-    type: 'message',
-    startDate: '',
-    endDate: '',
-    recipients: 'all',
-    channels: [],
+    scheduleDate: "",
+    scheduleTime: ""
   });
 
   const handleNewMessage = () => {
-    setShowMessageForm(true);
+    setShowMessageDialog(true);
   };
 
-  const handleScheduleCampaign = () => {
-    setShowScheduleForm(true);
+  const handleSubmitMessage = () => {
+    console.log("Submitting:", messageCampaignData);
+    setShowMessageDialog(false);
   };
 
   return (
@@ -134,30 +105,18 @@ export default function Marketing() {
         <div className="flex gap-2">
           <Button onClick={handleNewMessage}>
             <MessageSquare className="mr-2 h-4 w-4" />
-            Nova Mensagem
-          </Button>
-          <Button variant="outline" onClick={handleScheduleCampaign}>
-            <Calendar className="mr-2 h-4 w-4" />
-            Agendar Campanha
+            Nova Mensagem / Campanha
           </Button>
         </div>
       </div>
 
-      {showMessageForm && (
-        <MessageForm 
-          data={messageFormData}
-          onChange={setMessageFormData}
-          onClose={() => setShowMessageForm(false)}
-        />
-      )}
-
-      {showScheduleForm && (
-        <ScheduleForm 
-          data={scheduleFormData}
-          onChange={setScheduleFormData}
-          onClose={() => setShowScheduleForm(false)}
-        />
-      )}
+      <MessageCampaignDialog 
+        open={showMessageDialog}
+        onOpenChange={setShowMessageDialog}
+        data={messageCampaignData}
+        onChange={setMessageCampaignData}
+        onSubmit={handleSubmitMessage}
+      />
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {marketingMetrics.map((metric, index) => (
@@ -218,6 +177,62 @@ export default function Marketing() {
 
         <TabsContent value="aniversarios">
           <BirthdayAutomation />
+        </TabsContent>
+
+        <TabsContent value="automacao">
+          <Card>
+            <CardHeader>
+              <CardTitle>Automação de Marketing</CardTitle>
+              <CardDescription>
+                Configure regras automáticas para suas campanhas
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Clientes Inativos</CardTitle>
+                    <CardDescription>
+                      Envie mensagens automáticas para clientes que não visitam o salão há muito tempo
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <Button variant="outline" className="w-full">
+                      Configurar Regra
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Recompensas VIP</CardTitle>
+                    <CardDescription>
+                      Benefícios automáticos para clientes que atingem metas de gastos
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <Button variant="outline" className="w-full">
+                      Configurar Regra
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Horários Específicos</CardTitle>
+                    <CardDescription>
+                      Promoções automáticas para horários com menor movimento
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <Button variant="outline" className="w-full">
+                      Configurar Regra
+                    </Button>
+                  </CardContent>
+                </Card>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>
