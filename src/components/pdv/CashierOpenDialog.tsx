@@ -10,6 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { useState } from "react";
 
 interface CashierOpenDialogProps {
   isOpen: boolean;
@@ -26,6 +27,30 @@ export function CashierOpenDialog({
   onOpeningAmountChange,
   onConfirm,
 }: CashierOpenDialogProps) {
+  const formatCurrency = (value: string) => {
+    // Remove todos os caracteres não numéricos
+    const numericValue = value.replace(/\D/g, "");
+    
+    // Converte para centavos
+    const cents = parseInt(numericValue) / 100;
+    
+    // Formata o número como moeda brasileira
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(cents);
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Remove formatação atual
+    const rawValue = e.target.value.replace(/\D/g, "");
+    
+    // Converte para string mantendo apenas números
+    const numericValue = rawValue ? (parseInt(rawValue) / 100).toString() : "";
+    
+    onOpeningAmountChange(numericValue);
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent>
@@ -39,11 +64,11 @@ export function CashierOpenDialog({
           <div className="space-y-2">
             <Label>Valor Inicial</Label>
             <Input
-              type="number"
-              step="0.01"
-              value={openingAmount}
-              onChange={(e) => onOpeningAmountChange(e.target.value)}
-              placeholder="0,00"
+              type="text"
+              value={openingAmount ? formatCurrency(openingAmount) : ""}
+              onChange={handleInputChange}
+              placeholder="R$ 0,00"
+              className="text-right"
             />
           </div>
         </div>
