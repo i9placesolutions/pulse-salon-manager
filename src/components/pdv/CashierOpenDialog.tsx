@@ -42,10 +42,15 @@ export function CashierOpenDialog({
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     // Remove formatação atual
-    const rawValue = e.target.value.replace(/\D/g, "");
+    let rawValue = e.target.value.replace(/\D/g, "");
     
-    // Converte para string mantendo apenas números
-    const numericValue = (parseInt(rawValue || "0") / 100).toString();
+    // Se o campo estiver vazio, define como "0"
+    if (!rawValue) {
+      rawValue = "0";
+    }
+    
+    // Converte para string mantendo apenas números e divide por 100 para ter o valor em reais
+    const numericValue = (parseInt(rawValue) / 100).toString();
     
     onOpeningAmountChange(numericValue);
   };
@@ -64,6 +69,7 @@ export function CashierOpenDialog({
             <Label>Valor Inicial</Label>
             <Input
               type="text"
+              inputMode="numeric"
               value={formatCurrency(openingAmount)}
               onChange={handleInputChange}
               placeholder="R$ 0,00"
