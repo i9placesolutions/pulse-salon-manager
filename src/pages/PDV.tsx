@@ -349,7 +349,7 @@ const PDV = () => {
                       Desconto
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuContent align="end" className="w-48 bg-slate-50">
                     <DropdownMenuItem onClick={() => handleValueDialog('discount')} className="bg-slate-50">
                       Adicionar Desconto
                     </DropdownMenuItem>
