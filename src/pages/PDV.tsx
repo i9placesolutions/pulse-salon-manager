@@ -369,7 +369,7 @@ const PDV = () => {
                       Acréscimo
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuContent align="end" className="w-48 bg-slate-50">
                     <DropdownMenuItem onClick={() => handleValueDialog('surcharge')}>
                       Adicionar Acréscimo
                     </DropdownMenuItem>
