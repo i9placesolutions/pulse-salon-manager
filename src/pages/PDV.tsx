@@ -14,7 +14,6 @@ import { PaymentDialog } from "@/components/pdv/PaymentDialog";
 import { CashierCloseDialog } from "@/components/pdv/CashierCloseDialog";
 import { ClientSelectDialog } from "@/components/pdv/ClientSelectDialog";
 
-// Mock data para demonstração
 const mockProducts = [
   { id: 1, name: "Corte Masculino", price: 45.00, category: "Serviço", quantity: -1 },
   { id: 2, name: "Shampoo Profissional", price: 89.90, category: "Produto", quantity: 15 },
@@ -91,6 +90,27 @@ const PDV = () => {
           discount: discountValue,
           discountType: discountType,
           totalPrice: item.unitPrice - discount
+        };
+      }
+      return item;
+    });
+
+    setCart(updatedCart);
+    updateCartTotal(updatedCart);
+  };
+
+  const applySurcharge = (itemId: number, surchargeValue: number, surchargeType: 'percentage' | 'fixed') => {
+    const updatedCart = cart.map(item => {
+      if (item.id === itemId) {
+        const surcharge = surchargeType === 'percentage' 
+          ? (item.unitPrice * surchargeValue) / 100
+          : surchargeValue;
+        
+        return {
+          ...item,
+          surcharge: surchargeValue,
+          surchargeType: surchargeType,
+          totalPrice: item.unitPrice + surcharge
         };
       }
       return item;
@@ -265,7 +285,6 @@ const PDV = () => {
 
   return (
     <div className="flex h-[calc(100vh-4rem)] overflow-hidden">
-      {/* Produtos/Serviços */}
       <div className="flex-1 p-4 overflow-y-auto">
         <div className="mb-4 flex justify-between items-center">
           <div className="relative flex-1 max-w-md">
@@ -300,7 +319,6 @@ const PDV = () => {
         </div>
       </div>
 
-      {/* Carrinho */}
       <div className="w-96 border-l bg-secondary/50">
         <div className="h-full flex flex-col">
           <div className="p-4 border-b">
@@ -324,6 +342,7 @@ const PDV = () => {
                 item={item}
                 onRemove={removeFromCart}
                 onDiscount={applyDiscount}
+                onSurcharge={applySurcharge}
               />
             ))}
           </div>
