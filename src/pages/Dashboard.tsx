@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { 
@@ -49,15 +48,17 @@ const metrics: DashboardMetric[] = [
     value: formatCurrency(45980),
     change: 12.5,
     trend: "up",
-    description: "vs. mês anterior"
+    description: "vs. mês anterior",
+    icon: DollarSign
   },
   {
-    id: "net-profit",
-    title: "Lucro Líquido",
-    value: formatCurrency(23450),
-    change: 8.2,
+    id: "ticket-medio",
+    title: "Ticket Médio",
+    value: formatCurrency(120),
+    change: 8.5,
     trend: "up",
-    description: "vs. mês anterior"
+    description: "vs. mês anterior",
+    icon: TrendingUp
   },
   {
     id: "appointments",
@@ -65,7 +66,8 @@ const metrics: DashboardMetric[] = [
     value: 24,
     change: 4.1,
     trend: "up",
-    description: "vs. ontem"
+    description: "vs. ontem",
+    icon: Calendar
   },
   {
     id: "clients",
@@ -73,7 +75,8 @@ const metrics: DashboardMetric[] = [
     value: 193,
     change: 2.3,
     trend: "up",
-    description: "este mês"
+    description: "este mês",
+    icon: Users
   },
   {
     id: "products",
@@ -81,7 +84,8 @@ const metrics: DashboardMetric[] = [
     value: 78,
     change: -5.2,
     trend: "down",
-    description: "este mês"
+    description: "este mês",
+    icon: ShoppingBag
   },
   {
     id: "avg-time",
@@ -90,7 +94,8 @@ const metrics: DashboardMetric[] = [
     suffix: "min",
     change: 0,
     trend: "neutral",
-    description: "por atendimento"
+    description: "por atendimento",
+    icon: Clock
   }
 ];
 
