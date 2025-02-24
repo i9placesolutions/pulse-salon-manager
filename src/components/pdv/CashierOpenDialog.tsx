@@ -30,7 +30,7 @@ export function CashierOpenDialog({
     // Remove todos os caracteres não numéricos
     const numericValue = value.replace(/\D/g, "");
     
-    // Converte para centavos e garante que seja um número válido
+    // Converte para centavos (se vazio, usa 0)
     const cents = numericValue ? parseInt(numericValue) : 0;
     
     // Formata o número como moeda brasileira
@@ -41,18 +41,17 @@ export function CashierOpenDialog({
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Remove formatação atual
-    let rawValue = e.target.value.replace(/\D/g, "");
+    // Pega o valor atual do input
+    const inputValue = e.target.value;
     
-    // Se o campo estiver vazio, define como "0"
-    if (!rawValue) {
-      rawValue = "0";
-    }
+    // Remove qualquer caractere que não seja número
+    const numericValue = inputValue.replace(/\D/g, "");
     
-    // Converte para string mantendo apenas números e divide por 100 para ter o valor em reais
-    const numericValue = (parseInt(rawValue) / 100).toString();
+    // Converte para reais (divide por 100)
+    const valueInReais = (parseInt(numericValue || "0") / 100).toString();
     
-    onOpeningAmountChange(numericValue);
+    // Atualiza o valor
+    onOpeningAmountChange(valueInReais);
   };
 
   return (
