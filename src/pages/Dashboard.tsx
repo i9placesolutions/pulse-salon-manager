@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { 
@@ -85,7 +86,7 @@ const metrics: DashboardMetric[] = [
     change: -5.2,
     trend: "down",
     description: "este mês",
-    icon: ShoppingBag
+    icon: ShoppingCart
   },
   {
     id: "avg-time",
