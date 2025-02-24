@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Search, ShoppingCart, User, CircleDollarSign, AlertTriangle, Percent, Plus, Minus } from "lucide-react";
+import { Search, ShoppingCart, User, CircleDollarSign, AlertTriangle, Percent, Plus, Minus, X } from "lucide-react";
 import { formatCurrency } from "@/utils/currency";
 import { useToast } from "@/hooks/use-toast";
 import type { PDVState, Sale, SaleItem, Payment, CashierSession } from "@/types/pdv";
