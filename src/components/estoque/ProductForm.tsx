@@ -1,17 +1,10 @@
 
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Product } from "@/types/stock";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 
 interface ProductFormProps {
   open: boolean;
@@ -52,18 +45,18 @@ export function ProductForm({ open, onOpenChange, onSubmit, product }: ProductFo
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>{product ? "Editar Produto" : "Novo Produto"}</DialogTitle>
-          <DialogDescription>
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent className="w-[500px] sm:w-[540px] overflow-y-auto">
+        <SheetHeader>
+          <SheetTitle>{product ? "Editar Produto" : "Novo Produto"}</SheetTitle>
+          <SheetDescription>
             {product
               ? "Atualize as informações do produto."
               : "Preencha as informações para cadastrar um novo produto."}
-          </DialogDescription>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-4 py-4">
+          </SheetDescription>
+        </SheetHeader>
+        <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+          <div className="space-y-4">
             <div className="space-y-2">
               <label htmlFor="name">Nome do Produto</label>
               <Input
@@ -240,13 +233,16 @@ export function ProductForm({ open, onOpenChange, onSubmit, product }: ProductFo
               </div>
             </div>
           </div>
-          <DialogFooter>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" type="button" onClick={() => onOpenChange(false)}>
+              Cancelar
+            </Button>
             <Button type="submit">
               {product ? "Salvar Alterações" : "Cadastrar Produto"}
             </Button>
-          </DialogFooter>
+          </div>
         </form>
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   );
 }
