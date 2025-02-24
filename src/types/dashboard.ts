@@ -1,4 +1,6 @@
 
+import { LucideIcon } from "lucide-react";
+
 export interface DashboardMetric {
   id: string;
   title: string;
@@ -8,6 +10,7 @@ export interface DashboardMetric {
   description: string;
   prefix?: string;
   suffix?: string;
+  icon?: LucideIcon;
 }
 
 export interface AppointmentSummary {
@@ -38,4 +41,3 @@ export interface TopProduct {
   quantity: number;
   revenue: number;
 }
-

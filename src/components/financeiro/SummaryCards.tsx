@@ -1,11 +1,11 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { DollarSign, Calendar, Users, ArrowUp, ArrowDown, Wallet } from "lucide-react";
+import { DollarSign, Calendar, Users, ArrowUp, ArrowDown, Wallet, TrendingUp } from "lucide-react";
 import { formatCurrency } from "@/utils/currency";
 
 export const SummaryCards = () => {
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
       <Card className="bg-green-50">
         <CardHeader className="flex flex-row items-center justify-between pb-2">
           <CardTitle className="text-sm font-medium text-green-700">
@@ -34,6 +34,22 @@ export const SummaryCards = () => {
           <p className="text-xs text-blue-600 flex items-center">
             <ArrowUp className="h-3 w-3 mr-1" />
             +12.3% em relação ao mês passado
+          </p>
+        </CardContent>
+      </Card>
+
+      <Card className="bg-purple-50">
+        <CardHeader className="flex flex-row items-center justify-between pb-2">
+          <CardTitle className="text-sm font-medium text-purple-700">
+            Ticket Médio
+          </CardTitle>
+          <TrendingUp className="h-4 w-4 text-purple-700" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold text-purple-700">{formatCurrency(120)}</div>
+          <p className="text-xs text-purple-600 flex items-center">
+            <ArrowUp className="h-3 w-3 mr-1" />
+            +8.5% em relação ao mês passado
           </p>
         </CardContent>
       </Card>

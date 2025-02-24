@@ -1,13 +1,61 @@
 
 import { DashboardMetric } from "@/types/dashboard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowUp, ArrowDown, Minus } from "lucide-react";
+import { ArrowUp, ArrowDown, Minus, TrendingUp, DollarSign, Users, ShoppingBag, Clock } from "lucide-react";
 
 interface MetricsGridProps {
   metrics: DashboardMetric[];
 }
 
 export function MetricsGrid({ metrics }: MetricsGridProps) {
+  const defaultMetrics: DashboardMetric[] = [
+    {
+      id: "revenue",
+      title: "Faturamento",
+      value: "R$ 45.980",
+      change: 12.3,
+      trend: "up",
+      description: "em relação ao mês passado",
+      icon: DollarSign
+    },
+    {
+      id: "ticket",
+      title: "Ticket Médio",
+      value: "R$ 120",
+      change: 8.5,
+      trend: "up",
+      description: "em relação ao mês passado",
+      icon: TrendingUp
+    },
+    {
+      id: "clients",
+      title: "Clientes Atendidos",
+      value: "382",
+      change: 5.2,
+      trend: "up",
+      description: "este mês",
+      icon: Users
+    },
+    {
+      id: "services",
+      title: "Serviços Realizados",
+      value: "456",
+      change: 7.8,
+      trend: "up",
+      description: "este mês",
+      icon: ShoppingBag
+    },
+    {
+      id: "waiting",
+      title: "Tempo Médio Espera",
+      value: "12min",
+      change: -2.5,
+      trend: "down",
+      description: "em relação a ontem",
+      icon: Clock
+    }
+  ];
+
   const getTrendIcon = (trend: 'up' | 'down' | 'neutral') => {
     switch (trend) {
       case 'up':
@@ -19,14 +67,17 @@ export function MetricsGrid({ metrics }: MetricsGridProps) {
     }
   };
 
+  const metricsToShow = metrics.length > 0 ? metrics : defaultMetrics;
+
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-      {metrics.map((metric) => (
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+      {metricsToShow.map((metric) => (
         <Card key={metric.id}>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">
               {metric.title}
             </CardTitle>
+            {metric.icon && <metric.icon className="h-4 w-4 text-muted-foreground" />}
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
