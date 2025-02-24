@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,6 +13,19 @@ import { CartItem } from "@/components/pdv/CartItem";
 import { PaymentDialog } from "@/components/pdv/PaymentDialog";
 import { CashierCloseDialog } from "@/components/pdv/CashierCloseDialog";
 import { ClientSelectDialog } from "@/components/pdv/ClientSelectDialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 const mockProducts = [
   { id: 1, name: "Corte Masculino", price: 45.00, category: "Serviço", quantity: -1 },
@@ -54,11 +66,15 @@ const PDV = () => {
   const [remainingAmount, setRemainingAmount] = useState(0);
   const [changeAmount, setChangeAmount] = useState(0);
   
-  // New state for order-level discount and surcharge
   const [discount, setDiscount] = useState(0);
   const [discountType, setDiscountType] = useState<'fixed' | 'percentage'>('fixed');
   const [surcharge, setSurcharge] = useState(0);
   const [surchargeType, setSurchargeType] = useState<'fixed' | 'percentage'>('fixed');
+  const [isDiscountDialogOpen, setIsDiscountDialogOpen] = useState(false);
+  const [isSurchargeDialogOpen, setIsSurchargeDialogOpen] = useState(false);
+  const [tempValue, setTempValue] = useState("");
+  const [tempType, setTempType] = useState<'fixed' | 'percentage'>('fixed');
+  const [tempOperation, setTempOperation] = useState<'discount' | 'surcharge'>('discount');
 
   const addToCart = (product: any) => {
     const newItem: SaleItem = {
@@ -78,7 +94,6 @@ const PDV = () => {
     const subtotal = items.reduce((acc, item) => acc + item.totalPrice, 0);
     setCartSubtotal(subtotal);
     
-    // Calculate final total with discount and surcharge
     let total = subtotal;
     
     if (discount > 0) {
@@ -121,6 +136,30 @@ const PDV = () => {
     setSurcharge(Number(value));
     setSurchargeType(type);
     updateCartTotals(cart);
+  };
+
+  const handleValueDialog = (operation: 'discount' | 'surcharge') => {
+    setTempOperation(operation);
+    setTempValue("");
+    if (operation === 'discount') {
+      setIsDiscountDialogOpen(true);
+    } else {
+      setIsSurchargeDialogOpen(true);
+    }
+  };
+
+  const handleConfirmValue = () => {
+    const value = Number(tempValue);
+    if (tempOperation === 'discount') {
+      setDiscount(value);
+      setDiscountType(tempType);
+    } else {
+      setSurcharge(value);
+      setSurchargeType(tempType);
+    }
+    updateCartTotals(cart);
+    setIsDiscountDialogOpen(false);
+    setIsSurchargeDialogOpen(false);
   };
 
   const addPayment = () => {
@@ -349,31 +388,62 @@ const PDV = () => {
           </div>
 
           <div className="border-t p-4 space-y-4">
-            <div className="space-y-2">
+            <div className="space-y-4">
               <div className="flex justify-between items-center text-sm">
                 <span>Subtotal</span>
                 <span>{formatCurrency(cartSubtotal)}</span>
               </div>
               
               <div className="flex gap-2">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="flex-1"
-                  onClick={() => handleDiscount('fixed')}
-                >
-                  <Minus className="w-4 h-4 mr-1" />
-                  R$
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  className="flex-1"
-                  onClick={() => handleDiscount('percentage')}
-                >
-                  <Minus className="w-4 h-4 mr-1" />
-                  %
-                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="w-full">
+                      <Minus className="w-4 h-4 mr-2" />
+                      Desconto
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-48">
+                    <DropdownMenuItem onClick={() => handleValueDialog('discount')}>
+                      Adicionar Desconto
+                    </DropdownMenuItem>
+                    {discount > 0 && (
+                      <DropdownMenuItem 
+                        onClick={() => {
+                          setDiscount(0);
+                          updateCartTotals(cart);
+                        }}
+                        className="text-red-500"
+                      >
+                        Remover Desconto
+                      </DropdownMenuItem>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="w-full">
+                      <Plus className="w-4 h-4 mr-2" />
+                      Acréscimo
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-48">
+                    <DropdownMenuItem onClick={() => handleValueDialog('surcharge')}>
+                      Adicionar Acréscimo
+                    </DropdownMenuItem>
+                    {surcharge > 0 && (
+                      <DropdownMenuItem 
+                        onClick={() => {
+                          setSurcharge(0);
+                          updateCartTotals(cart);
+                        }}
+                        className="text-red-500"
+                      >
+                        Remover Acréscimo
+                      </DropdownMenuItem>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
               
               {discount > 0 && (
@@ -382,27 +452,6 @@ const PDV = () => {
                   <span>-{formatCurrency(discountType === 'percentage' ? (cartSubtotal * discount) / 100 : discount)}</span>
                 </div>
               )}
-
-              <div className="flex gap-2">
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  className="flex-1"
-                  onClick={() => handleSurcharge('fixed')}
-                >
-                  <Plus className="w-4 h-4 mr-1" />
-                  R$
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  className="flex-1"
-                  onClick={() => handleSurcharge('percentage')}
-                >
-                  <Plus className="w-4 h-4 mr-1" />
-                  %
-                </Button>
-              </div>
 
               {surcharge > 0 && (
                 <div className="flex justify-between items-center text-sm text-red-500">
@@ -458,6 +507,86 @@ const PDV = () => {
         sales={state.recentSales}
         onConfirm={handleCloseCashier}
       />
+
+      <Dialog open={isDiscountDialogOpen} onOpenChange={setIsDiscountDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Adicionar Desconto</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="flex items-center gap-4">
+              <Button
+                variant={tempType === 'fixed' ? "default" : "outline"}
+                onClick={() => setTempType('fixed')}
+                className="flex-1"
+              >
+                Valor Fixo (R$)
+              </Button>
+              <Button
+                variant={tempType === 'percentage' ? "default" : "outline"}
+                onClick={() => setTempType('percentage')}
+                className="flex-1"
+              >
+                Porcentagem (%)
+              </Button>
+            </div>
+            <Input
+              type="number"
+              placeholder={tempType === 'fixed' ? "Valor em R$" : "Valor em %"}
+              value={tempValue}
+              onChange={(e) => setTempValue(e.target.value)}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDiscountDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleConfirmValue}>
+              Confirmar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isSurchargeDialogOpen} onOpenChange={setIsSurchargeDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Adicionar Acréscimo</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="flex items-center gap-4">
+              <Button
+                variant={tempType === 'fixed' ? "default" : "outline"}
+                onClick={() => setTempType('fixed')}
+                className="flex-1"
+              >
+                Valor Fixo (R$)
+              </Button>
+              <Button
+                variant={tempType === 'percentage' ? "default" : "outline"}
+                onClick={() => setTempType('percentage')}
+                className="flex-1"
+              >
+                Porcentagem (%)
+              </Button>
+            </div>
+            <Input
+              type="number"
+              placeholder={tempType === 'fixed' ? "Valor em R$" : "Valor em %"}
+              value={tempValue}
+              onChange={(e) => setTempValue(e.target.value)}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsSurchargeDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleConfirmValue}>
+              Confirmar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
