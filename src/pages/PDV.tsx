@@ -120,6 +120,21 @@ const PDV = () => {
     setRemainingAmount(total);
   };
 
+  const updateItemQuantity = (itemId: number, newQuantity: number) => {
+    const updatedCart = cart.map(item => {
+      if (item.id === itemId) {
+        return {
+          ...item,
+          quantity: newQuantity,
+          totalPrice: item.unitPrice * newQuantity
+        };
+      }
+      return item;
+    });
+    setCart(updatedCart);
+    updateCartTotals(updatedCart);
+  };
+
   const removeFromCart = (itemId: number) => {
     const updatedCart = cart.filter(item => item.id !== itemId);
     setCart(updatedCart);
@@ -390,7 +405,14 @@ const PDV = () => {
           </div>
 
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {cart.map(item => <CartItem key={item.id} item={item} onRemove={removeFromCart} />)}
+            {cart.map(item => (
+              <CartItem 
+                key={item.id} 
+                item={item} 
+                onRemove={removeFromCart}
+                onUpdateQuantity={updateItemQuantity} 
+              />
+            ))}
           </div>
 
           <div className="border-t p-4 space-y-4">
@@ -417,6 +439,9 @@ const PDV = () => {
                         onClick={() => {
                           setDiscount(0);
                           updateCartTotals(cart);
+                          toast({
+                            description: "Desconto removido com sucesso",
+                          });
                         }}
                         className="text-red-500"
                       >
@@ -442,6 +467,9 @@ const PDV = () => {
                         onClick={() => {
                           setSurcharge(0);
                           updateCartTotals(cart);
+                          toast({
+                            description: "Acréscimo removido com sucesso",
+                          });
                         }}
                         className="text-red-500"
                       >
@@ -452,15 +480,19 @@ const PDV = () => {
                 </DropdownMenu>
               </div>
               
-              {discount > 0 && <div className="flex justify-between items-center text-sm text-green-500">
+              {discount > 0 && (
+                <div className="flex justify-between items-center text-sm text-green-500 bg-green-50 p-2 rounded-md">
                   <span>Desconto {discountType === 'percentage' ? `(${discount}%)` : ''}</span>
                   <span>-{formatCurrency(discountType === 'percentage' ? cartSubtotal * discount / 100 : discount)}</span>
-                </div>}
+                </div>
+              )}
 
-              {surcharge > 0 && <div className="flex justify-between items-center text-sm text-red-500">
+              {surcharge > 0 && (
+                <div className="flex justify-between items-center text-sm text-red-500 bg-red-50 p-2 rounded-md">
                   <span>Acréscimo {surchargeType === 'percentage' ? `(${surcharge}%)` : ''}</span>
                   <span>+{formatCurrency(surchargeType === 'percentage' ? cartSubtotal * surcharge / 100 : surcharge)}</span>
-                </div>}
+                </div>
+              )}
 
               <div className="flex justify-between items-center pt-2 border-t">
                 <span className="font-medium">Total</span>
