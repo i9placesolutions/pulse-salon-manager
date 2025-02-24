@@ -14,6 +14,7 @@ import { CashierCloseDialog } from "@/components/pdv/CashierCloseDialog";
 import { ClientSelectDialog } from "@/components/pdv/ClientSelectDialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+
 const mockProducts = [{
   id: 1,
   name: "Corte Masculino",
@@ -39,6 +40,7 @@ const mockProducts = [{
   category: "Serviço",
   quantity: -1
 }];
+
 const mockClients = [{
   id: 1,
   name: "João Silva",
@@ -52,6 +54,7 @@ const mockClients = [{
   email: "maria@email.com",
   cpf: "987.654.321-00"
 }];
+
 const PDV = () => {
   const {
     toast
@@ -87,6 +90,7 @@ const PDV = () => {
   const [tempValue, setTempValue] = useState("");
   const [tempType, setTempType] = useState<'fixed' | 'percentage'>('fixed');
   const [tempOperation, setTempOperation] = useState<'discount' | 'surcharge'>('discount');
+
   const addToCart = (product: any) => {
     const newItem: SaleItem = {
       id: Date.now(),
@@ -99,6 +103,7 @@ const PDV = () => {
     setCart(prev => [...prev, newItem]);
     updateCartTotals([...cart, newItem]);
   };
+
   const updateCartTotals = (items: SaleItem[]) => {
     const subtotal = items.reduce((acc, item) => acc + item.totalPrice, 0);
     setCartSubtotal(subtotal);
@@ -114,11 +119,13 @@ const PDV = () => {
     setCartTotal(total);
     setRemainingAmount(total);
   };
+
   const removeFromCart = (itemId: number) => {
     const updatedCart = cart.filter(item => item.id !== itemId);
     setCart(updatedCart);
     updateCartTotals(updatedCart);
   };
+
   const handleDiscount = (type: 'fixed' | 'percentage') => {
     const value = prompt(`Digite o valor do desconto ${type === 'percentage' ? 'em porcentagem' : 'em reais'}:`);
     if (!value) return;
@@ -126,6 +133,7 @@ const PDV = () => {
     setDiscountType(type);
     updateCartTotals(cart);
   };
+
   const handleSurcharge = (type: 'fixed' | 'percentage') => {
     const value = prompt(`Digite o valor do acréscimo ${type === 'percentage' ? 'em porcentagem' : 'em reais'}:`);
     if (!value) return;
@@ -133,7 +141,17 @@ const PDV = () => {
     setSurchargeType(type);
     updateCartTotals(cart);
   };
+
   const handleValueDialog = (operation: 'discount' | 'surcharge') => {
+    if (cart.length === 0) {
+      toast({
+        title: "Carrinho vazio",
+        description: "Adicione itens ao carrinho antes de aplicar desconto ou acréscimo.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     setTempOperation(operation);
     setTempValue("");
     if (operation === 'discount') {
@@ -142,19 +160,54 @@ const PDV = () => {
       setIsSurchargeDialogOpen(true);
     }
   };
+
   const handleConfirmValue = () => {
     const value = Number(tempValue);
+    
     if (tempOperation === 'discount') {
+      // Check if discount is percentage
+      if (tempType === 'percentage') {
+        if (value > 100) {
+          toast({
+            title: "Desconto inválido",
+            description: "O desconto não pode ser maior que 100%",
+            variant: "destructive"
+          });
+          return;
+        }
+        // Calculate actual discount amount
+        const discountAmount = (cartSubtotal * value) / 100;
+        if (discountAmount >= cartSubtotal) {
+          toast({
+            title: "Desconto inválido",
+            description: "O desconto não pode ser maior que o valor total dos produtos",
+            variant: "destructive"
+          });
+          return;
+        }
+      } else {
+        // Fixed value discount
+        if (value >= cartSubtotal) {
+          toast({
+            title: "Desconto inválido",
+            description: "O desconto não pode ser maior que o valor total dos produtos",
+            variant: "destructive"
+          });
+          return;
+        }
+      }
       setDiscount(value);
       setDiscountType(tempType);
     } else {
       setSurcharge(value);
       setSurchargeType(tempType);
     }
+    
     updateCartTotals(cart);
     setIsDiscountDialogOpen(false);
     setIsSurchargeDialogOpen(false);
   };
+
   const addPayment = () => {
     if (!paymentAmount || Number(paymentAmount) <= 0) return;
     const amount = Number(paymentAmount);
@@ -172,6 +225,7 @@ const PDV = () => {
     setRemainingAmount(prev => Math.max(0, prev - amount));
     setPaymentAmount("");
   };
+
   const finalizeSale = () => {
     if (remainingAmount > 0) {
       toast({
@@ -208,12 +262,14 @@ const PDV = () => {
       description: "Venda realizada com sucesso!"
     });
   };
+
   useEffect(() => {
     setState(prev => ({
       ...prev,
       isDayStarted: false
     }));
   }, []);
+
   const handleOpenCashier = () => {
     if (!openingAmount || Number(openingAmount) <= 0) {
       toast({
@@ -245,6 +301,7 @@ const PDV = () => {
       description: `Caixa aberto com saldo inicial de ${formatCurrency(Number(openingAmount))}`
     });
   };
+
   const handleCloseCashier = () => {
     if (!state.cashierSession) return;
     const totalSales = state.recentSales.reduce((acc, sale) => acc + sale.total, 0);
@@ -270,6 +327,7 @@ const PDV = () => {
       description: "O caixa foi fechado com sucesso!"
     });
   };
+
   if (!state.isDayStarted) {
     return <div className="flex h-[calc(100vh-4rem)] items-center justify-center">
         <Card className="w-[400px]">
@@ -292,6 +350,7 @@ const PDV = () => {
         <CashierOpenDialog isOpen={isOpenCashierDialog} onOpenChange={setIsOpenCashierDialog} openingAmount={openingAmount} onOpeningAmountChange={setOpeningAmount} onConfirm={handleOpenCashier} />
       </div>;
   }
+
   return <div className="flex h-[calc(100vh-4rem)] overflow-hidden">
       <div className="flex-1 p-4 overflow-y-auto">
         <div className="mb-4 flex justify-between items-center">
@@ -344,27 +403,32 @@ const PDV = () => {
               <div className="flex gap-2">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="outline" className="w-full">
+                    <Button variant="outline" className="w-full" disabled={cart.length === 0}>
                       <Minus className="w-4 h-4 mr-2" />
                       Desconto
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-48 bg-slate-50">
-                    <DropdownMenuItem onClick={() => handleValueDialog('discount')} className="bg-slate-50">
+                    <DropdownMenuItem onClick={() => handleValueDialog('discount')}>
                       Adicionar Desconto
                     </DropdownMenuItem>
-                    {discount > 0 && <DropdownMenuItem onClick={() => {
-                    setDiscount(0);
-                    updateCartTotals(cart);
-                  }} className="text-red-500">
+                    {discount > 0 && (
+                      <DropdownMenuItem 
+                        onClick={() => {
+                          setDiscount(0);
+                          updateCartTotals(cart);
+                        }}
+                        className="text-red-500"
+                      >
                         Remover Desconto
-                      </DropdownMenuItem>}
+                      </DropdownMenuItem>
+                    )}
                   </DropdownMenuContent>
                 </DropdownMenu>
 
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="outline" className="w-full">
+                    <Button variant="outline" className="w-full" disabled={cart.length === 0}>
                       <Plus className="w-4 h-4 mr-2" />
                       Acréscimo
                     </Button>
@@ -373,12 +437,17 @@ const PDV = () => {
                     <DropdownMenuItem onClick={() => handleValueDialog('surcharge')}>
                       Adicionar Acréscimo
                     </DropdownMenuItem>
-                    {surcharge > 0 && <DropdownMenuItem onClick={() => {
-                    setSurcharge(0);
-                    updateCartTotals(cart);
-                  }} className="text-red-500">
+                    {surcharge > 0 && (
+                      <DropdownMenuItem 
+                        onClick={() => {
+                          setSurcharge(0);
+                          updateCartTotals(cart);
+                        }}
+                        className="text-red-500"
+                      >
                         Remover Acréscimo
-                      </DropdownMenuItem>}
+                      </DropdownMenuItem>
+                    )}
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
@@ -467,4 +536,5 @@ const PDV = () => {
       </Dialog>
     </div>;
 };
+
 export default PDV;
