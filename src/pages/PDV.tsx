@@ -1,8 +1,9 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Search, ShoppingCart, User, CircleDollarSign, AlertTriangle } from "lucide-react";
+import { Search, ShoppingCart, User, CircleDollarSign, AlertTriangle, Percent, Plus, Minus } from "lucide-react";
 import { formatCurrency } from "@/utils/currency";
 import { useToast } from "@/hooks/use-toast";
 import type { PDVState, Sale, SaleItem, Payment, CashierSession } from "@/types/pdv";
@@ -48,9 +49,16 @@ const PDV = () => {
   const [paymentMethods, setPaymentMethods] = useState<Payment[]>([]);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>("cash");
   const [paymentAmount, setPaymentAmount] = useState<string>("");
+  const [cartSubtotal, setCartSubtotal] = useState(0);
   const [cartTotal, setCartTotal] = useState(0);
   const [remainingAmount, setRemainingAmount] = useState(0);
   const [changeAmount, setChangeAmount] = useState(0);
+  
+  // New state for order-level discount and surcharge
+  const [discount, setDiscount] = useState(0);
+  const [discountType, setDiscountType] = useState<'fixed' | 'percentage'>('fixed');
+  const [surcharge, setSurcharge] = useState(0);
+  const [surchargeType, setSurchargeType] = useState<'fixed' | 'percentage'>('fixed');
 
   const addToCart = (product: any) => {
     const newItem: SaleItem = {
@@ -63,11 +71,30 @@ const PDV = () => {
     };
 
     setCart(prev => [...prev, newItem]);
-    updateCartTotal([...cart, newItem]);
+    updateCartTotals([...cart, newItem]);
   };
 
-  const updateCartTotal = (items: SaleItem[]) => {
-    const total = items.reduce((acc, item) => acc + item.totalPrice, 0);
+  const updateCartTotals = (items: SaleItem[]) => {
+    const subtotal = items.reduce((acc, item) => acc + item.totalPrice, 0);
+    setCartSubtotal(subtotal);
+    
+    // Calculate final total with discount and surcharge
+    let total = subtotal;
+    
+    if (discount > 0) {
+      const discountValue = discountType === 'percentage' 
+        ? (subtotal * discount) / 100 
+        : discount;
+      total -= discountValue;
+    }
+    
+    if (surcharge > 0) {
+      const surchargeValue = surchargeType === 'percentage'
+        ? (subtotal * surcharge) / 100
+        : surcharge;
+      total += surchargeValue;
+    }
+    
     setCartTotal(total);
     setRemainingAmount(total);
   };
@@ -75,49 +102,25 @@ const PDV = () => {
   const removeFromCart = (itemId: number) => {
     const updatedCart = cart.filter(item => item.id !== itemId);
     setCart(updatedCart);
-    updateCartTotal(updatedCart);
+    updateCartTotals(updatedCart);
   };
 
-  const applyDiscount = (itemId: number, discountValue: number, discountType: 'percentage' | 'fixed') => {
-    const updatedCart = cart.map(item => {
-      if (item.id === itemId) {
-        const discount = discountType === 'percentage' 
-          ? (item.unitPrice * discountValue) / 100
-          : discountValue;
-        
-        return {
-          ...item,
-          discount: discountValue,
-          discountType: discountType,
-          totalPrice: item.unitPrice - discount
-        };
-      }
-      return item;
-    });
-
-    setCart(updatedCart);
-    updateCartTotal(updatedCart);
+  const handleDiscount = (type: 'fixed' | 'percentage') => {
+    const value = prompt(`Digite o valor do desconto ${type === 'percentage' ? 'em porcentagem' : 'em reais'}:`);
+    if (!value) return;
+    
+    setDiscount(Number(value));
+    setDiscountType(type);
+    updateCartTotals(cart);
   };
 
-  const applySurcharge = (itemId: number, surchargeValue: number, surchargeType: 'percentage' | 'fixed') => {
-    const updatedCart = cart.map(item => {
-      if (item.id === itemId) {
-        const surcharge = surchargeType === 'percentage' 
-          ? (item.unitPrice * surchargeValue) / 100
-          : surchargeValue;
-        
-        return {
-          ...item,
-          surcharge: surchargeValue,
-          surchargeType: surchargeType,
-          totalPrice: item.unitPrice + surcharge
-        };
-      }
-      return item;
-    });
-
-    setCart(updatedCart);
-    updateCartTotal(updatedCart);
+  const handleSurcharge = (type: 'fixed' | 'percentage') => {
+    const value = prompt(`Digite o valor do acréscimo ${type === 'percentage' ? 'em porcentagem' : 'em reais'}:`);
+    if (!value) return;
+    
+    setSurcharge(Number(value));
+    setSurchargeType(type);
+    updateCartTotals(cart);
   };
 
   const addPayment = () => {
@@ -341,16 +344,77 @@ const PDV = () => {
                 key={item.id}
                 item={item}
                 onRemove={removeFromCart}
-                onDiscount={applyDiscount}
-                onSurcharge={applySurcharge}
               />
             ))}
           </div>
 
           <div className="border-t p-4 space-y-4">
-            <div className="flex justify-between items-center">
-              <span className="text-sm font-medium">Total</span>
-              <span className="text-2xl font-bold">{formatCurrency(cartTotal)}</span>
+            <div className="space-y-2">
+              <div className="flex justify-between items-center text-sm">
+                <span>Subtotal</span>
+                <span>{formatCurrency(cartSubtotal)}</span>
+              </div>
+              
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="flex-1"
+                  onClick={() => handleDiscount('fixed')}
+                >
+                  <Minus className="w-4 h-4 mr-1" />
+                  R$
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  className="flex-1"
+                  onClick={() => handleDiscount('percentage')}
+                >
+                  <Minus className="w-4 h-4 mr-1" />
+                  %
+                </Button>
+              </div>
+              
+              {discount > 0 && (
+                <div className="flex justify-between items-center text-sm text-green-500">
+                  <span>Desconto {discountType === 'percentage' ? `(${discount}%)` : ''}</span>
+                  <span>-{formatCurrency(discountType === 'percentage' ? (cartSubtotal * discount) / 100 : discount)}</span>
+                </div>
+              )}
+
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  className="flex-1"
+                  onClick={() => handleSurcharge('fixed')}
+                >
+                  <Plus className="w-4 h-4 mr-1" />
+                  R$
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  className="flex-1"
+                  onClick={() => handleSurcharge('percentage')}
+                >
+                  <Plus className="w-4 h-4 mr-1" />
+                  %
+                </Button>
+              </div>
+
+              {surcharge > 0 && (
+                <div className="flex justify-between items-center text-sm text-red-500">
+                  <span>Acréscimo {surchargeType === 'percentage' ? `(${surcharge}%)` : ''}</span>
+                  <span>+{formatCurrency(surchargeType === 'percentage' ? (cartSubtotal * surcharge) / 100 : surcharge)}</span>
+                </div>
+              )}
+
+              <div className="flex justify-between items-center pt-2 border-t">
+                <span className="font-medium">Total</span>
+                <span className="text-2xl font-bold">{formatCurrency(cartTotal)}</span>
+              </div>
             </div>
 
             <Button 
