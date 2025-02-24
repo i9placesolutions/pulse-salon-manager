@@ -107,15 +107,25 @@ const PDV = () => {
   const updateCartTotals = (items: SaleItem[]) => {
     const subtotal = items.reduce((acc, item) => acc + item.totalPrice, 0);
     setCartSubtotal(subtotal);
+    
     let total = subtotal;
+    
     if (discount > 0) {
-      const discountValue = discountType === 'percentage' ? subtotal * discount / 100 : discount;
-      total -= discountValue;
+      const discountValue = discountType === 'percentage' 
+        ? (subtotal * discount) / 100 
+        : discount;
+      total = total - discountValue;
     }
+    
     if (surcharge > 0) {
-      const surchargeValue = surchargeType === 'percentage' ? subtotal * surcharge / 100 : surcharge;
-      total += surchargeValue;
+      const surchargeValue = surchargeType === 'percentage'
+        ? (subtotal * surcharge) / 100
+        : surcharge;
+      total = total + surchargeValue;
     }
+    
+    total = Math.max(0, total);
+    
     setCartTotal(total);
     setRemainingAmount(total);
   };
@@ -180,7 +190,6 @@ const PDV = () => {
     const value = Number(tempValue);
     
     if (tempOperation === 'discount') {
-      // Check if discount is percentage
       if (tempType === 'percentage') {
         if (value > 100) {
           toast({
@@ -190,7 +199,6 @@ const PDV = () => {
           });
           return;
         }
-        // Calculate actual discount amount
         const discountAmount = (cartSubtotal * value) / 100;
         if (discountAmount >= cartSubtotal) {
           toast({
@@ -201,7 +209,6 @@ const PDV = () => {
           return;
         }
       } else {
-        // Fixed value discount
         if (value >= cartSubtotal) {
           toast({
             title: "Desconto inválido",
@@ -218,7 +225,8 @@ const PDV = () => {
       setSurchargeType(tempType);
     }
     
-    updateCartTotals(cart);
+    setTimeout(() => updateCartTotals(cart), 0);
+    
     setIsDiscountDialogOpen(false);
     setIsSurchargeDialogOpen(false);
   };
