@@ -56,6 +56,8 @@ export interface SaleItem {
   totalPrice: number;
   discount?: number;
   discountType?: 'percentage' | 'fixed';
+  surcharge?: number;
+  surchargeType?: 'percentage' | 'fixed';
   professional?: {
     id: number;
     name: string;
