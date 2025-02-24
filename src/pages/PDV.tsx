@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { User, CircleDollarSign, AlertTriangle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { formatCurrency } from "@/utils/currency";
 import type { PDVState, Sale, SaleItem, Payment, CashierSession } from "@/types/pdv";
 import { CashierOpenDialog } from "@/components/pdv/CashierOpenDialog";
 import { PaymentDialog } from "@/components/pdv/PaymentDialog";
@@ -53,9 +55,7 @@ const mockClients = [{
 }];
 
 const PDV = () => {
-  const {
-    toast
-  } = useToast();
+  const { toast } = useToast();
   const [state, setState] = useState<PDVState>({
     cashierSession: null,
     currentSale: null,
