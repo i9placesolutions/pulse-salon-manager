@@ -1,18 +1,15 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Search, ShoppingCart, User, CircleDollarSign, AlertTriangle, Percent, Plus, Minus, X } from "lucide-react";
-import { formatCurrency } from "@/utils/currency";
+import { Card } from "@/components/ui/card";
+import { User, CircleDollarSign, AlertTriangle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type { PDVState, Sale, SaleItem, Payment, CashierSession } from "@/types/pdv";
 import { CashierOpenDialog } from "@/components/pdv/CashierOpenDialog";
-import { ProductCard } from "@/components/pdv/ProductCard";
-import { CartItem } from "@/components/pdv/CartItem";
 import { PaymentDialog } from "@/components/pdv/PaymentDialog";
 import { CashierCloseDialog } from "@/components/pdv/CashierCloseDialog";
 import { ClientSelectDialog } from "@/components/pdv/ClientSelectDialog";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { ProductGrid } from "@/components/pdv/ProductGrid";
+import { Cart } from "@/components/pdv/Cart";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 
 const mockProducts = [{
@@ -352,7 +349,8 @@ const PDV = () => {
   };
 
   if (!state.isDayStarted) {
-    return <div className="flex h-[calc(100vh-4rem)] items-center justify-center">
+    return (
+      <div className="flex h-[calc(100vh-4rem)] items-center justify-center">
         <Card className="w-[400px]">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -370,17 +368,27 @@ const PDV = () => {
           </CardContent>
         </Card>
 
-        <CashierOpenDialog isOpen={isOpenCashierDialog} onOpenChange={setIsOpenCashierDialog} openingAmount={openingAmount} onOpeningAmountChange={setOpeningAmount} onConfirm={handleOpenCashier} />
-      </div>;
+        <CashierOpenDialog
+          isOpen={isOpenCashierDialog}
+          onOpenChange={setIsOpenCashierDialog}
+          openingAmount={openingAmount}
+          onOpeningAmountChange={setOpeningAmount}
+          onConfirm={handleOpenCashier}
+        />
+      </div>
+    );
   }
 
-  return <div className="flex h-[calc(100vh-4rem)] overflow-hidden">
+  return (
+    <div className="flex h-[calc(100vh-4rem)] overflow-hidden">
       <div className="flex-1 p-4 overflow-y-auto">
         <div className="mb-4 flex justify-between items-center">
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-            <Input className="pl-10" placeholder="Buscar produtos ou serviços..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
-          </div>
+          <ProductGrid
+            products={mockProducts}
+            searchTerm={searchTerm}
+            onSearchChange={setSearchTerm}
+            onProductClick={addToCart}
+          />
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => setIsClientDialogOpen(true)}>
               <User className="mr-2 h-4 w-4" />
@@ -392,127 +400,32 @@ const PDV = () => {
             </Button>
           </div>
         </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {mockProducts.map(product => <ProductCard key={product.id} product={product} onClick={() => addToCart(product)} />)}
-        </div>
       </div>
 
       <div className="w-96 border-l bg-secondary/50">
-        <div className="h-full flex flex-col">
-          <div className="p-4 border-b">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-semibold flex items-center gap-2">
-                <ShoppingCart className="h-5 w-5" />
-                Carrinho
-              </h2>
-              {selectedClient && <span className="text-sm text-muted-foreground">
-                  Cliente: {selectedClient.name}
-                </span>}
-            </div>
-          </div>
-
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {cart.map(item => (
-              <CartItem 
-                key={item.id} 
-                item={item} 
-                onRemove={removeFromCart}
-                onUpdateQuantity={updateItemQuantity} 
-              />
-            ))}
-          </div>
-
-          <div className="border-t p-4 space-y-4">
-            <div className="space-y-4">
-              <div className="flex justify-between items-center text-sm">
-                <span>Subtotal</span>
-                <span>{formatCurrency(cartSubtotal)}</span>
-              </div>
-              
-              <div className="flex gap-2">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline" className="w-full" disabled={cart.length === 0}>
-                      <Minus className="w-4 h-4 mr-2" />
-                      Desconto
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-48 bg-slate-50">
-                    <DropdownMenuItem onClick={() => handleValueDialog('discount')}>
-                      Adicionar Desconto
-                    </DropdownMenuItem>
-                    {discount > 0 && (
-                      <DropdownMenuItem 
-                        onClick={() => {
-                          setDiscount(0);
-                          updateCartTotals(cart);
-                          toast({
-                            description: "Desconto removido com sucesso",
-                          });
-                        }}
-                        className="text-red-500"
-                      >
-                        Remover Desconto
-                      </DropdownMenuItem>
-                    )}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline" className="w-full" disabled={cart.length === 0}>
-                      <Plus className="w-4 h-4 mr-2" />
-                      Acréscimo
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-48 bg-slate-50">
-                    <DropdownMenuItem onClick={() => handleValueDialog('surcharge')}>
-                      Adicionar Acréscimo
-                    </DropdownMenuItem>
-                    {surcharge > 0 && (
-                      <DropdownMenuItem 
-                        onClick={() => {
-                          setSurcharge(0);
-                          updateCartTotals(cart);
-                          toast({
-                            description: "Acréscimo removido com sucesso",
-                          });
-                        }}
-                        className="text-red-500"
-                      >
-                        Remover Acréscimo
-                      </DropdownMenuItem>
-                    )}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-              
-              {discount > 0 && (
-                <div className="flex justify-between items-center text-sm text-green-500 bg-green-50 p-2 rounded-md">
-                  <span>Desconto {discountType === 'percentage' ? `(${discount}%)` : ''}</span>
-                  <span>-{formatCurrency(discountType === 'percentage' ? cartSubtotal * discount / 100 : discount)}</span>
-                </div>
-              )}
-
-              {surcharge > 0 && (
-                <div className="flex justify-between items-center text-sm text-red-500 bg-red-50 p-2 rounded-md">
-                  <span>Acréscimo {surchargeType === 'percentage' ? `(${surcharge}%)` : ''}</span>
-                  <span>+{formatCurrency(surchargeType === 'percentage' ? cartSubtotal * surcharge / 100 : surcharge)}</span>
-                </div>
-              )}
-
-              <div className="flex justify-between items-center pt-2 border-t">
-                <span className="font-medium">Total</span>
-                <span className="text-2xl font-bold">{formatCurrency(cartTotal)}</span>
-              </div>
-            </div>
-
-            <Button className="w-full" size="lg" disabled={cart.length === 0} onClick={() => setIsCheckoutOpen(true)}>
-              Finalizar Venda
-            </Button>
-          </div>
-        </div>
+        <Cart
+          items={cart}
+          selectedClient={selectedClient}
+          cartSubtotal={cartSubtotal}
+          cartTotal={cartTotal}
+          discount={discount}
+          discountType={discountType}
+          surcharge={surcharge}
+          surchargeType={surchargeType}
+          onRemoveItem={removeFromCart}
+          onUpdateQuantity={updateItemQuantity}
+          onDiscountClick={() => handleValueDialog('discount')}
+          onSurchargeClick={() => handleValueDialog('surcharge')}
+          onRemoveDiscount={() => {
+            setDiscount(0);
+            updateCartTotals(cart);
+          }}
+          onRemoveSurcharge={() => {
+            setSurcharge(0);
+            updateCartTotals(cart);
+          }}
+          onCheckout={() => setIsCheckoutOpen(true)}
+        />
       </div>
 
       <PaymentDialog isOpen={isCheckoutOpen} onOpenChange={setIsCheckoutOpen} cartTotal={cartTotal} selectedPaymentMethod={selectedPaymentMethod} onSelectPaymentMethod={setSelectedPaymentMethod} paymentAmount={paymentAmount} onPaymentAmountChange={setPaymentAmount} onAddPayment={addPayment} paymentMethods={paymentMethods} remainingAmount={remainingAmount} changeAmount={changeAmount} onFinalize={finalizeSale} />
@@ -574,7 +487,8 @@ const PDV = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>;
+    </div>
+  );
 };
 
 export default PDV;
