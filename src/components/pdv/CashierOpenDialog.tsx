@@ -27,25 +27,36 @@ export function CashierOpenDialog({
   onConfirm,
 }: CashierOpenDialogProps) {
   const formatCurrency = (value: string) => {
-    // Remove todos os caracteres não numéricos
-    const numericValue = value.replace(/\D/g, "").padStart(1, "0");
+    // Remove qualquer caractere que não seja número
+    const numericValue = value.replace(/[^0-9]/g, "");
     
-    // Converte para centavos
-    const cents = parseInt(numericValue);
+    // Converte para número, tratando string vazia como zero
+    const number = numericValue === "" ? 0 : parseInt(numericValue);
     
-    // Formata o número como moeda brasileira
+    // Formata como moeda brasileira
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
-      currency: 'BRL'
-    }).format(cents / 100);
+      currency: 'BRL',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(number / 100);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Pega o valor atual do input e remove não números
-    const numericValue = e.target.value.replace(/\D/g, "");
+    // Pega apenas os números do input
+    const numericValue = e.target.value.replace(/[^0-9]/g, "");
     
-    // Atualiza o valor mesmo se for zero
-    onOpeningAmountChange((parseInt(numericValue || "0") / 100).toString());
+    // Converte para valor em reais (string)
+    const valueInReais = numericValue === "" ? "0" : (parseInt(numericValue) / 100).toString();
+    
+    // Atualiza o valor
+    onOpeningAmountChange(valueInReais);
+  };
+
+  // Função auxiliar para debugar os valores
+  const logValues = () => {
+    console.log("Valor atual:", openingAmount);
+    console.log("Valor formatado:", formatCurrency(openingAmount));
   };
 
   return (
@@ -65,6 +76,7 @@ export function CashierOpenDialog({
               inputMode="numeric"
               value={formatCurrency(openingAmount)}
               onChange={handleInputChange}
+              onClick={() => logValues()} // Debug: log valores ao clicar
               placeholder="R$ 0,00"
               className="text-right"
             />
