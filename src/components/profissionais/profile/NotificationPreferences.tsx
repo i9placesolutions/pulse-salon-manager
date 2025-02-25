@@ -1,8 +1,8 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Separator } from "@/components/ui/separator";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 
 export function NotificationPreferences() {
   return (
@@ -12,61 +12,32 @@ export function NotificationPreferences() {
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="space-y-4">
-          <h4 className="font-medium">Canais de Comunicação</h4>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label>E-mail</Label>
-                <p className="text-sm text-muted-foreground">
-                  Receba atualizações importantes no seu e-mail
-                </p>
-              </div>
-              <Switch />
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label>WhatsApp</Label>
-                <p className="text-sm text-muted-foreground">
-                  Receba mensagens importantes via WhatsApp
-                </p>
-              </div>
-              <Switch />
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label>Sistema</Label>
-                <p className="text-sm text-muted-foreground">
-                  Receba alertas dentro do sistema
-                </p>
-              </div>
-              <Switch />
-            </div>
+          <div className="flex items-center justify-between space-x-2">
+            <Label htmlFor="new-appointments">Novos Agendamentos</Label>
+            <Switch id="new-appointments" defaultChecked />
           </div>
-
-          <Separator className="my-4" />
-
-          <h4 className="font-medium">Tipos de Notificação</h4>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label>Lembrete de Agendamentos</Label>
-                <p className="text-sm text-muted-foreground">
-                  24h antes do horário marcado
-                </p>
-              </div>
-              <Switch />
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label>Pagamentos e Comissões</Label>
-                <p className="text-sm text-muted-foreground">
-                  Alertas sobre transações financeiras
-                </p>
-              </div>
-              <Switch />
-            </div>
+          <div className="flex items-center justify-between space-x-2">
+            <Label htmlFor="cancellations">Cancelamentos</Label>
+            <Switch id="cancellations" defaultChecked />
+          </div>
+          <div className="flex items-center justify-between space-x-2">
+            <Label htmlFor="commission">Comissões Recebidas</Label>
+            <Switch id="commission" defaultChecked />
+          </div>
+          <div className="flex items-center justify-between space-x-2">
+            <Label htmlFor="schedule-changes">Alterações na Agenda</Label>
+            <Switch id="schedule-changes" defaultChecked />
+          </div>
+          <div className="flex items-center justify-between space-x-2">
+            <Label htmlFor="client-feedback">Avaliações de Clientes</Label>
+            <Switch id="client-feedback" defaultChecked />
+          </div>
+          <div className="flex items-center justify-between space-x-2">
+            <Label htmlFor="whatsapp">Notificações por WhatsApp</Label>
+            <Switch id="whatsapp" />
           </div>
         </div>
+        <Button>Salvar Preferências</Button>
       </CardContent>
     </Card>
   );
