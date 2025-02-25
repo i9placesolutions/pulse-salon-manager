@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Camera } from "lucide-react";
 
-export function ProfessionalInfo() {
+export function PersonalInfo() {
   return (
     <Card>
       <CardHeader>
@@ -27,11 +27,7 @@ export function ProfessionalInfo() {
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor="name">Nome Completo</Label>
-            <Input id="name" placeholder="Seu nome completo" />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="specialty">Especialidade</Label>
-            <Input id="specialty" placeholder="Ex: Cabeleireiro, Barbeiro" />
+            <Input id="name" placeholder="Seu nome" />
           </div>
           <div className="space-y-2">
             <Label htmlFor="email">E-mail</Label>
@@ -45,22 +41,15 @@ export function ProfessionalInfo() {
             <Label htmlFor="birthDate">Data de Nascimento</Label>
             <Input id="birthDate" type="date" />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="hiringDate">Data de Contratação</Label>
-            <Input id="hiringDate" type="date" readOnly />
+          <div className="space-y-2 md:col-span-2">
+            <Label htmlFor="address">Endereço</Label>
+            <Input id="address" placeholder="Seu endereço completo" />
           </div>
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="bio">Biografia Profissional</Label>
-          <textarea 
-            id="bio" 
-            className="w-full min-h-[100px] rounded-md border border-input bg-transparent px-3 py-2 text-sm"
-            placeholder="Conte um pouco sobre sua experiência profissional..."
-          />
+        <div className="flex justify-end">
+          <Button>Salvar Alterações</Button>
         </div>
-
-        <Button>Salvar Alterações</Button>
       </CardContent>
     </Card>
   );

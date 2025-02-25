@@ -1,44 +1,37 @@
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  User, 
-  Lock, 
-  Bell, 
-  History, 
-  Scissors, 
-  Calendar,
-  AlertTriangle,
-  ArrowLeft
-} from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
-
-// Importando os componentes do perfil do profissional
-import { Professional } from "@/types/professional";
-import { ProfessionalInfo } from "@/components/profissionais/profile/PersonalInfo";
+import { ProfessionalHeader } from "@/components/profissionais/dashboard/ProfessionalHeader";
+import { PersonalInfo } from "@/components/profissionais/profile/PersonalInfo";
 import { SecuritySettings } from "@/components/profissionais/profile/SecuritySettings";
 import { NotificationPreferences } from "@/components/profissionais/profile/NotificationPreferences";
 import { ActivityHistory } from "@/components/profissionais/profile/ActivityHistory";
 import { DangerZone } from "@/components/profissionais/profile/DangerZone";
-import { WorkingHoursForm } from "@/components/profissionais/working-hours/WorkingHoursForm";
+import { User, Lock, Bell, History, ArrowLeft } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 export default function Profile() {
   const navigate = useNavigate();
 
   return (
     <div>
+      <ProfessionalHeader />
+      
       <div className="container mx-auto px-4 py-6 space-y-6">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <Button 
-              variant="ghost" 
-              className="mb-4 -ml-4 text-muted-foreground hover:text-primary"
-              onClick={() => navigate("/profissional-dashboard")}
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Voltar para Dashboard
-            </Button>
-            <h1 className="text-2xl font-semibold text-neutral">Meu Perfil Profissional</h1>
+            <div className="flex items-center gap-2 mb-4">
+              <Button 
+                variant="secondary" 
+                size="sm"
+                onClick={() => navigate("/profissional-dashboard")}
+                className="hover:bg-secondary/80 transition-colors"
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Voltar ao Dashboard
+              </Button>
+            </div>
+            <h1 className="text-2xl font-semibold text-neutral">Meu Perfil</h1>
             <p className="text-sm text-muted-foreground">
               Gerencie suas informações pessoais e preferências
             </p>
@@ -46,7 +39,7 @@ export default function Profile() {
         </div>
 
         <Tabs defaultValue="personal" className="space-y-4">
-          <TabsList className="grid grid-cols-6 w-full">
+          <TabsList className="grid grid-cols-4 w-full">
             <TabsTrigger value="personal">
               <User className="h-4 w-4 mr-2" />
               Dados Pessoais
@@ -54,10 +47,6 @@ export default function Profile() {
             <TabsTrigger value="security">
               <Lock className="h-4 w-4 mr-2" />
               Segurança
-            </TabsTrigger>
-            <TabsTrigger value="schedule">
-              <Calendar className="h-4 w-4 mr-2" />
-              Horários
             </TabsTrigger>
             <TabsTrigger value="notifications">
               <Bell className="h-4 w-4 mr-2" />
@@ -67,35 +56,14 @@ export default function Profile() {
               <History className="h-4 w-4 mr-2" />
               Atividades
             </TabsTrigger>
-            <TabsTrigger value="danger">
-              <AlertTriangle className="h-4 w-4 mr-2" />
-              Zona de Perigo
-            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="personal">
-            <ProfessionalInfo />
+            <PersonalInfo />
           </TabsContent>
 
           <TabsContent value="security">
             <SecuritySettings />
-          </TabsContent>
-
-          <TabsContent value="schedule">
-            <WorkingHoursForm 
-              open={true}
-              onOpenChange={() => {}}
-              workingHours={{
-                monday: { isWorking: true, startTime: "09:00", endTime: "18:00" },
-                tuesday: { isWorking: true, startTime: "09:00", endTime: "18:00" },
-                wednesday: { isWorking: true, startTime: "09:00", endTime: "18:00" },
-                thursday: { isWorking: true, startTime: "09:00", endTime: "18:00" },
-                friday: { isWorking: true, startTime: "09:00", endTime: "18:00" },
-                saturday: { isWorking: true, startTime: "09:00", endTime: "13:00" },
-                sunday: { isWorking: false }
-              }}
-              onSave={() => {}}
-            />
           </TabsContent>
 
           <TabsContent value="notifications">
@@ -105,11 +73,9 @@ export default function Profile() {
           <TabsContent value="activity">
             <ActivityHistory />
           </TabsContent>
-
-          <TabsContent value="danger">
-            <DangerZone />
-          </TabsContent>
         </Tabs>
+
+        <DangerZone />
       </div>
     </div>
   );

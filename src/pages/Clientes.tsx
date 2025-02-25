@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -23,56 +24,6 @@ const mockClients: Client[] = [
     status: "active",
     points: 150,
     lastVisit: "2024-03-01",
-    balance: {
-      cashback: 50,
-      vipBonus: 0
-    },
-    campaignHistory: [
-      {
-        id: 1,
-        clientId: 1,
-        campaignId: 1,
-        campaignType: "cashback",
-        date: "2024-02-15",
-        description: "Campanha Verão 2024",
-        value: 50,
-        status: "active",
-        expirationDate: "2024-05-15"
-      }
-    ],
-    appointmentHistory: [
-      {
-        id: 1,
-        clientId: 1,
-        date: "2024-03-01",
-        time: "14:30",
-        service: "Corte + Escova",
-        professional: "Ana Silva",
-        status: "completed",
-        value: 150,
-        paymentMethod: "Cartão de Crédito"
-      }
-    ],
-    paymentHistory: [
-      {
-        id: 1,
-        clientId: 1,
-        date: "2024-03-01",
-        method: "Cartão de Crédito",
-        value: 150,
-        status: "completed"
-      }
-    ],
-    couponHistory: [
-      {
-        id: 1,
-        clientId: 1,
-        code: "WELCOME2024",
-        usedDate: "2024-01-15",
-        discount: 30,
-        service: "Corte + Escova"
-      }
-    ]
   },
   {
     id: 2,
@@ -84,14 +35,6 @@ const mockClients: Client[] = [
     status: "vip",
     points: 300,
     lastVisit: "2024-03-10",
-    balance: {
-      cashback: 100,
-      vipBonus: 50
-    },
-    campaignHistory: [],
-    appointmentHistory: [],
-    paymentHistory: [],
-    couponHistory: []
   },
   {
     id: 3,
@@ -103,14 +46,6 @@ const mockClients: Client[] = [
     status: "inactive",
     points: 50,
     lastVisit: "2023-08-10",
-    balance: {
-      cashback: 0,
-      vipBonus: 0
-    },
-    campaignHistory: [],
-    appointmentHistory: [],
-    paymentHistory: [],
-    couponHistory: []
   },
 ];
 

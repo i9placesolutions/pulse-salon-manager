@@ -26,38 +26,6 @@ export function CashierOpenDialog({
   onOpeningAmountChange,
   onConfirm,
 }: CashierOpenDialogProps) {
-  const formatCurrency = (value: string) => {
-    // Limpa o valor mantendo apenas números
-    let numericValue = value.replace(/[^0-9]/g, "");
-    
-    // Se estiver vazio, retorna zero formatado
-    if (numericValue === "") {
-      numericValue = "0";
-    }
-    
-    // Converte para número preservando zeros
-    const cents = parseInt(numericValue);
-    
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-      minimumFractionDigits: 2,
-    }).format(cents / 100);
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Pega o valor do input removendo formatação
-    let rawValue = e.target.value.replace(/[^0-9]/g, "");
-    
-    // Se o usuário apagou tudo, define como zero
-    if (rawValue === "") {
-      rawValue = "0";
-    }
-    
-    // Converte para reais preservando zeros
-    onOpeningAmountChange((parseInt(rawValue) / 100).toString());
-  };
-
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent>
@@ -71,12 +39,11 @@ export function CashierOpenDialog({
           <div className="space-y-2">
             <Label>Valor Inicial</Label>
             <Input
-              type="text"
-              inputMode="numeric"
-              value={formatCurrency(openingAmount)}
-              onChange={handleInputChange}
-              placeholder="R$ 0,00"
-              className="text-right"
+              type="number"
+              step="0.01"
+              value={openingAmount}
+              onChange={(e) => onOpeningAmountChange(e.target.value)}
+              placeholder="0,00"
             />
           </div>
         </div>
