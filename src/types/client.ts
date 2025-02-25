@@ -17,6 +17,9 @@ export interface Client {
     vipBonus: number;
   };
   campaignHistory: CampaignHistory[];
+  appointmentHistory: AppointmentHistory[];
+  paymentHistory: PaymentHistory[];
+  couponHistory: CouponHistory[];
 }
 
 export interface ClientPreference {
@@ -44,8 +47,41 @@ export interface CampaignHistory {
   campaignType: string;
   date: string;
   description: string;
-  value: number;  // Valor do desconto/cashback/bônus
+  value: number;
   status: 'active' | 'used' | 'expired';
   expirationDate?: string;
   usedDate?: string;
+}
+
+export interface AppointmentHistory {
+  id: number;
+  clientId: number;
+  date: string;
+  time: string;
+  service: string;
+  professional: string;
+  status: 'scheduled' | 'completed' | 'cancelled' | 'pending';
+  value: number;
+  couponUsed?: string;
+  paymentMethod: string;
+}
+
+export interface PaymentHistory {
+  id: number;
+  clientId: number;
+  date: string;
+  method: string;
+  value: number;
+  discount?: number;
+  cashbackUsed?: number;
+  status: 'completed' | 'pending' | 'cancelled';
+}
+
+export interface CouponHistory {
+  id: number;
+  clientId: number;
+  code: string;
+  usedDate: string;
+  discount: number;
+  service: string;
 }
