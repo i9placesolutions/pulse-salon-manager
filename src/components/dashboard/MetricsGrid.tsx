@@ -68,71 +68,37 @@ export function MetricsGrid({ metrics }: MetricsGridProps) {
   };
 
   const metricsToShow = metrics.length > 0 ? metrics : defaultMetrics;
-  const topMetrics = metricsToShow.slice(0, 3);
-  const bottomMetrics = metricsToShow.slice(3);
 
   return (
-    <div className="space-y-4">
-      <div className="grid gap-4 md:grid-cols-3">
-        {topMetrics.map((metric) => (
-          <Card key={metric.id}>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">
-                {metric.title}
-              </CardTitle>
-              {metric.icon && <metric.icon className="h-4 w-4 text-muted-foreground" />}
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {metric.prefix}{metric.value}{metric.suffix}
-              </div>
-              <p className="text-xs text-muted-foreground flex items-center mt-1">
-                <span className="flex items-center mr-1">
-                  {getTrendIcon(metric.trend)}
-                  <span className={`ml-1 ${
-                    metric.trend === 'up' ? 'text-green-500' : 
-                    metric.trend === 'down' ? 'text-red-500' : 
-                    'text-gray-500'
-                  }`}>
-                    {Math.abs(metric.change)}%
-                  </span>
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+      {metricsToShow.map((metric) => (
+        <Card key={metric.id}>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">
+              {metric.title}
+            </CardTitle>
+            {metric.icon && <metric.icon className="h-4 w-4 text-muted-foreground" />}
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {metric.prefix}{metric.value}{metric.suffix}
+            </div>
+            <p className="text-xs text-muted-foreground flex items-center mt-1">
+              <span className="flex items-center mr-1">
+                {getTrendIcon(metric.trend)}
+                <span className={`ml-1 ${
+                  metric.trend === 'up' ? 'text-green-500' : 
+                  metric.trend === 'down' ? 'text-red-500' : 
+                  'text-gray-500'
+                }`}>
+                  {Math.abs(metric.change)}%
                 </span>
-                {metric.description}
-              </p>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-      <div className="grid gap-4 md:grid-cols-3">
-        {bottomMetrics.map((metric) => (
-          <Card key={metric.id}>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">
-                {metric.title}
-              </CardTitle>
-              {metric.icon && <metric.icon className="h-4 w-4 text-muted-foreground" />}
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {metric.prefix}{metric.value}{metric.suffix}
-              </div>
-              <p className="text-xs text-muted-foreground flex items-center mt-1">
-                <span className="flex items-center mr-1">
-                  {getTrendIcon(metric.trend)}
-                  <span className={`ml-1 ${
-                    metric.trend === 'up' ? 'text-green-500' : 
-                    metric.trend === 'down' ? 'text-red-500' : 
-                    'text-gray-500'
-                  }`}>
-                    {Math.abs(metric.change)}%
-                  </span>
-                </span>
-                {metric.description}
-              </p>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+              </span>
+              {metric.description}
+            </p>
+          </CardContent>
+        </Card>
+      ))}
     </div>
   );
 }
