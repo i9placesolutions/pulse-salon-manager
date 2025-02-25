@@ -45,3 +45,12 @@ export interface Campaign {
     converted: number;
   };
 }
+
+export interface CampaignFormData {
+  name: string;
+  audience: Campaign['audience'];
+  startDate: string;
+  endDate?: string;
+  messageTemplate?: string;
+  discount?: Campaign['discount'];
+}
