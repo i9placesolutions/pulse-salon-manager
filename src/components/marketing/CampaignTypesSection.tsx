@@ -21,7 +21,16 @@ export function CampaignTypesSection({ selectedType, onTypeSelect }: CampaignTyp
     audience: "all",
     startDate: "",
     endDate: "",
+    discount: {
+      type: "percentage",
+      value: 0
+    }
   });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    console.log("Dados da campanha:", { type: selectedType, ...formData });
+  };
 
   return (
     <div className="space-y-6">
@@ -55,7 +64,7 @@ export function CampaignTypesSection({ selectedType, onTypeSelect }: CampaignTyp
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form className="space-y-6">
+            <form className="space-y-6" onSubmit={handleSubmit}>
               <div className="grid gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="name">Nome da Campanha</Label>
@@ -106,6 +115,83 @@ export function CampaignTypesSection({ selectedType, onTypeSelect }: CampaignTyp
                     />
                   </div>
                 </div>
+
+                {(selectedType === 'discount' || selectedType === 'coupon') && (
+                  <>
+                    <div className="space-y-2">
+                      <Label htmlFor="discountType">Tipo de Desconto</Label>
+                      <Select
+                        value={formData.discount?.type}
+                        onValueChange={(value: 'percentage' | 'fixed' | 'service') => 
+                          setFormData({
+                            ...formData,
+                            discount: { ...formData.discount, type: value }
+                          })
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione o tipo de desconto" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="percentage">Porcentagem (%)</SelectItem>
+                          <SelectItem value="fixed">Valor Fixo (R$)</SelectItem>
+                          <SelectItem value="service">Serviço Gratuito</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    {formData.discount?.type !== 'service' && (
+                      <div className="space-y-2">
+                        <Label htmlFor="discountValue">
+                          {formData.discount?.type === 'percentage' ? 'Porcentagem de Desconto' : 'Valor do Desconto'}
+                        </Label>
+                        <Input
+                          id="discountValue"
+                          type="number"
+                          min={0}
+                          max={formData.discount?.type === 'percentage' ? 100 : undefined}
+                          value={formData.discount?.value}
+                          onChange={(e) => setFormData({
+                            ...formData,
+                            discount: { ...formData.discount, value: Number(e.target.value) }
+                          })}
+                          placeholder={formData.discount?.type === 'percentage' ? "Ex: 10" : "Ex: 50"}
+                        />
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {selectedType === 'cashback' && (
+                  <div className="space-y-2">
+                    <Label htmlFor="cashbackValue">Valor do Cashback (%)</Label>
+                    <Input
+                      id="cashbackValue"
+                      type="number"
+                      min={0}
+                      max={100}
+                      value={formData.discount?.value}
+                      onChange={(e) => setFormData({
+                        ...formData,
+                        discount: { type: 'percentage', value: Number(e.target.value) }
+                      })}
+                      placeholder="Ex: 5"
+                    />
+                  </div>
+                )}
+
+                {selectedType === 'vip' && (
+                  <div className="space-y-2">
+                    <Label htmlFor="messageTemplate">Descrição dos Benefícios VIP</Label>
+                    <Textarea
+                      id="messageTemplate"
+                      rows={4}
+                      value={formData.messageTemplate}
+                      onChange={(e) => setFormData({ ...formData, messageTemplate: e.target.value })}
+                      placeholder="Descreva os benefícios exclusivos para clientes VIP"
+                    />
+                  </div>
+                )}
 
                 {selectedType === 'whatsapp' && (
                   <div className="space-y-2">
