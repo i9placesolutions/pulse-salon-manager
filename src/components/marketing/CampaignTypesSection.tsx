@@ -4,6 +4,7 @@ import { CampaignCard } from "@/components/marketing/CampaignCard";
 import { campaignTypes } from "./marketingConstants";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState } from "react";
@@ -109,9 +110,8 @@ export function CampaignTypesSection({ selectedType, onTypeSelect }: CampaignTyp
                 {selectedType === 'whatsapp' && (
                   <div className="space-y-2">
                     <Label htmlFor="messageTemplate">Mensagem</Label>
-                    <Input
+                    <Textarea
                       id="messageTemplate"
-                      as="textarea"
                       rows={4}
                       value={formData.messageTemplate}
                       onChange={(e) => setFormData({ ...formData, messageTemplate: e.target.value })}
