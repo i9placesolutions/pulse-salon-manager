@@ -24,7 +24,6 @@ import Profissionais from "./pages/Profissionais";
 import Mensalidade from "./pages/Mensalidade";
 import ProfissionalDashboard from "./pages/ProfissionalDashboard";
 import NotFound from "./pages/NotFound";
-import Profile from "./pages/Profile";
 
 const queryClient = new QueryClient();
 
@@ -44,7 +43,6 @@ const App = () => (
           
           {/* Professional routes without sidebar */}
           <Route path="/profissional-dashboard" element={<ProfissionalDashboard />} />
-          <Route path="/profissional-profile" element={<Profile />} />
           
           {/* Protected routes with sidebar */}
           <Route path="/dashboard" element={
@@ -105,11 +103,6 @@ const App = () => (
           <Route path="/mensalidade" element={
             <AppLayout>
               <Mensalidade />
-            </AppLayout>
-          } />
-          <Route path="/profile" element={
-            <AppLayout>
-              <Profile />
             </AppLayout>
           } />
           
