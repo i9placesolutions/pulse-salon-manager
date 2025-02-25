@@ -52,7 +52,10 @@ export function CampaignTypesSection({ selectedType, onTypeSelect }: CampaignTyp
           cashback: 0,
           vipBonus: 0
         },
-        campaignHistory: []
+        campaignHistory: [],
+        appointmentHistory: [], // Adicionado
+        paymentHistory: [], // Adicionado
+        couponHistory: [] // Adicionado
       };
 
       // Cria o registro no histórico
