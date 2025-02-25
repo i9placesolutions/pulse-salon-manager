@@ -1,13 +1,14 @@
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { User, Lock, Bell, History } from "lucide-react";
+import { User, Lock, Bell, History, Settings, AlertTriangle, BookUser } from "lucide-react";
 
-// Vamos importar os componentes corretos para o perfil do estabelecimento
+// Vamos importar os componentes do perfil do estabelecimento
 import { EstablishmentInfo } from "@/components/estabelecimento/profile/EstablishmentInfo";
 import { SecuritySettings } from "@/components/estabelecimento/profile/SecuritySettings";
 import { NotificationPreferences } from "@/components/estabelecimento/profile/NotificationPreferences";
 import { ActivityHistory } from "@/components/estabelecimento/profile/ActivityHistory";
 import { DangerZone } from "@/components/estabelecimento/profile/DangerZone";
+import { PermissionsSettings } from "@/components/estabelecimento/profile/PermissionsSettings";
 
 export default function Profile() {
   return (
@@ -23,10 +24,10 @@ export default function Profile() {
         </div>
 
         <Tabs defaultValue="establishment" className="space-y-4">
-          <TabsList className="grid grid-cols-4 w-full">
+          <TabsList className="grid grid-cols-6 w-full">
             <TabsTrigger value="establishment">
               <User className="h-4 w-4 mr-2" />
-              Dados do Estabelecimento
+              Dados
             </TabsTrigger>
             <TabsTrigger value="security">
               <Lock className="h-4 w-4 mr-2" />
@@ -36,9 +37,17 @@ export default function Profile() {
               <Bell className="h-4 w-4 mr-2" />
               Notificações
             </TabsTrigger>
+            <TabsTrigger value="permissions">
+              <BookUser className="h-4 w-4 mr-2" />
+              Permissões
+            </TabsTrigger>
             <TabsTrigger value="activity">
               <History className="h-4 w-4 mr-2" />
               Atividades
+            </TabsTrigger>
+            <TabsTrigger value="danger">
+              <AlertTriangle className="h-4 w-4 mr-2" />
+              Zona de Perigo
             </TabsTrigger>
           </TabsList>
 
@@ -54,12 +63,18 @@ export default function Profile() {
             <NotificationPreferences />
           </TabsContent>
 
+          <TabsContent value="permissions">
+            <PermissionsSettings />
+          </TabsContent>
+
           <TabsContent value="activity">
             <ActivityHistory />
           </TabsContent>
-        </Tabs>
 
-        <DangerZone />
+          <TabsContent value="danger">
+            <DangerZone />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
