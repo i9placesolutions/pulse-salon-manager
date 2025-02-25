@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -24,6 +23,11 @@ const mockClients: Client[] = [
     status: "active",
     points: 150,
     lastVisit: "2024-03-01",
+    balance: {
+      cashback: 0,
+      vipBonus: 0
+    },
+    campaignHistory: []
   },
   {
     id: 2,
@@ -35,6 +39,11 @@ const mockClients: Client[] = [
     status: "vip",
     points: 300,
     lastVisit: "2024-03-10",
+    balance: {
+      cashback: 100,
+      vipBonus: 50
+    },
+    campaignHistory: []
   },
   {
     id: 3,
@@ -46,6 +55,11 @@ const mockClients: Client[] = [
     status: "inactive",
     points: 50,
     lastVisit: "2023-08-10",
+    balance: {
+      cashback: 0,
+      vipBonus: 0
+    },
+    campaignHistory: []
   },
 ];
 
