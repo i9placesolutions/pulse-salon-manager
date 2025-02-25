@@ -12,6 +12,11 @@ export interface Client {
   photo?: string;
   points: number;
   lastVisit?: string;
+  balance: {
+    cashback: number;
+    vipBonus: number;
+  };
+  campaignHistory: CampaignHistory[];
 }
 
 export interface ClientPreference {
@@ -30,4 +35,17 @@ export interface ClientService {
   value: number;
   paymentMethod: string;
   observations?: string;
+}
+
+export interface CampaignHistory {
+  id: number;
+  clientId: number;
+  campaignId: number;
+  campaignType: string;
+  date: string;
+  description: string;
+  value: number;  // Valor do desconto/cashback/bônus
+  status: 'active' | 'used' | 'expired';
+  expirationDate?: string;
+  usedDate?: string;
 }

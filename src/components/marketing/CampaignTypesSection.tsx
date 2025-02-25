@@ -8,7 +8,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState } from "react";
+import { useToast } from "@/components/ui/use-toast";
 import type { CampaignFormData } from "@/types/marketing";
+import type { Client, CampaignHistory } from "@/types/client";
 
 interface CampaignTypesSectionProps {
   selectedType: string | null;
@@ -16,6 +18,7 @@ interface CampaignTypesSectionProps {
 }
 
 export function CampaignTypesSection({ selectedType, onTypeSelect }: CampaignTypesSectionProps) {
+  const { toast } = useToast();
   const [formData, setFormData] = useState<CampaignFormData>({
     name: "",
     audience: "all",
@@ -27,9 +30,80 @@ export function CampaignTypesSection({ selectedType, onTypeSelect }: CampaignTyp
     }
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Dados da campanha:", { type: selectedType, ...formData });
+    
+    try {
+      // Aqui você integraria com sua API/backend
+      const campaignData = { type: selectedType, ...formData };
+      console.log("Dados da campanha:", campaignData);
+
+      // Simula o registro da campanha para um cliente
+      const mockClient: Client = {
+        id: 1,
+        name: "Cliente Teste",
+        email: "teste@email.com",
+        phone: "11999999999",
+        birthDate: "1990-01-01",
+        firstVisit: "2024-01-01",
+        status: "active",
+        points: 100,
+        balance: {
+          cashback: 0,
+          vipBonus: 0
+        },
+        campaignHistory: []
+      };
+
+      // Cria o registro no histórico
+      const campaignHistory: CampaignHistory = {
+        id: Date.now(),
+        clientId: mockClient.id,
+        campaignId: Date.now(),
+        campaignType: selectedType || "",
+        date: new Date().toISOString(),
+        description: formData.name,
+        value: formData.discount?.value || 0,
+        status: 'active',
+        expirationDate: formData.endDate,
+      };
+
+      // Atualiza o saldo do cliente baseado no tipo de campanha
+      if (selectedType === 'cashback') {
+        mockClient.balance.cashback += formData.discount?.value || 0;
+      } else if (selectedType === 'vip') {
+        mockClient.balance.vipBonus += formData.discount?.value || 0;
+      }
+
+      // Adiciona ao histórico
+      mockClient.campaignHistory.push(campaignHistory);
+
+      // Simula o salvamento
+      console.log("Cliente atualizado:", mockClient);
+
+      toast({
+        title: "Campanha criada com sucesso!",
+        description: `A campanha foi registrada para o cliente ${mockClient.name}`,
+      });
+
+      // Limpa o formulário
+      setFormData({
+        name: "",
+        audience: "all",
+        startDate: "",
+        endDate: "",
+        discount: {
+          type: "percentage",
+          value: 0
+        }
+      });
+    } catch (error) {
+      toast({
+        title: "Erro ao criar campanha",
+        description: "Ocorreu um erro ao registrar a campanha.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
