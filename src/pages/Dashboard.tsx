@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { 
@@ -12,7 +13,8 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   BarChart3,
-  TrendingUp
+  TrendingUp,
+  ShoppingBag // Adicionando a importação correta do ShoppingBag
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MetricsGrid } from "@/components/dashboard/MetricsGrid";
