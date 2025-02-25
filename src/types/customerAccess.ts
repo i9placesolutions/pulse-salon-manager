@@ -9,6 +9,17 @@ export interface CustomerAccessInfo {
   pendingReviews: Review[];
 }
 
+export interface Appointment {
+  id: number;
+  date: string;
+  time: string;
+  service: string;
+  professional: string;
+  status: 'scheduled' | 'completed' | 'cancelled';
+  value: number;
+  paymentMethod: string;
+}
+
 export interface Review {
   id: number;
   appointmentId: number;
