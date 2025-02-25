@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { Card } from "@/components/ui/card";
 import { User, CircleDollarSign, AlertTriangle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency } from "@/utils/currency";
@@ -13,6 +12,7 @@ import { ClientSelectDialog } from "@/components/pdv/ClientSelectDialog";
 import { ProductGrid } from "@/components/pdv/ProductGrid";
 import { Cart } from "@/components/pdv/Cart";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 
 const mockProducts = [{
   id: 1,
@@ -350,22 +350,22 @@ const PDV = () => {
 
   if (!state.isDayStarted) {
     return (
-      <div className="flex h-[calc(100vh-4rem)] items-center justify-center">
-        <Card className="w-[400px]">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-yellow-500" />
-              Caixa Fechado
-            </CardTitle>
-            <p className="text-sm text-muted-foreground">
+      <div className="flex h-[calc(100vh-4rem)] items-center justify-center bg-background">
+        <Card className="w-[400px] p-6">
+          <div className="flex flex-col items-center space-y-4">
+            <AlertTriangle className="h-12 w-12 text-yellow-500" />
+            <h2 className="text-2xl font-semibold">Caixa Fechado</h2>
+            <p className="text-center text-muted-foreground">
               É necessário abrir o caixa para iniciar as operações do dia.
             </p>
-          </CardHeader>
-          <CardContent>
-            <Button className="w-full" onClick={() => setIsOpenCashierDialog(true)}>
+            <Button 
+              className="w-full" 
+              size="lg"
+              onClick={() => setIsOpenCashierDialog(true)}
+            >
               Abrir Caixa
             </Button>
-          </CardContent>
+          </div>
         </Card>
 
         <CashierOpenDialog
@@ -380,21 +380,23 @@ const PDV = () => {
   }
 
   return (
-    <div className="flex h-[calc(100vh-4rem)] overflow-hidden">
-      <div className="flex-1 p-4 overflow-y-auto">
-        <div className="mb-4 flex justify-between items-center">
-          <ProductGrid
-            products={mockProducts}
-            searchTerm={searchTerm}
-            onSearchChange={setSearchTerm}
-            onProductClick={addToCart}
-          />
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => setIsClientDialogOpen(true)}>
+    <div className="h-[calc(100vh-4rem)] flex flex-col">
+      {/* Header */}
+      <div className="border-b bg-background p-4">
+        <div className="container mx-auto flex items-center justify-between">
+          <h1 className="text-2xl font-semibold">PDV</h1>
+          <div className="flex items-center gap-4">
+            <Button 
+              variant="outline" 
+              onClick={() => setIsClientDialogOpen(true)}
+            >
               <User className="mr-2 h-4 w-4" />
               {selectedClient ? selectedClient.name : "Selecionar Cliente"}
             </Button>
-            <Button variant="outline" onClick={() => setIsCloseCashierDialog(true)}>
+            <Button 
+              variant="outline" 
+              onClick={() => setIsCloseCashierDialog(true)}
+            >
               <CircleDollarSign className="mr-2 h-4 w-4" />
               Fechar Caixa
             </Button>
@@ -402,37 +404,78 @@ const PDV = () => {
         </div>
       </div>
 
-      <div className="w-96 border-l bg-secondary/50">
-        <Cart
-          items={cart}
-          selectedClient={selectedClient}
-          cartSubtotal={cartSubtotal}
-          cartTotal={cartTotal}
-          discount={discount}
-          discountType={discountType}
-          surcharge={surcharge}
-          surchargeType={surchargeType}
-          onRemoveItem={removeFromCart}
-          onUpdateQuantity={updateItemQuantity}
-          onDiscountClick={() => handleValueDialog('discount')}
-          onSurchargeClick={() => handleValueDialog('surcharge')}
-          onRemoveDiscount={() => {
-            setDiscount(0);
-            updateCartTotals(cart);
-          }}
-          onRemoveSurcharge={() => {
-            setSurcharge(0);
-            updateCartTotals(cart);
-          }}
-          onCheckout={() => setIsCheckoutOpen(true)}
-        />
+      {/* Main Content */}
+      <div className="flex flex-1 overflow-hidden">
+        {/* Products Grid */}
+        <div className="flex-1 p-6 overflow-y-auto">
+          <div className="container mx-auto">
+            <ProductGrid
+              products={mockProducts}
+              searchTerm={searchTerm}
+              onSearchChange={setSearchTerm}
+              onProductClick={addToCart}
+            />
+          </div>
+        </div>
+
+        {/* Cart Sidebar */}
+        <div className="w-[400px] border-l bg-card">
+          <Cart
+            items={cart}
+            selectedClient={selectedClient}
+            cartSubtotal={cartSubtotal}
+            cartTotal={cartTotal}
+            discount={discount}
+            discountType={discountType}
+            surcharge={surcharge}
+            surchargeType={surchargeType}
+            onRemoveItem={removeFromCart}
+            onUpdateQuantity={updateItemQuantity}
+            onDiscountClick={() => handleValueDialog('discount')}
+            onSurchargeClick={() => handleValueDialog('surcharge')}
+            onRemoveDiscount={() => {
+              setDiscount(0);
+              updateCartTotals(cart);
+            }}
+            onRemoveSurcharge={() => {
+              setSurcharge(0);
+              updateCartTotals(cart);
+            }}
+            onCheckout={() => setIsCheckoutOpen(true)}
+          />
+        </div>
       </div>
 
-      <PaymentDialog isOpen={isCheckoutOpen} onOpenChange={setIsCheckoutOpen} cartTotal={cartTotal} selectedPaymentMethod={selectedPaymentMethod} onSelectPaymentMethod={setSelectedPaymentMethod} paymentAmount={paymentAmount} onPaymentAmountChange={setPaymentAmount} onAddPayment={addPayment} paymentMethods={paymentMethods} remainingAmount={remainingAmount} changeAmount={changeAmount} onFinalize={finalizeSale} />
+      {/* Dialogs */}
+      <PaymentDialog 
+        isOpen={isCheckoutOpen} 
+        onOpenChange={setIsCheckoutOpen} 
+        cartTotal={cartTotal}
+        selectedPaymentMethod={selectedPaymentMethod}
+        onSelectPaymentMethod={setSelectedPaymentMethod}
+        paymentAmount={paymentAmount}
+        onPaymentAmountChange={setPaymentAmount}
+        onAddPayment={addPayment}
+        paymentMethods={paymentMethods}
+        remainingAmount={remainingAmount}
+        changeAmount={changeAmount}
+        onFinalize={finalizeSale}
+      />
 
-      <ClientSelectDialog isOpen={isClientDialogOpen} onOpenChange={setIsClientDialogOpen} clients={mockClients} onSelect={setSelectedClient} />
+      <ClientSelectDialog 
+        isOpen={isClientDialogOpen} 
+        onOpenChange={setIsClientDialogOpen}
+        clients={mockClients}
+        onSelect={setSelectedClient}
+      />
 
-      <CashierCloseDialog isOpen={isCloseCashierDialog} onOpenChange={setIsCloseCashierDialog} initialAmount={state.cashierSession?.initialAmount || 0} sales={state.recentSales} onConfirm={handleCloseCashier} />
+      <CashierCloseDialog 
+        isOpen={isCloseCashierDialog}
+        onOpenChange={setIsCloseCashierDialog}
+        initialAmount={state.cashierSession?.initialAmount || 0}
+        sales={state.recentSales}
+        onConfirm={handleCloseCashier}
+      />
 
       <Dialog open={isDiscountDialogOpen} onOpenChange={setIsDiscountDialogOpen}>
         <DialogContent>
