@@ -18,14 +18,14 @@ interface ProductCardProps {
 export function ProductCard({ product, onClick }: ProductCardProps) {
   return (
     <Card 
-      className="group cursor-pointer transition-all hover:shadow-md"
+      className="cursor-pointer hover:bg-secondary/50 transition-colors"
       onClick={onClick}
     >
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium line-clamp-1">
+        <CardTitle className="text-sm font-medium">
           {product.name}
         </CardTitle>
-        <Button size="icon" variant="ghost" className="opacity-0 group-hover:opacity-100 transition-opacity">
+        <Button size="icon" variant="ghost">
           <Plus className="h-4 w-4" />
         </Button>
       </CardHeader>
