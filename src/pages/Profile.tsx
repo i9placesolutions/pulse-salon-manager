@@ -1,22 +1,21 @@
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { ProfessionalHeader } from "@/components/profissionais/dashboard/ProfessionalHeader";
-import { PersonalInfo } from "@/components/profissionais/profile/PersonalInfo";
-import { SecuritySettings } from "@/components/profissionais/profile/SecuritySettings";
-import { NotificationPreferences } from "@/components/profissionais/profile/NotificationPreferences";
-import { ActivityHistory } from "@/components/profissionais/profile/ActivityHistory";
-import { DangerZone } from "@/components/profissionais/profile/DangerZone";
 import { User, Lock, Bell, History, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+
+// Vamos importar os componentes corretos para o perfil do estabelecimento
+import { EstablishmentInfo } from "@/components/estabelecimento/profile/EstablishmentInfo";
+import { SecuritySettings } from "@/components/estabelecimento/profile/SecuritySettings";
+import { NotificationPreferences } from "@/components/estabelecimento/profile/NotificationPreferences";
+import { ActivityHistory } from "@/components/estabelecimento/profile/ActivityHistory";
+import { DangerZone } from "@/components/estabelecimento/profile/DangerZone";
 
 export default function Profile() {
   const navigate = useNavigate();
 
   return (
     <div>
-      <ProfessionalHeader />
-      
       <div className="container mx-auto px-4 py-6 space-y-6">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
@@ -24,25 +23,25 @@ export default function Profile() {
               <Button 
                 variant="secondary" 
                 size="sm"
-                onClick={() => navigate("/profissional-dashboard")}
+                onClick={() => navigate("/dashboard")}
                 className="hover:bg-secondary/80 transition-colors"
               >
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Voltar ao Dashboard
               </Button>
             </div>
-            <h1 className="text-2xl font-semibold text-neutral">Meu Perfil</h1>
+            <h1 className="text-2xl font-semibold text-neutral">Perfil do Estabelecimento</h1>
             <p className="text-sm text-muted-foreground">
-              Gerencie suas informações pessoais e preferências
+              Gerencie as informações e preferências do seu estabelecimento
             </p>
           </div>
         </div>
 
-        <Tabs defaultValue="personal" className="space-y-4">
+        <Tabs defaultValue="establishment" className="space-y-4">
           <TabsList className="grid grid-cols-4 w-full">
-            <TabsTrigger value="personal">
+            <TabsTrigger value="establishment">
               <User className="h-4 w-4 mr-2" />
-              Dados Pessoais
+              Dados do Estabelecimento
             </TabsTrigger>
             <TabsTrigger value="security">
               <Lock className="h-4 w-4 mr-2" />
@@ -58,8 +57,8 @@ export default function Profile() {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="personal">
-            <PersonalInfo />
+          <TabsContent value="establishment">
+            <EstablishmentInfo />
           </TabsContent>
 
           <TabsContent value="security">
