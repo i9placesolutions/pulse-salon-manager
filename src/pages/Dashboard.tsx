@@ -14,7 +14,7 @@ import {
   ArrowDownRight,
   BarChart3,
   TrendingUp,
-  ShoppingBag // Adicionando a importação correta do ShoppingBag
+  ShoppingBag
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MetricsGrid } from "@/components/dashboard/MetricsGrid";
