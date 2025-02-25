@@ -7,8 +7,11 @@ import {
   History, 
   Scissors, 
   Calendar,
-  AlertTriangle 
+  AlertTriangle,
+  ArrowLeft
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 
 // Importando os componentes do perfil do profissional
 import { Professional } from "@/types/professional";
@@ -20,11 +23,21 @@ import { DangerZone } from "@/components/profissionais/profile/DangerZone";
 import { WorkingHoursForm } from "@/components/profissionais/working-hours/WorkingHoursForm";
 
 export default function Profile() {
+  const navigate = useNavigate();
+
   return (
     <div>
       <div className="container mx-auto px-4 py-6 space-y-6">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
+            <Button 
+              variant="ghost" 
+              className="mb-4 -ml-4 text-muted-foreground hover:text-primary"
+              onClick={() => navigate("/profissional-dashboard")}
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Voltar para Dashboard
+            </Button>
             <h1 className="text-2xl font-semibold text-neutral">Meu Perfil Profissional</h1>
             <p className="text-sm text-muted-foreground">
               Gerencie suas informações pessoais e preferências
