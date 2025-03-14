@@ -1,9 +1,57 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DollarSign, Calendar, Users, ArrowUp, ArrowDown, Wallet, TrendingUp } from "lucide-react";
 import { formatCurrency } from "@/utils/currency";
+import { 
+  calculateTotalRevenue,
+  calculateTotalExpenses,
+  calculateAverageTicket,
+  calculateTotalCommissions 
+} from "@/utils/financial";
+import { Payment, Expense, Professional } from "@/types/financial";
 
-export const SummaryCards = () => {
+interface SummaryCardsProps {
+  payments: Payment[];
+  expenses: Expense[];
+  professionals: Professional[];
+}
+
+export const SummaryCards = ({ payments, expenses, professionals }: SummaryCardsProps) => {
+  // Filtra pagamentos de hoje
+  const today = new Date().toISOString().split('T')[0];
+  const todayPayments = payments.filter(p => p.date === today && p.status === "Pago");
+  const todayRevenue = calculateTotalRevenue(todayPayments);
+  
+  // Cálculo de receita mensal
+  const currentMonth = new Date().getMonth();
+  const currentYear = new Date().getFullYear();
+  const monthStart = new Date(currentYear, currentMonth, 1);
+  const monthEnd = new Date(currentYear, currentMonth + 1, 0);
+  
+  const monthlyRevenue = calculateTotalRevenue(payments, monthStart, monthEnd);
+  const monthlyExpenses = calculateTotalExpenses(expenses, monthStart, monthEnd);
+  
+  // Cálculo para comparações com período anterior
+  const lastMonthStart = new Date(currentYear, currentMonth - 1, 1);
+  const lastMonthEnd = new Date(currentYear, currentMonth, 0);
+  const lastMonthRevenue = calculateTotalRevenue(payments, lastMonthStart, lastMonthEnd);
+  const lastMonthExpenses = calculateTotalExpenses(expenses, lastMonthStart, lastMonthEnd);
+  
+  // Cálculo de percentuais de variação
+  const revenueChange = lastMonthRevenue > 0 
+    ? ((monthlyRevenue - lastMonthRevenue) / lastMonthRevenue) * 100 
+    : 0;
+  
+  const expensesChange = lastMonthExpenses > 0 
+    ? ((monthlyExpenses - lastMonthExpenses) / lastMonthExpenses) * 100 
+    : 0;
+    
+  // Ticket médio
+  const ticketMedio = calculateAverageTicket(payments);
+  
+  // Comissões a pagar
+  const comissoes = calculateTotalCommissions(professionals);
+  const professionaisComComissao = professionals.filter(p => p.status === "A Pagar").length;
+
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
       <Card className="bg-green-50">
@@ -14,10 +62,9 @@ export const SummaryCards = () => {
           <DollarSign className="h-4 w-4 text-green-700" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold text-green-700">{formatCurrency(2890)}</div>
+          <div className="text-2xl font-bold text-green-700">{formatCurrency(todayRevenue)}</div>
           <p className="text-xs text-green-600 flex items-center">
-            <ArrowUp className="h-3 w-3 mr-1" />
-            +20.1% em relação a ontem
+            {todayPayments.length} pagamentos hoje
           </p>
         </CardContent>
       </Card>
@@ -30,10 +77,19 @@ export const SummaryCards = () => {
           <Calendar className="h-4 w-4 text-blue-700" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold text-blue-700">{formatCurrency(45980)}</div>
+          <div className="text-2xl font-bold text-blue-700">{formatCurrency(monthlyRevenue)}</div>
           <p className="text-xs text-blue-600 flex items-center">
-            <ArrowUp className="h-3 w-3 mr-1" />
-            +12.3% em relação ao mês passado
+            {revenueChange >= 0 ? (
+              <>
+                <ArrowUp className="h-3 w-3 mr-1" />
+                +{revenueChange.toFixed(1)}% em relação ao mês passado
+              </>
+            ) : (
+              <>
+                <ArrowDown className="h-3 w-3 mr-1" />
+                {revenueChange.toFixed(1)}% em relação ao mês passado
+              </>
+            )}
           </p>
         </CardContent>
       </Card>
@@ -46,10 +102,9 @@ export const SummaryCards = () => {
           <TrendingUp className="h-4 w-4 text-purple-700" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold text-purple-700">{formatCurrency(120)}</div>
+          <div className="text-2xl font-bold text-purple-700">{formatCurrency(ticketMedio)}</div>
           <p className="text-xs text-purple-600 flex items-center">
-            <ArrowUp className="h-3 w-3 mr-1" />
-            +8.5% em relação ao mês passado
+            {payments.filter(p => p.status === "Pago").length} pagamentos processados
           </p>
         </CardContent>
       </Card>
@@ -62,9 +117,9 @@ export const SummaryCards = () => {
           <Users className="h-4 w-4 text-yellow-700" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold text-yellow-700">{formatCurrency(3630)}</div>
+          <div className="text-2xl font-bold text-yellow-700">{formatCurrency(comissoes)}</div>
           <p className="text-xs text-yellow-600">
-            3 profissionais
+            {professionaisComComissao} profissionais
           </p>
         </CardContent>
       </Card>
@@ -77,10 +132,19 @@ export const SummaryCards = () => {
           <Wallet className="h-4 w-4 text-red-700" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold text-red-700">{formatCurrency(12580)}</div>
+          <div className="text-2xl font-bold text-red-700">{formatCurrency(monthlyExpenses)}</div>
           <p className="text-xs text-red-600 flex items-center">
-            <ArrowDown className="h-3 w-3 mr-1" />
-            -8.1% em relação ao mês passado
+            {expensesChange <= 0 ? (
+              <>
+                <ArrowDown className="h-3 w-3 mr-1" />
+                {Math.abs(expensesChange).toFixed(1)}% em relação ao mês passado
+              </>
+            ) : (
+              <>
+                <ArrowUp className="h-3 w-3 mr-1" />
+                +{expensesChange.toFixed(1)}% em relação ao mês passado
+              </>
+            )}
           </p>
         </CardContent>
       </Card>

@@ -1,4 +1,4 @@
-
+import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { 
   Card, 
@@ -10,9 +10,52 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Phone, Mail } from "lucide-react";
+import { Phone, Mail, Upload, Image as ImageIcon } from "lucide-react";
+import { toast } from "@/components/ui/use-toast";
 
 export function ConfigGeral() {
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleLogoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Verificação do tipo de arquivo
+    if (!file.type.includes("image/")) {
+      toast({
+        title: "Formato inválido",
+        description: "Por favor, selecione apenas arquivos de imagem.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Verificação do tamanho do arquivo (5MB máximo)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: "Arquivo muito grande",
+        description: "O tamanho máximo permitido é 5MB.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      setLogoUrl(e.target?.result as string);
+      toast({
+        title: "Logo carregada com sucesso",
+        description: "A logo foi atualizada e será salva quando você clicar em Salvar Alterações."
+      });
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const triggerFileInput = () => {
+    fileInputRef.current?.click();
+  };
+
   return (
     <div className="space-y-4">
       <Card>
@@ -31,10 +74,41 @@ export function ConfigGeral() {
             <div className="grid gap-2">
               <Label>Logo do Salão</Label>
               <div className="flex items-center gap-4">
-                <div className="h-24 w-24 rounded-lg border-2 border-dashed border-gray-200 flex items-center justify-center">
-                  <Button variant="ghost" className="h-full w-full">
-                    Upload
-                  </Button>
+                <input 
+                  type="file" 
+                  ref={fileInputRef}
+                  onChange={handleLogoUpload}
+                  accept="image/*"
+                  className="hidden"
+                />
+                {logoUrl ? (
+                  <div className="relative h-24 w-24 rounded-lg overflow-hidden border border-border">
+                    <img 
+                      src={logoUrl} 
+                      alt="Logo do salão" 
+                      className="h-full w-full object-cover" 
+                    />
+                    <Button 
+                      variant="outline" 
+                      size="icon" 
+                      className="absolute top-1 right-1 h-6 w-6 bg-white"
+                      onClick={triggerFileInput}
+                    >
+                      <Upload className="h-3 w-3" />
+                    </Button>
+                  </div>
+                ) : (
+                  <div 
+                    className="h-24 w-24 rounded-lg border-2 border-dashed border-gray-200 flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 transition-all"
+                    onClick={triggerFileInput}
+                  >
+                    <ImageIcon className="h-8 w-8 text-gray-400 mb-1" />
+                    <span className="text-xs text-gray-500">Upload</span>
+                  </div>
+                )}
+                <div className="text-sm text-muted-foreground">
+                  <p>Formatos aceitos: JPG, PNG, GIF</p>
+                  <p>Tamanho máximo: 5MB</p>
                 </div>
               </div>
             </div>
@@ -51,13 +125,7 @@ export function ConfigGeral() {
                 </div>
               </div>
             </div>
-            <div className="grid gap-2">
-              <Label>Tema do Sistema</Label>
-              <div className="flex items-center space-x-2">
-                <Switch id="dark-mode" />
-                <Label htmlFor="dark-mode">Modo Escuro</Label>
-              </div>
-            </div>
+
           </div>
         </CardContent>
       </Card>

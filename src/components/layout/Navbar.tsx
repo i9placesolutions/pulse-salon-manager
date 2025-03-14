@@ -49,29 +49,14 @@ export const Navbar = ({
             <span className="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full" />
           </Button>
 
-          {/* User Menu */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="gap-2">
-                <Avatar className="h-8 w-8">
-                  <AvatarImage src="/placeholder.svg" />
-                  <AvatarFallback>JS</AvatarFallback>
-                </Avatar>
-                <span className="hidden md:inline">João Silva</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuItem onClick={() => navigate('/profile')} className="cursor-pointer">
-                <User className="w-4 h-4 mr-2" />
-                <span>Meu Perfil</span>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem className="text-red-500">
-                <LogOut className="w-4 h-4 mr-2" />
-                <span>Sair</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {/* User Profile */}
+          <Button variant="ghost" className="gap-2" onClick={() => navigate('/establishment-profile')}>
+            <Avatar className="h-8 w-8">
+              <AvatarImage src="/placeholder.svg" />
+              <AvatarFallback>JS</AvatarFallback>
+            </Avatar>
+            <span className="hidden md:inline">João Silva</span>
+          </Button>
         </div>
       </div>
     </header>

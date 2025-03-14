@@ -138,12 +138,12 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="space-y-6 p-4 md:p-6">
+    <div className="space-y-6">
       {/* Header com Ações Rápidas */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <h1 className="text-2xl font-semibold text-neutral">Dashboard</h1>
-        <div className="flex flex-wrap gap-2">
-          <Button size="sm">
+          <div className="flex flex-wrap gap-2">
+          <Button className="bg-[#dc8c95] text-black hover:bg-[#c47a82]" size="sm">
             <Plus className="mr-2 h-4 w-4" />
             Novo Agendamento
           </Button>

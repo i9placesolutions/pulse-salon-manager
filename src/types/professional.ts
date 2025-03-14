@@ -1,10 +1,10 @@
-
 export interface Professional {
-  id: number;
+  id: string;
   name: string;
   email: string;
   phone: string;
   specialty: string;
+  specialties: ProfessionalSpecialty[];
   profileImage?: string;
   hiringDate: string;
   experienceLevel: 'beginner' | 'intermediate' | 'expert';
@@ -18,6 +18,31 @@ export interface Professional {
   fixedSalary?: number;
   commissionRate?: number;
   benefits?: ProfessionalBenefit[];
+  lastAppointmentDate?: string;
+  averageAppointmentDuration?: number;
+  monthRanking?: number;
+  clientAttendanceRate?: number;
+  workingDays?: string[];
+  history?: ProfessionalHistoryItem[];
+  avatar?: string;
+  rating?: number;
+  completedAppointments?: number;
+  canceledAppointments?: number;
+  revenue?: number;
+  appointmentHistory?: AppointmentHistoryItem[];
+  metrics?: {
+    clientRetention: number;
+    avgSessionDuration: number;
+    satisfactionRate: number;
+    revenueTrend: number[];
+  };
+}
+
+export interface ProfessionalSpecialty {
+  id: string;
+  name: string;
+  color: string;
+  isActive: boolean;
 }
 
 export interface ProfessionalBenefit {
@@ -96,4 +121,23 @@ export interface ProfessionalPerformance {
   }[];
   rating: number;
   clientReturnRate: number;
+}
+
+export interface ProfessionalHistoryItem {
+  id: string;
+  date: string;
+  service: string;
+  client: string;
+  rating?: number;
+  notes?: string;
+  description: string;
+}
+
+export interface AppointmentHistoryItem {
+  id: string;
+  date: string;
+  client: string;
+  service: string;
+  status: 'completed' | 'canceled' | 'scheduled';
+  revenue: number;
 }

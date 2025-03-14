@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Download, FileText, MessageSquare } from "lucide-react";
+import { Download, FileText, MessageSquare, Send, FileUp, Calendar, Filter, Eye, Settings, RotateCcw } from "lucide-react";
 import { SummaryCards } from "@/components/financeiro/SummaryCards";
 import { RevenueChart } from "@/components/financeiro/RevenueChart";
 import { PaymentsList } from "@/components/financeiro/PaymentsList";
@@ -26,6 +26,41 @@ import {
   TaxRecord,
   PaymentMethodConfig
 } from "@/types/financial";
+import { 
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { prepareFinancialReportData } from "@/utils/financial";
+import { exportData } from "@/utils/export";
+import { Progress } from "@/components/ui/progress";
+import { ReportType, saveFinancialReport } from '@/utils/pdfReport';
+import { 
+  calculateTotalRevenue, 
+  calculateTotalExpenses, 
+  calculateCashFlowBalance,
+  getOverdueAccounts,
+  countOverdueAccounts
+} from '@/utils/financial';
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandList, CommandGroup, CommandItem } from "@/components/ui/command";
+import { sub, format, parse, isAfter, isBefore, add } from "date-fns";
+import { DateRange } from "react-day-picker";
+import { PeriodSelectButton } from "@/components/financeiro/PeriodSelectButton";
+import { FinancialProjections } from "@/components/financeiro/FinancialProjections";
+import { Separator } from "@/components/ui/separator";
+import { formatCurrency } from "@/utils/currency";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
+import { ptBR } from "date-fns/locale";
+import { toast } from "@/components/ui/use-toast";
 
 const revenueData: RevenueData[] = [
   { date: "01/03", revenue: 1200, expenses: 800 },
@@ -150,44 +185,188 @@ const paymentMethodsConfig: PaymentMethodConfig[] = [
   },
 ];
 
+// Dados de exemplo para o relatório completo
+const servicesData = [
+  { id: 1, name: 'Corte de Cabelo', price: 50, duration: 30, category: 'Cabelo', status: 'Ativo' },
+  { id: 2, name: 'Coloração', price: 120, duration: 90, category: 'Cabelo', status: 'Ativo' },
+  { id: 3, name: 'Manicure', price: 35, duration: 45, category: 'Unhas', status: 'Ativo' },
+  { id: 4, name: 'Pedicure', price: 45, duration: 60, category: 'Unhas', status: 'Ativo' },
+  { id: 5, name: 'Hidratação', price: 80, duration: 60, category: 'Tratamento', status: 'Ativo' },
+];
+
+const professionalsData = [
+  { id: 1, name: 'Ana Silva', role: 'Cabeleireira', appointments: 120, rating: 4.8, revenue: 5600 },
+  { id: 2, name: 'Carlos Santos', role: 'Barbeiro', appointments: 95, rating: 4.7, revenue: 4200 },
+  { id: 3, name: 'Juliana Oliveira', role: 'Manicure', appointments: 150, rating: 4.9, revenue: 3800 },
+  { id: 4, name: 'Marcos Pereira', role: 'Esteticista', appointments: 85, rating: 4.6, revenue: 6200 },
+];
+
+const clientsData = [
+  { id: 1, name: 'Maria Souza', email: 'maria@email.com', phone: '(11) 98765-4321', visits: 8, lastVisit: '15/05/2023', totalSpent: 780 },
+  { id: 2, name: 'João Almeida', email: 'joao@email.com', phone: '(11) 91234-5678', visits: 5, lastVisit: '22/06/2023', totalSpent: 450 },
+  { id: 3, name: 'Fernanda Lima', email: 'fernanda@email.com', phone: '(11) 99876-5432', visits: 12, lastVisit: '10/07/2023', totalSpent: 1250 },
+  { id: 4, name: 'Ricardo Gomes', email: 'ricardo@email.com', phone: '(11) 92345-6789', visits: 3, lastVisit: '05/08/2023', totalSpent: 320 },
+];
+
+const appointmentsData = [
+  { id: 1, date: '15/07/2023', time: '10:00', clientName: 'Maria Souza', serviceName: 'Corte de Cabelo', professionalName: 'Ana Silva', status: 'Concluído', value: 50 },
+  { id: 2, date: '16/07/2023', time: '14:30', clientName: 'João Almeida', serviceName: 'Barba', professionalName: 'Carlos Santos', status: 'Concluído', value: 35 },
+  { id: 3, date: '18/07/2023', time: '11:15', clientName: 'Fernanda Lima', serviceName: 'Manicure', professionalName: 'Juliana Oliveira', status: 'Concluído', value: 35 },
+  { id: 4, date: '20/07/2023', time: '16:00', clientName: 'Ricardo Gomes', serviceName: 'Massagem', professionalName: 'Marcos Pereira', status: 'Agendado', value: 120 },
+];
+
+// Interface para o objeto de dados do relatório
+interface ReportData {
+  title: string;
+  period: string;
+  summary: {
+    totalRevenue: number;
+    totalExpenses: number;
+    balance: number;
+  };
+  transactions: Array<{
+    date: string;
+    description: string;
+    category: string;
+    type: string;
+    value: number;
+    status: string;
+    paymentMethod: string;
+  }>;
+  categories?: Array<{
+    category: string;
+    value: number;
+    percentage: number;
+  }>;
+  projections?: Array<{
+    month: string;
+    projectedRevenue: number;
+    projectedExpenses: number;
+    projectedBalance: number;
+  }>;
+  services?: Array<{
+    id: number;
+    name: string;
+    price: number;
+    duration: number;
+    category: string;
+    status: string;
+  }>;
+  professionals?: Array<{
+    id: number;
+    name: string;
+    role: string;
+    appointments: number;
+    rating: number;
+    revenue: number;
+  }>;
+  clients?: Array<{
+    id: number;
+    name: string;
+    email: string;
+    phone: string;
+    visits: number;
+    lastVisit: string;
+    totalSpent: number;
+  }>;
+  appointments?: Array<{
+    id: number;
+    date: string;
+    time: string;
+    clientName: string;
+    serviceName: string;
+    professionalName: string;
+    status: string;
+    value: number;
+  }>;
+}
+
 const Financeiro = () => {
-  const [period, setPeriod] = useState("daily");
+  const [view, setView] = useState<"week" | "month" | "year">("month");
+  const [dateRange, setDateRange] = useState<DateRange | undefined>({
+    from: sub(new Date(), { months: 1 }),
+    to: new Date(),
+  });
+  const [cashFlowState, setCashFlowState] = useState<CashFlow[]>(cashFlowData);
+  const [expensesState, setExpensesState] = useState<Expense[]>(expenses);
+  const [accountsReceivableState, setAccountsReceivableState] = useState<AccountReceivable[]>(accountsReceivable);
   const { toast } = useToast();
 
-  const handleExport = () => {
+  const handleUpdateCashFlow = (newData: CashFlow[]) => {
+    setCashFlowState(newData);
+    // Aqui seria o lugar para persistir os dados em uma API ou localStorage
     toast({
-      title: "Exportando relatório",
-      description: "O relatório será gerado em breve.",
+      title: "Fluxo de caixa atualizado",
+      description: "As alterações foram salvas com sucesso.",
     });
   };
 
-  const handleWhatsApp = () => {
+  // Função para marcar um item como pago/recebido
+  const handleMarkItemAsPaid = (type: 'expense' | 'account', id: number) => {
+    if (type === 'expense') {
+      // Atualizar status da despesa
+      const updatedExpenses = expensesState.map(expense => 
+        expense.id === id ? { ...expense, status: 'Pago' as const } : expense
+      );
+      setExpensesState(updatedExpenses);
+      
+      toast({
+        title: "Despesa atualizada",
+        description: "A despesa foi marcada como paga com sucesso.",
+      });
+    } else {
+      // Atualizar status da conta a receber
+      const updatedAccounts = accountsReceivableState.map(account => 
+        account.id === id ? { ...account, status: 'Pago' as const } : account
+      );
+      setAccountsReceivableState(updatedAccounts);
+      
+      toast({
+        title: "Conta atualizada",
+        description: "A conta foi marcada como recebida com sucesso.",
+      });
+    }
+  };
+
+  const handleMarkAlertItem = (item: Expense | AccountReceivable, action: string) => {
+    if ('dueDate' in item) {
+      // É uma conta a receber
+      handleMarkItemAsPaid('account', item.id);
+    } else {
+      // É uma despesa
+      handleMarkItemAsPaid('expense', item.id);
+    }
+    
     toast({
-      title: "Enviando cobrança",
-      description: "A mensagem será enviada em breve.",
+      title: action === "pagar" ? "Despesa marcada como paga" : "Pagamento registrado",
+      description: `A atualização foi realizada com sucesso.`
     });
   };
 
   return (
-    <div className="space-y-6 p-4 md:p-6">
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <h1 className="text-2xl font-semibold text-neutral">Gestão Financeira</h1>
-        <div className="flex flex-wrap gap-2">
-          <NewRevenueDialog />
-          <NewExpenseDialog />
-          <Button variant="outline" onClick={handleWhatsApp}>
-            <MessageSquare className="mr-2 h-4 w-4" />
-            Enviar Cobranças
-          </Button>
-          <Button onClick={handleExport}>
-            <Download className="mr-2 h-4 w-4" />
-            Exportar Relatório
-          </Button>
+    <div className="space-y-8">
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Financeiro</h1>
+          <p className="text-muted-foreground">
+            Controle de receitas, despesas e fluxo de caixa
+          </p>
         </div>
       </div>
 
-      <SummaryCards />
-      
+      {/* SummaryCards movido para o topo, fora das abas */}
+      <div className="space-y-4">
+        <div className="flex justify-between items-center">
+          <h2 className="text-2xl font-bold">Visão Geral Financeira</h2>
+        </div>
+        
+        <SummaryCards 
+          payments={payments} 
+          expenses={expensesState} 
+          professionals={professionals} 
+        />
+      </div>
+
       <Tabs defaultValue="overview" className="space-y-4">
         <TabsList className="w-full justify-start">
           <TabsTrigger value="overview">Visão Geral</TabsTrigger>
@@ -202,23 +381,82 @@ const Financeiro = () => {
 
         <TabsContent value="overview">
           <div className="space-y-4">
-            <RevenueChart data={revenueData} period={period} setPeriod={setPeriod} />
-            <PaymentsList payments={payments} />
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+              <div className="col-span-12 lg:col-span-8">
+                <RevenueChart data={revenueData} period={view} setPeriod={setView} />
+              </div>
+              <div className="col-span-12 lg:col-span-4">
+                <PaymentsList payments={payments} />
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <ProfessionalsList professionals={professionals} />
+              <AccountsReceivable 
+                accounts={accountsReceivableState} 
+                onNewEntry={(entry) => {
+                  // Usando a mesma função para atualizar o fluxo de caixa
+                  const newEntry = {
+                    ...entry,
+                    id: cashFlowState.length > 0 ? Math.max(...cashFlowState.map(item => item.id)) + 1 : 1
+                  };
+                  handleUpdateCashFlow([...cashFlowState, newEntry]);
+                }} 
+              />
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+              <div className="col-span-12">
+                {/* Componente FinancialAlerts removido conforme solicitado */}
+              </div>
+            </div>
+            
+            <FinancialProjections 
+              expenses={expensesState}
+              accountsReceivable={accountsReceivableState}
+              cashFlow={cashFlowState}
+            />
           </div>
         </TabsContent>
 
         <TabsContent value="cashflow">
-          <CashFlowPanel data={cashFlowData} />
+          <CashFlowPanel data={cashFlowState} onUpdateData={handleUpdateCashFlow} />
         </TabsContent>
 
         <TabsContent value="receivables">
-          <AccountsReceivable accounts={accountsReceivable} onWhatsApp={handleWhatsApp} />
+          <AccountsReceivable 
+            accounts={accountsReceivableState} 
+            onNewEntry={(entry) => {
+              // Usando a mesma função para atualizar o fluxo de caixa
+              const newEntry = {
+                ...entry,
+                id: cashFlowState.length > 0 ? Math.max(...cashFlowState.map(item => item.id)) + 1 : 1
+              };
+              handleUpdateCashFlow([...cashFlowState, newEntry]);
+            }} 
+          />
         </TabsContent>
 
         <TabsContent value="expenses">
           <div className="space-y-4">
-            <ExpensesList expenses={expenses} />
-            <CostControlPanel expenses={expenses} />
+            <ExpensesList 
+              expenses={expensesState} 
+              onUpdateExpense={(updatedExpense) => {
+                const updatedExpenses = expensesState.map(expense => 
+                  expense.id === updatedExpense.id ? updatedExpense : expense
+                );
+                setExpensesState(updatedExpenses);
+              }}
+              onNewEntry={(entry) => {
+                // Usando a mesma função para atualizar o fluxo de caixa
+                const newEntry = {
+                  ...entry,
+                  id: cashFlowState.length > 0 ? Math.max(...cashFlowState.map(item => item.id)) + 1 : 1
+                };
+                handleUpdateCashFlow([...cashFlowState, newEntry]);
+              }}
+            />
+            <CostControlPanel expenses={expensesState} />
           </div>
         </TabsContent>
 

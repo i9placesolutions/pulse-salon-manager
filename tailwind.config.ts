@@ -1,4 +1,3 @@
-
 import type { Config } from "tailwindcss";
 
 export default {
@@ -29,16 +28,38 @@ export default {
           DEFAULT: "#dc8c95",
           soft: "#f5d8db",
           dark: "#b86f77",
+          foreground: "#ffffff",
+          "50": "#fdf2f3",
+          "100": "#fbdfe2",
+          "200": "#f7c8cd",
+          "300": "#f1a4ad",
+          "400": "#e98d98",
+          "500": "#dc8c95",
+          "600": "#cc5f6c",
+          "700": "#ba4c59",
+          "800": "#9a424c",
+          "900": "#803b44"
         },
         secondary: {
           DEFAULT: "#ffffff",
           soft: "#f8f9fa",
           dark: "#e9ecef",
+          foreground: "#313649",
         },
         neutral: {
           DEFAULT: "#313649",
           soft: "#4a4f66",
           dark: "#252837",
+          "50": "#f8f9fa",
+          "100": "#e9eaed",
+          "200": "#cfd1d8",
+          "300": "#a9adb9",
+          "400": "#7c8294",
+          "500": "#5c637a",
+          "600": "#485066",
+          "700": "#313649",
+          "800": "#272c3c",
+          "900": "#1f2532"
         },
       },
       borderRadius: {

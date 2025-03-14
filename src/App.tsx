@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -23,93 +22,102 @@ import Servicos from "./pages/Servicos";
 import Profissionais from "./pages/Profissionais";
 import Mensalidade from "./pages/Mensalidade";
 import ProfissionalDashboard from "./pages/ProfissionalDashboard";
+import EstablishmentProfile from "./pages/EstablishmentProfile";
 import NotFound from "./pages/NotFound";
+import { SpecialtiesProvider } from "./contexts/SpecialtiesContext";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          {/* Auth routes */}
-          <Route path="/" element={<Index />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/terms" element={<Terms />} />
-          <Route path="/privacy" element={<Privacy />} />
-          
-          {/* Professional routes without sidebar */}
-          <Route path="/profissional-dashboard" element={<ProfissionalDashboard />} />
-          
-          {/* Protected routes with sidebar */}
-          <Route path="/dashboard" element={
-            <AppLayout>
-              <Dashboard />
-            </AppLayout>
-          } />
-          <Route path="/appointments" element={
-            <AppLayout>
-              <Appointments />
-            </AppLayout>
-          } />
-          <Route path="/clientes" element={
-            <AppLayout>
-              <Clientes />
-            </AppLayout>
-          } />
-          <Route path="/servicos" element={
-            <AppLayout>
-              <Servicos />
-            </AppLayout>
-          } />
-          <Route path="/profissionais" element={
-            <AppLayout>
-              <Profissionais />
-            </AppLayout>
-          } />
-          <Route path="/financeiro" element={
-            <AppLayout>
-              <Financeiro />
-            </AppLayout>
-          } />
-          <Route path="/estoque" element={
-            <AppLayout>
-              <Estoque />
-            </AppLayout>
-          } />
-          <Route path="/pdv" element={
-            <AppLayout>
-              <PDV />
-            </AppLayout>
-          } />
-          <Route path="/relatorios" element={
-            <AppLayout>
-              <Relatorios />
-            </AppLayout>
-          } />
-          <Route path="/marketing" element={
-            <AppLayout>
-              <Marketing />
-            </AppLayout>
-          } />
-          <Route path="/configuracoes" element={
-            <AppLayout>
-              <Configuracoes />
-            </AppLayout>
-          } />
-          <Route path="/mensalidade" element={
-            <AppLayout>
-              <Mensalidade />
-            </AppLayout>
-          } />
-          
-          {/* Catch all */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
+      <SpecialtiesProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            {/* Auth routes */}
+            <Route path="/" element={<Index />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/terms" element={<Terms />} />
+            <Route path="/privacy" element={<Privacy />} />
+            
+            {/* Professional routes without sidebar */}
+            <Route path="/profissional-dashboard" element={<ProfissionalDashboard />} />
+            
+            {/* Protected routes with sidebar */}
+            <Route path="/dashboard" element={
+              <AppLayout>
+                <Dashboard />
+              </AppLayout>
+            } />
+            <Route path="/appointments" element={
+              <AppLayout>
+                <Appointments />
+              </AppLayout>
+            } />
+            <Route path="/clientes" element={
+              <AppLayout>
+                <Clientes />
+              </AppLayout>
+            } />
+            <Route path="/servicos" element={
+              <AppLayout>
+                <Servicos />
+              </AppLayout>
+            } />
+            <Route path="/profissionais" element={
+              <AppLayout>
+                <Profissionais />
+              </AppLayout>
+            } />
+            <Route path="/financeiro" element={
+              <AppLayout>
+                <Financeiro />
+              </AppLayout>
+            } />
+            <Route path="/estoque" element={
+              <AppLayout>
+                <Estoque />
+              </AppLayout>
+            } />
+            <Route path="/pdv" element={
+              <AppLayout>
+                <PDV />
+              </AppLayout>
+            } />
+            <Route path="/relatorios" element={
+              <AppLayout>
+                <Relatorios />
+              </AppLayout>
+            } />
+            <Route path="/marketing" element={
+              <AppLayout>
+                <Marketing />
+              </AppLayout>
+            } />
+            <Route path="/configuracoes" element={
+              <AppLayout>
+                <Configuracoes />
+              </AppLayout>
+            } />
+            <Route path="/mensalidade" element={
+              <AppLayout>
+                <Mensalidade />
+              </AppLayout>
+            } />
+            <Route path="/establishment-profile" element={
+              <AppLayout>
+                <EstablishmentProfile />
+              </AppLayout>
+            } />
+            
+            {/* Catch all */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </SpecialtiesProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );

@@ -1,4 +1,3 @@
-
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -21,6 +20,8 @@ interface AppointmentFiltersProps {
   selectedProfessional: string;
   setSelectedProfessional: (professional: string) => void;
   professionals: Professional[];
+  searchTerm?: string;
+  setSearchTerm?: (term: string) => void;
 }
 
 export const AppointmentFilters = ({
@@ -28,7 +29,9 @@ export const AppointmentFilters = ({
   setSelectedDate,
   selectedProfessional,
   setSelectedProfessional,
-  professionals
+  professionals,
+  searchTerm = "",
+  setSearchTerm = () => {}
 }: AppointmentFiltersProps) => {
   return (
     <Card className="p-4">
@@ -64,7 +67,12 @@ export const AppointmentFilters = ({
 
           <div className="relative flex-1">
             <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="Buscar cliente..." className="pl-8" />
+            <Input 
+              placeholder="Buscar cliente..." 
+              className="pl-8" 
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
           </div>
         </div>
 

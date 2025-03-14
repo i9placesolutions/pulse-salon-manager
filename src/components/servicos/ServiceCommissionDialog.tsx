@@ -1,20 +1,39 @@
-
-import { Button } from "@/components/ui/button";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
+  DialogDescription,
+  DialogFooter,
 } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { useState } from "react";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Edit,
+  Percent,
+  Settings,
+} from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { Service, ProfessionalCommission } from "@/types/service";
-import { formatCurrency } from "@/utils/currency";
+import { Service } from "@/types/service";
+import { formatCurrency, parseCurrency } from "@/utils/currency";
+import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 
 interface Professional {
   id: number;
@@ -24,8 +43,8 @@ interface Professional {
 interface ServiceCommissionDialogProps {
   service: Service;
   professionals: Professional[];
-  customCommissions?: ProfessionalCommission[];
-  onSave: (commissions: ProfessionalCommission[]) => void;
+  customCommissions?: any[];
+  onSave: (commissions: any[]) => void;
 }
 
 export function ServiceCommissionDialog({
@@ -35,194 +54,333 @@ export function ServiceCommissionDialog({
   onSave,
 }: ServiceCommissionDialogProps) {
   const { toast } = useToast();
-  const [isOpen, setIsOpen] = useState(false);
-  const [commissions, setCommissions] = useState<ProfessionalCommission[]>(
-    customCommissions.length > 0
-      ? customCommissions
-      : service.professionals.map((profId) => ({
-          professionalId: profId,
-          serviceId: service.id,
-          type: service.commission.type,
-          value: service.commission.value,
-        }))
+  const [open, setOpen] = useState(false);
+  const [commissions, setCommissions] = useState<any[]>([]);
+  const [applyToAll, setApplyToAll] = useState(true);
+  const [loading, setLoading] = useState(false);
+
+  const [globalCommissionType, setGlobalCommissionType] = useState<"percentage" | "fixed">(
+    service.commission.type
+  );
+  const [globalCommissionValue, setGlobalCommissionValue] = useState<number>(
+    service.commission.value
+  );
+  const [globalCommissionInput, setGlobalCommissionInput] = useState<string>(
+    globalCommissionType === "percentage" 
+      ? service.commission.value.toString() 
+      : formatCurrency(service.commission.value)
   );
 
-  const handleCommissionChange = (professionalId: number, value: number) => {
-    setCommissions((prev) =>
-      prev.map((comm) =>
-        comm.professionalId === professionalId ? { ...comm, value } : comm
-      )
-    );
+  useEffect(() => {
+    if (open) {
+      const initialCommissions = professionals.map((prof) => {
+        const customCommission = customCommissions.find(
+          (c) => c.professionalId === prof.id
+        );
+        return {
+          professionalId: prof.id,
+          name: prof.name,
+          active: service.professionals?.includes(prof.id) || false,
+          commission: customCommission
+            ? { ...customCommission.commission }
+            : { ...service.commission },
+          customInput: customCommission
+            ? customCommission.commission.type === "percentage"
+              ? customCommission.commission.value.toString()
+              : formatCurrency(customCommission.commission.value)
+            : globalCommissionType === "percentage"
+              ? globalCommissionValue.toString()
+              : formatCurrency(globalCommissionValue),
+        };
+      });
+      setCommissions(initialCommissions);
+    }
+  }, [open, service, professionals, customCommissions, globalCommissionType, globalCommissionValue]);
+
+  const handleGlobalCommissionTypeChange = (type: "percentage" | "fixed") => {
+    setGlobalCommissionType(type);
+    setGlobalCommissionValue(type === "percentage" ? 50 : 0);
+    setGlobalCommissionInput(type === "percentage" ? "50" : "R$ 0,00");
   };
 
-  const handleTypeChange = (professionalId: number, type: 'fixed' | 'percentage') => {
-    setCommissions((prev) =>
-      prev.map((comm) =>
-        comm.professionalId === professionalId ? { ...comm, type } : comm
-      )
-    );
+  const handleGlobalCommissionValueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setGlobalCommissionInput(value);
+    
+    try {
+      if (globalCommissionType === "percentage") {
+        // Para percentual, remove não-numéricos exceto ponto e vírgula
+        const numericValue = Number(value.replace(/[^\d]/g, ""));
+        setGlobalCommissionValue(numericValue);
+      } else {
+        // Para valor fixo, usa a função de parse
+        const numericValue = parseCurrency(value);
+        setGlobalCommissionValue(numericValue);
+      }
+    } catch (error) {
+      console.error("Erro ao converter valor da comissão:", error);
+    }
   };
 
-  const handleApplyToAll = (type: 'fixed' | 'percentage', value: number) => {
+  const applyGlobalCommission = () => {
     setCommissions((prev) =>
-      prev.map((comm) => ({
-        ...comm,
-        type,
-        value,
+      prev.map((c) => ({
+        ...c,
+        commission: {
+          type: globalCommissionType,
+          value: globalCommissionValue,
+        },
+        customInput: globalCommissionType === "percentage" 
+          ? globalCommissionValue.toString() 
+          : formatCurrency(globalCommissionValue),
       }))
     );
-    toast({
-      title: "Comissão aplicada",
-      description: "A comissão foi aplicada para todos os profissionais.",
-    });
   };
 
-  const calculateEarnings = (commission: ProfessionalCommission) => {
-    if (commission.type === "percentage") {
-      return (service.price * commission.value) / 100;
+  const handleCommissionTypeChange = (professionalId: number, type: "percentage" | "fixed") => {
+    setCommissions((prev) =>
+      prev.map((c) =>
+        c.professionalId === professionalId
+          ? {
+              ...c,
+              commission: {
+                type,
+                value: type === "percentage" ? 50 : 0,
+              },
+              customInput: type === "percentage" ? "50" : "R$ 0,00",
+            }
+          : c
+      )
+    );
+  };
+
+  const handleCommissionValueChange = (
+    professionalId: number,
+    value: string
+  ) => {
+    setCommissions((prev) =>
+      prev.map((c) => {
+        if (c.professionalId === professionalId) {
+          let numericValue = 0;
+          
+          try {
+            if (c.commission.type === "percentage") {
+              // Para percentual, remove não-numéricos
+              numericValue = Number(value.replace(/[^\d]/g, ""));
+            } else {
+              // Para valor fixo, usa a função de parse
+              numericValue = parseCurrency(value);
+            }
+          } catch (error) {
+            console.error("Erro ao converter valor da comissão:", error);
+          }
+          
+          return {
+            ...c,
+            commission: {
+              ...c.commission,
+              value: numericValue,
+            },
+            customInput: value,
+          };
+        }
+        return c;
+      })
+    );
+  };
+
+  const handleActiveChange = (professionalId: number, active: boolean) => {
+    setCommissions((prev) =>
+      prev.map((c) =>
+        c.professionalId === professionalId ? { ...c, active } : c
+      )
+    );
+  };
+
+  const handleSave = async () => {
+    try {
+      setLoading(true);
+      const activeProfessionals = commissions
+        .filter((c) => c.active)
+        .map((c) => ({
+          professionalId: c.professionalId,
+          commission: c.commission,
+        }));
+      
+      onSave(activeProfessionals);
+      setOpen(false);
+      toast({
+        title: "Comissões salvas",
+        description: "As configurações de comissão foram atualizadas.",
+      });
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Ocorreu um erro ao salvar as comissões.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
-    return commission.value;
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSave(commissions);
-    toast({
-      title: "Comissões atualizadas",
-      description: "As comissões foram atualizadas com sucesso!",
-    });
-    setIsOpen(false);
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline">Configurar Comissões</Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-[500px]">
-        <DialogHeader>
-          <DialogTitle>Configurar Comissões - {service.name}</DialogTitle>
-          <DialogDescription>
-            Configure as comissões individuais por profissional. Valor padrão:{" "}
-            {service.commission.type === "percentage"
-              ? `${service.commission.value}%`
-              : formatCurrency(service.commission.value)}
-          </DialogDescription>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="bg-muted/50 p-4 rounded-lg space-y-2">
-            <Label>Aplicar para todos os profissionais</Label>
-            <div className="flex gap-4">
-              <select
-                className="flex h-10 w-[150px] rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                defaultValue={service.commission.type}
-              >
-                <option value="percentage">Porcentagem</option>
-                <option value="fixed">Valor Fixo</option>
-              </select>
-              <Input
-                type="number"
-                step="0.01"
-                min="0"
-                defaultValue={service.commission.value}
-                placeholder="Valor"
-              />
-              <Button
-                type="button"
-                onClick={() =>
-                  handleApplyToAll(service.commission.type, service.commission.value)
-                }
-              >
-                Aplicar para Todos
-              </Button>
+    <>
+      <Button 
+        variant="ghost" 
+        size="icon" 
+        onClick={() => setOpen(true)}
+        className="h-8 w-8 text-neutral-500 hover:text-primary hover:bg-primary/10"
+      >
+        <Settings className="h-4 w-4" />
+      </Button>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="sm:max-w-[650px] p-0 overflow-hidden bg-white">
+          <DialogHeader className="px-6 pt-6 pb-4 border-b bg-muted/30">
+            <DialogTitle className="text-xl">Configuração de Comissões</DialogTitle>
+            <DialogDescription>
+              Configure as comissões para <span className="font-medium">{service.name}</span>
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="p-6 space-y-6">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="font-medium">Comissão Padrão</h3>
+                <div className="flex items-center">
+                  <Switch 
+                    id="apply-all" 
+                    checked={applyToAll}
+                    onCheckedChange={setApplyToAll}
+                    className="mr-2"
+                  />
+                  <label htmlFor="apply-all" className="text-sm cursor-pointer">
+                    Aplicar para todos
+                  </label>
+                </div>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <div className="grid grid-cols-2 gap-2 flex-1">
+                  <Select
+                    value={globalCommissionType}
+                    onValueChange={(value) => handleGlobalCommissionTypeChange(value as "percentage" | "fixed")}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="percentage">Percentual (%)</SelectItem>
+                      <SelectItem value="fixed">Valor Fixo (R$)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Input
+                    value={globalCommissionInput}
+                    onChange={handleGlobalCommissionValueChange}
+                  />
+                </div>
+                <Button 
+                  onClick={applyGlobalCommission}
+                  variant="outline"
+                  className="text-primary border-primary/20 hover:bg-primary/5"
+                >
+                  Aplicar
+                </Button>
+              </div>
+            </div>
+
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader className="bg-muted/50">
+                  <TableRow className="hover:bg-transparent">
+                    <TableHead className="w-[50px]">Ativo</TableHead>
+                    <TableHead>Profissional</TableHead>
+                    <TableHead>Tipo</TableHead>
+                    <TableHead>Valor</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {commissions.map((commission) => (
+                    <TableRow 
+                      key={commission.professionalId}
+                      className="hover:bg-muted/40"
+                    >
+                      <TableCell className="text-center">
+                        <Switch
+                          checked={commission.active}
+                          onCheckedChange={(checked) =>
+                            handleActiveChange(commission.professionalId, checked)
+                          }
+                        />
+                      </TableCell>
+                      <TableCell>{commission.name}</TableCell>
+                      <TableCell>
+                        <Select
+                          value={commission.commission.type}
+                          onValueChange={(value) =>
+                            handleCommissionTypeChange(
+                              commission.professionalId,
+                              value as "percentage" | "fixed"
+                            )
+                          }
+                          disabled={applyToAll}
+                        >
+                          <SelectTrigger className="w-[130px]">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="percentage">Percentual (%)</SelectItem>
+                            <SelectItem value="fixed">Valor Fixo (R$)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
+                      <TableCell>
+                        <Input
+                          value={commission.customInput}
+                          onChange={(e) =>
+                            handleCommissionValueChange(
+                              commission.professionalId,
+                              e.target.value
+                            )
+                          }
+                          disabled={applyToAll}
+                          className="w-[130px]"
+                        />
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+
+            <div className="rounded border p-4 bg-muted/20">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h3 className="font-medium text-sm">Resumo de ganhos</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Valor do serviço: {formatCurrency(service.price)}
+                  </p>
+                </div>
+                <div>
+                  <Badge variant="outline" className="bg-primary/10 text-primary">
+                    {commissions.filter(c => c.active).length} profissionais selecionados
+                  </Badge>
+                </div>
+              </div>
             </div>
           </div>
 
-          <div className="space-y-4">
-            {professionals
-              .filter((prof) => service.professionals.includes(prof.id))
-              .map((professional) => {
-                const commission = commissions.find(
-                  (c) => c.professionalId === professional.id
-                );
-                if (!commission) return null;
-
-                const earnings = calculateEarnings(commission);
-                const isCustom =
-                  commission.type !== service.commission.type ||
-                  commission.value !== service.commission.value;
-
-                return (
-                  <div 
-                    key={professional.id} 
-                    className={`space-y-2 p-4 rounded-lg border ${
-                      isCustom ? "border-primary/50" : "border-muted"
-                    }`}
-                  >
-                    <div className="flex justify-between items-center">
-                      <Label>{professional.name}</Label>
-                      {isCustom && (
-                        <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded">
-                          Comissão Personalizada
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex gap-4">
-                      <select
-                        className="flex h-10 w-[150px] rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                        value={commission.type}
-                        onChange={(e) =>
-                          handleTypeChange(
-                            professional.id,
-                            e.target.value as "fixed" | "percentage"
-                          )
-                        }
-                      >
-                        <option value="percentage">Porcentagem</option>
-                        <option value="fixed">Valor Fixo</option>
-                      </select>
-                      <Input
-                        type="number"
-                        step={commission.type === "percentage" ? "1" : "0.01"}
-                        min="0"
-                        value={commission.value}
-                        onChange={(e) =>
-                          handleCommissionChange(professional.id, Number(e.target.value))
-                        }
-                      />
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() =>
-                          handleCommissionChange(
-                            professional.id,
-                            service.commission.value
-                          )
-                        }
-                      >
-                        Usar Padrão
-                      </Button>
-                    </div>
-                    <div className="flex justify-between text-sm text-muted-foreground">
-                      <span>
-                        Comissão: {" "}
-                        {commission.type === "percentage"
-                          ? `${commission.value}%`
-                          : formatCurrency(commission.value)}
-                      </span>
-                      <span>
-                        Valor a receber: {formatCurrency(earnings)}
-                      </span>
-                    </div>
-                  </div>
-                );
-              })}
-          </div>
-          <DialogFooter>
-            <Button type="submit">Salvar Comissões</Button>
+          <DialogFooter className="px-6 py-4 border-t bg-muted/20">
+            <Button variant="outline" onClick={() => setOpen(false)} disabled={loading}>
+              Cancelar
+            </Button>
+            <Button onClick={handleSave} disabled={loading} className="bg-primary hover:bg-primary/90">
+              Salvar Comissões
+            </Button>
           </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

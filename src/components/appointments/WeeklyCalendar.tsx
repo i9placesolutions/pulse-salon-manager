@@ -1,4 +1,3 @@
-
 import { addDays, format, startOfWeek, startOfMonth, endOfMonth, eachDayOfInterval } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Card } from "@/components/ui/card";
@@ -110,7 +109,7 @@ export const WeeklyCalendar = ({
                 return (
                   <Card
                     key={`${date.toISOString()}-${time}`}
-                    className="h-24 p-2 bg-secondary-soft hover:bg-secondary-dark/5 transition-colors relative"
+                    className="h-24 p-2 bg-white hover:bg-secondary/5 transition-colors relative"
                   >
                     {dayAppointments.map((appointment) => (
                       <HoverCard key={appointment.id}>
@@ -171,7 +170,7 @@ export const WeeklyCalendar = ({
                             <div className="flex gap-2 pt-2">
                               <Button
                                 size="sm"
-                                variant="outline"
+                                variant={appointment.status === "confirmed" ? "outline" : "default"}
                                 onClick={() =>
                                   onStatusChange(
                                     appointment.id,
@@ -180,6 +179,7 @@ export const WeeklyCalendar = ({
                                       : "confirmed"
                                   )
                                 }
+                                className={appointment.status === "confirmed" ? "text-red-600 border-red-200 hover:bg-red-50" : "bg-green-600 text-white hover:bg-green-700"}
                               >
                                 {appointment.status === "confirmed"
                                   ? "Cancelar"
@@ -189,6 +189,7 @@ export const WeeklyCalendar = ({
                                 size="sm"
                                 variant="outline"
                                 onClick={() => onReschedule(appointment.id)}
+                                className="hover:bg-blue-50 hover:text-blue-600"
                               >
                                 Reagendar
                               </Button>

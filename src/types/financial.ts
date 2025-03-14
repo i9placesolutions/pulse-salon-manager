@@ -1,4 +1,3 @@
-
 export interface Payment {
   id: number;
   client: string;
@@ -100,6 +99,7 @@ export interface CashFlow {
   status: 'realizado' | 'previsto';
   paymentMethod?: string;
   relatedDocument?: string;
+  isRecurring?: boolean;
 }
 
 export interface TaxRecord {

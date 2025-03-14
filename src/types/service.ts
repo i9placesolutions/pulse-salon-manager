@@ -1,4 +1,3 @@
-
 export interface Service {
   id: number;
   name: string;
@@ -37,6 +36,10 @@ export interface ServicePackage {
   name: string;
   description: string;
   services: number[];
+  products?: {
+    productId: number;
+    quantity: number;
+  }[];
   discount: number;
   status: 'active' | 'inactive';
 }

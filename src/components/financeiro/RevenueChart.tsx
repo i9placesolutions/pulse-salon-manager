@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { 
@@ -15,8 +14,8 @@ import { RevenueData } from "@/types/financial";
 
 interface RevenueChartProps {
   data: RevenueData[];
-  period: string;
-  setPeriod: (period: string) => void;
+  period: "week" | "month" | "year";
+  setPeriod: (period: "week" | "month" | "year") => void;
 }
 
 export const RevenueChart = ({ data, period, setPeriod }: RevenueChartProps) => {
@@ -26,25 +25,25 @@ export const RevenueChart = ({ data, period, setPeriod }: RevenueChartProps) => 
         <CardTitle>Faturamento</CardTitle>
         <div className="flex items-center gap-2">
           <Button
-            variant={period === "daily" ? "default" : "outline"}
+            variant={period === "week" ? "default" : "outline"}
             size="sm"
-            onClick={() => setPeriod("daily")}
-          >
-            Diário
-          </Button>
-          <Button
-            variant={period === "weekly" ? "default" : "outline"}
-            size="sm"
-            onClick={() => setPeriod("weekly")}
+            onClick={() => setPeriod("week")}
           >
             Semanal
           </Button>
           <Button
-            variant={period === "monthly" ? "default" : "outline"}
+            variant={period === "month" ? "default" : "outline"}
             size="sm"
-            onClick={() => setPeriod("monthly")}
+            onClick={() => setPeriod("month")}
           >
             Mensal
+          </Button>
+          <Button
+            variant={period === "year" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setPeriod("year")}
+          >
+            Anual
           </Button>
         </div>
       </CardHeader>

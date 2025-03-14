@@ -1,73 +1,78 @@
-
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, Crown, UserMinus, Cake } from "lucide-react";
+import {
+  Users,
+  UserCheck,
+  Crown,
+  Clock,
+  Cake,
+} from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
 
 interface ClientStatisticsProps {
   totalClients: number;
   activeClients: number;
   vipClients: number;
-  birthdaysThisMonth: number;
+  inactiveClients: number;
+  birthdayClients: number;
 }
 
 export function ClientStatistics({
   totalClients,
   activeClients,
   vipClients,
-  birthdaysThisMonth,
+  inactiveClients,
+  birthdayClients,
 }: ClientStatisticsProps) {
+  const stats = [
+    {
+      title: "Total de Clientes",
+      value: totalClients,
+      icon: Users,
+      color: "bg-primary/10 text-primary",
+    },
+    {
+      title: "Clientes Ativos",
+      value: activeClients,
+      icon: UserCheck,
+      color: "bg-green-100 text-green-700",
+    },
+    {
+      title: "Clientes VIP",
+      value: vipClients,
+      icon: Crown,
+      color: "bg-yellow-100 text-yellow-700",
+    },
+    {
+      title: "Clientes Inativos",
+      value: inactiveClients,
+      icon: Clock,
+      color: "bg-gray-100 text-gray-700",
+    },
+    {
+      title: "Aniversariantes",
+      value: birthdayClients,
+      icon: Cake,
+      color: "bg-pink-100 text-pink-700",
+    },
+  ];
+
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Total de Clientes</CardTitle>
-          <Users className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{totalClients}</div>
-          <p className="text-xs text-muted-foreground">
-            clientes cadastrados
-          </p>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Clientes Ativos</CardTitle>
-          <Users className="h-4 w-4 text-primary" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{activeClients}</div>
-          <p className="text-xs text-muted-foreground">
-            clientes ativos
-          </p>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Clientes VIP</CardTitle>
-          <Crown className="h-4 w-4 text-yellow-600" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold text-yellow-600">{vipClients}</div>
-          <p className="text-xs text-muted-foreground">
-            clientes VIP
-          </p>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Aniversariantes</CardTitle>
-          <Cake className="h-4 w-4 text-pink-500" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold text-pink-500">{birthdaysThisMonth}</div>
-          <p className="text-xs text-muted-foreground">
-            neste mês
-          </p>
-        </CardContent>
-      </Card>
-    </div>
+    <>
+      {stats.map((stat, index) => (
+        <Card 
+          key={index} 
+          className="border-none shadow-md hover:shadow-lg transition-shadow"
+        >
+          <CardContent className="p-4 flex items-center gap-4">
+            <div className={`w-12 h-12 rounded-full ${stat.color} flex items-center justify-center`}>
+              <stat.icon className="h-6 w-6" />
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">{stat.title}</p>
+              <p className="text-2xl font-bold">{stat.value}</p>
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+    </>
   );
 }
