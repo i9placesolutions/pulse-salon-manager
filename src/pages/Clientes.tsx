@@ -11,17 +11,15 @@ import {
   X, 
   Calendar, 
   Wallet, 
-  Ticket, 
-  Tag, 
-  CreditCard,
-  SlidersHorizontal,
   FileSpreadsheet,
   FileText,
   Plus,
   Users,
   Crown,
   Clock,
-  ShoppingBag
+  ShoppingBag,
+  Check,
+  BarChart
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { ClientList } from "@/components/clients/ClientList";
@@ -30,15 +28,6 @@ import { ClientForm } from "@/components/clients/ClientForm";
 import { ClientDetails } from "@/components/clients/ClientDetails";
 import { Client, ClientService, ClientPreference, ClientCoupon, ClientFilters, ClientExportOptions, ClientCampaign } from "@/types/client";
 import { useToast } from "@/components/ui/use-toast";
-import { 
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger
-} from "@/components/ui/dropdown-menu";
 import {
   Sheet,
   SheetClose,
@@ -75,6 +64,8 @@ import { ClientProfileDialog } from "@/components/clients/ClientProfileDialog";
 import { NewClientDialog } from "@/components/clients/NewClientDialog";
 import { format, subMonths, addDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { useNavigate } from "react-router-dom";
+import { exportClientReport } from "@/utils/clientReportUtils";
 
 // Dados mockados para demonstração
 const mockClients: Client[] = [
@@ -323,420 +314,602 @@ const mockPreferences: ClientPreference[] = [
 ];
 
 export default function Clientes() {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [isNewClientOpen, setIsNewClientOpen] = useState(false);
+  // Estados para controle geral
+  const [loading, setLoading] = useState(false);
+  const [clients, setClients] = useState<Client[]>(mockClients);
+  const [filteredClients, setFilteredClients] = useState<Client[]>(mockClients);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [activeTab, setActiveTab] = useState<string>("todos");
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
-  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState("all");
+  
+  // Estados para controle de modais
+  const [isNewClientOpen, setIsNewClientOpen] = useState(false);
+  const [isProfileDialogOpen, setIsProfileDialogOpen] = useState(false);
   const [isFiltersDialogOpen, setIsFiltersDialogOpen] = useState(false);
   const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
-  const [isClientProfileOpen, setIsClientProfileOpen] = useState(false);
-  const [selectedFormat, setSelectedFormat] = useState<"pdf" | "excel" | null>(null);
-  const [appliedFilters, setAppliedFilters] = useState<ClientFilters>({
+  
+  // Estado para filtros
+  const [filters, setFilters] = useState<ClientFilters>({
     status: [],
-    minVisits: 0,
-    hasCashback: false,
-    usedCoupons: false,
-    joinedCampaigns: false,
-    tags: [],
     dateRange: null,
     lastVisitRange: [null, null],
     spendingRange: [null, null],
+    minVisits: undefined,
+    hasCashback: false,
+    usedCoupons: false,
+    joinedCampaigns: false,
     hasWhatsApp: false,
     hasBirthday: false,
+    tags: []
   });
-
+  
   const { toast } = useToast();
+  const navigate = useNavigate();
+  
+  // Efeito para filtrar clientes com base no termo de busca
+  useEffect(() => {
+    applyFilters();
+  }, [searchTerm, activeTab, clients, filters]);
 
+  // Funções para manipulação de dados
   const handleSaveClient = (client: Partial<Client>) => {
-    toast({
-      title: "Cliente salvo com sucesso!",
-      description: "Os dados do cliente foram atualizados.",
-    });
-    setIsNewClientOpen(false);
+    setLoading(true);
+    
+    // Simulando tempo de processamento
+    setTimeout(() => {
+      // Gerar ID para novo cliente
+      const newId = Math.max(...clients.map(c => c.id)) + 1;
+      
+      // Criar novo cliente com dados padrão para campos não preenchidos
+      const newClient: Client = {
+        id: newId,
+        name: client.name!,
+        email: client.email || '',
+        phone: client.phone!,
+        birthDate: client.birthDate!,
+        status: client.status || 'active',
+        points: client.points || 0,
+        cashback: client.cashback || 0,
+        totalSpent: client.totalSpent || 0,
+        visitsCount: client.visitsCount || 0,
+        firstVisit: client.firstVisit || format(new Date(), 'yyyy-MM-dd'),
+        lastVisit: client.lastVisit || undefined,
+        observations: client.observations || '',
+        cpf: client.cpf || '',
+        address: client.address || '',
+        tags: client.tags || []
+      };
+      
+      // Adicionar novo cliente ao array de clientes
+      setClients(prev => [...prev, newClient]);
+      
+      // Aplicar filtros para atualizar a visualização
+      setLoading(false);
+      
+      // Mostrar feedback
+      toast({
+        title: "Cliente adicionado",
+        description: `Cliente ${newClient.name} foi adicionado com sucesso`,
+      });
+    }, 800);
   };
-
+  
+  const handleUpdateClient = (updatedClient: Client) => {
+    setLoading(true);
+    
+    // Simulando tempo de processamento
+    setTimeout(() => {
+      // Atualizar cliente existente
+      const updatedClients = clients.map(client => 
+        client.id === updatedClient.id ? updatedClient : client
+      );
+      
+      setClients(updatedClients);
+      setLoading(false);
+      
+      // Se o cliente selecionado for o atualizado, atualizar o selecionado também
+      if (selectedClient && selectedClient.id === updatedClient.id) {
+        setSelectedClient(updatedClient);
+      }
+      
+      // Mostrar feedback
+      toast({
+        title: "Cliente atualizado",
+        description: `Dados de ${updatedClient.name} foram atualizados`,
+      });
+    }, 800);
+  };
+  
+  const handleDeleteClient = (clientId: number) => {
+    setLoading(true);
+    
+    // Simulando tempo de processamento
+    setTimeout(() => {
+      // Remover cliente
+      const updatedClients = clients.filter(client => client.id !== clientId);
+      const clientName = clients.find(c => c.id === clientId)?.name;
+      
+      setClients(updatedClients);
+      setLoading(false);
+      
+      // Se o cliente excluído for o selecionado, limpar seleção
+      if (selectedClient && selectedClient.id === clientId) {
+        setSelectedClient(null);
+        setIsProfileDialogOpen(false);
+      }
+      
+      // Mostrar feedback
+      toast({
+        title: "Cliente removido",
+        description: `Cliente ${clientName} foi removido do sistema`,
+        variant: "destructive"
+      });
+    }, 800);
+  };
+  
   const handleViewProfile = (client: Client) => {
     setSelectedClient(client);
-    setIsClientProfileOpen(true);
+    setIsProfileDialogOpen(true);
   };
-
+  
   const handleExportData = () => {
-    if (!selectedFormat) {
-      toast({
-        title: "Selecione um formato",
-        description: "Por favor, selecione um formato para exportação",
-      });
-      return;
-    }
-
-    toast({
-      title: "Exportação iniciada",
-      description: `Seus dados estão sendo exportados em formato ${selectedFormat.toUpperCase()}`,
-    });
-
-    // Simulação de download
-    setTimeout(() => {
-      toast({
-        title: "Exportação concluída",
-        description: `Seus dados foram exportados com sucesso em formato ${selectedFormat.toUpperCase()}`,
-      });
-      setIsExportDialogOpen(false);
-      setSelectedFormat(null);
-    }, 1500);
+    setIsExportDialogOpen(true);
   };
-
+  
+  // Funções para filtros e pesquisa
+  const filterBySearchTerm = (client: Client, term: string) => {
+    if (!term) return true;
+    
+    const searchLower = term.toLowerCase();
+    
+    return (
+      client.name.toLowerCase().includes(searchLower) ||
+      client.phone.toLowerCase().includes(searchLower) ||
+      (client.email && client.email.toLowerCase().includes(searchLower)) ||
+      (client.cpf && client.cpf.toLowerCase().includes(searchLower)) ||
+      (client.address && client.address.toLowerCase().includes(searchLower))
+    );
+  };
+  
+  const filterByTab = (client: Client, tab: string) => {
+    switch (tab) {
+      case "todos":
+        return true;
+      case "ativos":
+        return client.status === "active";
+      case "vips":
+        return client.status === "vip";
+      case "inativos":
+        return client.status === "inactive";
+      case "aniversariantes":
+        const now = new Date();
+        const birthDate = new Date(client.birthDate);
+        return birthDate.getMonth() === now.getMonth();
+      case "cashback":
+        return client.cashback > 0;
+      default:
+        return true;
+    }
+  };
+  
+  const applyFilters = () => {
+    let result = [...clients];
+    
+    // Filtrar por termo de busca
+    if (searchTerm) {
+      result = result.filter(client => filterBySearchTerm(client, searchTerm));
+    }
+    
+    // Filtrar por aba selecionada
+    result = result.filter(client => filterByTab(client, activeTab));
+    
+    // Aplicar filtros adicionais
+    if (filters.status.length > 0) {
+      result = result.filter(client => filters.status.includes(client.status));
+    }
+    
+    if (filters.minVisits !== undefined) {
+      result = result.filter(client => client.visitsCount >= filters.minVisits!);
+    }
+    
+    if (filters.hasCashback) {
+      result = result.filter(client => client.cashback > 0);
+    }
+    
+    if (filters.lastVisitRange && filters.lastVisitRange[0] && filters.lastVisitRange[1]) {
+      result = result.filter(client => {
+        if (!client.lastVisit) return false;
+        const lastVisit = new Date(client.lastVisit);
+        return lastVisit >= filters.lastVisitRange[0]! && lastVisit <= filters.lastVisitRange[1]!;
+      });
+    }
+    
+    if (filters.spendingRange && filters.spendingRange[0] && filters.spendingRange[1]) {
+      result = result.filter(client => 
+        client.totalSpent >= filters.spendingRange[0]! && 
+        client.totalSpent <= filters.spendingRange[1]!
+      );
+    }
+    
+    if (filters.hasBirthday) {
+      const currentMonth = new Date().getMonth();
+      result = result.filter(client => {
+        const birthMonth = new Date(client.birthDate).getMonth();
+        return birthMonth === currentMonth;
+      });
+    }
+    
+    if (filters.tags && filters.tags.length > 0) {
+      result = result.filter(client => 
+        client.tags && client.tags.some(tag => filters.tags?.includes(tag))
+      );
+    }
+    
+    setFilteredClients(result);
+  };
+  
   const resetFilters = () => {
-    setAppliedFilters({
+    setFilters({
       status: [],
-      minVisits: 0,
-      hasCashback: false,
-      usedCoupons: false,
-      joinedCampaigns: false,
-      tags: [],
       dateRange: null,
       lastVisitRange: [null, null],
       spendingRange: [null, null],
+      minVisits: undefined,
+      hasCashback: false,
+      usedCoupons: false,
+      joinedCampaigns: false,
       hasWhatsApp: false,
       hasBirthday: false,
+      tags: []
     });
+    
     toast({
       title: "Filtros resetados",
-      description: "Todos os filtros foram limpos",
+      description: "Todos os filtros foram removidos"
     });
   };
-
-  const applyFilters = () => {
-    toast({
-      title: "Filtros aplicados",
-      description: "A lista de clientes foi atualizada conforme os filtros",
-    });
-    setIsFiltersDialogOpen(false);
-  };
-
-  // Filtragem de clientes
-  const filteredClients = mockClients.filter(client => {
-    // Filtro por pesquisa de texto
-    const matchesSearch = 
-      searchQuery === "" ||
-      client.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      client.phone.includes(searchQuery);
-    
-    if (!matchesSearch) return false;
-    
-    // Filtragem por status
-    if (appliedFilters.status.length > 0 && !appliedFilters.status.includes(client.status)) {
-      return false;
-    }
-    
-    // Filtragem por número mínimo de visitas
-    if (appliedFilters.minVisits > 0 && (client.visitsCount || 0) < appliedFilters.minVisits) {
-      return false;
-    }
-    
-    // Filtragem por cashback disponível
-    if (appliedFilters.hasCashback && (client.cashback || 0) <= 0) {
-      return false;
-    }
-    
-    // Filtragem por uso de cupons
-    if (appliedFilters.usedCoupons) {
-      const hasUsedCoupons = mockCoupons.some(coupon => coupon.clientId === client.id);
-      if (!hasUsedCoupons) return false;
-    }
-    
-    // Filtragem por participação em campanhas
-    if (appliedFilters.joinedCampaigns) {
-      const hasJoinedCampaigns = mockCampaigns.some(campaign => campaign.clientId === client.id);
-      if (!hasJoinedCampaigns) return false;
-    }
-    
-    // Filtragem por tags
-    if (appliedFilters.tags.length > 0) {
-      const clientTags = client.tags || [];
-      if (!appliedFilters.tags.some(tag => clientTags.includes(tag))) {
-        return false;
-      }
-    }
-    
-    // Filtros avançados
-    // Verificar intervalo de data da última visita
-    if (appliedFilters.lastVisitRange && appliedFilters.lastVisitRange[0] && appliedFilters.lastVisitRange[1] && client.lastVisit) {
-      const clientLastVisit = new Date(client.lastVisit);
-      const startDate = new Date(appliedFilters.lastVisitRange[0]);
-      const endDate = new Date(appliedFilters.lastVisitRange[1]);
-      
-      if (clientLastVisit < startDate || clientLastVisit > endDate) {
-        return false;
-      }
-    }
-    
-    // Verificar intervalo de gastos
-    if (appliedFilters.spendingRange && 
-        ((appliedFilters.spendingRange[0] !== null && client.totalSpent < appliedFilters.spendingRange[0]) || 
-         (appliedFilters.spendingRange[1] !== null && client.totalSpent > appliedFilters.spendingRange[1]))) {
-      return false;
-    }
-    
-    // Verificar WhatsApp (assumindo que todos os clientes com telefone têm WhatsApp)
-    if (appliedFilters.hasWhatsApp && !client.phone) {
-      return false;
-    }
-    
-    // Verificar data de aniversário cadastrada
-    if (appliedFilters.hasBirthday && !client.birthDate) {
-      return false;
-    }
-    
-    return true;
-  });
-
-  // Obter os aniversariantes do mês atual
-  const currentMonth = new Date().getMonth() + 1; // +1 porque getMonth() retorna 0-11
-  const birthdayClients = mockClients.filter(client => {
-    const birthMonth = new Date(client.birthDate).getMonth() + 1;
-    return birthMonth === currentMonth;
-  });
   
-  // Organizar aniversariantes por dia
-  const sortedBirthdayClients = [...birthdayClients].sort((a, b) => {
-    const dayA = new Date(a.birthDate).getDate();
-    const dayB = new Date(b.birthDate).getDate();
-    return dayA - dayB;
-  });
-
-  // Lista de todas as tags disponíveis
-  const allTags = Array.from(
-    new Set(
-      mockClients
-        .flatMap(client => client.tags || [])
-        .filter(Boolean)
-    )
-  );
-
-  // Verificar se o aniversário é no mês atual
+  // Verificar se é aniversariante do mês atual
   const isBirthdayInCurrentMonth = (birthDateStr: string) => {
     const birthDate = new Date(birthDateStr);
-    const today = new Date();
-    return birthDate.getMonth() === today.getMonth();
+    const currentMonth = new Date().getMonth();
+    return birthDate.getMonth() === currentMonth;
   };
-
-  // Estatísticas de clientes
-  const clientStats = {
-    total: mockClients.length,
-    active: mockClients.filter((c) => c.status === "active").length,
-    vip: mockClients.filter((c) => c.status === "vip").length,
-    inactive: mockClients.filter((c) => c.status === "inactive").length,
-    birthdays: birthdayClients.length,
+  
+  // Contar número de aniversariantes no mês
+  const getBirthdayCount = () => {
+    return clients.filter(client => isBirthdayInCurrentMonth(client.birthDate)).length;
   };
-
-  // Manipular a aplicação de filtros
+  
+  // Funções para eventos de diálogos
   const handleApplyFilters = (filters: ClientFilters) => {
-    setAppliedFilters(filters);
-  };
-
-  // Manipular a exportação de clientes
-  const handleExportClients = (options: ClientExportOptions) => {
-    console.log("Exportando clientes com opções:", options);
-    // Em uma implementação real, aqui seria feita a exportação dos dados
-    setSelectedFormat(options.format);
+    setFilters(filters);
+    setIsFiltersDialogOpen(false);
     
     toast({
-      title: "Exportação iniciada",
-      description: `Seus dados estão sendo exportados em formato ${options.format.toUpperCase()}`,
+      title: "Filtros aplicados",
+      description: "A lista foi atualizada com os filtros selecionados"
     });
-
-    // Simulação de download
-    setTimeout(() => {
+  };
+  
+  const handleExportClients = (options: ClientExportOptions) => {
+    setLoading(true);
+    
+    try {
+      const format = options.format;
+      let clientsToExport = filteredClients.length > 0 ? filteredClients : clients;
+      
+      // Filtrar por período caso existam datas definidas
+      if (options.dateFrom || options.dateTo) {
+        clientsToExport = clientsToExport.filter(client => {
+          const lastVisitDate = client.lastVisit ? new Date(client.lastVisit) : null;
+          
+          // Se não tiver data da última visita, só inclui se não estiver filtrando por datas
+          if (!lastVisitDate) return false;
+          
+          const isAfterStartDate = !options.dateFrom || lastVisitDate >= options.dateFrom;
+          const isBeforeEndDate = !options.dateTo || lastVisitDate <= options.dateTo;
+          
+          return isAfterStartDate && isBeforeEndDate;
+        });
+      }
+      
+      // Montando descrição das opções selecionadas
+      let reportDescription = `${clientsToExport.length} clientes`;
+      
+      // Adicionar informação sobre o período, se aplicável
+      if (options.timeRange !== 'all') {
+        const periodText = {
+          'last30': 'dos últimos 30 dias',
+          'last90': 'dos últimos 90 dias',
+          'last180': 'dos últimos 6 meses',
+          'last365': 'do último ano',
+          'custom': 'do período selecionado'
+        }[options.timeRange] || '';
+        
+        if (periodText) {
+          reportDescription += ` ${periodText}`;
+        }
+      }
+      
+      // Adicionar informações sobre o tipo de relatório
+      const reportTypeText = {
+        'summary': 'relatório resumido',
+        'detailed': 'relatório detalhado',
+        'analytics': 'relatório estatístico'
+      }[options.exportFormat] || 'relatório';
+      
       toast({
-        title: "Exportação concluída",
-        description: `Seus dados foram exportados com sucesso em formato ${options.format.toUpperCase()}`,
+        title: `Exportação ${format === 'pdf' ? 'PDF' : 'Excel'} iniciada`,
+        description: `${reportDescription} serão exportados em ${reportTypeText}.`
       });
-      setIsExportDialogOpen(false);
-    }, 1500);
+      
+      // Registrar no console as opções selecionadas (para debug)
+      console.log("Opções do relatório:", {
+        formato: options.format,
+        tipoRelatorio: options.exportFormat,
+        periodo: options.timeRange,
+        dataInicial: options.dateFrom,
+        dataFinal: options.dateTo,
+        dadosIncluidos: {
+          contato: options.includeContact,
+          servicos: options.includeServices,
+          gastos: options.includeSpending,
+          tags: options.includeTags,
+          aniversario: options.includeBirthday,
+          preferencias: options.includePreferences,
+          historico: options.includeVisitHistory,
+          estatisticas: options.includeAnalytics
+        },
+        clientesExportados: clientsToExport.length
+      });
+      
+      // Gerar e exportar o relatório usando as funções reais
+      exportClientReport(clientsToExport, options);
+      
+      // Exibir notificação de sucesso após o download iniciar
+      setTimeout(() => {
+        toast({
+          title: "Exportação concluída",
+          description: `${reportTypeText.charAt(0).toUpperCase() + reportTypeText.slice(1)} ${format === 'pdf' ? 'PDF' : 'Excel'} exportado com sucesso.`,
+          variant: "default"
+        });
+        
+        setLoading(false);
+        setIsExportDialogOpen(false);
+      }, 1000);
+    } catch (error) {
+      console.error("Erro ao exportar relatório:", error);
+      toast({
+        title: "Erro na exportação",
+        description: "Não foi possível gerar o relatório. Tente novamente.",
+        variant: "destructive"
+      });
+      setLoading(false);
+    }
   };
 
+  // Estatísticas dos clientes
+  const clientStats = {
+    total: clients.length,
+    ativos: clients.filter(c => c.status === 'active').length,
+    vips: clients.filter(c => c.status === 'vip').length,
+    inativos: clients.filter(c => c.status === 'inactive').length,
+    aniversariantes: getBirthdayCount(),
+    comCashback: clients.filter(c => c.cashback > 0).length,
+  };
+  
+  // Obter todas as tags únicas dos clientes
+  const getAllTags = () => {
+    const tags = new Set<string>();
+    clients.forEach(client => {
+      if (client.tags) {
+        client.tags.forEach(tag => tags.add(tag));
+      }
+    });
+    return Array.from(tags);
+  };
+  
   return (
-    <div className="space-y-6 p-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold tracking-tight">Clientes</h1>
-        <Button 
-          size="sm" 
-          className="bg-primary hover:bg-primary-dark"
-          onClick={() => setIsNewClientOpen(true)}
-        >
-          <Plus className="h-4 w-4 mr-1.5" />
-          Novo Cliente
-        </Button>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-        <ClientStatistics 
-          totalClients={clientStats.total}
-          activeClients={clientStats.active}
-          vipClients={clientStats.vip}
-          inactiveClients={clientStats.inactive}
-          birthdayClients={clientStats.birthdays}
-        />
-      </div>
-
-      <div className="flex flex-col md:flex-row justify-between gap-4">
-        <div className="flex flex-1 items-center gap-2">
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder="Buscar por nome, email ou telefone..."
-              className="pl-8"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
-          
-          <Button
-            variant="outline"
-            size="sm"
-            className="gap-1"
-            onClick={() => setIsFiltersDialogOpen(true)}
-          >
-            <Filter className="h-4 w-4" />
-            <span className="hidden sm:inline">Filtros</span>
-            {Object.keys(appliedFilters).some(key => 
-              appliedFilters[key as keyof ClientFilters] !== undefined && 
-              (
-                Array.isArray(appliedFilters[key as keyof ClientFilters]) 
-                  ? (appliedFilters[key as keyof ClientFilters] as any[]).length > 0
-                  : true
-              )
-            ) && (
-              <span className="ml-1 rounded-full bg-primary/20 px-1.5 text-xs text-primary-dark">
-                ✓
-              </span>
-            )}
-          </Button>
-          
-          <Button
-            variant="outline"
-            size="sm"
-            className="gap-1"
-            onClick={() => setIsExportDialogOpen(true)}
-          >
-            <Download className="h-4 w-4" />
-            <span className="hidden sm:inline">Exportar</span>
-          </Button>
+    <div className="space-y-6 animate-in fade-in duration-500">
+      {/* Cabeçalho */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold text-neutral">Clientes</h1>
+          <p className="text-sm text-muted-foreground">
+            Gerencie seus clientes e relacionamentos
+          </p>
         </div>
         
-        <div className="flex items-center">
-          <span className="text-sm text-muted-foreground mr-2">
-            {filteredClients.length} cliente{filteredClients.length !== 1 ? "s" : ""}
-          </span>
+        <div className="flex flex-wrap gap-2 mt-4 md:mt-0">
+          <Button 
+            onClick={() => setIsNewClientOpen(true)} 
+            className="bg-primary hover:bg-primary/90 text-white"
+            size="sm"
+          >
+            <UserPlus className="mr-2 h-4 w-4" />
+            Novo Cliente
+          </Button>
+          
+          <Button 
+            onClick={handleExportData} 
+            variant="outline" 
+            size="sm"
+            className="bg-blue-50 text-blue-600 hover:bg-blue-100 border-blue-200"
+          >
+            <BarChart className="mr-2 h-4 w-4" />
+            Relatórios
+          </Button>
         </div>
       </div>
-
-      <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="mb-4">
-          <TabsTrigger value="all">
-            <Users className="h-4 w-4 mr-1.5" />
-            Todos
-          </TabsTrigger>
-          <TabsTrigger value="vip">
-            <Crown className="h-4 w-4 mr-1.5" />
-            VIP
-          </TabsTrigger>
-          <TabsTrigger value="inactive">
-            <Clock className="h-4 w-4 mr-1.5" />
-            Inativos
-          </TabsTrigger>
-          <TabsTrigger value="birthdays">
-            <Cake className="h-4 w-4 mr-1.5" />
-            Aniversários
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="all">
-          <ClientList 
-            clients={filteredClients} 
-            onViewProfile={handleViewProfile}
-            services={mockServices}
-          />
-        </TabsContent>
-
-        <TabsContent value="vip">
-          <ClientList 
-            clients={filteredClients} 
-            onViewProfile={handleViewProfile}
-            services={mockServices}
-          />
-        </TabsContent>
-
-        <TabsContent value="inactive">
-          <ClientList 
-            clients={filteredClients} 
-            onViewProfile={handleViewProfile}
-            services={mockServices}
-          />
-        </TabsContent>
-
-        <TabsContent value="birthdays">
-          {filteredClients.length > 0 ? (
-            <>
-              <div className="mb-4 p-4 bg-pink-50 rounded-lg border border-pink-100">
-                <div className="flex items-center gap-2">
-                  <Cake className="h-5 w-5 text-pink-500" />
-                  <h3 className="font-medium">Aniversariantes do Mês</h3>
-                </div>
-                <p className="mt-1 text-sm text-gray-600 ml-7">
-                  Clientes que fazem aniversário neste mês. Envie uma mensagem personalizada de felicitações.
-                </p>
-              </div>
-              <ClientList 
-                clients={filteredClients} 
-                onViewProfile={handleViewProfile}
-                showBirthdayInfo
-                services={mockServices}
-              />
-            </>
-          ) : (
-            <div className="text-center py-12 border rounded-md border-pink-200 bg-pink-50">
-              <Cake className="h-12 w-12 text-pink-300 mx-auto mb-3" />
-              <p className="text-lg font-medium text-pink-700">Nenhum aniversariante neste mês</p>
-              <p className="text-sm text-pink-600 mt-1">
-                Quando seus clientes fizerem aniversário no mês atual, eles aparecerão aqui.
-              </p>
+      
+      {/* Estatísticas e filtros */}
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+        <Card className="md:col-span-9">
+          <div className="p-4">
+            <div className="mb-4">
+              <h3 className="text-sm font-medium">Visão geral dos clientes</h3>
             </div>
-          )}
-        </TabsContent>
-      </Tabs>
-
-      {/* Diálogos */}
+            <ClientStatistics 
+              totalClients={clientStats.total}
+              activeClients={clientStats.ativos}
+              vipClients={clientStats.vips}
+              inactiveClients={clientStats.inativos}
+              birthdayClients={clientStats.aniversariantes}
+              cashbackClients={clientStats.comCashback}
+            />
+          </div>
+        </Card>
+        
+        <Card className="md:col-span-3">
+          <div className="p-4 space-y-4">
+            <h3 className="text-sm font-medium">Filtros rápidos</h3>
+            <div className="flex flex-col gap-2">
+              <Button 
+                variant="outline" 
+                size="sm"
+                className="justify-start"
+                onClick={() => setIsFiltersDialogOpen(true)}
+              >
+                <Filter className="mr-2 h-4 w-4 text-primary" />
+                Filtros avançados
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="sm"
+                className="justify-start"
+                onClick={resetFilters}
+              >
+                <X className="mr-2 h-4 w-4 text-gray-500" />
+                Limpar filtros
+              </Button>
+            </div>
+          </div>
+        </Card>
+      </div>
+      
+      {/* Barra de pesquisa e abas */}
+      <div className="flex flex-col gap-4">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Buscar clientes por nome, telefone, e-mail..."
+            className="pl-10"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+        
+        <Tabs defaultValue="todos" value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="grid grid-cols-3 md:grid-cols-6 h-auto">
+            <TabsTrigger value="todos" className="data-[state=active]:bg-primary/10 text-xs rounded-md py-2">
+              <Users className="h-4 w-4 mr-1" />
+              Todos ({clientStats.total})
+            </TabsTrigger>
+            <TabsTrigger value="ativos" className="data-[state=active]:bg-primary/10 text-xs rounded-md py-2">
+              <Check className="h-4 w-4 mr-1 text-green-500" />
+              Ativos ({clientStats.ativos})
+            </TabsTrigger>
+            <TabsTrigger value="vips" className="data-[state=active]:bg-primary/10 text-xs rounded-md py-2">
+              <Crown className="h-4 w-4 mr-1 text-yellow-500" />
+              VIPs ({clientStats.vips})
+            </TabsTrigger>
+            <TabsTrigger value="inativos" className="data-[state=active]:bg-primary/10 text-xs rounded-md py-2">
+              <Clock className="h-4 w-4 mr-1 text-gray-500" />
+              Inativos ({clientStats.inativos})
+            </TabsTrigger>
+            <TabsTrigger value="aniversariantes" className="data-[state=active]:bg-primary/10 text-xs rounded-md py-2">
+              <Cake className="h-4 w-4 mr-1 text-pink-500" />
+              Aniversários ({clientStats.aniversariantes})
+            </TabsTrigger>
+            <TabsTrigger value="cashback" className="data-[state=active]:bg-primary/10 text-xs rounded-md py-2">
+              <Wallet className="h-4 w-4 mr-1 text-green-600" />
+              Cashback ({clientStats.comCashback})
+            </TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="todos" className="mt-4">
+            <ClientList 
+              clients={filteredClients} 
+              onViewProfile={handleViewProfile}
+              services={mockServices}
+            />
+          </TabsContent>
+          
+          <TabsContent value="aniversariantes" className="mt-4">
+            <ClientList 
+              clients={filteredClients} 
+              onViewProfile={handleViewProfile}
+              showBirthdayInfo={true}
+              services={mockServices}
+            />
+          </TabsContent>
+          
+          <TabsContent value="ativos" className="mt-4">
+            <ClientList 
+              clients={filteredClients} 
+              onViewProfile={handleViewProfile}
+              services={mockServices}
+            />
+          </TabsContent>
+          
+          <TabsContent value="vips" className="mt-4">
+            <ClientList 
+              clients={filteredClients} 
+              onViewProfile={handleViewProfile}
+              services={mockServices}
+            />
+          </TabsContent>
+          
+          <TabsContent value="inativos" className="mt-4">
+            <ClientList 
+              clients={filteredClients} 
+              onViewProfile={handleViewProfile}
+              services={mockServices}
+            />
+          </TabsContent>
+          
+          <TabsContent value="cashback" className="mt-4">
+            <ClientList 
+              clients={filteredClients} 
+              onViewProfile={handleViewProfile}
+              services={mockServices}
+            />
+          </TabsContent>
+        </Tabs>
+      </div>
+      
+      {/* Dialogs de Funcionalidades */}
       <NewClientDialog 
         isOpen={isNewClientOpen}
         onClose={() => setIsNewClientOpen(false)}
         onSave={handleSaveClient}
       />
-
+      
+      {selectedClient && (
+        <ClientProfileDialog
+          client={selectedClient}
+          isOpen={isProfileDialogOpen}
+          onClose={() => setIsProfileDialogOpen(false)}
+          onUpdate={handleUpdateClient}
+          onDelete={handleDeleteClient}
+          services={mockServices.filter(s => s.clientId === selectedClient.id)}
+        />
+      )}
+      
       <ClientFiltersDialog
         isOpen={isFiltersDialogOpen}
         onClose={() => setIsFiltersDialogOpen(false)}
-        defaultFilters={appliedFilters}
         onApplyFilters={handleApplyFilters}
-        availableTags={allTags}
+        initialFilters={filters}
+        availableTags={getAllTags()}
       />
-
+      
       <ClientExportDialog
         isOpen={isExportDialogOpen}
         onClose={() => setIsExportDialogOpen(false)}
-        clientCount={filteredClients.length}
         onExport={handleExportClients}
-      />
-
-      <ClientProfileDialog
-        isOpen={isClientProfileOpen}
-        onClose={() => setIsClientProfileOpen(false)}
-        client={selectedClient}
-        services={mockServices}
-        preferences={mockPreferences}
-        coupons={mockCoupons}
+        clientCount={filteredClients.length}
       />
     </div>
   );

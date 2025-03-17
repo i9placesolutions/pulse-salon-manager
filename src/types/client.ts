@@ -47,6 +47,18 @@ export interface ClientExportOptions {
   includePreferences: boolean;
   includeBirthday: boolean;
   format: 'pdf' | 'excel';
+  includeTags: boolean;
+  includeVisitHistory: boolean;
+  includeCashbackHistory: boolean;
+  includeAverageTicket: boolean;
+  includeCharts: boolean;
+  groupBy: string;
+  sortBy: string;
+  timeRange: string;
+  exportFormat: string;
+  includeAnalytics: boolean;
+  dateFrom?: Date;
+  dateTo?: Date;
 }
 
 export interface ClientFilters {
