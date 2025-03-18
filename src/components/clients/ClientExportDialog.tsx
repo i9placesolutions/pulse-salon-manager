@@ -195,6 +195,120 @@ export function ClientExportDialog({
     onClose();
   };
 
+  // Componente reutilizável para seleção de período
+  const DateRangeSelector = () => (
+    <div className="space-y-4 mb-4 bg-muted/30 p-3 rounded-md">
+      <div className="flex items-center justify-between">
+        <h4 className="text-sm font-medium">Período do Relatório</h4>
+      </div>
+      
+      <div className="space-y-2">
+        <Label htmlFor="timeRange">Selecione o Período</Label>
+        <Select 
+          value={options.timeRange} 
+          onValueChange={(value) => handleSelectChange("timeRange", value)}
+        >
+          <SelectTrigger id="timeRange">
+            <SelectValue placeholder="Selecione uma opção" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todo o histórico</SelectItem>
+            <SelectItem value="last30">Últimos 30 dias</SelectItem>
+            <SelectItem value="last90">Últimos 90 dias</SelectItem>
+            <SelectItem value="last180">Últimos 6 meses</SelectItem>
+            <SelectItem value="last365">Último ano</SelectItem>
+            <SelectItem value="custom">Período personalizado</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className={cn("grid grid-cols-2 gap-4", 
+        options.timeRange !== 'custom' && options.timeRange !== 'all' ? "opacity-50 pointer-events-none" : ""
+      )}>
+        <div className="space-y-2">
+          <Label htmlFor="dateFrom">Data Inicial</Label>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant={"outline"}
+                className={cn(
+                  "w-full justify-start text-left font-normal",
+                  !options.dateFrom && "text-muted-foreground"
+                )}
+              >
+                <CalendarRange className="mr-2 h-4 w-4" />
+                {options.dateFrom ? (
+                  format(options.dateFrom, 'dd/MM/yyyy')
+                ) : (
+                  "Selecione uma data"
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <CalendarComponent
+                mode="single"
+                selected={options.dateFrom}
+                onSelect={(date) => handleDateChange('dateFrom', date)}
+                initialFocus
+                locale={ptBR}
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="dateTo">Data Final</Label>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant={"outline"}
+                className={cn(
+                  "w-full justify-start text-left font-normal",
+                  !options.dateTo && "text-muted-foreground"
+                )}
+              >
+                <CalendarRange className="mr-2 h-4 w-4" />
+                {options.dateTo ? (
+                  format(options.dateTo, 'dd/MM/yyyy')
+                ) : (
+                  "Selecione uma data"
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <CalendarComponent
+                mode="single"
+                selected={options.dateTo}
+                onSelect={(date) => handleDateChange('dateTo', date)}
+                initialFocus
+                locale={ptBR}
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
+      </div>
+
+      {dateError && (
+        <div className="text-sm font-medium text-destructive mt-1">
+          {dateError}
+        </div>
+      )}
+
+      {options.timeRange !== 'all' && options.timeRange !== 'custom' && (
+        <div className="flex items-center space-x-2 p-2 bg-muted/40 rounded-md text-sm mt-2">
+          <Check className="h-4 w-4 text-primary" />
+          {options.dateFrom && options.dateTo ? (
+            <span>
+              Período selecionado: {format(options.dateFrom, 'dd/MM/yyyy')} até {format(options.dateTo, 'dd/MM/yyyy')}
+            </span>
+          ) : (
+            <span>Período automático será aplicado ao exportar</span>
+          )}
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[650px]">
@@ -226,6 +340,8 @@ export function ClientExportDialog({
           </TabsList>
 
           <TabsContent value="dados" className="space-y-4">
+            <DateRangeSelector />
+            
             <h4 className="text-sm font-medium">Informações do Cliente</h4>
             <div className="space-y-3">
               <div className="flex items-center justify-between space-x-2">
@@ -299,6 +415,8 @@ export function ClientExportDialog({
           </TabsContent>
 
           <TabsContent value="historico" className="space-y-4">
+            <DateRangeSelector />
+            
             <h4 className="text-sm font-medium">Histórico e Estatísticas</h4>
             <div className="space-y-3">
               <div className="flex items-center justify-between space-x-2">
@@ -360,114 +478,7 @@ export function ClientExportDialog({
           </TabsContent>
 
           <TabsContent value="filtros" className="space-y-4">
-            <h4 className="text-sm font-medium">Período do Relatório</h4>
-            
-            <div className="space-y-2">
-              <Label htmlFor="timeRange">Selecione o Período</Label>
-              <Select 
-                value={options.timeRange} 
-                onValueChange={(value) => handleSelectChange("timeRange", value)}
-              >
-                <SelectTrigger id="timeRange">
-                  <SelectValue placeholder="Selecione uma opção" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todo o histórico</SelectItem>
-                  <SelectItem value="last30">Últimos 30 dias</SelectItem>
-                  <SelectItem value="last90">Últimos 90 dias</SelectItem>
-                  <SelectItem value="last180">Últimos 6 meses</SelectItem>
-                  <SelectItem value="last365">Último ano</SelectItem>
-                  <SelectItem value="custom">Período personalizado</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className={cn("grid grid-cols-2 gap-4 mt-2", 
-              options.timeRange !== 'custom' && options.timeRange !== 'all' ? "opacity-50 pointer-events-none" : ""
-            )}>
-              <div className="space-y-2">
-                <Label htmlFor="dateFrom">Data Inicial</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant={"outline"}
-                      className={cn(
-                        "w-full justify-start text-left font-normal",
-                        !options.dateFrom && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarRange className="mr-2 h-4 w-4" />
-                      {options.dateFrom ? (
-                        format(options.dateFrom, 'dd/MM/yyyy')
-                      ) : (
-                        "Selecione uma data"
-                      )}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <CalendarComponent
-                      mode="single"
-                      selected={options.dateFrom}
-                      onSelect={(date) => handleDateChange('dateFrom', date)}
-                      initialFocus
-                      locale={ptBR}
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="dateTo">Data Final</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant={"outline"}
-                      className={cn(
-                        "w-full justify-start text-left font-normal",
-                        !options.dateTo && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarRange className="mr-2 h-4 w-4" />
-                      {options.dateTo ? (
-                        format(options.dateTo, 'dd/MM/yyyy')
-                      ) : (
-                        "Selecione uma data"
-                      )}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <CalendarComponent
-                      mode="single"
-                      selected={options.dateTo}
-                      onSelect={(date) => handleDateChange('dateTo', date)}
-                      initialFocus
-                      locale={ptBR}
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-            </div>
-
-            {dateError && (
-              <div className="text-sm font-medium text-destructive mt-1">
-                {dateError}
-              </div>
-            )}
-
-            {options.timeRange !== 'all' && options.timeRange !== 'custom' && (
-              <div className="flex items-center space-x-2 p-2 bg-muted/40 rounded-md text-sm mt-2">
-                <Check className="h-4 w-4 text-primary" />
-                {options.dateFrom && options.dateTo ? (
-                  <span>
-                    Período selecionado: {format(options.dateFrom, 'dd/MM/yyyy')} até {format(options.dateTo, 'dd/MM/yyyy')}
-                  </span>
-                ) : (
-                  <span>Período automático será aplicado ao exportar</span>
-                )}
-              </div>
-            )}
-
-            <Separator className="my-4" />
+            <DateRangeSelector />
             
             <h4 className="text-sm font-medium">Organização</h4>
             <div className="space-y-4">
@@ -513,6 +524,8 @@ export function ClientExportDialog({
           </TabsContent>
 
           <TabsContent value="exportacao" className="space-y-4">
+            <DateRangeSelector />
+            
             <h4 className="text-sm font-medium">Tipo de Relatório</h4>
             
             <RadioGroup
