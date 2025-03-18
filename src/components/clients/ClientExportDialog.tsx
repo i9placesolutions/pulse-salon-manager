@@ -23,6 +23,7 @@ import { format, subDays, subMonths, startOfDay, endOfDay, isBefore, isAfter } f
 import { ptBR } from "date-fns/locale";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { useToast } from "@/components/ui/use-toast";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface ClientExportDialogProps {
   isOpen: boolean;
@@ -197,18 +198,18 @@ export function ClientExportDialog({
 
   // Componente reutilizável para seleção de período
   const DateRangeSelector = () => (
-    <div className="space-y-4 mb-4 bg-muted/30 p-3 rounded-md">
+    <div className="space-y-3 mb-3 bg-muted/30 p-2 rounded-md">
       <div className="flex items-center justify-between">
         <h4 className="text-sm font-medium">Período do Relatório</h4>
       </div>
       
       <div className="space-y-2">
-        <Label htmlFor="timeRange">Selecione o Período</Label>
+        <Label htmlFor="timeRange" className="text-sm">Selecione o Período</Label>
         <Select 
           value={options.timeRange} 
           onValueChange={(value) => handleSelectChange("timeRange", value)}
         >
-          <SelectTrigger id="timeRange">
+          <SelectTrigger id="timeRange" className="h-8 text-xs">
             <SelectValue placeholder="Selecione uma opção" />
           </SelectTrigger>
           <SelectContent>
@@ -222,21 +223,21 @@ export function ClientExportDialog({
         </Select>
       </div>
 
-      <div className={cn("grid grid-cols-2 gap-4", 
+      <div className={cn("grid grid-cols-2 gap-3", 
         options.timeRange !== 'custom' && options.timeRange !== 'all' ? "opacity-50 pointer-events-none" : ""
       )}>
-        <div className="space-y-2">
-          <Label htmlFor="dateFrom">Data Inicial</Label>
+        <div className="space-y-1">
+          <Label htmlFor="dateFrom" className="text-xs">Data Inicial</Label>
           <Popover>
             <PopoverTrigger asChild>
               <Button
                 variant={"outline"}
                 className={cn(
-                  "w-full justify-start text-left font-normal",
+                  "w-full h-8 justify-start text-left font-normal text-xs",
                   !options.dateFrom && "text-muted-foreground"
                 )}
               >
-                <CalendarRange className="mr-2 h-4 w-4" />
+                <CalendarRange className="mr-2 h-3 w-3" />
                 {options.dateFrom ? (
                   format(options.dateFrom, 'dd/MM/yyyy')
                 ) : (
@@ -256,18 +257,18 @@ export function ClientExportDialog({
           </Popover>
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="dateTo">Data Final</Label>
+        <div className="space-y-1">
+          <Label htmlFor="dateTo" className="text-xs">Data Final</Label>
           <Popover>
             <PopoverTrigger asChild>
               <Button
                 variant={"outline"}
                 className={cn(
-                  "w-full justify-start text-left font-normal",
+                  "w-full h-8 justify-start text-left font-normal text-xs",
                   !options.dateTo && "text-muted-foreground"
                 )}
               >
-                <CalendarRange className="mr-2 h-4 w-4" />
+                <CalendarRange className="mr-2 h-3 w-3" />
                 {options.dateTo ? (
                   format(options.dateTo, 'dd/MM/yyyy')
                 ) : (
@@ -289,20 +290,20 @@ export function ClientExportDialog({
       </div>
 
       {dateError && (
-        <div className="text-sm font-medium text-destructive mt-1">
+        <div className="text-xs font-medium text-destructive mt-1">
           {dateError}
         </div>
       )}
 
       {options.timeRange !== 'all' && options.timeRange !== 'custom' && (
-        <div className="flex items-center space-x-2 p-2 bg-muted/40 rounded-md text-sm mt-2">
-          <Check className="h-4 w-4 text-primary" />
+        <div className="flex items-center space-x-2 p-1 bg-muted/40 rounded-md text-xs mt-1">
+          <Check className="h-3 w-3 text-primary" />
           {options.dateFrom && options.dateTo ? (
             <span>
-              Período selecionado: {format(options.dateFrom, 'dd/MM/yyyy')} até {format(options.dateTo, 'dd/MM/yyyy')}
+              Período: {format(options.dateFrom, 'dd/MM/yyyy')} até {format(options.dateTo, 'dd/MM/yyyy')}
             </span>
           ) : (
-            <span>Período automático será aplicado ao exportar</span>
+            <span>Período automático será aplicado</span>
           )}
         </div>
       )}
@@ -311,287 +312,291 @@ export function ClientExportDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[650px]">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] p-4">
+        <DialogHeader className="pb-2">
           <DialogTitle>Relatório Avançado de Clientes</DialogTitle>
-          <DialogDescription>
-            Configure seu relatório detalhado com {clientCount} cliente{clientCount !== 1 ? "s" : ""}.
+          <DialogDescription className="text-xs">
+            Configure seu relatório com {clientCount} cliente{clientCount !== 1 ? "s" : ""}.
           </DialogDescription>
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid grid-cols-4 mb-4">
-            <TabsTrigger value="dados">
-              <Users className="w-4 h-4 mr-2" />
+          <TabsList className="grid grid-cols-4 mb-2">
+            <TabsTrigger value="dados" className="text-xs py-1">
+              <Users className="w-3 h-3 mr-1" />
               Dados
             </TabsTrigger>
-            <TabsTrigger value="historico">
-              <Clock className="w-4 h-4 mr-2" />
+            <TabsTrigger value="historico" className="text-xs py-1">
+              <Clock className="w-3 h-3 mr-1" />
               Histórico
             </TabsTrigger>
-            <TabsTrigger value="filtros">
-              <Filter className="w-4 h-4 mr-2" />
+            <TabsTrigger value="filtros" className="text-xs py-1">
+              <Filter className="w-3 h-3 mr-1" />
               Filtros
             </TabsTrigger>
-            <TabsTrigger value="exportacao">
-              <Download className="w-4 h-4 mr-2" />
+            <TabsTrigger value="exportacao" className="text-xs py-1">
+              <Download className="w-3 h-3 mr-1" />
               Exportação
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="dados" className="space-y-4">
-            <DateRangeSelector />
-            
-            <h4 className="text-sm font-medium">Informações do Cliente</h4>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between space-x-2">
-                <div className="flex items-center space-x-2">
-                  <User className="w-4 h-4 text-primary/70" />
-                  <Label htmlFor="basicInfo" className="cursor-pointer">Informações básicas (nome, CPF)</Label>
-                </div>
-                <Switch
-                  id="basicInfo"
-                  checked={true}
-                  disabled={true}
-                />
-              </div>
-
-              <div className="flex items-center justify-between space-x-2">
-                <div className="flex items-center space-x-2">
-                  <Phone className="w-4 h-4 text-primary/70" />
-                  <Label htmlFor="contact" className="cursor-pointer">Contato (email, telefone)</Label>
-                </div>
-                <Switch
-                  id="contact"
-                  checked={options.includeContact}
-                  onCheckedChange={(checked) =>
-                    handleToggleOption("includeContact", checked)
-                  }
-                />
-              </div>
-
-              <div className="flex items-center justify-between space-x-2">
-                <div className="flex items-center space-x-2">
-                  <Tag className="w-4 h-4 text-primary/70" />
-                  <Label htmlFor="tags" className="cursor-pointer">Tags do cliente</Label>
-                </div>
-                <Switch
-                  id="tags"
-                  checked={options.includeTags}
-                  onCheckedChange={(checked) =>
-                    handleToggleOption("includeTags", checked)
-                  }
-                />
-              </div>
-
-              <div className="flex items-center justify-between space-x-2">
-                <div className="flex items-center space-x-2">
-                  <Cake className="w-4 h-4 text-primary/70" />
-                  <Label htmlFor="birthday" className="cursor-pointer">Data de aniversário</Label>
-                </div>
-                <Switch
-                  id="birthday"
-                  checked={options.includeBirthday}
-                  onCheckedChange={(checked) =>
-                    handleToggleOption("includeBirthday", checked)
-                  }
-                />
-              </div>
-
-              <div className="flex items-center justify-between space-x-2">
-                <div className="flex items-center space-x-2">
-                  <Heart className="w-4 h-4 text-primary/70" />
-                  <Label htmlFor="preferences" className="cursor-pointer">Preferências do cliente</Label>
-                </div>
-                <Switch
-                  id="preferences"
-                  checked={options.includePreferences}
-                  onCheckedChange={(checked) =>
-                    handleToggleOption("includePreferences", checked)
-                  }
-                />
-              </div>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="historico" className="space-y-4">
-            <DateRangeSelector />
-            
-            <h4 className="text-sm font-medium">Histórico e Estatísticas</h4>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between space-x-2">
-                <div className="flex items-center space-x-2">
-                  <Scissors className="w-4 h-4 text-primary/70" />
-                  <Label htmlFor="services" className="cursor-pointer">Histórico de serviços</Label>
-                </div>
-                <Switch
-                  id="services"
-                  checked={options.includeServices}
-                  onCheckedChange={(checked) =>
-                    handleToggleOption("includeServices", checked)
-                  }
-                />
-              </div>
-
-              <div className="flex items-center justify-between space-x-2">
-                <div className="flex items-center space-x-2">
-                  <Clock className="w-4 h-4 text-primary/70" />
-                  <Label htmlFor="visitHistory" className="cursor-pointer">Histórico de visitas</Label>
-                </div>
-                <Switch
-                  id="visitHistory"
-                  checked={options.includeVisitHistory}
-                  onCheckedChange={(checked) =>
-                    handleToggleOption("includeVisitHistory", checked)
-                  }
-                />
-              </div>
-
-              <div className="flex items-center justify-between space-x-2">
-                <div className="flex items-center space-x-2">
-                  <CreditCard className="w-4 h-4 text-primary/70" />
-                  <Label htmlFor="spending" className="cursor-pointer">Gastos e cashback</Label>
-                </div>
-                <Switch
-                  id="spending"
-                  checked={options.includeSpending}
-                  onCheckedChange={(checked) =>
-                    handleToggleOption("includeSpending", checked)
-                  }
-                />
-              </div>
-
-              <div className="flex items-center justify-between space-x-2">
-                <div className="flex items-center space-x-2">
-                  <BarChart className="w-4 h-4 text-primary/70" />
-                  <Label htmlFor="analytics" className="cursor-pointer">Estatísticas de cliente (frequência, status)</Label>
-                </div>
-                <Switch
-                  id="analytics"
-                  checked={options.includeAnalytics}
-                  onCheckedChange={(checked) =>
-                    handleToggleOption("includeAnalytics", checked)
-                  }
-                />
-              </div>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="filtros" className="space-y-4">
-            <DateRangeSelector />
-            
-            <h4 className="text-sm font-medium">Organização</h4>
-            <div className="space-y-4">
+          <ScrollArea className="h-[calc(90vh-200px)] pr-3">
+            <TabsContent value="dados" className="space-y-3">
+              <DateRangeSelector />
+              
+              <h4 className="text-sm font-medium">Informações do Cliente</h4>
               <div className="space-y-2">
-                <Label htmlFor="groupBy">Agrupar por</Label>
-                <Select 
-                  value={options.groupBy} 
-                  onValueChange={(value) => handleSelectChange("groupBy", value)}
-                >
-                  <SelectTrigger id="groupBy">
-                    <SelectValue placeholder="Selecione uma opção" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">Sem agrupamento</SelectItem>
-                    <SelectItem value="status">Status (Ativo, VIP, Inativo)</SelectItem>
-                    <SelectItem value="services">Serviços</SelectItem>
-                    <SelectItem value="tags">Tags</SelectItem>
-                    <SelectItem value="frequency">Frequência de visitas</SelectItem>
-                    <SelectItem value="spending">Valor gasto</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+                <div className="flex items-center justify-between space-x-2">
+                  <div className="flex items-center space-x-2">
+                    <User className="w-4 h-4 text-primary/70" />
+                    <Label htmlFor="basicInfo" className="cursor-pointer text-sm">Informações básicas (nome, CPF)</Label>
+                  </div>
+                  <Switch
+                    id="basicInfo"
+                    checked={true}
+                    disabled={true}
+                  />
+                </div>
 
+                <div className="flex items-center justify-between space-x-2">
+                  <div className="flex items-center space-x-2">
+                    <Phone className="w-4 h-4 text-primary/70" />
+                    <Label htmlFor="contact" className="cursor-pointer text-sm">Contato (email, telefone)</Label>
+                  </div>
+                  <Switch
+                    id="contact"
+                    checked={options.includeContact}
+                    onCheckedChange={(checked) =>
+                      handleToggleOption("includeContact", checked)
+                    }
+                  />
+                </div>
+
+                <div className="flex items-center justify-between space-x-2">
+                  <div className="flex items-center space-x-2">
+                    <Tag className="w-4 h-4 text-primary/70" />
+                    <Label htmlFor="tags" className="cursor-pointer text-sm">Tags do cliente</Label>
+                  </div>
+                  <Switch
+                    id="tags"
+                    checked={options.includeTags}
+                    onCheckedChange={(checked) =>
+                      handleToggleOption("includeTags", checked)
+                    }
+                  />
+                </div>
+
+                <div className="flex items-center justify-between space-x-2">
+                  <div className="flex items-center space-x-2">
+                    <Cake className="w-4 h-4 text-primary/70" />
+                    <Label htmlFor="birthday" className="cursor-pointer text-sm">Data de aniversário</Label>
+                  </div>
+                  <Switch
+                    id="birthday"
+                    checked={options.includeBirthday}
+                    onCheckedChange={(checked) =>
+                      handleToggleOption("includeBirthday", checked)
+                    }
+                  />
+                </div>
+
+                <div className="flex items-center justify-between space-x-2">
+                  <div className="flex items-center space-x-2">
+                    <Heart className="w-4 h-4 text-primary/70" />
+                    <Label htmlFor="preferences" className="cursor-pointer text-sm">Preferências do cliente</Label>
+                  </div>
+                  <Switch
+                    id="preferences"
+                    checked={options.includePreferences}
+                    onCheckedChange={(checked) =>
+                      handleToggleOption("includePreferences", checked)
+                    }
+                  />
+                </div>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="historico" className="space-y-3">
+              <DateRangeSelector />
+              
+              <h4 className="text-sm font-medium">Histórico e Estatísticas</h4>
               <div className="space-y-2">
-                <Label htmlFor="sortBy">Ordenar por</Label>
-                <Select 
-                  value={options.sortBy} 
-                  onValueChange={(value) => handleSelectChange("sortBy", value)}
-                >
-                  <SelectTrigger id="sortBy">
-                    <SelectValue placeholder="Selecione uma opção" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="name">Nome</SelectItem>
-                    <SelectItem value="lastVisit">Última visita</SelectItem>
-                    <SelectItem value="spending">Gastos (maior para menor)</SelectItem>
-                    <SelectItem value="frequency">Frequência (maior para menor)</SelectItem>
-                    <SelectItem value="birthday">Aniversário</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </TabsContent>
+                <div className="flex items-center justify-between space-x-2">
+                  <div className="flex items-center space-x-2">
+                    <Scissors className="w-4 h-4 text-primary/70" />
+                    <Label htmlFor="services" className="cursor-pointer text-sm">Histórico de serviços</Label>
+                  </div>
+                  <Switch
+                    id="services"
+                    checked={options.includeServices}
+                    onCheckedChange={(checked) =>
+                      handleToggleOption("includeServices", checked)
+                    }
+                  />
+                </div>
 
-          <TabsContent value="exportacao" className="space-y-4">
-            <DateRangeSelector />
-            
-            <h4 className="text-sm font-medium">Tipo de Relatório</h4>
-            
-            <RadioGroup
-              value={options.exportFormat}
-              onValueChange={(value) => handleSelectChange("exportFormat", value)}
-              className="space-y-2"
-            >
-              <div className="flex items-center space-x-2 rounded-md border p-3 cursor-pointer hover:bg-slate-50">
-                <RadioGroupItem value="summary" id="summary" />
-                <Label htmlFor="summary" className="cursor-pointer">
-                  <div className="font-medium">Resumido</div>
-                  <div className="text-sm text-muted-foreground">Dados principais e totais por cliente</div>
-                </Label>
-              </div>
+                <div className="flex items-center justify-between space-x-2">
+                  <div className="flex items-center space-x-2">
+                    <Clock className="w-4 h-4 text-primary/70" />
+                    <Label htmlFor="visitHistory" className="cursor-pointer text-sm">Histórico de visitas</Label>
+                  </div>
+                  <Switch
+                    id="visitHistory"
+                    checked={options.includeVisitHistory}
+                    onCheckedChange={(checked) =>
+                      handleToggleOption("includeVisitHistory", checked)
+                    }
+                  />
+                </div>
 
-              <div className="flex items-center space-x-2 rounded-md border p-3 cursor-pointer hover:bg-slate-50">
-                <RadioGroupItem value="detailed" id="detailed" />
-                <Label htmlFor="detailed" className="cursor-pointer">
-                  <div className="font-medium">Detalhado</div>
-                  <div className="text-sm text-muted-foreground">Todas as informações selecionadas por cliente</div>
-                </Label>
-              </div>
+                <div className="flex items-center justify-between space-x-2">
+                  <div className="flex items-center space-x-2">
+                    <CreditCard className="w-4 h-4 text-primary/70" />
+                    <Label htmlFor="spending" className="cursor-pointer text-sm">Gastos e cashback</Label>
+                  </div>
+                  <Switch
+                    id="spending"
+                    checked={options.includeSpending}
+                    onCheckedChange={(checked) =>
+                      handleToggleOption("includeSpending", checked)
+                    }
+                  />
+                </div>
 
-              <div className="flex items-center space-x-2 rounded-md border p-3 cursor-pointer hover:bg-slate-50">
-                <RadioGroupItem value="analytics" id="analytics" />
-                <Label htmlFor="analytics" className="cursor-pointer">
-                  <div className="font-medium">Estatístico</div>
-                  <div className="text-sm text-muted-foreground">Foco em métricas e totais por categoria</div>
-                </Label>
+                <div className="flex items-center justify-between space-x-2">
+                  <div className="flex items-center space-x-2">
+                    <BarChart className="w-4 h-4 text-primary/70" />
+                    <Label htmlFor="analytics" className="cursor-pointer text-sm">Estatísticas de cliente</Label>
+                  </div>
+                  <Switch
+                    id="analytics"
+                    checked={options.includeAnalytics}
+                    onCheckedChange={(checked) =>
+                      handleToggleOption("includeAnalytics", checked)
+                    }
+                  />
+                </div>
               </div>
-            </RadioGroup>
+            </TabsContent>
 
-            <Separator className="my-4" />
+            <TabsContent value="filtros" className="space-y-3">
+              <DateRangeSelector />
+              
+              <h4 className="text-sm font-medium">Organização</h4>
+              <div className="space-y-3">
+                <div className="space-y-1">
+                  <Label htmlFor="groupBy" className="text-sm">Agrupar por</Label>
+                  <Select 
+                    value={options.groupBy} 
+                    onValueChange={(value) => handleSelectChange("groupBy", value)}
+                  >
+                    <SelectTrigger id="groupBy" className="h-8 text-xs">
+                      <SelectValue placeholder="Selecione uma opção" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Sem agrupamento</SelectItem>
+                      <SelectItem value="status">Status (Ativo, VIP, Inativo)</SelectItem>
+                      <SelectItem value="services">Serviços</SelectItem>
+                      <SelectItem value="tags">Tags</SelectItem>
+                      <SelectItem value="frequency">Frequência de visitas</SelectItem>
+                      <SelectItem value="spending">Valor gasto</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
 
-            <h4 className="text-sm font-medium">Tipo de Arquivo</h4>
-            <RadioGroup
-              value={options.format}
-              onValueChange={(value) => handleFormatChange(value as "pdf" | "excel")}
-              className="flex flex-col space-y-1"
-            >
-              <div className="flex items-center space-x-2 rounded-md border p-3 cursor-pointer hover:bg-slate-50" onClick={() => handleFormatChange("excel")}>
-                <RadioGroupItem value="excel" id="excel" />
-                <FileSpreadsheet className="w-5 h-5 text-green-600 mr-1" />
-                <Label htmlFor="excel" className="cursor-pointer">Excel (.xlsx)</Label>
+                <div className="space-y-1">
+                  <Label htmlFor="sortBy" className="text-sm">Ordenar por</Label>
+                  <Select 
+                    value={options.sortBy} 
+                    onValueChange={(value) => handleSelectChange("sortBy", value)}
+                  >
+                    <SelectTrigger id="sortBy" className="h-8 text-xs">
+                      <SelectValue placeholder="Selecione uma opção" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="name">Nome</SelectItem>
+                      <SelectItem value="lastVisit">Última visita</SelectItem>
+                      <SelectItem value="spending">Gastos (maior para menor)</SelectItem>
+                      <SelectItem value="frequency">Frequência (maior para menor)</SelectItem>
+                      <SelectItem value="birthday">Aniversário</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-              <div className="flex items-center space-x-2 rounded-md border p-3 cursor-pointer hover:bg-slate-50" onClick={() => handleFormatChange("pdf")}>
-                <RadioGroupItem value="pdf" id="pdf" />
-                <FileText className="w-5 h-5 text-red-600 mr-1" />
-                <Label htmlFor="pdf" className="cursor-pointer">PDF (.pdf)</Label>
-              </div>
-            </RadioGroup>
-          </TabsContent>
+            </TabsContent>
+
+            <TabsContent value="exportacao" className="space-y-3">
+              <DateRangeSelector />
+              
+              <h4 className="text-sm font-medium">Tipo de Relatório</h4>
+              
+              <RadioGroup
+                value={options.exportFormat}
+                onValueChange={(value) => handleSelectChange("exportFormat", value)}
+                className="space-y-2"
+              >
+                <div className="flex items-center space-x-2 rounded-md border p-2 cursor-pointer hover:bg-slate-50">
+                  <RadioGroupItem value="summary" id="summary" />
+                  <Label htmlFor="summary" className="cursor-pointer">
+                    <div className="font-medium text-sm">Resumido</div>
+                    <div className="text-xs text-muted-foreground">Dados principais e totais por cliente</div>
+                  </Label>
+                </div>
+
+                <div className="flex items-center space-x-2 rounded-md border p-2 cursor-pointer hover:bg-slate-50">
+                  <RadioGroupItem value="detailed" id="detailed" />
+                  <Label htmlFor="detailed" className="cursor-pointer">
+                    <div className="font-medium text-sm">Detalhado</div>
+                    <div className="text-xs text-muted-foreground">Todas as informações selecionadas por cliente</div>
+                  </Label>
+                </div>
+
+                <div className="flex items-center space-x-2 rounded-md border p-2 cursor-pointer hover:bg-slate-50">
+                  <RadioGroupItem value="analytics" id="analytics" />
+                  <Label htmlFor="analytics" className="cursor-pointer">
+                    <div className="font-medium text-sm">Estatístico</div>
+                    <div className="text-xs text-muted-foreground">Foco em métricas e totais por categoria</div>
+                  </Label>
+                </div>
+              </RadioGroup>
+
+              <Separator className="my-3" />
+
+              <h4 className="text-sm font-medium">Tipo de Arquivo</h4>
+              <RadioGroup
+                value={options.format}
+                onValueChange={(value) => handleFormatChange(value as "pdf" | "excel")}
+                className="flex flex-col space-y-1"
+              >
+                <div className="flex items-center space-x-2 rounded-md border p-2 cursor-pointer hover:bg-slate-50" onClick={() => handleFormatChange("excel")}>
+                  <RadioGroupItem value="excel" id="excel" />
+                  <FileSpreadsheet className="w-4 h-4 text-green-600 mr-1" />
+                  <Label htmlFor="excel" className="cursor-pointer text-sm">Excel (.xlsx)</Label>
+                </div>
+                <div className="flex items-center space-x-2 rounded-md border p-2 cursor-pointer hover:bg-slate-50" onClick={() => handleFormatChange("pdf")}>
+                  <RadioGroupItem value="pdf" id="pdf" />
+                  <FileText className="w-4 h-4 text-red-600 mr-1" />
+                  <Label htmlFor="pdf" className="cursor-pointer text-sm">PDF (.pdf)</Label>
+                </div>
+              </RadioGroup>
+            </TabsContent>
+          </ScrollArea>
         </Tabs>
 
-        <DialogFooter className="gap-2 sm:gap-0 mt-4">
+        <DialogFooter className="gap-2 sm:gap-0 mt-3 pt-2 border-t border-border">
           <Button
             variant="outline"
             onClick={onClose}
+            size="sm"
           >
             Cancelar
           </Button>
           <Button
             onClick={handleExport}
             className="bg-primary hover:bg-primary/90"
+            size="sm"
           >
-            <Download className="w-4 h-4 mr-2" />
+            <Download className="w-3 h-3 mr-1" />
             Exportar Relatório
           </Button>
         </DialogFooter>
