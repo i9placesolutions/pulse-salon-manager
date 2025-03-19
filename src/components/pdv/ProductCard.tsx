@@ -1,10 +1,11 @@
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatCurrency } from "@/utils/currency";
 import { Tag, Clock } from "lucide-react";
 
 interface Product {
-  id: number;
+  id: string;
   name: string;
   price: number;
   category: string;
