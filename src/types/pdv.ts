@@ -1,3 +1,4 @@
+
 export interface CashierSession {
   id: string;
   openingDate: string;
@@ -7,8 +8,8 @@ export interface CashierSession {
   status: 'open' | 'closed';
   userId: string;
   sales: Sale[];
-  withdrawals: any[];
-  supplies: any[];
+  withdrawals: CashierOperation[];
+  supplies: CashierOperation[];
 }
 
 export interface CashierOperation {
@@ -23,6 +24,8 @@ export interface CashierOperation {
 export interface Sale {
   id: string;
   clientId: string;
+  clientName?: string;
+  clientPhone?: string;
   items: SaleItem[];
   total: number;
   payments: Payment[];
@@ -40,6 +43,7 @@ export interface SaleItem {
 }
 
 export interface Payment {
+  id?: string;
   method: 'cash' | 'credit' | 'debit' | 'pix';
   amount: number;
 }
@@ -72,6 +76,7 @@ export interface Client {
   name: string;
   phone: string;
   email: string;
+  cpf?: string;
 }
 
 export interface Product {

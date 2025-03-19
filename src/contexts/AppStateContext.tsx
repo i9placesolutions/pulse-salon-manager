@@ -1,36 +1,6 @@
+
 import React, { createContext, useContext, useState } from 'react';
-
-export interface SaleFilters {
-  startDate: Date | null;
-  endDate: Date | null;
-  status: string | null;
-  clientId: string | null;
-  minAmount: number | null;
-  maxAmount: number | null;
-}
-
-export interface CashierSession {
-  id: string;
-  openingDate: string;
-  closingDate: string | null;
-  initialAmount: number;
-  finalAmount: number;
-  status: 'open' | 'closed';
-  userId: string;
-  sales: any[];
-  withdrawals: any[];
-  supplies: any[];
-}
-
-export interface PDVState {
-  cashierSession: CashierSession | null;
-  currentSale: any | null;
-  draftSales: any[];
-  pendingSales: any[];
-  completedSales: any[];
-  filters: SaleFilters;
-  isDayStarted?: boolean;
-}
+import type { PDVState, Sale, CashierSession, SaleFilters } from '@/types/pdv';
 
 interface AppStateContextType {
   pdvState: PDVState;

@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -21,6 +22,7 @@ import Profissionais from "./pages/Profissionais";
 import Mensalidade from "./pages/Mensalidade";
 import ProfissionalDashboard from "./pages/ProfissionalDashboard";
 import EstablishmentProfile from "./pages/EstablishmentProfile";
+import PDV from "./pages/PDV";
 import NotFound from "./pages/NotFound";
 import { SpecialtiesProvider } from "./contexts/SpecialtiesContext";
 import { AppStateProvider } from "./contexts/AppStateContext";
@@ -100,6 +102,11 @@ const App = () => (
               <Route path="/establishment-profile" element={
                 <AppLayout>
                   <EstablishmentProfile />
+                </AppLayout>
+              } />
+              <Route path="/pdv" element={
+                <AppLayout>
+                  <PDV />
                 </AppLayout>
               } />
               
