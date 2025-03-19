@@ -61,7 +61,7 @@ export function SpecialtyManager({ specialties, onSpecialtiesChange }: Specialty
 
     // Criar nova especialidade
     const newSpecialty: ProfessionalSpecialty = {
-      id: Date.now(), // Gerar ID único temporário
+      id: String(Date.now()), // Convert to string
       name: newSpecialtyName.trim(),
       color: SPECIALTY_COLORS[specialties.length % SPECIALTY_COLORS.length],
       isActive: true,
@@ -274,4 +274,4 @@ export function SpecialtyManager({ specialties, onSpecialtiesChange }: Specialty
       )}
     </div>
   );
-} 
+}

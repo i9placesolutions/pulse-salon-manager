@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,10 +16,10 @@ import { CashOperationDialog } from "./CashOperationDialog";
 import { OrderList } from "./OrderList";
 import { OrderDialog } from "./OrderDialog";
 import { ReportDialog } from "./ReportDialog";
-import type { Product, Sale, SaleItem, Payment, Client, CashierOperation } from "@/types/pdv";
+import { Product, Sale, SaleItem, Payment, Client, CashierOperation } from "@/types/pdv";
 import { useToast } from "@/hooks/use-toast";
 
-// Mock data for illustration
+// Mock data for illustration - with string IDs
 const mockProducts: Product[] = [
   { id: "1", name: "Corte de Cabelo", price: 50, category: "Serviço", quantity: -1 },
   { id: "2", name: "Barba", price: 30, category: "Serviço", quantity: -1 },
@@ -34,6 +33,7 @@ const mockProducts: Product[] = [
   { id: "10", name: "Kit Barba", price: 85, category: "Produto", quantity: 7 },
 ];
 
+// Mock clients with string IDs
 const mockClients: Client[] = [
   { id: "1", name: "João Silva", phone: "(11) 98765-4321", email: "joao@example.com" },
   { id: "2", name: "Maria Oliveira", phone: "(11) 91234-5678", email: "maria@example.com" },
@@ -826,3 +826,4 @@ export function PDV() {
     </div>
   );
 }
+

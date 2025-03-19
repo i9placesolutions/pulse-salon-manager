@@ -1,26 +1,23 @@
-
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
 import { formatCurrency } from "@/utils/currency";
-import { User, Phone, Clock, Receipt, CreditCard, Tag } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import type { Sale } from "@/types/pdv";
+import { Ban, Printer } from "lucide-react";
+import { Sale } from "@/types/pdv";
 
 interface OrderDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   order: Sale | null;
-  onPrintReceipt: () => void;
-  onCancel: () => void;
+  onPrintReceipt: (order: Sale) => void;
+  onCancel: (orderId: string) => void;
 }
 
 export function OrderDialog({
@@ -166,9 +163,9 @@ export function OrderDialog({
             <Button 
               variant="outline" 
               className="w-full sm:w-auto"
-              onClick={onPrintReceipt}
+              onClick={() => onPrintReceipt(order)}
             >
-              <Receipt className="mr-2 h-4 w-4" />
+              <Printer className="mr-2 h-4 w-4" />
               Imprimir Recibo
             </Button>
           )}
@@ -176,7 +173,7 @@ export function OrderDialog({
             <Button 
               variant="destructive"
               className="w-full sm:w-auto"
-              onClick={onCancel}
+              onClick={() => onCancel(order.id)}
             >
               Cancelar Pedido
             </Button>

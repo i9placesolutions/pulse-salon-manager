@@ -1,10 +1,11 @@
+
 import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/utils/currency";
 import { Minus, Plus, Trash2 } from "lucide-react";
 
 interface CartItemProps {
   item: {
-    id: number;
+    id: string; // Changed from number to string
     name: string;
     price: number;
     quantity: number;

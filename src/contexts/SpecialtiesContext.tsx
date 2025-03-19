@@ -1,23 +1,24 @@
+
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { ProfessionalSpecialty } from '@/types/professional';
 import { useToast } from '@/hooks/use-toast';
 
 // Especialidades padrão
 const DEFAULT_SPECIALTIES: ProfessionalSpecialty[] = [
-  { id: 1, name: 'Cabeleireiro', color: '#db2777', isActive: true },
-  { id: 2, name: 'Barbeiro', color: '#8884d8', isActive: true },
-  { id: 3, name: 'Manicure', color: '#82ca9d', isActive: true },
-  { id: 4, name: 'Pedicure', color: '#ffc658', isActive: true },
-  { id: 5, name: 'Esteticista', color: '#ff8042', isActive: true },
-  { id: 6, name: 'Maquiador', color: '#4dabf5', isActive: true },
+  { id: "1", name: 'Cabeleireiro', color: '#db2777', isActive: true },
+  { id: "2", name: 'Barbeiro', color: '#8884d8', isActive: true },
+  { id: "3", name: 'Manicure', color: '#82ca9d', isActive: true },
+  { id: "4", name: 'Pedicure', color: '#ffc658', isActive: true },
+  { id: "5", name: 'Esteticista', color: '#ff8042', isActive: true },
+  { id: "6", name: 'Maquiador', color: '#4dabf5', isActive: true },
 ];
 
 interface SpecialtiesContextType {
   specialties: ProfessionalSpecialty[];
   addSpecialty: (specialty: Omit<ProfessionalSpecialty, 'id'>) => void;
   updateSpecialty: (specialty: ProfessionalSpecialty) => void;
-  deleteSpecialty: (id: number) => void;
-  toggleSpecialtyActive: (id: number) => boolean;
+  deleteSpecialty: (id: string) => void; // Changed from number to string
+  toggleSpecialtyActive: (id: string) => boolean; // Changed from number to string
 }
 
 const SpecialtiesContext = createContext<SpecialtiesContextType | undefined>(undefined);
@@ -74,7 +75,7 @@ export function SpecialtiesProvider({ children }: SpecialtiesProviderProps) {
 
     const newSpecialty: ProfessionalSpecialty = {
       ...specialty,
-      id: Math.max(0, ...specialties.map(s => s.id)) + 1,
+      id: String(Math.max(0, ...specialties.map(s => Number(s.id))) + 1), // Convert to string
     };
 
     setSpecialties([...specialties, newSpecialty]);
@@ -107,7 +108,7 @@ export function SpecialtiesProvider({ children }: SpecialtiesProviderProps) {
     });
   };
 
-  const deleteSpecialty = (id: number) => {
+  const deleteSpecialty = (id: string) => { // Changed from number to string
     setSpecialties(specialties.filter(s => s.id !== id));
     toast({
       title: "Especialidade removida",
@@ -115,7 +116,7 @@ export function SpecialtiesProvider({ children }: SpecialtiesProviderProps) {
     });
   };
 
-  const toggleSpecialtyActive = (id: number) => {
+  const toggleSpecialtyActive = (id: string) => { // Changed from number to string
     let result = false;
     setSpecialties(specialties.map(s => {
       if (s.id === id) {
@@ -142,4 +143,4 @@ export function SpecialtiesProvider({ children }: SpecialtiesProviderProps) {
       {children}
     </SpecialtiesContext.Provider>
   );
-} 
+}

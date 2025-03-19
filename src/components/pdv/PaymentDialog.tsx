@@ -1,8 +1,7 @@
 
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogContent,
@@ -11,18 +10,25 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { BanknoteIcon, CreditCard, QrCode } from "lucide-react";
-import { formatCurrency } from "@/utils/currency";
-import type { Payment } from "@/types/pdv";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { formatCurrency, parseCurrency } from "@/utils/currency";
+import { CreditCard, DollarSign, QrCode, Trash2 } from "lucide-react";
+import { Payment } from "@/types/pdv";
 
 interface PaymentDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   cartTotal: number;
-  selectedPaymentMethod: string;
-  onSelectPaymentMethod: (method: string) => void;
+  selectedPaymentMethod: "cash" | "credit" | "debit" | "pix";
+  onSelectPaymentMethod: (method: "cash" | "credit" | "debit" | "pix") => void;
   paymentAmount: string;
-  onPaymentAmountChange: (value: string) => void;
+  onPaymentAmountChange: (amount: string) => void;
   onAddPayment: () => void;
   paymentMethods: Payment[];
   remainingAmount: number;
