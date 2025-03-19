@@ -4,7 +4,7 @@ import { useToast } from '@/hooks/use-toast';
 
 // Especialidades padrão
 const DEFAULT_SPECIALTIES: ProfessionalSpecialty[] = [
-  { id: 1, name: 'Cabeleireiro', color: '#dc8c95', isActive: true },
+  { id: 1, name: 'Cabeleireiro', color: '#db2777', isActive: true },
   { id: 2, name: 'Barbeiro', color: '#8884d8', isActive: true },
   { id: 3, name: 'Manicure', color: '#82ca9d', isActive: true },
   { id: 4, name: 'Pedicure', color: '#ffc658', isActive: true },

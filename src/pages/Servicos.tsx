@@ -31,7 +31,8 @@ import {
   TrendingDown,
   BarChart2,
   Info,
-  Calendar
+  FileText,
+  X,
 } from "lucide-react";
 import { Service, ServicePackage } from "@/types/service";
 import { useToast } from "@/hooks/use-toast";
@@ -47,6 +48,21 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { exportData } from "@/utils/export";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetFooter,
+  SheetClose,
+} from "@/components/ui/sheet";
+import {
+  Label,
+} from "@/components/ui/label";
+import { CalendarIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Calendar } from "@/components/ui/calendar";
 
 // Interface para dados de desempenho adicionais
 interface PerformanceData {
@@ -228,7 +244,15 @@ export default function Servicos() {
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [priceRangeFilter, setPriceRangeFilter] = useState<string>("");
   const [popularityFilter, setPopularityFilter] = useState<string>("");
-  const [isExportPopoverOpen, setIsExportPopoverOpen] = useState(false);
+  const [reportFormat, setReportFormat] = useState<"excel" | "pdf">("excel");
+  const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
+  const [dateRange, setDateRange] = useState<{
+    from: Date | undefined;
+    to: Date | undefined;
+  }>({
+    from: undefined,
+    to: undefined,
+  });
   const [activeTab, setActiveTab] = useState<string>("services");
 
   const mockMetrics = {
@@ -340,49 +364,361 @@ export default function Servicos() {
     });
   };
 
-  const handleExportServices = (format: "excel" | "csv") => {
-    // Fecha o popover
-    setIsExportPopoverOpen(false);
+  const handleExportServices = () => {
+    // Fecha o diálogo
+    setIsExportDialogOpen(false);
     
     try {
-      // Mostra um toast informando que a exportação está começando
+      // Mostra um toast informando que o relatório está sendo gerado
       toast({
-        title: "Exportando serviços",
+        title: "Gerando relatório",
         description: "Preparando o arquivo para download...",
       });
       
-      // Preparar dados para exportação
-      const dataToExport = filteredServices.map(service => ({
-        ID: service.id,
-        Nome: service.name,
-        Categoria: service.category,
-        Preco: service.price, // Valor numérico para melhor exportação
-        PrecoFormatado: formatCurrency(service.price),
-        Duracao: service.duration,
-        DuracaoFormatada: `${service.duration} min`,
-        Status: service.status === 'active' ? 'Ativo' : 'Inativo',
-        Atendimentos: service.performanceData?.appointmentsLastMonth || 0,
-        Avaliacao: service.performanceData?.rating || 0
-      }));
+      // Coletar os dados com base nos filtros selecionados
+      let dataToExport = [...mockServices];
       
-      // Chama a função de exportação
-      exportData(dataToExport, format, 'servicos');
+      // Aplicar filtros de data se estiverem definidos
+      if (dateRange.from && dateRange.to) {
+        // Em um caso real, filtraria os serviços por data
+        console.log(`Filtrando serviços de ${format(dateRange.from, "yyyy-MM-dd")} até ${format(dateRange.to, "yyyy-MM-dd")}`);
+      }
       
-      // Mostra um toast de sucesso
-      toast({
-        title: `Serviços exportados para ${format.toUpperCase()}`,
-        description: `A lista de serviços foi exportada com sucesso!`,
-        duration: 3000,
+      // Filtro por categoria
+      const categorySelect = document.querySelector('#category-select') as HTMLSelectElement;
+      const selectedCategory = categorySelect?.value;
+      if (selectedCategory) {
+        dataToExport = dataToExport.filter(service => service.category === selectedCategory);
+      }
+      
+      // Filtro por status
+      const statusRadios = document.querySelectorAll('input[name="status"]') as NodeListOf<HTMLInputElement>;
+      let selectedStatus = "";
+      statusRadios.forEach(radio => {
+        if (radio.checked && radio.id !== "status-all") {
+          selectedStatus = radio.id === "status-active" ? "active" : "inactive";
+        }
       });
+      if (selectedStatus) {
+        dataToExport = dataToExport.filter(service => service.status === selectedStatus);
+      }
+      
+      // Filtro por faixa de preço
+      const priceSelect = document.querySelector('#price-select') as HTMLSelectElement;
+      const selectedPriceRange = priceSelect?.value;
+      if (selectedPriceRange) {
+        switch (selectedPriceRange) {
+          case "lt50":
+            dataToExport = dataToExport.filter(service => service.price < 50);
+            break;
+          case "50-100":
+            dataToExport = dataToExport.filter(service => service.price >= 50 && service.price <= 100);
+            break;
+          case "100-200":
+            dataToExport = dataToExport.filter(service => service.price > 100 && service.price <= 200);
+            break;
+          case "gt200":
+            dataToExport = dataToExport.filter(service => service.price > 200);
+            break;
+        }
+      }
+      
+      // Filtro por popularidade
+      const popularitySelect = document.querySelector('#popularity-select') as HTMLSelectElement;
+      const selectedPopularity = popularitySelect?.value;
+      if (selectedPopularity) {
+        switch (selectedPopularity) {
+          case "high":
+            dataToExport = dataToExport.filter(service => 
+              service.performanceData && service.performanceData.popularityRank <= 2);
+            break;
+          case "medium":
+            dataToExport = dataToExport.filter(service => 
+              service.performanceData && service.performanceData.popularityRank > 2 
+              && service.performanceData.popularityRank <= 4);
+            break;
+          case "low":
+            dataToExport = dataToExport.filter(service => 
+              service.performanceData && service.performanceData.popularityRank > 4);
+            break;
+        }
+      }
+      
+      // Verificar profissionais selecionados
+      const professionalCheckboxes = document.querySelectorAll('[id^="prof-"]') as NodeListOf<HTMLInputElement>;
+      const selectedProfessionals: number[] = [];
+      professionalCheckboxes.forEach(cb => {
+        if (cb.checked) {
+          const profId = parseInt(cb.id.replace('prof-', ''));
+          if (!isNaN(profId)) {
+            selectedProfessionals.push(profId);
+          }
+        }
+      });
+      
+      // Filtrar por profissionais se algum estiver selecionado
+      if (selectedProfessionals.length > 0) {
+        dataToExport = dataToExport.filter(service => 
+          service.professionals?.some(profId => selectedProfessionals.includes(profId))
+        );
+      }
+      
+      // Coletar informações sobre quais colunas exibir
+      const columns = {
+        name: document.getElementById('col-name') as HTMLInputElement,
+        category: document.getElementById('col-category') as HTMLInputElement,
+        price: document.getElementById('col-price') as HTMLInputElement,
+        duration: document.getElementById('col-duration') as HTMLInputElement,
+        status: document.getElementById('col-status') as HTMLInputElement,
+        commission: document.getElementById('col-commission') as HTMLInputElement,
+        popularity: document.getElementById('col-popularity') as HTMLInputElement,
+        rating: document.getElementById('col-rating') as HTMLInputElement,
+      };
+      
+      // Verificar se é necessário agrupar os dados
+      const groupBySelect = document.querySelector('#groupby-select') as HTMLSelectElement;
+      const groupByValue = groupBySelect?.value;
+      
+      // Transformar os dados com base nas colunas selecionadas e agrupamento
+      let formattedData: Record<string, any>[] = [];
+      
+      if (groupByValue) {
+        // Agrupar dados
+        const groupedData: Record<string, ExtendedService[]> = {};
+        
+        dataToExport.forEach(service => {
+          let groupKey = '';
+          
+          switch (groupByValue) {
+            case 'category':
+              groupKey = service.category;
+              break;
+            case 'professional':
+              // Como um serviço pode ter múltiplos profissionais, criamos uma entrada para cada
+              service.professionals?.forEach(profId => {
+                const professional = mockProfessionals.find(p => p.id === profId);
+                if (professional) {
+                  const profKey = professional.name;
+                  if (!groupedData[profKey]) {
+                    groupedData[profKey] = [];
+                  }
+                  groupedData[profKey].push(service);
+                }
+              });
+              return; // Pular o resto para esse serviço
+            case 'status':
+              groupKey = service.status === 'active' ? 'Ativo' : 'Inativo';
+              break;
+            case 'price':
+              if (service.price < 50) groupKey = 'Até R$50';
+              else if (service.price >= 50 && service.price <= 100) groupKey = 'R$50 - R$100';
+              else if (service.price > 100 && service.price <= 200) groupKey = 'R$100 - R$200';
+              else groupKey = 'Acima de R$200';
+              break;
+          }
+          
+          // Não agrupar se não for por profissional (já tratado acima)
+          if (groupByValue !== 'professional') {
+            if (!groupedData[groupKey]) {
+              groupedData[groupKey] = [];
+            }
+            groupedData[groupKey].push(service);
+          }
+        });
+        
+        // Converter grupos para o formato de saída
+        Object.entries(groupedData).forEach(([groupName, services], index) => {
+          // Adicionar linha de cabeçalho de grupo se não for o primeiro
+          if (index > 0) {
+            formattedData.push({ 'Grupo': '' }); // Linha em branco
+          }
+          
+          formattedData.push({ 'Grupo': groupName }); // Nome do grupo
+          
+          // Adicionar serviços do grupo
+          services.forEach(service => {
+            const obj: Record<string, any> = {};
+            if (columns.name?.checked) obj['Nome'] = service.name;
+            if (columns.category?.checked) obj['Categoria'] = service.category;
+            if (columns.price?.checked) obj['Preço'] = formatCurrency(service.price);
+            if (columns.duration?.checked) obj['Duração (min)'] = service.duration;
+            if (columns.status?.checked) obj['Status'] = service.status === 'active' ? 'Ativo' : 'Inativo';
+            
+            if (columns.commission?.checked) {
+              obj['Comissão'] = service.commission.type === 'percentage' 
+                ? `${service.commission.value}%` 
+                : formatCurrency(service.commission.value);
+            }
+            
+            if (columns.popularity?.checked && service.performanceData) {
+              obj['Popularidade'] = `Rank ${service.performanceData.popularityRank}`;
+            }
+            
+            if (columns.rating?.checked && service.performanceData) {
+              obj['Avaliação'] = service.performanceData.rating.toFixed(1);
+            }
+            
+            formattedData.push(obj);
+          });
+          
+          // Adicionar linha com estatísticas do grupo
+          const totalValue = services.reduce((sum, service) => sum + service.price, 0);
+          const avgValue = totalValue / services.length;
+          
+          formattedData.push({
+            'Nome': `Total: ${services.length} serviços`,
+            'Preço': services.length > 0 ? `Média: ${formatCurrency(avgValue)}` : '',
+          });
+        });
+      } else {
+        // Sem agrupamento - formato simples
+        formattedData = dataToExport.map(service => {
+          const obj: Record<string, any> = {};
+          
+          if (columns.name?.checked) obj['Nome'] = service.name;
+          if (columns.category?.checked) obj['Categoria'] = service.category;
+          if (columns.price?.checked) obj['Preço'] = formatCurrency(service.price);
+          if (columns.duration?.checked) obj['Duração (min)'] = service.duration;
+          if (columns.status?.checked) obj['Status'] = service.status === 'active' ? 'Ativo' : 'Inativo';
+          
+          if (columns.commission?.checked) {
+            obj['Comissão'] = service.commission.type === 'percentage' 
+              ? `${service.commission.value}%` 
+              : formatCurrency(service.commission.value);
+          }
+          
+          if (columns.popularity?.checked && service.performanceData) {
+            obj['Popularidade'] = `Rank ${service.performanceData.popularityRank}`;
+          }
+          
+          if (columns.rating?.checked && service.performanceData) {
+            obj['Avaliação'] = service.performanceData.rating.toFixed(1);
+          }
+          
+          return obj;
+        });
+      }
+      
+      // Gerar nome do arquivo com data atual
+      const dateStr = format(new Date(), "yyyy-MM-dd");
+      const fileName = `relatorio-servicos-${dateStr}`;
+      
+      // Simular um pequeno atraso para melhor UX
+      setTimeout(() => {
+        // Gerar e iniciar o download do arquivo de acordo com o formato selecionado
+        if (reportFormat === "excel") {
+          downloadAsFile(
+            generateCSV(formattedData), 
+            `${fileName}.xlsx`, 
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+          );
+        } else {
+          downloadAsFile(
+            generatePDF(formattedData, dateRange),
+            `${fileName}.pdf`,
+            'application/pdf'
+          );
+        }
+        
+        // Exibe um toast de sucesso
+        toast({
+          title: "Relatório gerado com sucesso",
+          description: `O relatório de serviços foi baixado em formato ${reportFormat === "excel" ? "Excel" : "PDF"}.`,
+          variant: "default",
+        });
+      }, 1500);
     } catch (error) {
-      console.error("Erro ao exportar:", error);
+      console.error("Erro ao gerar relatório:", error);
+      
+      // Exibe um toast de erro
       toast({
-        title: "Erro na exportação",
-        description: "Ocorreu um erro ao exportar os serviços. Tente novamente.",
+        title: "Erro ao gerar relatório",
+        description: "Ocorreu um erro ao gerar o relatório de serviços. Tente novamente.",
         variant: "destructive",
-        duration: 5000,
       });
     }
+  };
+  
+  // Função para gerar CSV para Excel
+  const generateCSV = (data: Record<string, any>[]) => {
+    if (data.length === 0) return '';
+    
+    // Obter cabeçalhos
+    const headers = Object.keys(data[0]);
+    
+    // Criar linhas de cabeçalho
+    const headerRow = headers.join(',');
+    
+    // Criar linhas de dados
+    const rows = data.map(obj => 
+      headers.map(header => {
+        const value = obj[header] || '';
+        // Tratar valores com vírgulas adicionando aspas
+        return typeof value === 'string' && value.includes(',') 
+          ? `"${value}"` 
+          : value;
+      }).join(',')
+    );
+    
+    // Combinar tudo
+    return [headerRow, ...rows].join('\n');
+  };
+  
+  // Função para gerar PDF (simulação - na implementação real usaria uma biblioteca como jsPDF)
+  const generatePDF = (data: Record<string, any>[], dateRange: { from: Date | undefined; to: Date | undefined }) => {
+    // Nesta simulação, estamos apenas retornando uma string que representa o conteúdo
+    // Em uma implementação real, usaríamos jsPDF ou outra biblioteca para gerar um PDF real
+    
+    // Por enquanto, vamos apenas simular o conteúdo
+    let content = "Relatório de Serviços\n";
+    content += `Data do relatório: ${format(new Date(), "dd/MM/yyyy")}\n\n`;
+    
+    // Adicionar informações de filtros
+    content += "Filtros aplicados:\n";
+    if (dateRange.from && dateRange.to) {
+      content += `- Período: ${format(dateRange.from, "dd/MM/yyyy")} até ${format(dateRange.to, "dd/MM/yyyy")}\n`;
+    }
+    content += "\n";
+    
+    // Adicionar dados
+    if (data.length > 0) {
+      const headers = Object.keys(data[0]);
+      content += headers.join("\t") + "\n";
+      
+      data.forEach(row => {
+        content += headers.map(header => row[header] || "").join("\t") + "\n";
+      });
+    } else {
+      content += "Nenhum dado encontrado com os filtros aplicados.";
+    }
+    
+    return content;
+  };
+  
+  // Função para download de arquivo
+  const downloadAsFile = (content: string, fileName: string, mimeType: string) => {
+    // Criar um blob com o conteúdo
+    const blob = new Blob([content], { type: mimeType });
+    
+    // Criar URL para o blob
+    const url = URL.createObjectURL(blob);
+    
+    // Criar um elemento de link para download
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName;
+    
+    // Adicionar o link ao documento
+    document.body.appendChild(link);
+    
+    // Clicar no link para iniciar o download
+    link.click();
+    
+    // Limpar
+    setTimeout(() => {
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    }, 100);
   };
 
   // Função para obter o ícone de tendência
@@ -395,6 +731,31 @@ export default function Servicos() {
       default:
         return <BarChart2 className="h-4 w-4 text-yellow-500" />;
     }
+  };
+  
+  // Componente para renderizar as métricas de desempenho de forma organizada
+  const ServicePerformance = ({ data }: { data?: PerformanceData }) => {
+    if (!data) {
+      return <div className="text-muted-foreground text-sm">Sem dados disponíveis</div>;
+    }
+    
+    return (
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center">
+          <div className="flex items-center mr-2 bg-muted/20 rounded-full px-2 py-0.5">
+            <Star className="h-3.5 w-3.5 text-amber-500 mr-1" />
+            <span className="font-medium text-sm">{data.rating.toFixed(1)}</span>
+          </div>
+          <span>{getTrendIcon(data.trend)}</span>
+        </div>
+        
+        <div className="flex items-center">
+          <Badge variant="outline" className="font-medium text-xs py-0.5 px-2">
+            {data.appointmentsLastMonth} atendimentos
+          </Badge>
+        </div>
+      </div>
+    );
   };
   
   // Função para formatar o último ajuste de preço
@@ -426,7 +787,7 @@ export default function Servicos() {
     <div className="space-y-6 animate-in fade-in duration-300">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-neutral">Serviços</h1>
+          <h1 className="text-2xl font-semibold text-primary">Serviços</h1>
           <p className="text-sm text-muted-foreground">
             Gerencie os serviços oferecidos pelo seu salão
           </p>
@@ -434,7 +795,7 @@ export default function Servicos() {
         <div className="flex flex-wrap gap-2">
           <Button 
             variant="outline"
-            className="gap-2 border-primary/20 text-primary hover:bg-primary/10"
+            className="gap-2 border-amber-300 text-amber-600 hover:bg-amber-50"
             onClick={() => setIsPackageFormOpen(true)}
           >
             <Package className="h-4 w-4" />
@@ -451,56 +812,33 @@ export default function Servicos() {
             Novo Serviço
           </Button>
           
-          <Popover open={isExportPopoverOpen} onOpenChange={setIsExportPopoverOpen}>
-            <PopoverTrigger asChild>
               <Button
                 variant="outline"
-                className="gap-2"
+            className="gap-2 border-purple-300 text-purple-600 hover:bg-purple-50"
+            onClick={() => setIsExportDialogOpen(true)}
               >
                 <FileSpreadsheet className="h-4 w-4" />
-                Exportar
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-56 p-2">
-              <div className="grid gap-2">
-                <Button 
-                  variant="ghost" 
-                  className="justify-start gap-2 text-sm"
-                  onClick={() => handleExportServices("excel")}
-                >
-                  <FileSpreadsheet className="h-4 w-4" />
-                  Exportar para Excel
+            Relatórios
                 </Button>
-                <Button 
-                  variant="ghost" 
-                  className="justify-start gap-2 text-sm"
-                  onClick={() => handleExportServices("csv")}
-                >
-                  <Download className="h-4 w-4" />
-                  Exportar para CSV
-                </Button>
-              </div>
-            </PopoverContent>
-          </Popover>
         </div>
       </div>
 
       <ServiceMetrics {...mockMetrics} />
 
       <Tabs defaultValue="services" value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="mb-4">
-          <TabsTrigger value="services" className="flex items-center gap-2">
+        <TabsList className="mb-4 bg-muted/80">
+          <TabsTrigger value="services" className="flex items-center gap-2 data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
             <Package className="h-4 w-4" />
             Serviços
           </TabsTrigger>
-          <TabsTrigger value="overview" className="flex items-center gap-2">
+          <TabsTrigger value="overview" className="flex items-center gap-2 data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
             <BarChart2 className="h-4 w-4" />
             Visão Geral
           </TabsTrigger>
         </TabsList>
       
         <TabsContent value="services" className="mt-0 space-y-4">
-          <Card className="p-4 bg-white border-0 shadow-sm">
+          <Card className="p-4 bg-white border border-indigo-100 shadow-sm">
             <div className="flex flex-col gap-4 md:flex-row md:items-center">
               <div className="relative flex-1">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -508,13 +846,13 @@ export default function Servicos() {
                   placeholder="Buscar serviços..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-8"
+                  className="pl-8 border-indigo-200 focus:border-indigo-400"
                 />
               </div>
               <select
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
-                className="h-10 rounded-md border border-input bg-background px-3 text-sm min-w-[180px]"
+                className="h-10 rounded-md border border-indigo-200 bg-background px-3 text-sm min-w-[180px] focus:border-indigo-400"
               >
                 <option value="">Todas as categorias</option>
                 <option value="Corte">Corte</option>
@@ -528,7 +866,7 @@ export default function Servicos() {
                 <Button 
                   variant="outline" 
                   size="icon"
-                  className={isFilterOpen ? "bg-primary/10 text-primary" : ""}
+                  className={isFilterOpen ? "bg-primary/10 text-primary border-primary" : "border-indigo-200"}
                   onClick={() => setIsFilterOpen(!isFilterOpen)}
                 >
                   <Filter className="h-4 w-4" />
@@ -538,6 +876,7 @@ export default function Servicos() {
                   <Button 
                     variant="outline" 
                     size="sm"
+                    className="border-[#db2777]/20 text-[#db2777] hover:bg-[#db2777]/10"
                     onClick={resetFilters}
                   >
                     Limpar Filtros
@@ -547,15 +886,15 @@ export default function Servicos() {
             </div>
             
             {isFilterOpen && (
-              <div className="mt-4 p-4 border rounded-md bg-muted/50">
-                <h3 className="font-medium mb-3">Filtros Avançados</h3>
+              <div className="mt-4 p-4 border rounded-md bg-gradient-to-r from-indigo-50 to-purple-50 border-indigo-100">
+                <h3 className="font-medium mb-3 text-indigo-700">Filtros Avançados</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="space-y-2">
-                    <label className="text-sm font-medium">Status</label>
+                    <label className="text-sm font-medium text-indigo-600">Status</label>
                     <select
                       value={statusFilter}
                       onChange={(e) => setStatusFilter(e.target.value)}
-                      className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
+                      className="w-full h-10 rounded-md border border-indigo-200 bg-white px-3 text-sm focus:border-indigo-400"
                     >
                       <option value="">Todos os status</option>
                       <option value="active">Ativo</option>
@@ -564,11 +903,11 @@ export default function Servicos() {
                   </div>
                   
                   <div className="space-y-2">
-                    <label className="text-sm font-medium">Faixa de Preço</label>
+                    <label className="text-sm font-medium text-indigo-600">Faixa de Preço</label>
                     <select
                       value={priceRangeFilter}
                       onChange={(e) => setPriceRangeFilter(e.target.value)}
-                      className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
+                      className="w-full h-10 rounded-md border border-indigo-200 bg-white px-3 text-sm focus:border-indigo-400"
                     >
                       <option value="">Todas as faixas</option>
                       <option value="lt50">Até R$ 50,00</option>
@@ -579,11 +918,11 @@ export default function Servicos() {
                   </div>
                   
                   <div className="space-y-2">
-                    <label className="text-sm font-medium">Popularidade</label>
+                    <label className="text-sm font-medium text-indigo-600">Popularidade</label>
                     <select
                       value={popularityFilter}
                       onChange={(e) => setPopularityFilter(e.target.value)}
-                      className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
+                      className="w-full h-10 rounded-md border border-indigo-200 bg-white px-3 text-sm focus:border-indigo-400"
                     >
                       <option value="">Todos os níveis</option>
                       <option value="high">Alta (Top 2)</option>
@@ -596,60 +935,60 @@ export default function Servicos() {
             )}
           </Card>
 
-          <Card className="border-0 shadow-sm">
-            <CardHeader className="px-6 border-b bg-muted/30">
+          <Card className="border border-indigo-100 shadow-sm overflow-hidden">
+            <CardHeader className="px-6 border-b bg-gradient-to-r from-primary/5 to-indigo-50">
               <div className="flex justify-between items-center">
-                <CardTitle>Lista de Serviços</CardTitle>
-                <Badge variant="outline" className="text-sm">
+                <CardTitle className="text-primary">Lista de Serviços</CardTitle>
+                <Badge variant="outline" className="text-sm bg-indigo-100 text-indigo-700 border-indigo-200">
                   {filteredServices.length} serviços encontrados
                 </Badge>
               </div>
             </CardHeader>
             <CardContent className="p-0">
               <Table>
-                <TableHeader>
+                <TableHeader className="bg-muted/30">
                   <TableRow className="hover:bg-transparent">
-                    <TableHead>Serviço</TableHead>
-                    <TableHead>Categoria</TableHead>
-                    <TableHead>Duração</TableHead>
-                    <TableHead>Valor</TableHead>
-                    <TableHead>Desempenho</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Ações</TableHead>
+                    <TableHead className="text-indigo-700">Serviço</TableHead>
+                    <TableHead className="text-indigo-700">Categoria</TableHead>
+                    <TableHead className="text-indigo-700">Duração</TableHead>
+                    <TableHead className="text-indigo-700">Valor</TableHead>
+                    <TableHead className="text-indigo-700">Desempenho</TableHead>
+                    <TableHead className="text-indigo-700">Status</TableHead>
+                    <TableHead className="text-right text-indigo-700">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredServices.length > 0 ? (
-                    filteredServices.map((service) => (
-                      <TableRow key={service.id} className="hover:bg-muted/40">
+                    filteredServices.map((service, idx) => (
+                      <TableRow key={service.id} className={idx % 2 === 0 ? "bg-white hover:bg-muted/30" : "bg-indigo-50/40 hover:bg-muted/30"}>
                         <TableCell>
                           <div>
-                            <div className="font-medium">{service.name}</div>
+                            <div className="font-medium text-primary">{service.name}</div>
                             <div className="text-sm text-muted-foreground">
                               {service.description}
                             </div>
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Badge variant="outline" className="bg-muted/50">
+                          <Badge variant="outline" className="bg-violet-50 text-violet-700 border-violet-200">
                             {service.category}
                           </Badge>
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-1">
-                            <Clock className="h-4 w-4 text-muted-foreground" />
+                            <Clock className="h-4 w-4 text-amber-500" />
                             {service.duration}min
                             {service.performanceData && service.performanceData.avgDuration !== service.duration && (
                               <Popover>
                                 <PopoverTrigger asChild>
-                                  <Button variant="ghost" size="icon" className="h-6 w-6">
-                                    <Info className="h-3.5 w-3.5 text-muted-foreground" />
+                                  <Button variant="ghost" size="icon" className="h-6 w-6 text-amber-600 hover:text-amber-700 hover:bg-amber-50">
+                                    <Info className="h-3.5 w-3.5" />
                                   </Button>
                                 </PopoverTrigger>
-                                <PopoverContent className="w-60">
+                                <PopoverContent className="w-60 border-amber-200 bg-amber-50">
                                   <div className="text-sm">
-                                    <p className="font-medium">Tempo médio real: {service.performanceData.avgDuration}min</p>
-                                    <p className="text-muted-foreground mt-1">
+                                    <p className="font-medium text-amber-800">Tempo médio real: {service.performanceData.avgDuration}min</p>
+                                    <p className="text-amber-700 mt-1">
                                       Este serviço tem duração média {service.performanceData.avgDuration > service.duration ? "maior" : "menor"} que o planejado.
                                     </p>
                                   </div>
@@ -660,7 +999,7 @@ export default function Servicos() {
                         </TableCell>
                         <TableCell>
                           <div className="flex flex-col">
-                            <div className="font-medium">{formatCurrency(service.price)}</div>
+                            <div className="font-medium text-emerald-700">{formatCurrency(service.price)}</div>
                             {service.performanceData?.priceHistory && service.performanceData.priceHistory.length > 1 && (
                               <div className="text-xs text-muted-foreground">
                                 Último ajuste: {getLastPriceAdjustment(service.performanceData.priceHistory)}
@@ -669,27 +1008,14 @@ export default function Servicos() {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-1 text-sm">
-                              <Calendar className="h-4 w-4 text-muted-foreground" />
-                              <span>{service.performanceData?.appointmentsLastMonth || 0}</span>
-                              <span className="text-xs text-muted-foreground">último mês</span>
-                            </div>
-                            <div className="flex items-center gap-1 text-sm">
-                              <Star className="h-4 w-4 text-amber-500" />
-                              <span>{service.performanceData?.rating.toFixed(1) || "0.0"}</span>
-                              <span className="ml-1">
-                                {getTrendIcon(service.performanceData?.trend)}
-                              </span>
-                            </div>
-                          </div>
+                          <ServicePerformance data={service.performanceData} />
                         </TableCell>
                         <TableCell>
                           <Badge
                             className={
                               service.status === "active"
-                                ? "bg-green-50 text-green-700 hover:bg-green-100"
-                                : "bg-red-50 text-red-700 hover:bg-red-100"
+                                ? "bg-green-100 text-green-700 hover:bg-green-200 border-green-200"
+                                : "bg-red-100 text-red-700 hover:bg-red-200 border-red-200"
                             }
                           >
                             {service.status === "active" ? "Ativo" : "Inativo"}
@@ -701,17 +1027,17 @@ export default function Servicos() {
                               variant="ghost"
                               size="icon"
                               onClick={() => handleEditService(service)}
-                              className="hover:bg-muted"
+                              className="text-indigo-600 hover:bg-indigo-50 hover:text-indigo-700"
                             >
                               <Edit className="h-4 w-4" />
                             </Button>
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="text-red-500 hover:bg-red-50"
+                              className="text-[#db2777] hover:bg-[#db2777]/10 hover:text-[#db2777]"
                               onClick={() => handleDeleteService(service.id)}
                             >
-                              <Trash2 className="h-4 w-4" />
+                              <Trash2 className="h-4 w-4 text-[#db2777]" />
                             </Button>
                           </div>
                         </TableCell>
@@ -719,7 +1045,7 @@ export default function Servicos() {
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center py-6 text-muted-foreground">
+                      <TableCell colSpan={7} className="text-center py-8 text-muted-foreground bg-muted/10">
                         Nenhum serviço encontrado com os filtros selecionados.
                       </TableCell>
                     </TableRow>
@@ -731,16 +1057,16 @@ export default function Servicos() {
         </TabsContent>
 
         <TabsContent value="overview" className="space-y-6">
-          <Card className="border-0 shadow-sm">
-            <CardHeader>
+          <Card className="border border-indigo-100 shadow-sm overflow-hidden">
+            <CardHeader className="bg-gradient-to-r from-primary/5 to-indigo-50 border-b">
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle>Visão Geral</CardTitle>
+                  <CardTitle className="text-primary">Visão Geral</CardTitle>
                   <CardDescription>Dados consolidados dos serviços</CardDescription>
                 </div>
               </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-6">
               <ServiceCharts
                 services={mockServices}
                 professionals={mockProfessionals}
@@ -762,6 +1088,339 @@ export default function Servicos() {
         onOpenChange={setIsPackageFormOpen}
         onSubmit={handlePackageSubmit}
       />
+
+      {/* Drawer lateral para relatórios */}
+      <Sheet open={isExportDialogOpen} onOpenChange={setIsExportDialogOpen}>
+        <SheetContent side="right" className="p-0 w-full max-w-full sm:max-w-2xl border-l flex flex-col h-[100dvh] bg-white">
+          {/* Cabeçalho fixo */}
+          <div className="sticky top-0 z-10 bg-gradient-to-r from-blue-600 to-indigo-600 border-b">
+            <SheetHeader className="p-6">
+              <div className="flex items-center justify-between">
+                <SheetTitle className="text-xl flex items-center gap-2 text-white">
+                  <FileText className="h-5 w-5 text-white" />
+                  Relatórios de Serviços
+                </SheetTitle>
+                <SheetClose className="rounded-full opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 text-white">
+                  <X className="h-4 w-4" />
+                  <span className="sr-only">Fechar</span>
+                </SheetClose>
+              </div>
+              <SheetDescription className="text-blue-100">
+                Configure o relatório e clique em "Gerar" para exportar
+              </SheetDescription>
+            </SheetHeader>
+          </div>
+          
+          {/* Conteúdo rolável */}
+          <div className="flex-1 overflow-y-auto bg-white p-6">
+            <div className="space-y-6">
+              {/* Formato do relatório */}
+              <div className="bg-muted/30 p-5 rounded-lg border">
+                <h3 className="text-lg font-medium mb-4">Formato de Saída</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div 
+                    className={`border rounded-md p-4 cursor-pointer hover:border-primary ${reportFormat === 'excel' ? 'bg-primary/10 border-primary' : 'bg-white'}`}
+                    onClick={() => setReportFormat('excel')}
+                  >
+                    <div className="flex items-center gap-3">
+                      <FileSpreadsheet className="h-8 w-8 text-emerald-600" />
+                      <div>
+                        <h4 className="font-medium">Excel (.xlsx)</h4>
+                        <p className="text-xs text-muted-foreground">Planilha para análises detalhadas</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div 
+                    className={`border rounded-md p-4 cursor-pointer hover:border-primary ${reportFormat === 'pdf' ? 'bg-primary/10 border-primary' : 'bg-white'}`}
+                    onClick={() => setReportFormat('pdf')}
+                  >
+                    <div className="flex items-center gap-3">
+                      <FileText className="h-8 w-8 text-[#db2777]" />
+                      <div>
+                        <h4 className="font-medium">PDF (.pdf)</h4>
+                        <p className="text-xs text-muted-foreground">Documento para impressão e apresentação</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Período */}
+              <div className="bg-muted/30 p-5 rounded-lg border">
+                <h3 className="text-lg font-medium mb-4">Período</h3>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label className="text-sm text-muted-foreground">Data Inicial</Label>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className={cn(
+                              "w-full justify-start text-left font-normal",
+                              !dateRange.from && "text-muted-foreground"
+                            )}
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {dateRange.from ? (
+                              format(dateRange.from, "dd/MM/yyyy", { locale: ptBR })
+                            ) : (
+                              <span>Selecione a data</span>
+                            )}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={dateRange.from}
+                            onSelect={(date) => setDateRange((prev) => ({ ...prev, from: date }))}
+                            initialFocus
+                            locale={ptBR}
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label className="text-sm text-muted-foreground">Data Final</Label>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className={cn(
+                              "w-full justify-start text-left font-normal",
+                              !dateRange.to && "text-muted-foreground"
+                            )}
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {dateRange.to ? (
+                              format(dateRange.to, "dd/MM/yyyy", { locale: ptBR })
+                            ) : (
+                              <span>Selecione a data</span>
+                            )}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={dateRange.to}
+                            onSelect={(date) => setDateRange((prev) => ({ ...prev, to: date }))}
+                            initialFocus
+                            locale={ptBR}
+                            disabled={(date) => dateRange.from ? date < dateRange.from : false}
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+                  </div>
+                  
+                  {dateRange.from && dateRange.to && (
+                    <div className="mt-3 p-2 bg-blue-50 rounded-md border border-blue-100">
+                      <p className="text-sm text-blue-800 flex items-center">
+                        <Calendar className="h-3 w-3 mr-1 inline" />
+                        <span>
+                          Período: {format(dateRange.from, "dd/MM/yyyy", { locale: ptBR })} até {format(dateRange.to, "dd/MM/yyyy", { locale: ptBR })}
+                        </span>
+                      </p>
+                    </div>
+                  )}
+                  
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="text-xs mt-3"
+                    onClick={() => setDateRange({ from: undefined, to: undefined })}
+                  >
+                    <X className="h-3 w-3 mr-1" />
+                    Limpar datas
+                  </Button>
+                </div>
+              </div>
+              
+              {/* Filtros do relatório */}
+              <div className="bg-muted/30 p-5 rounded-lg border">
+                <h3 className="text-lg font-medium mb-4">Filtros do Relatório</h3>
+                
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Categoria */}
+                    <div className="space-y-2">
+                      <Label>Categoria</Label>
+                      <select
+                        id="category-select"
+                        className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
+                      >
+                        <option value="">Todas as categorias</option>
+                        <option value="Corte">Corte</option>
+                        <option value="Tintura">Tintura</option>
+                        <option value="Tratamento">Tratamento</option>
+                        <option value="Manicure">Manicure</option>
+                        <option value="Estética">Estética</option>
+                      </select>
+                    </div>
+                    
+                    {/* Status */}
+                    <div className="space-y-2">
+                      <Label>Status do Serviço</Label>
+                      <div className="grid grid-cols-3 gap-2">
+                        <div className="flex items-center gap-2">
+                          <input 
+                            type="radio" 
+                            id="status-all" 
+                            name="status" 
+                            defaultChecked
+                            className="h-4 w-4 text-primary"
+                          />
+                          <Label htmlFor="status-all" className="cursor-pointer">Todos</Label>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <input 
+                            type="radio" 
+                            id="status-active" 
+                            name="status" 
+                            className="h-4 w-4 text-primary"
+                          />
+                          <Label htmlFor="status-active" className="cursor-pointer">Ativos</Label>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <input 
+                            type="radio" 
+                            id="status-inactive" 
+                            name="status" 
+                            className="h-4 w-4 text-primary"
+                          />
+                          <Label htmlFor="status-inactive" className="cursor-pointer">Inativos</Label>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Faixa de Preço */}
+                    <div className="space-y-2">
+                      <Label>Faixa de Preço</Label>
+                      <select
+                        id="price-select"
+                        className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
+                      >
+                        <option value="">Todas as faixas</option>
+                        <option value="lt50">Até R$ 50,00</option>
+                        <option value="50-100">R$ 50,00 - R$ 100,00</option>
+                        <option value="100-200">R$ 100,00 - R$ 200,00</option>
+                        <option value="gt200">Acima de R$ 200,00</option>
+                      </select>
+                    </div>
+                    
+                    {/* Popularidade */}
+                    <div className="space-y-2">
+                      <Label>Popularidade</Label>
+                      <select
+                        id="popularity-select"
+                        className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
+                      >
+                        <option value="">Todos os níveis</option>
+                        <option value="high">Alta (Top 2)</option>
+                        <option value="medium">Média</option>
+                        <option value="low">Baixa</option>
+                      </select>
+                    </div>
+                  </div>
+                  
+                  {/* Agrupamento */}
+                  <div className="space-y-2">
+                    <Label>Agrupar por</Label>
+                    <select
+                      id="groupby-select"
+                      className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
+                    >
+                      <option value="">Sem agrupamento</option>
+                      <option value="category">Categoria</option>
+                      <option value="professional">Profissional</option>
+                      <option value="status">Status</option>
+                      <option value="price">Faixa de Preço</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Profissionais */}
+              <div className="bg-muted/30 p-5 rounded-lg border">
+                <h3 className="text-lg font-medium mb-4">Profissionais</h3>
+                <div className="grid grid-cols-2 gap-2">
+                  {mockProfessionals.map(prof => (
+                    <div key={prof.id} className="flex items-center gap-2">
+                      <input 
+                        type="checkbox" 
+                        id={`prof-${prof.id}`} 
+                        className="h-4 w-4 text-primary rounded"
+                      />
+                      <Label htmlFor={`prof-${prof.id}`} className="cursor-pointer">{prof.name}</Label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              
+              {/* Colunas para exibir */}
+              <div className="bg-muted/30 p-5 rounded-lg border">
+                <h3 className="text-lg font-medium mb-4">Colunas para exibir</h3>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="flex items-center gap-2">
+                    <input type="checkbox" id="col-name" defaultChecked className="h-4 w-4 text-primary rounded" />
+                    <Label htmlFor="col-name" className="cursor-pointer">Nome</Label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input type="checkbox" id="col-category" defaultChecked className="h-4 w-4 text-primary rounded" />
+                    <Label htmlFor="col-category" className="cursor-pointer">Categoria</Label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input type="checkbox" id="col-price" defaultChecked className="h-4 w-4 text-primary rounded" />
+                    <Label htmlFor="col-price" className="cursor-pointer">Preço</Label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input type="checkbox" id="col-duration" defaultChecked className="h-4 w-4 text-primary rounded" />
+                    <Label htmlFor="col-duration" className="cursor-pointer">Duração</Label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input type="checkbox" id="col-status" defaultChecked className="h-4 w-4 text-primary rounded" />
+                    <Label htmlFor="col-status" className="cursor-pointer">Status</Label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input type="checkbox" id="col-commission" className="h-4 w-4 text-primary rounded" />
+                    <Label htmlFor="col-commission" className="cursor-pointer">Comissão</Label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input type="checkbox" id="col-popularity" className="h-4 w-4 text-primary rounded" />
+                    <Label htmlFor="col-popularity" className="cursor-pointer">Popularidade</Label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input type="checkbox" id="col-rating" className="h-4 w-4 text-primary rounded" />
+                    <Label htmlFor="col-rating" className="cursor-pointer">Avaliação</Label>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          {/* Rodapé fixo */}
+          <div className="sticky bottom-0 mt-auto p-6 border-t bg-white shadow-sm">
+            <div className="flex flex-row gap-3 w-full justify-end">
+              <Button 
+                variant="outline" 
+                onClick={() => setIsExportDialogOpen(false)}
+              >
+                Cancelar
+              </Button>
+              <Button 
+                onClick={handleExportServices}
+                variant="pink"
+              >
+                <Download className="mr-2 h-4 w-4" />
+                Gerar Relatório
+              </Button>
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }

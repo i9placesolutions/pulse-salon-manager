@@ -35,7 +35,7 @@ interface ServiceChartsProps {
   professionals: { id: number; name: string }[];
 }
 
-const COLORS = ["#dc8c95", "#8b5cf6", "#22c55e", "#eab308", "#ec4899"];
+const COLORS = ["#db2777", "#8b5cf6", "#22c55e", "#eab308", "#ec4899"];
 
 export function ServiceCharts({ services, professionals }: ServiceChartsProps) {
   // Dados para o gráfico de serviços mais populares
@@ -88,7 +88,7 @@ export function ServiceCharts({ services, professionals }: ServiceChartsProps) {
                   labelFormatter={(label) => `Serviço: ${label}`}
                 />
                 <Legend />
-                <Bar dataKey="appointments" name="Atendimentos" fill="#dc8c95" yAxisId="left" />
+                <Bar dataKey="appointments" name="Atendimentos" fill="#db2777" yAxisId="left" />
                 <Bar dataKey="revenue" name="Preço" fill="#8b5cf6" yAxisId="right" />
               </BarChart>
             </ResponsiveContainer>

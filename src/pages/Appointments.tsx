@@ -15,7 +15,18 @@ import {
   CalendarRange,
   LayoutDashboard,
   Filter,
-  Ban
+  Ban,
+  BarChart,
+  Download,
+  FileText,
+  Check,
+  User,
+  FileDown,
+  File,
+  Search,
+  Loader2,
+  X,
+  CheckCircle2
 } from "lucide-react";
 import type { BlockTimeFormData } from "@/components/appointments/BlockTimeDialog";
 import { AppointmentList } from "@/components/appointments/AppointmentList";
@@ -29,7 +40,10 @@ import {
   Sheet, 
   SheetContent, 
   SheetTrigger, 
-  SheetClose 
+  SheetClose,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription
 } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import { 
@@ -45,6 +59,9 @@ import { Calendar } from "@/components/ui/calendar";
 import { Separator } from "@/components/ui/separator";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import type { DateRange } from "react-day-picker";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Checkbox } from "@/components/ui/checkbox";
 
 // Temporary mock data
 const professionals: Professional[] = [
@@ -161,6 +178,18 @@ const mockAppointments: Appointment[] = [
   }
 ];
 
+// Extrair lista de clientes únicos dos agendamentos para filtro
+const uniqueClients = Array.from(new Set(mockAppointments.map(app => app.clientId)))
+  .map(clientId => {
+    const appointment = mockAppointments.find(app => app.clientId === clientId);
+    return {
+      id: clientId,
+      name: appointment?.clientName || ""
+    };
+  })
+  .filter(client => client.name !== "")
+  .sort((a, b) => a.name.localeCompare(b.name));
+
 const Appointments = () => {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [selectedProfessional, setSelectedProfessional] = useState<string>("");
@@ -180,6 +209,31 @@ const Appointments = () => {
   const [rescheduleProfessional, setRescheduleProfessional] = useState<string>("");
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [statusAction, setStatusAction] = useState<"confirm" | "cancel" | null>(null);
+  
+  // Estado para controlar o modal de novo agendamento
+  const [newAppointmentOpen, setNewAppointmentOpen] = useState(false);
+  const [newAppointmentDate, setNewAppointmentDate] = useState<Date | undefined>(undefined);
+  const [newAppointmentTime, setNewAppointmentTime] = useState<string>("");
+  
+  // Estado para controlar o modal de relatórios
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+  const [reportDateRange, setReportDateRange] = useState<DateRange>({ 
+    from: new Date(), 
+    to: addDays(new Date(), 30) 
+  });
+  const [reportProfessionalFilter, setReportProfessionalFilter] = useState<string[]>([]);
+  const [reportStatusFilter, setReportStatusFilter] = useState<string[]>([]);
+  const [reportServiceFilter, setReportServiceFilter] = useState<string[]>([]);
+  const [reportPaymentStatusFilter, setReportPaymentStatusFilter] = useState<string[]>([]);
+  const [reportSortBy, setReportSortBy] = useState<string>("date");
+  const [reportClientSearch, setReportClientSearch] = useState<string>("");
+  const [reportClientFilter, setReportClientFilter] = useState<string[]>([]);
+  
+  // Novos estados para o relatório
+  const [generatedReport, setGeneratedReport] = useState<Appointment[]>([]);
+  const [filteredReport, setFilteredReport] = useState<Appointment[]>([]);
+  const [isReportLoading, setIsReportLoading] = useState(false);
+  const [showReportResults, setShowReportResults] = useState(false);
   
   const { toast } = useToast();
 
@@ -333,108 +387,401 @@ const Appointments = () => {
   
   const statusCounts = getStatusCounts();
 
-  return (
-    <div className="space-y-6 animate-in fade-in duration-500">
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-neutral">Agendamentos</h1>
-          <p className="text-sm text-muted-foreground">
-            Gerencie os agendamentos do seu salão
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <AppointmentDialog />
+  // Função para lidar com clique em um slot vazio
+  const handleSlotClick = (date: Date, time: string) => {
+    setNewAppointmentDate(date);
+    setNewAppointmentTime(time);
+    setNewAppointmentOpen(true);
+  };
+
+  // Efeito para atualizar o relatório quando os filtros são alterados
+  useEffect(() => {
+    if (showReportResults) {
+      // Só atualiza se já estiver mostrando resultados
+      const filteredAppointments = filterAppointmentsForReport();
+      const sortedAppointments = sortReportResults(filteredAppointments);
+      setGeneratedReport(sortedAppointments);
+      
+      // Log para debug
+      console.log("Filtros atualizados:", {
+        clientSearch: reportClientSearch,
+        clientFilter: reportClientFilter,
+        resultCount: sortedAppointments.length,
+      });
+    }
+  }, [reportClientSearch, reportClientFilter, showReportResults, 
+     // Incluímos todas as dependências do filterAppointmentsForReport e sortReportResults
+     reportDateRange, reportProfessionalFilter, reportStatusFilter, 
+     reportPaymentStatusFilter, reportSortBy]);
+
+  // Função para filtrar agendamentos conforme os critérios do relatório
+  const filterAppointmentsForReport = (): Appointment[] => {
+    // Log para debug
+    console.log("Executando filtro com busca:", reportClientSearch);
+    
+    return mockAppointments.filter(appointment => {
+      // Filtragem por data
+      const appointmentDate = new Date(appointment.date);
+      const matchesDateRange = 
+        (!reportDateRange.from || appointmentDate >= reportDateRange.from) &&
+        (!reportDateRange.to || appointmentDate <= reportDateRange.to);
+      
+      // Filtragem por profissional
+      const matchesProfessional = reportProfessionalFilter.length === 0 
+        ? true 
+        : reportProfessionalFilter.includes(String(appointment.professionalId));
+      
+      // Filtragem por status
+      const matchesStatus = reportStatusFilter.length === 0
+        ? true
+        : reportStatusFilter.includes(appointment.status);
+      
+      // Filtragem por status de pagamento
+      const matchesPaymentStatus = reportPaymentStatusFilter.length === 0
+        ? true
+        : reportPaymentStatusFilter.includes(appointment.paymentStatus);
+      
+      // Filtragem por cliente (busca por nome)
+      const matchesClientSearch = reportClientSearch.trim() === ""
+        ? true
+        : appointment.clientName.toLowerCase().includes(reportClientSearch.toLowerCase());
+      
+      // Filtragem por cliente específico (dropdown)
+      const matchesClientFilter = reportClientFilter.length === 0
+        ? true
+        : reportClientFilter.includes(String(appointment.clientId));
+      
+      // Resultado final combinando todos os filtros
+      return matchesDateRange && matchesProfessional && matchesStatus && 
+             matchesPaymentStatus && matchesClientSearch && matchesClientFilter;
+    });
+  };
+
+  // Função para ordenar os resultados
+  const sortReportResults = (appointments: Appointment[]): Appointment[] => {
+    return [...appointments].sort((a, b) => {
+      switch (reportSortBy) {
+        case 'date':
+          return new Date(a.date).getTime() - new Date(b.date).getTime();
+        case 'professional':
+          return a.professionalName.localeCompare(b.professionalName);
+        case 'status':
+          return a.status.localeCompare(b.status);
+        case 'client':
+          return a.clientName.localeCompare(b.clientName);
+        default:
+          return 0;
+      }
+    });
+  };
+
+  // Função para gerar o relatório
+  const generateReport = () => {
+    setIsReportLoading(true);
+    
+    // Simulando processamento
+    setTimeout(() => {
+      try {
+        // Filtrar e ordenar os agendamentos
+        const filteredAppointments = filterAppointmentsForReport();
+        const sortedAppointments = sortReportResults(filteredAppointments);
+        
+        // Aplicar o filtro de busca por nome, se houver
+        let resultsWithClientFilter = sortedAppointments;
+        if (reportClientSearch.trim() !== "") {
+          resultsWithClientFilter = sortedAppointments.filter(app => 
+            app.clientName.toLowerCase().includes(reportClientSearch.toLowerCase())
+          );
+        }
+        
+        // Atualizar o estado com os resultados
+        setGeneratedReport(sortedAppointments);
+        setFilteredReport(resultsWithClientFilter); // Inicializa já com o filtro de cliente aplicado
+        setShowReportResults(true);
+        setIsReportLoading(false);
+        
+        toast({
+          title: "Relatório gerado",
+          description: `Foram encontrados ${resultsWithClientFilter.length} agendamentos. Para salvar o relatório, clique em Exportar.`,
+        });
+      } catch (error) {
+        setIsReportLoading(false);
+        toast({
+          title: "Erro ao gerar relatório",
+          description: "Ocorreu um erro ao processar os dados do relatório.",
+          variant: "destructive"
+        });
+      }
+    }, 1000);
+  };
+
+  // Função para exportar o relatório para CSV
+  const exportReportToCSV = () => {
+    setIsReportLoading(true);
+    
+    try {
+      // Filtrar e ordenar os agendamentos se ainda não tiver gerado
+      const dataToExport = generatedReport.length > 0 
+        ? generatedReport 
+        : sortReportResults(filterAppointmentsForReport());
+      
+      // Criar cabeçalhos do CSV
+      const headers = [
+        'ID', 'Cliente', 'Profissional', 'Serviços', 
+        'Data', 'Horário', 'Duração', 'Status', 
+        'Pagamento', 'Valor Total', 'Observações'
+      ];
+      
+      // Criar linhas do CSV
+      const rows = dataToExport.map(appointment => [
+        appointment.id,
+        appointment.clientName,
+        appointment.professionalName,
+        appointment.services.map(s => s.name).join(' + '),
+        format(new Date(appointment.date), 'dd/MM/yyyy'),
+        `${appointment.startTime} - ${appointment.endTime}`,
+        `${appointment.duration} min`,
+        appointment.status === 'confirmed' ? 'Confirmado' :
+          appointment.status === 'pending' ? 'Pendente' :
+          appointment.status === 'canceled' ? 'Cancelado' : 'Concluído',
+        appointment.paymentStatus === 'paid' ? 'Pago' : 'Pendente',
+        `R$ ${appointment.totalValue.toFixed(2)}`,
+        appointment.notes || ''
+      ]);
+      
+      // Combinar cabeçalhos e linhas
+      const csvContent = [
+        headers.join(','),
+        ...rows.map(row => row.join(','))
+      ].join('\n');
+      
+      // Criar blob e link para download
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      
+      // Configurar link para download
+      link.setAttribute('href', url);
+      link.setAttribute('download', `relatorio_agendamentos_${format(new Date(), 'dd-MM-yyyy')}.csv`);
+      document.body.appendChild(link);
+      
+      // Simular click no link
+      link.click();
+      
+      // Remover o link após o download
+      document.body.removeChild(link);
+      
+      setIsReportLoading(false);
+      toast({
+        title: "Relatório exportado",
+        description: "O arquivo CSV foi baixado com sucesso.",
+      });
+    } catch (error) {
+      setIsReportLoading(false);
+      toast({
+        title: "Erro na exportação",
+        description: "Ocorreu um erro ao exportar o relatório.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Função para exportar para PDF (implementando download real)
+  const exportReportToPDF = () => {
+    setIsReportLoading(true);
+    
+    try {
+      // Filtrar e ordenar os agendamentos se ainda não tiver gerado
+      const dataToExport = generatedReport.length > 0 
+        ? generatedReport 
+        : sortReportResults(filterAppointmentsForReport());
+      
+      // Simulando a criação de um PDF (na prática seria usado uma biblioteca como jsPDF)
+      // Por enquanto, vamos simular com um arquivo HTML que pode ser convertido para PDF pelo navegador
+      
+      // Criar conteúdo HTML para download
+      const htmlContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Relatório de Agendamentos</title>
+          <meta charset="utf-8">
+          <style>
+            body { font-family: Arial, sans-serif; margin: 20px; }
+            h1, h2 { color: #333; }
+            table { border-collapse: collapse; width: 100%; margin: 20px 0; }
+            th, td { padding: 8px; text-align: left; border-bottom: 1px solid #ddd; }
+            th { background-color: #f2f2f2; }
+            .confirmado { color: green; }
+            .pendente { color: orange; }
+            .cancelado { color: red; }
+            .concluido { color: blue; }
+            .sumario { background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin: 20px 0; }
+            @media print {
+              body { font-size: 12pt; }
+              h1 { font-size: 18pt; }
+              h2 { font-size: 16pt; }
+              .pagebreak { page-break-before: always; }
+            }
+          </style>
+        </head>
+        <body>
+          <h1>Relatório de Agendamentos (PDF)</h1>
+          <p>Data de geração: ${format(new Date(), 'dd/MM/yyyy HH:mm')}</p>
           
+          <div class="sumario">
+            <h2>Resumo</h2>
+            <p>Total de agendamentos: ${dataToExport.length}</p>
+            <p>Valor total: R$ ${dataToExport.reduce((sum, app) => sum + app.totalValue, 0).toFixed(2)}</p>
+            <p>Valor médio: R$ ${(dataToExport.reduce((sum, app) => sum + app.totalValue, 0) / dataToExport.length).toFixed(2)}</p>
+          </div>
+          
+          <table>
+            <tr>
+              <th>Data</th>
+              <th>Cliente</th>
+              <th>Profissional</th>
+              <th>Serviço</th>
+              <th>Horário</th>
+              <th>Status</th>
+              <th>Pagamento</th>
+              <th>Valor</th>
+            </tr>
+            ${dataToExport.map(app => `
+              <tr>
+                <td>${format(new Date(app.date), 'dd/MM/yyyy')}</td>
+                <td>${app.clientName}</td>
+                <td>${app.professionalName}</td>
+                <td>${app.services.map(s => s.name).join(', ')}</td>
+                <td>${app.startTime} - ${app.endTime}</td>
+                <td class="${app.status === 'confirmed' ? 'confirmado' : 
+                            app.status === 'pending' ? 'pendente' : 
+                            app.status === 'canceled' ? 'cancelado' : 'concluido'}">
+                  ${app.status === 'confirmed' ? 'Confirmado' : 
+                    app.status === 'pending' ? 'Pendente' : 
+                    app.status === 'canceled' ? 'Cancelado' : 'Concluído'}
+                </td>
+                <td>${app.paymentStatus === 'paid' ? 'Pago' : 'Pendente'}</td>
+                <td>R$ ${app.totalValue.toFixed(2)}</td>
+              </tr>
+            `).join('')}
+          </table>
+        </body>
+        </html>
+      `;
+      
+      // Criar blob e link para download
+      const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      
+      // Configurar link para download
+      link.setAttribute('href', url);
+      link.setAttribute('download', `relatorio_agendamentos_${format(new Date(), 'dd-MM-yyyy_HH-mm')}_pdf.html`);
+      document.body.appendChild(link);
+      
+      // Simular click no link
+      link.click();
+      
+      // Remover o link após o download
+      document.body.removeChild(link);
+      
+      setIsReportLoading(false);
+      toast({
+        title: "PDF gerado",
+        description: "O arquivo PDF foi baixado com sucesso.",
+      });
+    } catch (error) {
+      setIsReportLoading(false);
+      toast({
+        title: "Erro na exportação",
+        description: "Ocorreu um erro ao exportar o relatório para PDF.",
+        variant: "destructive"
+      });
+    }
+  };
+  
+  // Função para limpar todos os filtros do relatório
+  const clearReportFilters = () => {
+    setReportDateRange({ from: new Date(), to: addDays(new Date(), 30) });
+    setReportProfessionalFilter([]);
+    setReportStatusFilter([]);
+    setReportServiceFilter([]);
+    setReportPaymentStatusFilter([]);
+    setReportSortBy("date");
+    setReportClientSearch("");
+    setReportClientFilter([]);
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-semibold text-neutral">Agendamentos</h1>
+        <div className="flex gap-2">
           <Sheet>
             <SheetTrigger asChild>
-              <Button variant="outline" size="sm" onClick={() => setIsFilterOpen(true)}>
-                <Filter className="mr-2 h-4 w-4" />
-                Filtros
+              <Button>
+                <Plus className="mr-2 h-4 w-4" />
+                Novo Agendamento
               </Button>
             </SheetTrigger>
-            <SheetContent side="right" className="w-[300px] sm:w-[400px]">
-              <div className="py-6 space-y-6">
-                <h3 className="text-lg font-medium">Filtros Avançados</h3>
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <h4 className="text-sm font-medium">Status</h4>
-                    <div className="grid grid-cols-2 gap-2">
-                      <Button 
-                        variant={statusFilter === 'confirmed' ? 'default' : 'outline'} 
-                        size="sm"
-                        onClick={() => setStatusFilter(prev => prev === 'confirmed' ? '' : 'confirmed')}
-                        className={statusFilter === 'confirmed' ? 'bg-green-600 hover:bg-green-700' : ''}
-                      >
-                        Confirmados
-                      </Button>
-                      <Button 
-                        variant={statusFilter === 'pending' ? 'default' : 'outline'} 
-                        size="sm"
-                        onClick={() => setStatusFilter(prev => prev === 'pending' ? '' : 'pending')}
-                        className={statusFilter === 'pending' ? 'bg-yellow-600 hover:bg-yellow-700' : ''}
-                      >
-                        Pendentes
-                      </Button>
-                      <Button 
-                        variant={statusFilter === 'canceled' ? 'default' : 'outline'} 
-                        size="sm"
-                        onClick={() => setStatusFilter(prev => prev === 'canceled' ? '' : 'canceled')}
-                        className={statusFilter === 'canceled' ? 'bg-red-600 hover:bg-red-700' : ''}
-                      >
-                        Cancelados
-                      </Button>
-                      <Button 
-                        variant={statusFilter === 'completed' ? 'default' : 'outline'} 
-                        size="sm"
-                        onClick={() => setStatusFilter(prev => prev === 'completed' ? '' : 'completed')}
-                        className={statusFilter === 'completed' ? 'bg-blue-600 hover:bg-blue-700' : ''}
-                      >
-                        Concluídos
-                      </Button>
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <h4 className="text-sm font-medium">Profissional</h4>
-                    <div className="space-y-2">
-                      {professionals.map(prof => (
-                        <Button 
-                          key={prof.id}
-                          variant={selectedProfessional === String(prof.id) ? 'default' : 'outline'} 
-                          size="sm"
-                          onClick={() => setSelectedProfessional(prev => prev === String(prof.id) ? '' : String(prof.id))}
-                          className="w-full justify-start"
-                        >
-                          {prof.name}
-                        </Button>
-                      ))}
-                    </div>
-                  </div>
-                  
-                  <div className="pt-4 space-x-2">
-                    <Button variant="outline" onClick={() => {
-                      setStatusFilter('');
-                      setSelectedProfessional('');
-                    }}>
-                      Limpar Filtros
-                    </Button>
-                    <SheetClose asChild>
-                      <Button>Aplicar</Button>
+            <SheetContent side="right" className="p-0 w-full max-w-full sm:max-w-2xl border-l flex flex-col h-[100dvh] bg-white">
+              {/* Cabeçalho fixo */}
+              <div className="sticky top-0 z-10 bg-gradient-to-r from-blue-600 to-indigo-600 border-b">
+                <SheetHeader className="p-6">
+                  <div className="flex items-center justify-between">
+                    <SheetTitle className="text-xl flex items-center gap-2 text-white">
+                      <CalendarClock className="h-5 w-5 text-white" />
+                      Novo Agendamento
+                    </SheetTitle>
+                    <SheetClose className="rounded-full opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 text-white">
+                      <X className="h-4 w-4" />
+                      <span className="sr-only">Fechar</span>
                     </SheetClose>
                   </div>
+                  <SheetDescription className="text-blue-100">
+                    Preencha o formulário para criar um novo agendamento
+                  </SheetDescription>
+                </SheetHeader>
+              </div>
+              
+              {/* Conteúdo rolável */}
+              <div className="flex-1 overflow-y-auto bg-white">
+                <div className="p-6">
+                  <AppointmentDialog
+                    isOpen={true}
+                    onOpenChange={() => {}}
+                    initialDate={newAppointmentDate}
+                    initialTime={newAppointmentTime}
+                  />
+                </div>
+              </div>
+              
+              {/* Rodapé fixo */}
+              <div className="sticky bottom-0 mt-auto p-6 border-t bg-white shadow-sm">
+                <div className="flex flex-row gap-3 w-full justify-end">
+                  <Button variant="outline" onClick={() => setNewAppointmentOpen(false)}>
+                    Cancelar
+                  </Button>
+                  <Button 
+                    variant="pink"
+                  >
+                    <Check className="mr-2 h-4 w-4" />
+                    Salvar Agendamento
+                  </Button>
                 </div>
               </div>
             </SheetContent>
           </Sheet>
           
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={() => setIsBlockTimeOpen(true)}
-            className="bg-primary/10 text-primary hover:bg-primary/20 border-primary/20"
-          >
+          <Button variant="outline" onClick={() => setIsBlockTimeOpen(true)}>
             <Ban className="mr-2 h-4 w-4" />
             Bloquear Horário
+          </Button>
+          
+          <Button variant="outline" onClick={() => setIsReportModalOpen(true)}>
+            <BarChart className="mr-2 h-4 w-4" />
+            Relatórios
           </Button>
         </div>
       </div>
@@ -602,6 +949,7 @@ const Appointments = () => {
                     mode="day"
                     onStatusChange={handleStatusChange}
                     onReschedule={handleReschedule}
+                    onSlotClick={handleSlotClick}
                   />
                 </CardContent>
               </Card>
@@ -617,6 +965,7 @@ const Appointments = () => {
                     mode="week"
                     onStatusChange={handleStatusChange}
                     onReschedule={handleReschedule}
+                    onSlotClick={handleSlotClick}
                   />
                 </CardContent>
               </Card>
@@ -632,6 +981,7 @@ const Appointments = () => {
                     mode="month"
                     onStatusChange={handleStatusChange}
                     onReschedule={handleReschedule}
+                    onSlotClick={handleSlotClick}
                   />
                 </CardContent>
               </Card>
@@ -662,6 +1012,14 @@ const Appointments = () => {
             description: `Período bloqueado de ${blockData.startDate} até ${blockData.endDate}, das ${blockData.startTime} às ${blockData.endTime}`
           });
         }}
+      />
+
+      {/* Modal de agendamento */}
+      <AppointmentDialog
+        isOpen={newAppointmentOpen}
+        onOpenChange={setNewAppointmentOpen}
+        initialDate={newAppointmentDate}
+        initialTime={newAppointmentTime}
       />
 
       {/* Diálogo de Confirmação */}
@@ -793,6 +1151,246 @@ const Appointments = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Modal de Relatórios */}
+      <Sheet open={isReportModalOpen} onOpenChange={setIsReportModalOpen}>
+        <SheetContent side="right" className="p-0 w-full max-w-full sm:max-w-2xl border-l flex flex-col h-[100dvh] bg-white">
+          {/* Cabeçalho fixo */}
+          <div className="sticky top-0 z-10 bg-gradient-to-r from-blue-600 to-indigo-600 border-b">
+            <SheetHeader className="p-6">
+              <div className="flex items-center justify-between">
+                <SheetTitle className="text-xl flex items-center gap-2 text-white">
+                  <FileText className="h-5 w-5 text-white" />
+                  Relatórios de Agendamentos
+                </SheetTitle>
+                <SheetClose className="rounded-full opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 text-white">
+                  <X className="h-4 w-4" />
+                  <span className="sr-only">Fechar</span>
+                </SheetClose>
+              </div>
+              <SheetDescription className="text-blue-100">
+                Configure o relatório e clique em "Gerar" para exportar
+              </SheetDescription>
+            </SheetHeader>
+          </div>
+          
+          {/* Conteúdo rolável */}
+          <div className="flex-1 overflow-y-auto bg-white">
+            <div className="p-6">
+              {/* Conteúdo do relatório existente */}
+              <div className="space-y-6">
+                {/* ... existing report content ... */}
+                {showReportResults ? (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-lg font-medium">Resultados</h3>
+                      <p className="text-sm text-muted-foreground">{filteredReport.length} registros encontrados</p>
+                    </div>
+                    
+                    {/* Lista de resultados */}
+                    <div className="border rounded-md">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Cliente</TableHead>
+                            <TableHead>Serviço</TableHead>
+                            <TableHead>Profissional</TableHead>
+                            <TableHead>Data</TableHead>
+                            <TableHead>Status</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {filteredReport.slice(0, 10).map((appointment) => (
+                            <TableRow key={appointment.id}>
+                              <TableCell>{appointment.clientName}</TableCell>
+                              <TableCell>{appointment.services.map(s => s.name).join(", ")}</TableCell>
+                              <TableCell>{appointment.professionalName}</TableCell>
+                              <TableCell>
+                                {format(appointment.date, "dd/MM/yyyy")} {appointment.startTime}
+                              </TableCell>
+                              <TableCell>
+                                <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
+                                  appointment.status === 'confirmed' 
+                                    ? 'bg-green-50 text-green-700' 
+                                    : appointment.status === 'canceled'
+                                    ? 'bg-red-50 text-red-700'
+                                    : 'bg-yellow-50 text-yellow-700'
+                                }`}>
+                                  {appointment.status === 'confirmed' ? 'Confirmado' 
+                                    : appointment.status === 'canceled' ? 'Cancelado'
+                                    : 'Pendente'}
+                                </span>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                      {filteredReport.length > 10 && (
+                        <div className="p-3 text-center text-sm text-muted-foreground">
+                          Mostrando 10 de {filteredReport.length} resultados
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    {/* Categoria de Relatório */}
+                    <div className="bg-muted/30 p-5 rounded-lg border">
+                      <h3 className="text-lg font-medium mb-4">Tipo de Relatório</h3>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                        <div 
+                          className={`flex flex-col items-center justify-center p-3 border rounded-md cursor-pointer hover:bg-muted/50 ${reportSortBy === 'date' ? 'bg-primary/10 border-primary' : 'bg-white'}`}
+                          onClick={() => setReportSortBy('date')}
+                        >
+                          <CalendarClock className="h-6 w-6 text-blue-600 mb-1" />
+                          <span className="text-xs font-medium text-center">Por Data</span>
+                        </div>
+                        <div 
+                          className={`flex flex-col items-center justify-center p-3 border rounded-md cursor-pointer hover:bg-muted/50 ${reportSortBy === 'professional' ? 'bg-primary/10 border-primary' : 'bg-white'}`}
+                          onClick={() => setReportSortBy('professional')}
+                        >
+                          <User className="h-6 w-6 text-green-600 mb-1" />
+                          <span className="text-xs font-medium text-center">Por Profissional</span>
+                        </div>
+                        <div 
+                          className={`flex flex-col items-center justify-center p-3 border rounded-md cursor-pointer hover:bg-muted/50 ${reportSortBy === 'status' ? 'bg-primary/10 border-primary' : 'bg-white'}`}
+                          onClick={() => setReportSortBy('status')}
+                        >
+                          <CheckCircle2 className="h-6 w-6 text-orange-600 mb-1" />
+                          <span className="text-xs font-medium text-center">Por Status</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Período */}
+                    <div className="bg-muted/30 p-5 rounded-lg border">
+                      <h3 className="text-lg font-medium mb-4">Período</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="date-from">Data Inicial</Label>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant="outline"
+                                className="w-full justify-start text-left font-normal"
+                              >
+                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                {reportDateRange.from ? (
+                                  format(reportDateRange.from, "dd/MM/yyyy")
+                                ) : (
+                                  <span>Selecione a data inicial</span>
+                                )}
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0">
+                              <Calendar
+                                mode="single"
+                                selected={reportDateRange.from}
+                                onSelect={(date) =>
+                                  setReportDateRange({
+                                    ...reportDateRange,
+                                    from: date,
+                                  })
+                                }
+                                initialFocus
+                              />
+                            </PopoverContent>
+                          </Popover>
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="date-to">Data Final</Label>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant="outline"
+                                className="w-full justify-start text-left font-normal"
+                              >
+                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                {reportDateRange.to ? (
+                                  format(reportDateRange.to, "dd/MM/yyyy")
+                                ) : (
+                                  <span>Selecione a data final</span>
+                                )}
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0">
+                              <Calendar
+                                mode="single"
+                                selected={reportDateRange.to}
+                                onSelect={(date) =>
+                                  setReportDateRange({
+                                    ...reportDateRange,
+                                    to: date,
+                                  })
+                                }
+                                initialFocus
+                                disabled={(date) =>
+                                  reportDateRange.from
+                                    ? date < reportDateRange.from
+                                    : false
+                                }
+                              />
+                            </PopoverContent>
+                          </Popover>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+          
+          {/* Rodapé fixo */}
+          <div className="sticky bottom-0 mt-auto p-6 border-t bg-white shadow-sm">
+            <div className="flex flex-row gap-3 w-full justify-end">
+              {showReportResults ? (
+                <>
+                  <Button variant="outline" onClick={() => setShowReportResults(false)}>
+                    Voltar para Filtros
+                  </Button>
+                  <Button 
+                    variant="outline"
+                    onClick={exportReportToCSV}
+                  >
+                    <FileDown className="mr-2 h-4 w-4" />
+                    Exportar CSV
+                  </Button>
+                  <Button 
+                    variant="pink"
+                    onClick={exportReportToPDF}
+                  >
+                    <FileText className="mr-2 h-4 w-4" />
+                    Exportar PDF
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button variant="outline" onClick={() => setIsReportModalOpen(false)}>
+                    Cancelar
+                  </Button>
+                  <Button 
+                    onClick={generateReport}
+                    variant="pink"
+                  >
+                    {isReportLoading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Gerando...
+                      </>
+                    ) : (
+                      <>
+                        <Search className="mr-2 h-4 w-4" />
+                        Gerar Relatório
+                      </>
+                    )}
+                  </Button>
+                </>
+              )}
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
 
     </div>
   );

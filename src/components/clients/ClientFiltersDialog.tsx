@@ -36,7 +36,7 @@ import { CalendarIcon, X } from "lucide-react";
 interface ClientFiltersDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  defaultFilters: ClientFilters;
+  initialFilters: ClientFilters;
   onApplyFilters: (filters: ClientFilters) => void;
   availableTags: string[];
 }
@@ -44,12 +44,12 @@ interface ClientFiltersDialogProps {
 export function ClientFiltersDialog({
   isOpen,
   onClose,
-  defaultFilters,
+  initialFilters,
   onApplyFilters,
   availableTags,
 }: ClientFiltersDialogProps) {
-  const [filters, setFilters] = useState<ClientFilters>(defaultFilters);
-  const [selectedTags, setSelectedTags] = useState<string[]>(defaultFilters.tags || []);
+  const [filters, setFilters] = useState<ClientFilters>(initialFilters);
+  const [selectedTags, setSelectedTags] = useState<string[]>(initialFilters.tags || []);
   const [tagInput, setTagInput] = useState("");
 
   // Valores predefinidos para o seletor de gastos

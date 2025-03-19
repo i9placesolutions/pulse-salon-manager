@@ -33,7 +33,7 @@ const defaultProfile: EstablishmentProfile = {
   logo: "",
   description: "Bem-vindo ao nosso salão! Oferecemos serviços de alta qualidade para cuidar da sua beleza.",
   customUrl: "meu-salao",
-  primaryColor: "#dc8c95"
+  primaryColor: "#db2777"
 };
 
 export default function EstablishmentProfile() {

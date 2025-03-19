@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   UserPlus, 
@@ -17,9 +17,9 @@ import {
   Users,
   Crown,
   Clock,
-  ShoppingBag,
   Check,
-  BarChart
+  BarChart,
+  CalendarIcon
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { ClientList } from "@/components/clients/ClientList";
@@ -66,6 +66,20 @@ import { format, subMonths, addDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useNavigate } from "react-router-dom";
 import { exportClientReport } from "@/utils/clientReportUtils";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Calendar as CalendarDatePicker } from "@/components/ui/calendar";
 
 // Dados mockados para demonstração
 const mockClients: Client[] = [
@@ -314,37 +328,33 @@ const mockPreferences: ClientPreference[] = [
 ];
 
 export default function Clientes() {
-  // Estados para controle geral
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
+  // Estados para gerenciar a interface
   const [loading, setLoading] = useState(false);
-  const [clients, setClients] = useState<Client[]>(mockClients);
-  const [filteredClients, setFilteredClients] = useState<Client[]>(mockClients);
+  const [clients, setClients] = useState<Client[]>([...mockClients]);
+  const [filteredClients, setFilteredClients] = useState<Client[]>([...mockClients]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [activeTab, setActiveTab] = useState<string>("todos");
-  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
-  
-  // Estados para controle de modais
+  const [activeTab, setActiveTab] = useState("todos");
   const [isNewClientOpen, setIsNewClientOpen] = useState(false);
   const [isProfileDialogOpen, setIsProfileDialogOpen] = useState(false);
   const [isFiltersDialogOpen, setIsFiltersDialogOpen] = useState(false);
   const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
-  
-  // Estado para filtros
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [filters, setFilters] = useState<ClientFilters>({
     status: [],
+    tags: [],
     dateRange: null,
-    lastVisitRange: [null, null],
     spendingRange: [null, null],
+    lastVisitRange: [null, null],
     minVisits: undefined,
     hasCashback: false,
-    usedCoupons: false,
-    joinedCampaigns: false,
     hasWhatsApp: false,
     hasBirthday: false,
-    tags: []
+    usedCoupons: false,
+    joinedCampaigns: false
   });
-  
-  const { toast } = useToast();
-  const navigate = useNavigate();
   
   // Efeito para filtrar clientes com base no termo de busca
   useEffect(() => {
@@ -520,14 +530,14 @@ export default function Clientes() {
       result = result.filter(client => {
         if (!client.lastVisit) return false;
         const lastVisit = new Date(client.lastVisit);
-        return lastVisit >= filters.lastVisitRange[0]! && lastVisit <= filters.lastVisitRange[1]!;
+        return lastVisit >= filters.lastVisitRange![0]! && lastVisit <= filters.lastVisitRange![1]!;
       });
     }
     
     if (filters.spendingRange && filters.spendingRange[0] && filters.spendingRange[1]) {
       result = result.filter(client => 
-        client.totalSpent >= filters.spendingRange[0]! && 
-        client.totalSpent <= filters.spendingRange[1]!
+        client.totalSpent >= filters.spendingRange![0]! && 
+        client.totalSpent <= filters.spendingRange![1]!
       );
     }
     
@@ -551,6 +561,7 @@ export default function Clientes() {
   const resetFilters = () => {
     setFilters({
       status: [],
+      tags: [],
       dateRange: null,
       lastVisitRange: [null, null],
       spendingRange: [null, null],
@@ -559,8 +570,7 @@ export default function Clientes() {
       usedCoupons: false,
       joinedCampaigns: false,
       hasWhatsApp: false,
-      hasBirthday: false,
-      tags: []
+      hasBirthday: false
     });
     
     toast({
@@ -571,14 +581,36 @@ export default function Clientes() {
   
   // Verificar se é aniversariante do mês atual
   const isBirthdayInCurrentMonth = (birthDateStr: string) => {
-    const birthDate = new Date(birthDateStr);
-    const currentMonth = new Date().getMonth();
-    return birthDate.getMonth() === currentMonth;
+    try {
+      if (!birthDateStr) return false;
+      
+      const birthDate = new Date(birthDateStr);
+      if (isNaN(birthDate.getTime())) return false; // Verifica se a data é válida
+      
+      const currentMonth = new Date().getMonth();
+      return birthDate.getMonth() === currentMonth;
+    } catch (error) {
+      console.error("Erro ao verificar aniversário no mês:", error);
+      return false;
+    }
   };
   
   // Contar número de aniversariantes no mês
   const getBirthdayCount = () => {
-    return clients.filter(client => isBirthdayInCurrentMonth(client.birthDate)).length;
+    try {
+      if (!clients || !Array.isArray(clients)) return 0;
+      
+      return clients.filter(client => {
+        try {
+          return client && client.birthDate && isBirthdayInCurrentMonth(client.birthDate);
+        } catch {
+          return false;
+        }
+      }).length;
+    } catch (error) {
+      console.error("Erro ao contar aniversariantes:", error);
+      return 0;
+    }
   };
   
   // Funções para eventos de diálogos
@@ -691,12 +723,12 @@ export default function Clientes() {
 
   // Estatísticas dos clientes
   const clientStats = {
-    total: clients.length,
-    ativos: clients.filter(c => c.status === 'active').length,
-    vips: clients.filter(c => c.status === 'vip').length,
-    inativos: clients.filter(c => c.status === 'inactive').length,
+    total: clients?.length || 0,
+    ativos: clients?.filter(c => c?.status === 'active')?.length || 0,
+    vips: clients?.filter(c => c?.status === 'vip')?.length || 0,
+    inativos: clients?.filter(c => c?.status === 'inactive')?.length || 0,
     aniversariantes: getBirthdayCount(),
-    comCashback: clients.filter(c => c.cashback > 0).length,
+    comCashback: clients?.filter(c => (c?.cashback || 0) > 0)?.length || 0,
   };
   
   // Obter todas as tags únicas dos clientes
@@ -757,6 +789,8 @@ export default function Clientes() {
               inactiveClients={clientStats.inativos}
               birthdayClients={clientStats.aniversariantes}
               cashbackClients={clientStats.comCashback}
+              birthdaysThisMonth={clientStats.aniversariantes}
+              birthdaysLastMonth={clientStats.aniversariantes - 2}
             />
           </div>
         </Card>
@@ -819,7 +853,7 @@ export default function Clientes() {
               Inativos ({clientStats.inativos})
             </TabsTrigger>
             <TabsTrigger value="aniversariantes" className="data-[state=active]:bg-primary/10 text-xs rounded-md py-2">
-              <Cake className="h-4 w-4 mr-1 text-pink-500" />
+              <Cake className="h-4 w-4 mr-1 text-[#db2777]" />
               Aniversários ({clientStats.aniversariantes})
             </TabsTrigger>
             <TabsTrigger value="cashback" className="data-[state=active]:bg-primary/10 text-xs rounded-md py-2">

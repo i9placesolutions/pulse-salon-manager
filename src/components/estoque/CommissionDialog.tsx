@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -15,6 +14,14 @@ import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Product } from "@/types/stock";
 import { formatCurrency } from "@/utils/currency";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Settings, Percent } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface CommissionDialogProps {
   product: Product;
@@ -91,7 +98,22 @@ export function CommissionDialog({
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline">Configurar Comissões</Button>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
+                variant="ghost" 
+                size="icon"
+                className="h-8 w-8 text-purple-700 hover:text-purple-500 hover:bg-purple-50"
+              >
+                <Percent className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Configurar Comissões</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>

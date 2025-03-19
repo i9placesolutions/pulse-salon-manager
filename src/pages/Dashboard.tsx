@@ -1,6 +1,6 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 import { 
   Calendar, 
   Plus, 
@@ -14,7 +14,8 @@ import {
   ArrowDownRight,
   BarChart3,
   TrendingUp,
-  ShoppingBag
+  ShoppingBag,
+  Filter
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MetricsGrid } from "@/components/dashboard/MetricsGrid";
@@ -29,6 +30,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   BarChart,
   Bar,
@@ -127,34 +135,53 @@ const revenueData = [
   { date: "07/03", revenue: 5000, expenses: 2600 }
 ];
 
-const COLORS = ['#dc8c95', '#f3a0a7', '#f7b9be', '#fbd2d6', '#ffebed'];
+const COLORS = ['#db2777', '#db2777cc', '#db277799', '#db277766', '#db277733'];
 
 export default function Dashboard() {
   const [period, setPeriod] = useState<string>("daily");
+  const [periodoFilter, setPeriodoFilter] = useState<string>("30dias");
+  const navigate = useNavigate();
   
-  const handleExportReport = () => {
-    // Aqui seria implementada a lógica de exportação
-    console.log("Exportando relatório...");
-  };
+  // Lista de períodos para filtro
+  const periodos = [
+    { id: "7dias", nome: "Últimos 7 dias" },
+    { id: "30dias", nome: "Últimos 30 dias" },
+    { id: "90dias", nome: "Últimos 90 dias" },
+    { id: "mesAtual", nome: "Mês atual" },
+    { id: "mesAnterior", nome: "Mês anterior" }
+  ];
 
   return (
     <div className="space-y-6">
-      {/* Header com Ações Rápidas */}
+      {/* Header com Filtros */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <h1 className="text-2xl font-semibold text-neutral">Dashboard</h1>
-          <div className="flex flex-wrap gap-2">
-          <Button className="bg-[#dc8c95] text-black hover:bg-[#c47a82]" size="sm">
-            <Plus className="mr-2 h-4 w-4" />
-            Novo Agendamento
+        <div className="flex flex-wrap gap-2 items-center">
+          <Button 
+            className="bg-[#db2777] text-white hover:bg-[#be185d] mr-2" 
+            onClick={() => navigate("/appointments")}
+          >
+            <Calendar className="mr-2 h-4 w-4" />
+            Agendamentos
           </Button>
-          <Button variant="outline" size="sm">
-            <DollarSign className="mr-2 h-4 w-4" />
-            Registrar Pagamento
-          </Button>
-          <Button variant="outline" size="sm" onClick={handleExportReport}>
-            <Download className="mr-2 h-4 w-4" />
-            Exportar Relatório
-          </Button>
+
+          <div className="flex items-center gap-1">
+            <Filter className="h-4 w-4 text-gray-500" />
+            <span className="text-sm font-medium text-gray-700">Filtrar por:</span>
+          </div>
+          
+          <Select value={periodoFilter} onValueChange={setPeriodoFilter}>
+            <SelectTrigger className="h-9 w-[160px]">
+              <SelectValue placeholder="Período" />
+            </SelectTrigger>
+            <SelectContent>
+              {periodos.map((periodo) => (
+                <SelectItem key={periodo.id} value={periodo.id}>
+                  {periodo.nome}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
@@ -204,7 +231,7 @@ export default function Dashboard() {
                     formatter={(value: number) => [formatCurrency(value)]}
                     labelStyle={{ color: '#666' }}
                   />
-                  <Bar dataKey="revenue" name="Receita" fill="#dc8c95" />
+                  <Bar dataKey="revenue" name="Receita" fill="#db2777" />
                   <Bar dataKey="expenses" name="Despesas" fill="#94a3b8" />
                 </BarChart>
               </ResponsiveContainer>

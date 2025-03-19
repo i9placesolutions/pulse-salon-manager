@@ -33,7 +33,7 @@ export const PerformanceMetrics = ({ performance }: PerformanceMetricsProps) => 
   }));
   
   // Cores para o gráfico de pizza
-  const COLORS = ['#dc8c95', '#8884d8', '#82ca9d', '#ffc658', '#ff8042'];
+  const COLORS = ['#db2777', '#8884d8', '#82ca9d', '#ffc658', '#ff8042'];
 
   return (
     <div className="space-y-6">
@@ -122,7 +122,7 @@ export const PerformanceMetrics = ({ performance }: PerformanceMetricsProps) => 
                   formatter={(value) => formatCurrency(Number(value))}
                   labelFormatter={(label) => `Mês: ${label}`}
                 />
-                <Bar dataKey="revenue" fill="#dc8c95" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="revenue" fill="#db2777" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>

@@ -22,6 +22,14 @@ import { CalendarIcon, CheckCircle2, UserPlus, X, AlertTriangle } from "lucide-r
 import { format, isValid, parse } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+  SheetClose
+} from "@/components/ui/sheet";
 
 interface NewClientDialogProps {
   isOpen: boolean;
@@ -176,207 +184,209 @@ export function NewClientDialog({ isOpen, onClose, onSave }: NewClientDialogProp
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px] p-0 overflow-hidden">
-        <DialogHeader className="bg-gradient-to-r from-primary/30 to-primary/10 p-6">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
-              <UserPlus className="h-4 w-4 text-primary-dark" />
-            </div>
-            <DialogTitle className="text-xl">Novo Cliente</DialogTitle>
-          </div>
-          <DialogDescription>
-            Cadastre um novo cliente com poucos dados. 
-            Complete o perfil mais tarde se necessário.
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="p-6 space-y-5">
-          {/* Nome completo */}
-          <div className="space-y-2">
+    <Sheet open={isOpen} onOpenChange={onClose}>
+      <SheetContent side="right" className="p-0 w-full max-w-full sm:max-w-2xl border-l flex flex-col h-[100dvh] bg-white">
+        {/* Cabeçalho fixo */}
+        <div className="sticky top-0 z-10 bg-gradient-to-r from-blue-600 to-indigo-600 border-b">
+          <SheetHeader className="p-6">
             <div className="flex items-center justify-between">
-              <Label htmlFor="name" className="text-sm font-medium">
-                Nome completo <span className="text-red-500">*</span>
-              </Label>
-              {nameTouched && !nameError && (
-                <div className="flex items-center text-green-600 text-xs">
-                  <CheckCircle2 className="h-3 w-3 mr-1" />
-                  <span>Válido</span>
-                </div>
-              )}
+              <SheetTitle className="text-xl flex items-center gap-2 text-white">
+                <UserPlus className="h-5 w-5 text-white" />
+                Novo Cliente
+              </SheetTitle>
+              <SheetClose className="rounded-full opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 text-white">
+                <X className="h-4 w-4" />
+                <span className="sr-only">Fechar</span>
+              </SheetClose>
             </div>
-            <div className="relative">
-              <Input
-                id="name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                onBlur={() => setNameTouched(true)}
-                placeholder="Digite o nome do cliente"
-                className={cn(
-                  "transition-all pr-8",
-                  nameTouched && nameError 
-                    ? "border-red-400 focus-visible:ring-red-400" 
-                    : nameTouched && !nameError 
-                    ? "border-green-400 focus-visible:ring-green-400" 
-                    : ""
-                )}
-              />
-              {nameTouched && (nameError ? (
-                <AlertTriangle className="h-4 w-4 text-red-500 absolute right-3 top-1/2 transform -translate-y-1/2" />
-              ) : (
-                <CheckCircle2 className="h-4 w-4 text-green-600 absolute right-3 top-1/2 transform -translate-y-1/2" />
-              ))}
-            </div>
-            {nameError && (
-              <p className="text-xs text-red-500 mt-1">{nameError}</p>
-            )}
-          </div>
-
-          {/* WhatsApp */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="phone" className="text-sm font-medium">
-                WhatsApp <span className="text-red-500">*</span>
-              </Label>
-              {phoneTouched && !phoneError && (
-                <div className="flex items-center text-green-600 text-xs">
-                  <CheckCircle2 className="h-3 w-3 mr-1" />
-                  <span>Válido</span>
-                </div>
-              )}
-            </div>
-            <div className="relative">
-              <Input
-                id="phone"
-                value={phone}
-                onChange={handlePhoneChange}
-                onBlur={() => setPhoneTouched(true)}
-                placeholder="(00) 00000-0000"
-                className={cn(
-                  "transition-all pr-8",
-                  phoneTouched && phoneError 
-                    ? "border-red-400 focus-visible:ring-red-400" 
-                    : phoneTouched && !phoneError && phone.length > 0
-                    ? "border-green-400 focus-visible:ring-green-400" 
-                    : ""
-                )}
-              />
-              {phoneTouched && (phoneError ? (
-                <AlertTriangle className="h-4 w-4 text-red-500 absolute right-3 top-1/2 transform -translate-y-1/2" />
-              ) : phone.length > 0 && (
-                <CheckCircle2 className="h-4 w-4 text-green-600 absolute right-3 top-1/2 transform -translate-y-1/2" />
-              ))}
-            </div>
-            {phoneError ? (
-              <p className="text-xs text-red-500 mt-1">{phoneError}</p>
-            ) : (
-              <p className="text-xs text-muted-foreground">
-                Formato: (00) 00000-0000
-              </p>
-            )}
-          </div>
-
-          {/* Data de nascimento */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="birthDate" className="text-sm font-medium">
-                Data de nascimento <span className="text-red-500">*</span>
-              </Label>
-              {birthDateTouched && !birthDateError && birthDate && (
-                <div className="flex items-center text-green-600 text-xs">
-                  <CheckCircle2 className="h-3 w-3 mr-1" />
-                  <span>Válido</span>
-                </div>
-              )}
-            </div>
-            <div className="relative">
-              <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !birthDate && "text-muted-foreground",
-                      birthDateTouched && birthDateError 
-                        ? "border-red-400" 
-                        : birthDateTouched && !birthDateError && birthDate
-                        ? "border-green-400" 
-                        : ""
-                    )}
-                    onClick={() => setBirthDateTouched(true)}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {birthDate ? (
-                      format(birthDate, "dd/MM/yyyy", { locale: ptBR })
-                    ) : (
-                      <span>Selecione a data</span>
-                    )}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar
-                    mode="single"
-                    captionLayout="dropdown-buttons"
-                    selected={birthDate}
-                    onSelect={handleDateSelect}
-                    disabled={(date) => date > new Date()}
-                    initialFocus
-                    fromYear={1920}
-                    toYear={new Date().getFullYear()}
-                    locale={ptBR}
-                  />
-                </PopoverContent>
-              </Popover>
-              {birthDateTouched && birthDate && !birthDateError && (
-                <CheckCircle2 className="h-4 w-4 text-green-600 absolute right-3 top-1/2 transform -translate-y-1/2" />
-              )}
-            </div>
-            {birthDateError && (
-              <p className="text-xs text-red-500 mt-1">{birthDateError}</p>
-            )}
-          </div>
+            <SheetDescription className="text-blue-100">
+              Cadastre um novo cliente com poucos dados. Complete o perfil mais tarde se necessário.
+            </SheetDescription>
+          </SheetHeader>
         </div>
 
-        <DialogFooter className="p-6 pt-0">
-          <div className="w-full space-y-2">
-            <Button
-              type="submit"
-              onClick={handleSubmit}
-              disabled={!formValid || isSubmitting}
-              className={cn(
-                "w-full rounded-full bg-primary hover:bg-primary-dark h-10 transition-all duration-200",
-                !formValid && "opacity-50 cursor-not-allowed"
+        {/* Conteúdo rolável */}
+        <div className="flex-1 overflow-y-auto bg-white">
+          <div className="p-6 space-y-6">
+            {/* Nome completo */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="name" className="text-sm font-medium">
+                  Nome completo <span className="text-red-500">*</span>
+                </Label>
+                {nameTouched && !nameError && (
+                  <div className="flex items-center text-green-600 text-xs">
+                    <CheckCircle2 className="h-3 w-3 mr-1" />
+                    <span>Válido</span>
+                  </div>
+                )}
+              </div>
+              <div className="relative">
+                <Input
+                  id="name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  onBlur={() => setNameTouched(true)}
+                  placeholder="Digite o nome do cliente"
+                  className={cn(
+                    "transition-all pr-8",
+                    nameTouched && nameError 
+                      ? "border-red-400 focus-visible:ring-red-400" 
+                      : nameTouched && !nameError 
+                      ? "border-green-400 focus-visible:ring-green-400" 
+                      : ""
+                  )}
+                />
+                {nameTouched && (nameError ? (
+                  <AlertTriangle className="h-4 w-4 text-red-500 absolute right-3 top-1/2 transform -translate-y-1/2" />
+                ) : (
+                  <CheckCircle2 className="h-4 w-4 text-green-600 absolute right-3 top-1/2 transform -translate-y-1/2" />
+                ))}
+              </div>
+              {nameError && (
+                <p className="text-xs text-red-500 mt-1">{nameError}</p>
               )}
-            >
-              {isSubmitting ? (
-                <div className="flex items-center">
-                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Salvando...
-                </div>
-              ) : (
-                "Salvar Cliente"
-              )}
-            </Button>
-            <Button
-              variant="outline"
-              onClick={onClose}
-              className="w-full rounded-full border-gray-300 text-neutral"
-            >
-              <X className="h-4 w-4 mr-2" />
-              Cancelar
-            </Button>
+            </div>
 
-            <div className="text-center mt-3">
-              <p className="text-xs text-muted-foreground">
-                <span className="text-red-500">*</span> Campos obrigatórios
+            {/* WhatsApp */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="phone" className="text-sm font-medium">
+                  WhatsApp <span className="text-red-500">*</span>
+                </Label>
+                {phoneTouched && !phoneError && (
+                  <div className="flex items-center text-green-600 text-xs">
+                    <CheckCircle2 className="h-3 w-3 mr-1" />
+                    <span>Válido</span>
+                  </div>
+                )}
+              </div>
+              <div className="relative">
+                <Input
+                  id="phone"
+                  value={phone}
+                  onChange={handlePhoneChange}
+                  onBlur={() => setPhoneTouched(true)}
+                  placeholder="(00) 00000-0000"
+                  className={cn(
+                    "transition-all pr-8",
+                    phoneTouched && phoneError 
+                      ? "border-red-400 focus-visible:ring-red-400" 
+                      : phoneTouched && !phoneError 
+                      ? "border-green-400 focus-visible:ring-green-400" 
+                      : ""
+                  )}
+                />
+                {phoneTouched && (phoneError ? (
+                  <AlertTriangle className="h-4 w-4 text-red-500 absolute right-3 top-1/2 transform -translate-y-1/2" />
+                ) : (
+                  <CheckCircle2 className="h-4 w-4 text-green-600 absolute right-3 top-1/2 transform -translate-y-1/2" />
+                ))}
+              </div>
+              {phoneError && (
+                <p className="text-xs text-red-500 mt-1">{phoneError}</p>
+              )}
+            </div>
+
+            {/* Data de Nascimento */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="birthdate" className="text-sm font-medium">
+                  Data de Nascimento <span className="text-red-500">*</span>
+                </Label>
+                {birthDateTouched && !birthDateError && birthDate && (
+                  <div className="flex items-center text-green-600 text-xs">
+                    <CheckCircle2 className="h-3 w-3 mr-1" />
+                    <span>Válido</span>
+                  </div>
+                )}
+              </div>
+              <div className="relative">
+                <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+                  <PopoverTrigger asChild>
+                    <div className="relative">
+                      <Button
+                        variant="outline"
+                        onClick={() => setCalendarOpen(true)}
+                        className={cn(
+                          "w-full justify-start text-left font-normal pr-8",
+                          !birthDate && "text-muted-foreground",
+                          birthDateTouched && birthDateError 
+                            ? "border-red-400 focus-visible:ring-red-400" 
+                            : birthDateTouched && !birthDateError && birthDate
+                            ? "border-green-400 focus-visible:ring-green-400" 
+                            : ""
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {birthDate ? (
+                          format(birthDate, "dd 'de' MMMM 'de' yyyy", { locale: ptBR })
+                        ) : (
+                          <span>Selecionar data</span>
+                        )}
+                      </Button>
+                      {birthDateTouched && (birthDateError ? (
+                        <AlertTriangle className="h-4 w-4 text-red-500 absolute right-3 top-1/2 transform -translate-y-1/2" />
+                      ) : birthDate && (
+                        <CheckCircle2 className="h-4 w-4 text-green-600 absolute right-3 top-1/2 transform -translate-y-1/2" />
+                      ))}
+                    </div>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={birthDate}
+                      onSelect={handleDateSelect}
+                      onDayClick={() => setBirthDateTouched(true)}
+                      disabled={(date) => date > new Date()}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+              {birthDateError && (
+                <p className="text-xs text-red-500 mt-1">{birthDateError}</p>
+              )}
+            </div>
+
+            <div className="my-6">
+              <p className="text-sm text-muted-foreground italic">
+                Todos os campos marcados com <span className="text-red-500">*</span> são obrigatórios. 
+                Informações adicionais podem ser preenchidas posteriormente.
               </p>
             </div>
           </div>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </div>
+        
+        {/* Rodapé fixo */}
+        <div className="sticky bottom-0 mt-auto p-6 border-t bg-white shadow-sm">
+          <div className="flex flex-row gap-3 w-full justify-end">
+            <Button 
+              variant="outline" 
+              onClick={onClose}
+            >
+              Cancelar
+            </Button>
+            <Button 
+              variant="pink"
+              onClick={handleSubmit}
+              disabled={!formValid || isSubmitting}
+            >
+              {isSubmitting ? (
+                <>
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent mr-2"></span>
+                  Cadastrando...
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 className="mr-2 h-4 w-4" />
+                  Salvar Cliente
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
+      </SheetContent>
+    </Sheet>
   );
 } 

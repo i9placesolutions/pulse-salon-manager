@@ -25,7 +25,7 @@ import { useToast } from "@/hooks/use-toast";
 
 // Cores predefinidas para especialidades
 const SPECIALTY_COLORS = [
-  "#dc8c95", // Rosa
+  "#db2777", // Rosa
   "#8884d8", // Roxo
   "#82ca9d", // Verde
   "#ffc658", // Amarelo

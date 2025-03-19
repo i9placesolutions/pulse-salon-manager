@@ -1,12 +1,4 @@
 import { useState, useEffect } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { 
@@ -29,6 +21,14 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetClose
+} from "@/components/ui/sheet";
 
 // Mock de serviços para seleção
 const mockAvailableServices: Service[] = [
@@ -319,252 +319,273 @@ export function ServicePackageForm({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] p-0 overflow-hidden bg-white">
-        <DialogHeader className="px-6 pt-6 pb-4 border-b bg-muted/30">
-          <DialogTitle className="text-xl">
-            {servicePackage ? "Editar Pacote" : "Novo Pacote de Serviços"}
-          </DialogTitle>
-          <DialogDescription>
-            Crie um pacote com desconto em serviços e produtos combinados
-          </DialogDescription>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-6 px-6 py-4 max-h-[70vh] overflow-y-auto">
-          <div className="grid grid-cols-1 gap-4">
-            <div className="space-y-2">
-              <label htmlFor="name" className="text-sm font-medium">
-                Nome do Pacote <span className="text-red-500">*</span>
-              </label>
-              <Input
-                id="name"
-                placeholder="Ex: Dia da Noiva"
-                value={formData.name}
-                onChange={(e) =>
-                  setFormData({ ...formData, name: e.target.value })
-                }
-                className="w-full"
-                required
-              />
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="right" className="p-0 w-full max-w-full sm:max-w-2xl border-l flex flex-col h-[100dvh] bg-white">
+        {/* Cabeçalho fixo */}
+        <div className="sticky top-0 z-10 bg-gradient-to-r from-blue-600 to-indigo-600 border-b">
+          <SheetHeader className="p-6">
+            <div className="flex items-center justify-between">
+              <SheetTitle className="text-xl flex items-center gap-2 text-white">
+                <Package className="h-5 w-5 text-white" />
+                {servicePackage ? "Editar Pacote" : "Novo Pacote de Serviços"}
+              </SheetTitle>
+              <SheetClose className="rounded-full opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 text-white">
+                <X className="h-4 w-4" />
+                <span className="sr-only">Fechar</span>
+              </SheetClose>
             </div>
-
-            <div className="space-y-2">
-              <label htmlFor="description" className="text-sm font-medium">
-                Descrição
-              </label>
-              <Textarea
-                id="description"
-                placeholder="Descrição detalhada do pacote..."
-                value={formData.description}
-                onChange={(e) =>
-                  setFormData({ ...formData, description: e.target.value })
-                }
-                className="h-20 resize-none"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
+            <SheetDescription className="text-blue-100">
+              Crie um pacote com desconto em serviços e produtos combinados
+            </SheetDescription>
+          </SheetHeader>
+        </div>
+        
+        {/* Conteúdo rolável */}
+        <div className="flex-1 overflow-y-auto bg-white p-6">
+          <form className="space-y-6">
+            <div className="grid grid-cols-1 gap-4">
               <div className="space-y-2">
-                <label htmlFor="discount" className="text-sm font-medium">
-                  Desconto (%) <span className="text-red-500">*</span>
+                <label htmlFor="name" className="text-sm font-medium">
+                  Nome do Pacote <span className="text-red-500">*</span>
                 </label>
                 <Input
-                  id="discount"
-                  type="number"
-                  min="0"
-                  max="100"
-                  value={formData.discount}
-                  onChange={handleDiscountChange}
+                  id="name"
+                  placeholder="Ex: Dia da Noiva"
+                  value={formData.name}
+                  onChange={(e) =>
+                    setFormData({ ...formData, name: e.target.value })
+                  }
                   className="w-full"
                   required
                 />
-                {formData.discount && formData.discount > 100 && (
-                  <p className="text-xs text-red-500 mt-1">
-                    O desconto não pode ser maior que 100%
-                  </p>
-                )}
               </div>
 
               <div className="space-y-2">
-                <label htmlFor="status" className="text-sm font-medium">
-                  Status
+                <label htmlFor="description" className="text-sm font-medium">
+                  Descrição
                 </label>
-                <div className="flex items-center justify-between rounded-md border p-3">
-                  <span className="text-sm">Ativo</span>
-                  <Switch
-                    checked={formData.status === "active"}
-                    onCheckedChange={(checked) =>
-                      setFormData({
-                        ...formData,
-                        status: checked ? "active" : "inactive",
-                      })
-                    }
+                <Textarea
+                  id="description"
+                  placeholder="Descrição detalhada do pacote..."
+                  value={formData.description}
+                  onChange={(e) =>
+                    setFormData({ ...formData, description: e.target.value })
+                  }
+                  className="h-20 resize-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label htmlFor="discount" className="text-sm font-medium">
+                    Desconto (%) <span className="text-red-500">*</span>
+                  </label>
+                  <Input
+                    id="discount"
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={formData.discount}
+                    onChange={handleDiscountChange}
+                    className="w-full"
+                    required
                   />
+                  {formData.discount && formData.discount > 100 && (
+                    <p className="text-xs text-red-500 mt-1">
+                      O desconto não pode ser maior que 100%
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <label htmlFor="status" className="text-sm font-medium">
+                    Status
+                  </label>
+                  <div className="flex items-center justify-between rounded-md border p-3">
+                    <span className="text-sm">Ativo</span>
+                    <Switch
+                      checked={formData.status === "active"}
+                      onCheckedChange={(checked) =>
+                        setFormData({
+                          ...formData,
+                          status: checked ? "active" : "inactive",
+                        })
+                      }
+                    />
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <div className="p-4 border rounded-md bg-muted/40 space-y-3">
-              <Tabs defaultValue="services" value={activeTab} onValueChange={setActiveTab}>
-                <div className="flex items-center justify-between mb-3">
-                  <TabsList>
-                    <TabsTrigger value="services" className="flex items-center gap-1">
-                      <Package className="h-4 w-4" />
-                      Serviços
-                    </TabsTrigger>
-                    <TabsTrigger value="products" className="flex items-center gap-1">
-                      <ShoppingBag className="h-4 w-4" />
-                      Produtos
-                    </TabsTrigger>
-                  </TabsList>
-                </div>
-                
-                <TabsContent value="services" className="space-y-4">
-                  <div className="flex items-center gap-2">
-                    <Select value={selectedServiceId.toString()} onValueChange={(value) => setSelectedServiceId(Number(value))}>
-                      <SelectTrigger className="flex-1">
-                        <SelectValue placeholder="Selecione um serviço" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {mockAvailableServices.map((service) => (
-                          <SelectItem key={service.id} value={service.id.toString()}>
-                            {service.name} - {formatCurrency(service.price)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <Button 
-                      type="button" 
-                      variant="outline" 
-                      onClick={handleAddService}
-                      className="shrink-0"
-                    >
-                      <Plus className="h-4 w-4 mr-1" />
-                      Adicionar
-                    </Button>
+              <div className="p-4 border rounded-md bg-muted/40 space-y-3">
+                <Tabs defaultValue="services" value={activeTab} onValueChange={setActiveTab}>
+                  <div className="flex items-center justify-between mb-3">
+                    <TabsList>
+                      <TabsTrigger value="services" className="flex items-center gap-1">
+                        <Package className="h-4 w-4" />
+                        Serviços
+                      </TabsTrigger>
+                      <TabsTrigger value="products" className="flex items-center gap-1">
+                        <ShoppingBag className="h-4 w-4" />
+                        Produtos
+                      </TabsTrigger>
+                    </TabsList>
                   </div>
                   
-                  {selectedServices.length > 0 ? (
-                    <div className="space-y-2">
-                      {selectedServices.map((service) => (
-                        <div key={service.id} className="flex items-center justify-between p-2 bg-background rounded border">
-                          <span>{service.name}</span>
-                          <div className="flex items-center gap-2">
-                            <span className="text-muted-foreground">{formatCurrency(service.price)}</span>
-                            <Button 
-                              type="button" 
-                              variant="ghost" 
-                              size="sm" 
-                              onClick={() => handleRemoveService(service.id)}
-                              className="h-8 text-red-500 hover:text-red-700 hover:bg-red-50"
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
+                  <TabsContent value="services" className="space-y-4">
+                    <div className="flex items-center gap-2">
+                      <Select value={selectedServiceId.toString()} onValueChange={(value) => setSelectedServiceId(Number(value))}>
+                        <SelectTrigger className="flex-1">
+                          <SelectValue placeholder="Selecione um serviço" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {mockAvailableServices.map((service) => (
+                            <SelectItem key={service.id} value={service.id.toString()}>
+                              {service.name} - {formatCurrency(service.price)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        onClick={handleAddService}
+                        className="shrink-0"
+                      >
+                        <Plus className="h-4 w-4 mr-1" />
+                        Adicionar
+                      </Button>
+                    </div>
+                    
+                    {selectedServices.length > 0 ? (
+                      <div className="space-y-2">
+                        {selectedServices.map((service) => (
+                          <div key={service.id} className="flex items-center justify-between p-2 bg-background rounded border">
+                            <span>{service.name}</span>
+                            <div className="flex items-center gap-2">
+                              <span className="text-muted-foreground">{formatCurrency(service.price)}</span>
+                              <Button 
+                                type="button" 
+                                variant="ghost" 
+                                size="sm" 
+                                onClick={() => handleRemoveService(service.id)}
+                                className="h-8 text-red-500 hover:text-red-700 hover:bg-red-50"
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </div>
                           </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-6 text-muted-foreground text-sm">
-                      Nenhum serviço adicionado ao pacote.
-                    </div>
-                  )}
-                </TabsContent>
-                
-                <TabsContent value="products" className="space-y-4">
-                  <div className="flex items-center gap-2">
-                    <Select value={selectedProductId.toString()} onValueChange={(value) => setSelectedProductId(Number(value))}>
-                      <SelectTrigger className="flex-1">
-                        <SelectValue placeholder="Selecione um produto" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {mockAvailableProducts.map((product) => (
-                          <SelectItem key={product.id} value={product.id.toString()}>
-                            {product.name} - {formatCurrency(product.price)}
-                          </SelectItem>
                         ))}
-                      </SelectContent>
-                    </Select>
-                    <Input
-                      type="number"
-                      min="1"
-                      value={productQuantity}
-                      onChange={(e) => setProductQuantity(parseInt(e.target.value) || 1)}
-                      className="w-[80px]"
-                      placeholder="Qtd"
-                    />
-                    <Button 
-                      type="button" 
-                      variant="outline" 
-                      onClick={handleAddProduct}
-                      className="shrink-0"
-                    >
-                      <Plus className="h-4 w-4 mr-1" />
-                      Adicionar
-                    </Button>
-                  </div>
+                      </div>
+                    ) : (
+                      <div className="text-center py-6 text-muted-foreground text-sm">
+                        Nenhum serviço adicionado ao pacote.
+                      </div>
+                    )}
+                  </TabsContent>
                   
-                  {selectedProducts.length > 0 ? (
-                    <div className="space-y-2">
-                      {selectedProducts.map((product) => (
-                        <div key={product.id} className="flex items-center justify-between p-2 bg-background rounded border">
-                          <div>
-                            <span>{product.name}</span>
-                            <span className="text-xs text-muted-foreground ml-2">
-                              (Qtd: {product.quantity})
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-muted-foreground">{formatCurrency(product.price * product.quantity)}</span>
-                            <Button 
-                              type="button" 
-                              variant="ghost" 
-                              size="sm" 
-                              onClick={() => handleRemoveProduct(product.id)}
-                              className="h-8 text-red-500 hover:text-red-700 hover:bg-red-50"
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      ))}
+                  <TabsContent value="products" className="space-y-4">
+                    <div className="flex items-center gap-2">
+                      <Select value={selectedProductId.toString()} onValueChange={(value) => setSelectedProductId(Number(value))}>
+                        <SelectTrigger className="flex-1">
+                          <SelectValue placeholder="Selecione um produto" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {mockAvailableProducts.map((product) => (
+                            <SelectItem key={product.id} value={product.id.toString()}>
+                              {product.name} - {formatCurrency(product.price)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Input
+                        type="number"
+                        min="1"
+                        value={productQuantity}
+                        onChange={(e) => setProductQuantity(parseInt(e.target.value) || 1)}
+                        className="w-[80px]"
+                        placeholder="Qtd"
+                      />
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        onClick={handleAddProduct}
+                        className="shrink-0"
+                      >
+                        <Plus className="h-4 w-4 mr-1" />
+                        Adicionar
+                      </Button>
                     </div>
-                  ) : (
-                    <div className="text-center py-6 text-muted-foreground text-sm">
-                      Nenhum produto adicionado ao pacote.
+                    
+                    {selectedProducts.length > 0 ? (
+                      <div className="space-y-2">
+                        {selectedProducts.map((product) => (
+                          <div key={product.id} className="flex items-center justify-between p-2 bg-background rounded border">
+                            <div>
+                              <span>{product.name}</span>
+                              <span className="text-xs text-muted-foreground ml-2">
+                                (Qtd: {product.quantity})
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-muted-foreground">{formatCurrency(product.price * product.quantity)}</span>
+                              <Button 
+                                type="button" 
+                                variant="ghost" 
+                                size="sm" 
+                                onClick={() => handleRemoveProduct(product.id)}
+                                className="h-8 text-red-500 hover:text-red-700 hover:bg-red-50"
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-6 text-muted-foreground text-sm">
+                        Nenhum produto adicionado ao pacote.
+                      </div>
+                    )}
+                  </TabsContent>
+                </Tabs>
+                
+                {(selectedServices.length > 0 || selectedProducts.length > 0) && (
+                  <div className="flex items-center justify-between pt-2 border-t mt-2">
+                    <div>
+                      <div className="text-sm font-medium">Valor Total</div>
+                      <div className="text-sm text-muted-foreground">Desconto de {formData.discount}%</div>
                     </div>
-                  )}
-                </TabsContent>
-              </Tabs>
-              
-              {(selectedServices.length > 0 || selectedProducts.length > 0) && (
-                <div className="flex items-center justify-between pt-2 border-t mt-2">
-                  <div>
-                    <div className="text-sm font-medium">Valor Total</div>
-                    <div className="text-sm text-muted-foreground">Desconto de {formData.discount}%</div>
+                    <div className="text-right">
+                      <div className="text-sm line-through text-muted-foreground">{formatCurrency(calculateTotalPrice())}</div>
+                      <div className="font-medium text-primary">{formatCurrency(calculateDiscountedPrice())}</div>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <div className="text-sm line-through text-muted-foreground">{formatCurrency(calculateTotalPrice())}</div>
-                    <div className="font-medium text-primary">{formatCurrency(calculateDiscountedPrice())}</div>
-                  </div>
-                </div>
-              )}
+                )}
+              </div>
             </div>
-          </div>
-          
-          <DialogFooter className="px-0 pt-2">
-            <Button variant="outline" type="button" onClick={() => onOpenChange(false)}>
+          </form>
+        </div>
+        
+        {/* Rodapé fixo */}
+        <div className="sticky bottom-0 mt-auto p-6 border-t bg-white shadow-sm">
+          <div className="flex flex-row gap-3 w-full justify-end">
+            <Button 
+              variant="outline" 
+              type="button" 
+              onClick={() => onOpenChange(false)}
+            >
               Cancelar
             </Button>
             <Button 
               type="submit" 
-              className="bg-primary hover:bg-primary/90"
+              onClick={handleSubmit}
               disabled={selectedServices.length === 0 || (formData.discount || 0) > 100}
             >
               {servicePackage ? "Atualizar" : "Criar"} Pacote
             </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+          </div>
+        </div>
+      </SheetContent>
+    </Sheet>
   );
 }

@@ -60,7 +60,7 @@ export const RevenueChart = ({ data, period, setPeriod }: RevenueChartProps) => 
                 formatter={(value: number) => [formatCurrency(value), "Faturamento"]}
                 labelStyle={{ color: '#666' }}
               />
-              <Bar dataKey="revenue" fill="#dc8c95" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="revenue" fill="#db2777" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>

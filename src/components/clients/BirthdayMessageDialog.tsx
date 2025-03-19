@@ -76,19 +76,19 @@ export function BirthdayMessageDialog({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Cake className="h-5 w-5 text-pink-500" />
-            Mensagem de Aniversário
-          </DialogTitle>
-          <DialogDescription>
-            Envie uma mensagem de aniversário personalizada para {client.name}.
-          </DialogDescription>
+          <div className="flex-1 flex flex-col">
+            <h3 className="font-medium text-lg">
+              <Cake className="h-5 w-5 text-[#db2777] inline mr-2" />
+              Mensagem de Aniversário
+            </h3>
+            <p className="text-sm text-muted-foreground">Envie uma mensagem personalizada para os clientes no dia do aniversário.</p>
+          </div>
         </DialogHeader>
 
         <div className="mt-2 space-y-4">
-          <div className="bg-pink-50 rounded-lg p-4 flex items-center gap-3">
-            <div className="w-12 h-12 rounded-full bg-pink-100 flex items-center justify-center">
-              <Cake className="h-6 w-6 text-pink-500" />
+          <div className="bg-[#db2777]/10 rounded-lg p-4 flex items-center gap-3">
+            <div className="w-12 h-12 rounded-full bg-[#db2777]/20 flex items-center justify-center">
+              <Cake className="h-6 w-6 text-[#db2777]" />
             </div>
             <div>
               <p className="font-medium">{client.name}</p>
@@ -124,7 +124,9 @@ export function BirthdayMessageDialog({
           {includeOffer && (
             <div className="space-y-1.5">
               <Label htmlFor="offer" className="flex items-center gap-1.5">
-                <Gift className="h-4 w-4 text-pink-500" />
+                <div className="flex-shrink-0">
+                  <Gift className="h-4 w-4 text-[#db2777]" />
+                </div>
                 Oferta especial
               </Label>
               <Input

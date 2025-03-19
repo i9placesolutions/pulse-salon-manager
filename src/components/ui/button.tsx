@@ -9,15 +9,16 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/90",
-        destructive:
-          "bg-destructive text-destructive-foreground hover:bg-destructive/90",
-        outline:
-          "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
-        secondary:
-          "bg-secondary text-secondary-foreground hover:bg-secondary/80",
-        ghost: "hover:bg-accent hover:text-accent-foreground",
-        link: "text-primary underline-offset-4 hover:underline",
+        default: "bg-blue-600 text-white hover:bg-blue-700 shadow-sm",
+        destructive: "bg-red-600 text-white hover:bg-red-700 shadow-sm",
+        outline: "border border-blue-200 bg-white text-blue-700 hover:bg-blue-50 hover:border-blue-300",
+        secondary: "bg-blue-100 text-blue-800 hover:bg-blue-200",
+        ghost: "text-blue-700 hover:bg-blue-50 hover:text-blue-800",
+        link: "text-blue-600 underline-offset-4 hover:underline",
+        pink: "bg-[#db2777] text-white hover:bg-[#be185d] shadow-sm",
+        "pink-outline": "border border-[#db2777]/30 bg-white text-[#db2777] hover:bg-[#db2777]/10 hover:border-[#db2777]/60",
+        "pink-secondary": "bg-[#db2777]/10 text-[#db2777] hover:bg-[#db2777]/20",
+        "pink-ghost": "text-[#db2777] hover:bg-[#db2777]/10 hover:text-[#be185d]",
       },
       size: {
         default: "h-10 px-4 py-2",

@@ -1,8 +1,9 @@
-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Supplier } from "@/types/stock";
-import { Building2, Phone, Mail, MapPin, Edit, Trash2 } from "lucide-react";
+import { Building2, Phone, Mail, MapPin, Edit, Trash2, FileText, History } from "lucide-react";
+import { useState } from "react";
+import { SupplierDetails } from "./SupplierDetails";
 
 interface FornecedorListProps {
   suppliers: Supplier[];
@@ -15,6 +16,14 @@ export function FornecedorList({
   onEdit,
   onDelete,
 }: FornecedorListProps) {
+  const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(null);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+
+  const handleViewDetails = (supplier: Supplier) => {
+    setSelectedSupplier(supplier);
+    setIsDetailsOpen(true);
+  };
+
   return (
     <div className="grid gap-4">
       {suppliers.map((supplier) => (
@@ -44,6 +53,15 @@ export function FornecedorList({
             </div>
             <div className="flex items-center gap-2">
               <Button
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-1"
+                onClick={() => handleViewDetails(supplier)}
+              >
+                <History className="h-4 w-4" />
+                <span>Pedidos</span>
+              </Button>
+              <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => onEdit(supplier)}
@@ -62,6 +80,12 @@ export function FornecedorList({
           </CardContent>
         </Card>
       ))}
+
+      <SupplierDetails 
+        open={isDetailsOpen}
+        onOpenChange={setIsDetailsOpen}
+        supplier={selectedSupplier}
+      />
     </div>
   );
 }

@@ -1,4 +1,3 @@
-
 import {
   BarChart,
   Bar,
@@ -66,7 +65,7 @@ export function EstoqueCharts({ products, movements }: EstoqueChartsProps) {
                 <YAxis />
                 <Tooltip />
                 <Legend />
-                <Bar dataKey="quantidade" fill="#dc8c95" />
+                <Bar dataKey="quantidade" fill="#db2777" />
               </BarChart>
             </ResponsiveContainer>
           </div>

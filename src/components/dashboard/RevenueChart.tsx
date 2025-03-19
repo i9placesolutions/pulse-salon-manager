@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/utils/currency";
@@ -91,8 +90,8 @@ export function RevenueChart({
               <Area
                 type="monotone"
                 dataKey="revenue"
-                stroke="#dc8c95"
-                fill="#fce7eb"
+                stroke="#db2777"
+                fill="#db277720"
                 strokeWidth={2}
               />
               <Area

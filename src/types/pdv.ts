@@ -1,20 +1,14 @@
-
 export interface CashierSession {
-  id: number;
-  openingDate: Date;
-  closingDate?: Date;
+  id: string;
+  openingDate: string;
+  closingDate: string | null;
   initialAmount: number;
-  finalAmount?: number;
+  finalAmount: number;
   status: 'open' | 'closed';
-  userId: number;
+  userId: string;
   sales: Sale[];
-  withdrawals: CashierOperation[];
-  supplies: CashierOperation[];
-  differences?: {
-    expected: number;
-    actual: number;
-    difference: number;
-  };
+  withdrawals: any[];
+  supplies: any[];
 }
 
 export interface CashierOperation {
@@ -27,56 +21,63 @@ export interface CashierOperation {
 }
 
 export interface Sale {
-  id: number;
+  id: string;
+  clientId: string;
   items: SaleItem[];
   total: number;
-  subtotal: number;
-  discount?: number;
-  discountType?: 'percentage' | 'fixed';
-  client?: {
-    id: number;
-    name: string;
-  };
-  professional?: {
-    id: number;
-    name: string;
-  };
   payments: Payment[];
-  status: 'pending' | 'completed' | 'canceled';
-  date: Date;
-  cashierSessionId: number;
+  status: 'draft' | 'pending' | 'completed' | 'cancelled';
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface SaleItem {
-  id: number;
-  type: 'service' | 'product';
+  id: string;
   name: string;
+  price: number;
   quantity: number;
-  unitPrice: number;
-  totalPrice: number;
-  discount?: number;
-  discountType?: 'percentage' | 'fixed';
-  professional?: {
-    id: number;
-    name: string;
-    commission: number;
-  };
+  category: string;
 }
 
 export interface Payment {
-  id: number;
-  method: 'credit' | 'debit' | 'pix' | 'cash';
+  method: 'cash' | 'credit' | 'debit' | 'pix';
   amount: number;
-  installments?: number;
-  change?: number;
-  status: 'pending' | 'completed' | 'failed';
-  date: Date;
 }
 
 export interface PDVState {
   cashierSession: CashierSession | null;
   currentSale: Sale | null;
-  recentSales: Sale[];
-  isDayStarted: boolean;
-  isProcessingPayment: boolean;
+  draftSales: Sale[];
+  pendingSales: Sale[];
+  completedSales: Sale[];
+  filters: SaleFilters;
+}
+
+export interface SaleFilters {
+  startDate: Date | null;
+  endDate: Date | null;
+  status: string | null;
+  clientId: string | null;
+  minAmount: number | null;
+  maxAmount: number | null;
+}
+
+export interface PaymentFormData {
+  method: 'cash' | 'credit' | 'debit' | 'pix';
+  amount: number;
+}
+
+export interface Client {
+  id: string;
+  name: string;
+  phone: string;
+  email: string;
+}
+
+export interface Product {
+  id: string;
+  name: string;
+  price: number;
+  category: string;
+  quantity: number;
 }

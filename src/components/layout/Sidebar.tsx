@@ -41,8 +41,6 @@ const menuItems: MenuItem[] = [
   { icon: UserSquare2, label: "Profissionais", path: "/profissionais", category: "gestao" },
   { icon: DollarSign, label: "Financeiro", path: "/financeiro", category: "gestao" },
   { icon: Package, label: "Estoque", path: "/estoque", category: "operacional" },
-  { icon: ShoppingCart, label: "PDV", path: "/pdv", category: "operacional" },
-  { icon: BarChart, label: "Relatórios", path: "/relatorios", category: "analise" },
   { icon: MessageSquare, label: "Marketing", path: "/marketing", category: "analise" },
   { icon: CreditCard, label: "Mensalidade", path: "/mensalidade", category: "configuracoes" },
   { icon: Settings, label: "Configurações", path: "/configuracoes", category: "configuracoes" },

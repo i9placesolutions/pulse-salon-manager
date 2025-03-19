@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Target, Bell, Zap, BarChart, MessageSquare, History } from "lucide-react";
 import { MetricsCard } from "@/components/marketing/MetricsCard";
@@ -14,8 +13,10 @@ import { marketingMetrics } from "@/components/marketing/marketingConstants";
 import { MessageHistory } from "@/components/marketing/MessageHistory";
 import { Button } from "@/components/ui/button";
 import type { MessageCampaignData } from "@/types/marketing";
+import { useLocation } from 'react-router-dom';
 
 export default function Marketing() {
+  const location = useLocation();
   const [selectedCampaignType, setSelectedCampaignType] = useState<string | null>(null);
   const [showMessageDialog, setShowMessageDialog] = useState(false);
   const [messageCampaignData, setMessageCampaignData] = useState<MessageCampaignData>({
@@ -29,6 +30,26 @@ export default function Marketing() {
   
   // Estado para armazenar as mensagens enviadas
   const [sentMessages, setSentMessages] = useState<any[]>([]);
+  
+  // Estado para controlar a aba ativa
+  const [activeTab, setActiveTab] = useState("campanhas");
+
+  // Processar parâmetros de consulta
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const tab = params.get('tab');
+    const campaignType = params.get('type');
+    
+    // Definir a aba ativa
+    if (tab) {
+      setActiveTab(tab);
+    }
+    
+    // Definir o tipo de campanha, se especificado
+    if (campaignType) {
+      setSelectedCampaignType(campaignType);
+    }
+  }, [location.search]);
 
   const handleNewMessage = () => {
     setShowMessageDialog(true);
@@ -95,7 +116,7 @@ export default function Marketing() {
         ))}
       </div>
 
-      <Tabs defaultValue="campanhas" className="space-y-4">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <TabsList className="grid w-full grid-cols-2 lg:grid-cols-5 gap-4">
           <TabsTrigger value="campanhas" className="gap-2">
             <Target className="h-4 w-4" />
@@ -130,8 +151,6 @@ export default function Marketing() {
             />
           </div>
         </TabsContent>
-
-
 
         <TabsContent value="aniversarios">
           <BirthdayAutomation />

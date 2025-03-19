@@ -2,20 +2,21 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Calendar, Clock, AlertCircle, X, Ban, CheckCircle2 } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useToast } from "@/components/ui/use-toast";
 import { cn } from "@/lib/utils";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+  SheetClose
+} from "@/components/ui/sheet";
 
 export interface BlockTimeFormData {
   startDate: string;
@@ -177,164 +178,175 @@ export const BlockTimeDialog = ({ open, onOpenChange, onConfirm }: BlockTimeDial
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px] max-h-[85vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center justify-center gap-2 text-xl font-semibold">
-            <Ban className="h-6 w-6 text-primary" />
-            Bloquear Horários
-          </DialogTitle>
-          <DialogDescription className="text-center text-sm text-muted-foreground">
-            Selecione o período em que o salão não aceitará agendamentos.
-          </DialogDescription>
-        </DialogHeader>
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="right" className="p-0 w-full max-w-full sm:max-w-2xl border-l flex flex-col h-[100dvh] bg-white">
+        {/* Cabeçalho fixo */}
+        <div className="sticky top-0 z-10 bg-gradient-to-r from-blue-600 to-indigo-600 border-b">
+          <SheetHeader className="p-6">
+            <div className="flex items-center justify-between">
+              <SheetTitle className="text-xl flex items-center gap-2 text-white">
+                <Ban className="h-5 w-5 text-white" />
+                Bloquear Horários
+              </SheetTitle>
+              <SheetClose className="rounded-full opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 text-white">
+                <X className="h-4 w-4" />
+                <span className="sr-only">Fechar</span>
+              </SheetClose>
+            </div>
+            <SheetDescription className="text-blue-100">
+              Selecione o período em que o salão não aceitará agendamentos.
+            </SheetDescription>
+          </SheetHeader>
+        </div>
         
-        <Separator className="my-4" />
-
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label className="text-sm font-medium flex items-center gap-1">
-                <Calendar className="h-4 w-4 text-muted-foreground" />
-                Período do Bloqueio <span className="text-destructive">*</span>
-              </Label>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label className="text-xs text-muted-foreground">Data Inicial</Label>
-                  <Input
-                    type="date"
-                    className={cn(
-                      touched.startDate && formErrors.startDate ? "border-destructive" : "",
-                      touched.startDate && !formErrors.startDate ? "border-green-500" : ""
+        {/* Conteúdo rolável */}
+        <div className="flex-1 overflow-y-auto bg-white p-6">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label className="text-sm font-medium flex items-center gap-1">
+                  <Calendar className="h-4 w-4 text-muted-foreground" />
+                  Período do Bloqueio <span className="text-destructive">*</span>
+                </Label>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-xs text-muted-foreground">Data Inicial</Label>
+                    <Input
+                      type="date"
+                      className={cn(
+                        touched.startDate && formErrors.startDate ? "border-destructive" : "",
+                        touched.startDate && !formErrors.startDate ? "border-green-500" : ""
+                      )}
+                      value={formData.startDate}
+                      min={format(new Date(), "yyyy-MM-dd")}
+                      onChange={(e) => handleFieldChange("startDate", e.target.value)}
+                      required
+                    />
+                    {touched.startDate && formErrors.startDate && (
+                      <div className="text-xs text-destructive flex items-center gap-1">
+                        <AlertCircle className="h-3 w-3" />
+                        {formErrors.startDate}
+                      </div>
                     )}
-                    value={formData.startDate}
-                    min={format(new Date(), "yyyy-MM-dd")}
-                    onChange={(e) => handleFieldChange("startDate", e.target.value)}
-                    required
-                  />
-                  {touched.startDate && formErrors.startDate && (
-                    <div className="text-xs text-destructive flex items-center gap-1">
-                      <AlertCircle className="h-3 w-3" />
-                      {formErrors.startDate}
-                    </div>
-                  )}
-                  {touched.startDate && !formErrors.startDate && (
-                    <div className="text-xs text-green-500 flex items-center gap-1">
-                      <CheckCircle2 className="h-3 w-3" />
-                      Data válida
-                    </div>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-xs text-muted-foreground">Data Final</Label>
-                  <Input
-                    type="date"
-                    className={cn(
-                      touched.endDate && formErrors.endDate ? "border-destructive" : "",
-                      touched.endDate && !formErrors.endDate ? "border-green-500" : ""
+                    {touched.startDate && !formErrors.startDate && (
+                      <div className="text-xs text-green-500 flex items-center gap-1">
+                        <CheckCircle2 className="h-3 w-3" />
+                        Data válida
+                      </div>
                     )}
-                    value={formData.endDate}
-                    min={formData.startDate}
-                    onChange={(e) => handleFieldChange("endDate", e.target.value)}
-                    required
-                  />
-                  {touched.endDate && formErrors.endDate && (
-                    <div className="text-xs text-destructive flex items-center gap-1">
-                      <AlertCircle className="h-3 w-3" />
-                      {formErrors.endDate}
-                    </div>
-                  )}
-                  {touched.endDate && !formErrors.endDate && (
-                    <div className="text-xs text-green-500 flex items-center gap-1">
-                      <CheckCircle2 className="h-3 w-3" />
-                      Data válida
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-sm font-medium flex items-center gap-1">
-                <Clock className="h-4 w-4 text-muted-foreground" />
-                Horário do Bloqueio <span className="text-destructive">*</span>
-              </Label>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label className="text-xs text-muted-foreground">Horário Inicial</Label>
-                  <Input
-                    type="time"
-                    className={cn(
-                      touched.startTime && formErrors.startTime ? "border-destructive" : "",
-                      touched.startTime && !formErrors.startTime ? "border-green-500" : ""
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs text-muted-foreground">Data Final</Label>
+                    <Input
+                      type="date"
+                      className={cn(
+                        touched.endDate && formErrors.endDate ? "border-destructive" : "",
+                        touched.endDate && !formErrors.endDate ? "border-green-500" : ""
+                      )}
+                      value={formData.endDate}
+                      min={formData.startDate}
+                      onChange={(e) => handleFieldChange("endDate", e.target.value)}
+                      required
+                    />
+                    {touched.endDate && formErrors.endDate && (
+                      <div className="text-xs text-destructive flex items-center gap-1">
+                        <AlertCircle className="h-3 w-3" />
+                        {formErrors.endDate}
+                      </div>
                     )}
-                    value={formData.startTime}
-                    onChange={(e) => handleFieldChange("startTime", e.target.value)}
-                    required
-                  />
-                  {touched.startTime && formErrors.startTime && (
-                    <div className="text-xs text-destructive flex items-center gap-1">
-                      <AlertCircle className="h-3 w-3" />
-                      {formErrors.startTime}
-                    </div>
-                  )}
-                  {touched.startTime && !formErrors.startTime && (
-                    <div className="text-xs text-green-500 flex items-center gap-1">
-                      <CheckCircle2 className="h-3 w-3" />
-                      Horário válido
-                    </div>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-xs text-muted-foreground">Horário Final</Label>
-                  <Input
-                    type="time"
-                    className={cn(
-                      touched.endTime && formErrors.endTime ? "border-destructive" : "",
-                      touched.endTime && !formErrors.endTime ? "border-green-500" : ""
+                    {touched.endDate && !formErrors.endDate && (
+                      <div className="text-xs text-green-500 flex items-center gap-1">
+                        <CheckCircle2 className="h-3 w-3" />
+                        Data válida
+                      </div>
                     )}
-                    value={formData.endTime}
-                    onChange={(e) => handleFieldChange("endTime", e.target.value)}
-                    required
-                  />
-                  {touched.endTime && formErrors.endTime && (
-                    <div className="text-xs text-destructive flex items-center gap-1">
-                      <AlertCircle className="h-3 w-3" />
-                      {formErrors.endTime}
-                    </div>
-                  )}
-                  {touched.endTime && !formErrors.endTime && (
-                    <div className="text-xs text-green-500 flex items-center gap-1">
-                      <CheckCircle2 className="h-3 w-3" />
-                      Horário válido
-                    </div>
-                  )}
+                  </div>
                 </div>
               </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm font-medium flex items-center gap-1">
+                  <Clock className="h-4 w-4 text-muted-foreground" />
+                  Horário do Bloqueio <span className="text-destructive">*</span>
+                </Label>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-xs text-muted-foreground">Horário Inicial</Label>
+                    <Input
+                      type="time"
+                      className={cn(
+                        touched.startTime && formErrors.startTime ? "border-destructive" : "",
+                        touched.startTime && !formErrors.startTime ? "border-green-500" : ""
+                      )}
+                      value={formData.startTime}
+                      onChange={(e) => handleFieldChange("startTime", e.target.value)}
+                      required
+                    />
+                    {touched.startTime && formErrors.startTime && (
+                      <div className="text-xs text-destructive flex items-center gap-1">
+                        <AlertCircle className="h-3 w-3" />
+                        {formErrors.startTime}
+                      </div>
+                    )}
+                    {touched.startTime && !formErrors.startTime && (
+                      <div className="text-xs text-green-500 flex items-center gap-1">
+                        <CheckCircle2 className="h-3 w-3" />
+                        Horário válido
+                      </div>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs text-muted-foreground">Horário Final</Label>
+                    <Input
+                      type="time"
+                      className={cn(
+                        touched.endTime && formErrors.endTime ? "border-destructive" : "",
+                        touched.endTime && !formErrors.endTime ? "border-green-500" : ""
+                      )}
+                      value={formData.endTime}
+                      onChange={(e) => handleFieldChange("endTime", e.target.value)}
+                      required
+                    />
+                    {touched.endTime && formErrors.endTime && (
+                      <div className="text-xs text-destructive flex items-center gap-1">
+                        <AlertCircle className="h-3 w-3" />
+                        {formErrors.endTime}
+                      </div>
+                    )}
+                    {touched.endTime && !formErrors.endTime && (
+                      <div className="text-xs text-green-500 flex items-center gap-1">
+                        <CheckCircle2 className="h-3 w-3" />
+                        Horário válido
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm font-medium flex items-center gap-1">
+                  <AlertCircle className="h-4 w-4 text-muted-foreground" />
+                  Motivo do Bloqueio (Opcional)
+                </Label>
+                <textarea
+                  className="min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  placeholder="Descreva o motivo do bloqueio..."
+                  value={formData.reason || ""}
+                  onChange={(e) => setFormData(prev => ({ ...prev, reason: e.target.value }))}
+                />
+              </div>
             </div>
-
-            <div className="space-y-2">
-              <Label className="text-sm font-medium flex items-center gap-1">
-                <AlertCircle className="h-4 w-4 text-muted-foreground" />
-                Motivo do Bloqueio (Opcional)
-              </Label>
-              <textarea
-                className="min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                placeholder="Descreva o motivo do bloqueio..."
-                value={formData.reason || ""}
-                onChange={(e) => setFormData(prev => ({ ...prev, reason: e.target.value }))}
-              />
-            </div>
-          </div>
-
-          <Separator />
-
-          <DialogFooter className="gap-2 sm:gap-0">
+          </form>
+        </div>
+        
+        {/* Rodapé fixo */}
+        <div className="sticky bottom-0 mt-auto p-6 border-t bg-white shadow-sm">
+          <div className="flex flex-row gap-3 w-full justify-end">
             <Button
               type="button"
               variant="outline"
               onClick={() => onOpenChange(false)}
-              className="gap-2 border-gray-300"
+              className="gap-2"
               disabled={isSubmitting}
             >
               <X className="h-4 w-4" />
@@ -342,7 +354,8 @@ export const BlockTimeDialog = ({ open, onOpenChange, onConfirm }: BlockTimeDial
             </Button>
             <Button 
               type="submit" 
-              className="gap-2 bg-primary hover:bg-primary/90"
+              className="gap-2"
+              onClick={handleSubmit}
               disabled={!isFormValid() || isSubmitting}
             >
               {isSubmitting ? (
@@ -357,9 +370,9 @@ export const BlockTimeDialog = ({ open, onOpenChange, onConfirm }: BlockTimeDial
                 </>
               )}
             </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+          </div>
+        </div>
+      </SheetContent>
+    </Sheet>
   );
 };
