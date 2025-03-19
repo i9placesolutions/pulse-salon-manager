@@ -1,15 +1,23 @@
+
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { formatCurrency } from "@/utils/currency";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Ban, Printer } from "lucide-react";
+import { Ban, Printer, Clock, User, Phone, CreditCard, Tag } from "lucide-react";
 import { Sale } from "@/types/pdv";
 
 interface OrderDialogProps {

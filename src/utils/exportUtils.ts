@@ -253,7 +253,7 @@ export const prepareExportData = (clients: Client[], options: ClientExportOption
   
   // Tags
   const tagFields: FieldDefinition[] = options.includeTags ? [
-    { header: 'Tags', key: 'tags', format: (value: string[]) => value?.join(', ') || '' }
+    { header: 'Tags', key: 'tags', format: (value: string[] | undefined) => value?.join(', ') || '' }
   ] : [];
   
   // Dados financeiros

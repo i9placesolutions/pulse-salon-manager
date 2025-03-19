@@ -1,5 +1,6 @@
+
 export interface Product {
-  id: number;
+  id: string;
   name: string;
   price: number;
   stock: number;
@@ -13,15 +14,15 @@ export interface Product {
 }
 
 export interface ProductCategory {
-  id: number;
+  id: string;
   name: string;
   description?: string;
   status: 'active' | 'inactive';
 }
 
 export interface ProductMovement {
-  id: number;
-  productId: number;
+  id: string;
+  productId: string;
   quantity: number;
   type: 'entrada' | 'saida' | 'ajuste';
   date: string;

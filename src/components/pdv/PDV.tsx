@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,8 +17,25 @@ import { CashOperationDialog } from "./CashOperationDialog";
 import { OrderList } from "./OrderList";
 import { OrderDialog } from "./OrderDialog";
 import { ReportDialog } from "./ReportDialog";
-import { Product, Sale, SaleItem, Payment, Client, CashierOperation } from "@/types/pdv";
+import { Sale, SaleItem, Payment, CashierOperation } from "@/types/pdv";
 import { useToast } from "@/hooks/use-toast";
+
+// Define interfaces for the mock data to ensure type compatibility
+interface Product {
+  id: string;
+  name: string;
+  price: number;
+  category: string;
+  quantity: number;
+}
+
+interface Client {
+  id: string;
+  name: string;
+  phone: string;
+  email: string;
+  cpf?: string;
+}
 
 // Mock data for illustration - with string IDs
 const mockProducts: Product[] = [
@@ -767,8 +785,8 @@ export function PDV() {
       <ClientSelectDialog
         isOpen={isClientDialogOpen}
         onOpenChange={setIsClientDialogOpen}
-        clients={mockClients}
-        onSelect={handleSelectClient}
+        clients={mockClients as any}
+        onSelect={handleSelectClient as any}
         isRequired={!selectedClient}
       />
       
@@ -793,7 +811,7 @@ export function PDV() {
         onOpenChange={setIsPaymentDialogOpen}
         cartTotal={cartTotal}
         selectedPaymentMethod={selectedPaymentMethod}
-        onSelectPaymentMethod={setSelectedPaymentMethod}
+        onSelectPaymentMethod={setSelectedPaymentMethod as any}
         paymentAmount={paymentAmount}
         onPaymentAmountChange={setPaymentAmount}
         onAddPayment={handleAddPayment}
@@ -814,8 +832,8 @@ export function PDV() {
         isOpen={isOrderDialogOpen}
         onOpenChange={setIsOrderDialogOpen}
         order={selectedOrder}
-        onPrintReceipt={handlePrintReceipt}
-        onCancel={handleCancelOrder}
+        onPrintReceipt={handlePrintReceipt as any}
+        onCancel={handleCancelOrder as any}
       />
       
       <ReportDialog
@@ -826,4 +844,3 @@ export function PDV() {
     </div>
   );
 }
-

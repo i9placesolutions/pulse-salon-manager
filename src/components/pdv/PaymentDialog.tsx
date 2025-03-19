@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogContent,
@@ -17,8 +18,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { formatCurrency, parseCurrency } from "@/utils/currency";
-import { CreditCard, DollarSign, QrCode, Trash2 } from "lucide-react";
+import { CreditCard, DollarSign, QrCode, Trash2, Banknote } from "lucide-react";
 import { Payment } from "@/types/pdv";
 
 interface PaymentDialogProps {
@@ -67,7 +74,7 @@ export function PaymentDialog({
                 variant={selectedPaymentMethod === 'cash' ? 'default' : 'outline'}
                 onClick={() => onSelectPaymentMethod('cash')}
               >
-                <BanknoteIcon className="mr-2 h-4 w-4" />
+                <Banknote className="mr-2 h-4 w-4" />
                 Dinheiro
               </Button>
               <Button
@@ -119,8 +126,8 @@ export function PaymentDialog({
                 <CardTitle className="text-sm">Pagamentos Registrados</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
-                {paymentMethods.map((payment) => (
-                  <div key={payment.id} className="flex justify-between items-center">
+                {paymentMethods.map((payment, index) => (
+                  <div key={index} className="flex justify-between items-center">
                     <span className="capitalize">{payment.method}</span>
                     <span>{formatCurrency(payment.amount)}</span>
                   </div>
