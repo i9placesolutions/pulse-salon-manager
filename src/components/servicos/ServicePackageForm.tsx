@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -82,21 +83,21 @@ const mockAvailableServices: Service[] = [
 // Mock de produtos para seleção
 const mockAvailableProducts: Product[] = [
   {
-    id: 1,
+    id: "1", // Changed to string to match the pattern in other files
     name: "Shampoo Profissional",
     price: 45,
     stock: 10,
     category: "Cabelo",
   },
   {
-    id: 2,
+    id: "2", // Changed to string
     name: "Condicionador",
     price: 40,
     stock: 15,
     category: "Cabelo",
   },
   {
-    id: 3,
+    id: "3", // Changed to string
     name: "Máscara Capilar",
     price: 60,
     stock: 8,
@@ -117,8 +118,9 @@ interface PackageService {
   price: number;
 }
 
+// Updated to use string IDs for product
 interface PackageProduct {
-  id: number;
+  id: string; // Changed to string
   name: string;
   price: number;
   quantity: number;
@@ -143,7 +145,7 @@ export function ServicePackageForm({
   const [selectedServices, setSelectedServices] = useState<PackageService[]>([]);
   const [selectedProducts, setSelectedProducts] = useState<PackageProduct[]>([]);
   const [selectedServiceId, setSelectedServiceId] = useState<number | "">("");
-  const [selectedProductId, setSelectedProductId] = useState<number | "">("");
+  const [selectedProductId, setSelectedProductId] = useState<string | "">("");
   const [productQuantity, setProductQuantity] = useState<number>(1);
   const [activeTab, setActiveTab] = useState<string>("services");
 
@@ -165,7 +167,9 @@ export function ServicePackageForm({
       
       // Carrega produtos (em uma aplicação real, você buscaria os dados dos produtos)
       const productDetails = servicePackage.products?.map(product => {
-        const productInfo = mockAvailableProducts.find(p => p.id === product.productId);
+        // Ensure product.productId is treated as a string
+        const productStringId = String(product.productId);
+        const productInfo = mockAvailableProducts.find(p => p.id === productStringId);
         return productInfo ? {
           id: productInfo.id,
           name: productInfo.name,
@@ -232,9 +236,8 @@ export function ServicePackageForm({
   const handleAddProduct = () => {
     if (!selectedProductId || productQuantity <= 0) return;
     
-    const productId = Number(selectedProductId);
     // Evita adicionar produto duplicado
-    if (selectedProducts.some(p => p.id === productId)) {
+    if (selectedProducts.some(p => p.id === selectedProductId)) {
       toast({
         title: "Produto já adicionado",
         description: "Este produto já está incluído no pacote.",
@@ -243,9 +246,9 @@ export function ServicePackageForm({
       return;
     }
     
-    const product = mockAvailableProducts.find(p => p.id === productId);
+    const product = mockAvailableProducts.find(p => p.id === selectedProductId);
     if (product) {
-      const newProduct = {
+      const newProduct: PackageProduct = {
         id: product.id,
         name: product.name,
         price: product.price,
@@ -255,7 +258,10 @@ export function ServicePackageForm({
       setSelectedProducts([...selectedProducts, newProduct]);
       setFormData(prev => ({
         ...prev,
-        products: [...(prev.products || []), { productId: product.id, quantity: productQuantity }],
+        products: [...(prev.products || []), { 
+          productId: Number(product.id), // Convert back to number for ServicePackage structure
+          quantity: productQuantity 
+        }],
       }));
       
       setSelectedProductId("");
@@ -263,11 +269,11 @@ export function ServicePackageForm({
     }
   };
   
-  const handleRemoveProduct = (productId: number) => {
+  const handleRemoveProduct = (productId: string) => {
     setSelectedProducts(selectedProducts.filter(p => p.id !== productId));
     setFormData(prev => ({
       ...prev,
-      products: (prev.products || []).filter(item => item.productId !== productId),
+      products: (prev.products || []).filter(item => String(item.productId) !== productId),
     }));
   };
 
@@ -485,13 +491,13 @@ export function ServicePackageForm({
                   
                   <TabsContent value="products" className="space-y-4">
                     <div className="flex items-center gap-2">
-                      <Select value={selectedProductId.toString()} onValueChange={(value) => setSelectedProductId(Number(value))}>
+                      <Select value={selectedProductId} onValueChange={(value) => setSelectedProductId(value)}>
                         <SelectTrigger className="flex-1">
                           <SelectValue placeholder="Selecione um produto" />
                         </SelectTrigger>
                         <SelectContent>
                           {mockAvailableProducts.map((product) => (
-                            <SelectItem key={product.id} value={product.id.toString()}>
+                            <SelectItem key={product.id} value={product.id}>
                               {product.name} - {formatCurrency(product.price)}
                             </SelectItem>
                           ))}

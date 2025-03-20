@@ -330,7 +330,7 @@ export const prepareExportData = (clients: Client[], options: ClientExportOption
     
     fields.forEach(field => {
       const value = client[field.key as keyof Client];
-      clientData[field.header] = field.format ? field.format(value as any) : value || '';
+      clientData[field.header] = field.format ? field.format(value) : value || '';
     });
     
     return clientData;
