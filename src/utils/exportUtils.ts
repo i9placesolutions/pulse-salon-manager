@@ -344,12 +344,16 @@ export const prepareExportData = (clients: Client[], options: ClientExportOption
       if (typeof keyName === 'string') {
         // Acesso seguro à propriedade do cliente usando keyof
         value = client[keyName as keyof Client];
+      } else {
+        // If keyName is already a keyof Client, use it directly
+        value = client[keyName];
       }
       
       // Aplicar formatação se disponível e o valor existir
       if (field.format && value !== undefined) {
-        // O tipo de retorno da função format sempre será string
-        clientData[field.header] = field.format(value);
+        // Explicitly type the format function to avoid 'never' error
+        const formatFn = field.format as (val: typeof value) => string;
+        clientData[field.header] = formatFn(value);
       } else {
         // Converter valor para string ou usar string vazia
         clientData[field.header] = value?.toString() || '';
