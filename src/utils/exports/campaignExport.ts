@@ -2,6 +2,41 @@
 import { formatDate, formatCampaignType, formatCampaignStatus } from '../formatters';
 import { exportCampaignToPDF } from '../pdfExport';
 
+// Definindo tipos para os objetos usados na exportação
+interface CampaignData {
+  id: string;
+  name: string;
+  type: string;
+  startDate: string;
+  endDate?: string;
+  status: string;
+  metrics: {
+    totalUses: number;
+    totalCustomers: number;
+    conversionRate: number;
+    averageSpend: number;
+    totalRevenue: number;
+    redemptionRate: number;
+  };
+}
+
+interface UsageData {
+  id: string;
+  customer: {
+    id: string;
+    name: string;
+  };
+  date: string;
+  amount: number;
+  serviceOrProduct: string;
+}
+
+interface ColumnDefinition<T> {
+  key: keyof T | ((item: T) => string | number);
+  label: string;
+  format?: (value: any) => string;
+}
+
 /**
  * Exporta dados no formato adequado para o relatório de campanhas de marketing
  * @param campaignData Dados da campanha
@@ -9,32 +44,8 @@ import { exportCampaignToPDF } from '../pdfExport';
  * @param filename Nome do arquivo
  */
 export function exportCampaignReport(
-  campaignData: {
-    id: string;
-    name: string;
-    type: string;
-    startDate: string;
-    endDate?: string;
-    status: string;
-    metrics: {
-      totalUses: number;
-      totalCustomers: number;
-      conversionRate: number;
-      averageSpend: number;
-      totalRevenue: number;
-      redemptionRate: number;
-    };
-  },
-  usageData: {
-    id: string;
-    customer: {
-      id: string;
-      name: string;
-    };
-    date: string;
-    amount: number;
-    serviceOrProduct: string;
-  }[],
+  campaignData: CampaignData,
+  usageData: UsageData[],
   filename: string = 'relatorio-campanha'
 ): void {
   // Informações da campanha
@@ -65,12 +76,26 @@ export function exportCampaignReport(
   // Espaço em branco
   csvContent += "\n\nHistórico de Uso\n\n";
   
-  // Detalhes de uso
-  const usageColumns = [
-    { key: (item: any) => item.customer.name, label: 'Cliente' },
-    { key: 'date', label: 'Data', format: (value: string) => new Date(value).toLocaleDateString('pt-BR') },
-    { key: 'serviceOrProduct', label: 'Serviço/Produto' },
-    { key: 'amount', label: 'Valor (R$)', format: (value: number) => value.toFixed(2) }
+  // Definindo as colunas com tipo genérico
+  const usageColumns: ColumnDefinition<UsageData>[] = [
+    { 
+      key: (item: UsageData) => item.customer.name, 
+      label: 'Cliente' 
+    },
+    { 
+      key: 'date',
+      label: 'Data', 
+      format: (value: string) => new Date(value).toLocaleDateString('pt-BR') 
+    },
+    { 
+      key: 'serviceOrProduct', 
+      label: 'Serviço/Produto' 
+    },
+    { 
+      key: 'amount', 
+      label: 'Valor (R$)', 
+      format: (value: number) => value.toFixed(2) 
+    }
   ];
   
   // Cabeçalho do histórico
@@ -79,19 +104,22 @@ export function exportCampaignReport(
   // Linhas de dados
   usageData.forEach(usage => {
     const row = usageColumns.map(col => {
-      // Especifica o tipo correto para a função de chave
-      let key: any;
+      let value: any;
+      
       if (typeof col.key === 'function') {
-        // Aplicando tipagem segura para evitar erro de 'any' para 'never'
-        const typedFunction = col.key as (item: any) => string | number;
-        key = typedFunction(usage);
+        value = col.key(usage);
       } else {
-        key = usage[col.key as keyof typeof usage];
+        value = usage[col.key];
       }
       
-      const value = col.format ? col.format(key) : key;
+      // Aplicar formatação se existir
+      if (col.format && value !== undefined) {
+        value = col.format(value);
+      }
+      
       return `"${value}"`;
     }).join(',');
+    
     csvContent += row + '\n';
   });
   
