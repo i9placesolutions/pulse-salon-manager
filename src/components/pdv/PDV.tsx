@@ -19,7 +19,6 @@ import { ClientSelectDialog } from "./ClientSelectDialog";
 import { PaymentDialog } from "./PaymentDialog";
 import { useCartState } from "@/hooks/useCartState";
 import { useCashierDialog } from "@/hooks/useCashierDialog";
-import { usePDVOperations } from "@/hooks/usePDVOperations";
 import { useCashOperationDialog } from "@/hooks/useCashOperationDialog";
 import { useReportDialog } from "@/hooks/useReportDialog";
 import { useOrderDialog } from "@/hooks/useOrderDialog";
@@ -28,15 +27,20 @@ import { useClientDialog } from "@/hooks/useClientDialog";
 import { usePDVData } from "@/hooks/usePDVData";
 
 export function PDV() {
+  // Core states
   const { toast } = useToast();
   const { pdvState } = useAppState();
   const [currentTab, setCurrentTab] = useState("terminal");
+  
+  // PDV data hook
   const { mockClients } = usePDVData();
   
   // Cart state 
   const { 
     cartItems, 
     cartTotal, 
+    searchTerm,
+    setSearchTerm,
     setCartItems, 
     selectedClient, 
     setSelectedClient,
@@ -183,8 +187,8 @@ export function PDV() {
             ) : (
               <PDVTerminal 
                 onViewOrders={() => setCurrentTab("orders")}
-                searchTerm={useCartState().searchTerm}
-                setSearchTerm={useCartState().setSearchTerm}
+                searchTerm={searchTerm}
+                setSearchTerm={setSearchTerm}
                 selectedClient={selectedClient}
                 cartItems={cartItems}
                 cartTotal={cartTotal}
@@ -264,8 +268,8 @@ export function PDV() {
       <ClientSelectDialog
         isOpen={isClientDialogOpen}
         onOpenChange={setIsClientDialogOpen}
-        clients={mockClients as any}
-        onSelect={(client) => {
+        clients={mockClients}
+        onSelect={(client: Client) => {
           handleSelectClient(client);
           setSelectedClient(client);
         }}
