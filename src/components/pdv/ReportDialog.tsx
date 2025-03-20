@@ -1,4 +1,5 @@
-import React from "react";
+
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
@@ -40,6 +41,9 @@ export const ReportDialog: React.FC<ReportDialogProps> = ({
   onOpenChange,
   onGenerateReport,
 }) => {
+  const [reportType, setReportType] = useState<string>("sales");
+  const [reportFormat, setReportFormat] = useState<string>("pdf");
+
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
@@ -51,7 +55,7 @@ export const ReportDialog: React.FC<ReportDialogProps> = ({
             <Label htmlFor="reportType" className="col-span-4">
               Tipo de Relatório
             </Label>
-            <Select>
+            <Select value={reportType} onValueChange={setReportType}>
               <SelectTrigger className="col-span-4">
                 <SelectValue placeholder="Selecione o tipo" />
               </SelectTrigger>
@@ -72,7 +76,7 @@ export const ReportDialog: React.FC<ReportDialogProps> = ({
             <Label htmlFor="format" className="col-span-4">
               Formato
             </Label>
-            <Select>
+            <Select value={reportFormat} onValueChange={setReportFormat}>
               <SelectTrigger className="col-span-4">
                 <SelectValue placeholder="Selecione o formato" />
               </SelectTrigger>
@@ -88,9 +92,12 @@ export const ReportDialog: React.FC<ReportDialogProps> = ({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>
-          <Button onClick={() => onGenerateReport({})}>Gerar</Button>
+          <Button onClick={() => onGenerateReport({
+            type: reportType,
+            format: reportFormat
+          })}>Gerar</Button>
         </div>
       </DialogContent>
     </Dialog>
   );
-}; 
+};
