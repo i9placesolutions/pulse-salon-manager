@@ -1,23 +1,7 @@
 
 import { useState, useMemo } from "react";
 import { useCartState } from "./useCartState";
-
-// Mock data interfaces
-interface Product {
-  id: string;
-  name: string;
-  price: number;
-  category: string;
-  quantity: number;
-}
-
-interface Client {
-  id: string;
-  name: string;
-  phone: string;
-  email: string;
-  cpf?: string;
-}
+import { Product, Client } from "@/types/pdv";
 
 export function usePDVData() {
   const { searchTerm } = useCartState();

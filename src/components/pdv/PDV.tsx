@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Ban, Lock, Printer, Clock } from "lucide-react";
 import { useAppState } from "@/contexts/AppStateContext";
 import { useToast } from "@/hooks/use-toast";
-import { Sale } from "@/types/pdv";
+import { Sale, Client } from "@/types/pdv";
 import { PDVHeader } from "./PDVHeader";
 import { PDVTerminal } from "./PDVTerminal";
 import { OrderList } from "./OrderList";

@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -11,14 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Search, User, Phone, Mail, ChevronsRight } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
-
-interface Client {
-  id: number;
-  name: string;
-  phone: string;
-  email?: string;
-  cpf?: string;
-}
+import { Client } from "@/types/pdv";
 
 interface ClientSelectDialogProps {
   isOpen: boolean;
