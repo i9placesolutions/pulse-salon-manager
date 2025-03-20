@@ -351,8 +351,8 @@ export const prepareExportData = (clients: Client[], options: ClientExportOption
       
       // Aplicar formatação se disponível e o valor existir
       if (field.format && value !== undefined) {
-        // Explicitly type the format function to avoid type error
-        clientData[field.header] = field.format(value);
+        // Use type assertion to ensure TypeScript understands the format function's parameter type
+        clientData[field.header] = (field.format as (val: typeof value) => string)(value);
       } else {
         // Converter valor para string ou usar string vazia
         clientData[field.header] = value?.toString() || '';
