@@ -13,6 +13,7 @@ import { OrderList } from "./OrderList";
 import { DialogsProvider } from "./DialogsProvider";
 import { usePDVOperations } from "@/hooks/usePDVOperations";
 import { useCashierDialog } from "@/hooks/useCashierDialog";
+import { CashierOpenDialog } from "./CashierOpenDialog";
 
 export function PDV() {
   const { toast } = useToast();
@@ -32,7 +33,10 @@ export function PDV() {
     isOpeningDialogOpen,
     setIsOpeningDialogOpen,
     isClosingDialogOpen,
-    setIsClosingDialogOpen
+    setIsClosingDialogOpen,
+    openingAmount,
+    setOpeningAmount,
+    handleOpenCashier
   } = useCashierDialog();
 
   return (
@@ -99,6 +103,14 @@ export function PDV() {
           </div>
         </TabsContent>
       </Tabs>
+      
+      <CashierOpenDialog
+        isOpen={isOpeningDialogOpen}
+        onOpenChange={setIsOpeningDialogOpen}
+        openingAmount={openingAmount}
+        onOpeningAmountChange={setOpeningAmount}
+        onConfirm={handleOpenCashier}
+      />
       
       <DialogsProvider />
     </div>

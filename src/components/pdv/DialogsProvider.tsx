@@ -30,13 +30,8 @@ export function DialogsProvider() {
   } = useClientDialog();
 
   const {
-    isOpeningDialogOpen,
-    setIsOpeningDialogOpen,
     isClosingDialogOpen,
     setIsClosingDialogOpen,
-    openingAmount,
-    setOpeningAmount,
-    handleOpenCashier,
     handleCloseCashier
   } = useCashierDialog();
 
@@ -97,14 +92,6 @@ export function DialogsProvider() {
         clients={mockClients as any}
         onSelect={handleSelectClient as any}
         isRequired={!selectedClient}
-      />
-      
-      <CashierOpenDialog
-        isOpen={isOpeningDialogOpen}
-        onOpenChange={setIsOpeningDialogOpen}
-        openingAmount={openingAmount}
-        onOpeningAmountChange={setOpeningAmount}
-        onConfirm={handleOpenCashier}
       />
       
       <CashierCloseDialog
