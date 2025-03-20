@@ -202,7 +202,7 @@ export function OrderList({ orders, onCancel, onPrintReceipt }: OrderListProps) 
               <SelectValue placeholder="Status" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Todos os status</SelectItem>
+              <SelectItem value="all">Todos os status</SelectItem>
               <SelectItem value="completed">Finalizado</SelectItem>
               <SelectItem value="pending">Pendente</SelectItem>
               <SelectItem value="cancelled">Cancelado</SelectItem>
@@ -214,7 +214,7 @@ export function OrderList({ orders, onCancel, onPrintReceipt }: OrderListProps) 
               <SelectValue placeholder="Forma de Pagamento" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Todas formas</SelectItem>
+              <SelectItem value="all">Todas formas</SelectItem>
               <SelectItem value="cash">Dinheiro</SelectItem>
               <SelectItem value="credit">Cartão de Crédito</SelectItem>
               <SelectItem value="debit">Cartão de Débito</SelectItem>
@@ -227,7 +227,7 @@ export function OrderList({ orders, onCancel, onPrintReceipt }: OrderListProps) 
               <SelectValue placeholder="Período" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Todos períodos</SelectItem>
+              <SelectItem value="all">Todos períodos</SelectItem>
               <SelectItem value="today">Hoje</SelectItem>
               <SelectItem value="week">Esta semana</SelectItem>
               <SelectItem value="month">Este mês</SelectItem>
