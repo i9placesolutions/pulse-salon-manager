@@ -12,6 +12,7 @@ import { PDVTerminal } from "./PDVTerminal";
 import { OrderList } from "./OrderList";
 import { DialogsProvider } from "./DialogsProvider";
 import { usePDVOperations } from "@/hooks/usePDVOperations";
+import { useCashierDialog } from "@/hooks/useCashierDialog";
 
 export function PDV() {
   const { toast } = useToast();
@@ -20,14 +21,19 @@ export function PDV() {
   
   const {
     isCashierClosed,
-    setIsOpeningDialogOpen,
     setIsCashOperationDialogOpen,
     setCashOperationType,
-    setIsClosingDialogOpen,
     setIsReportDialogOpen,
     handleCancelOrder,
     handlePrintReceipt
   } = usePDVOperations();
+
+  const {
+    isOpeningDialogOpen,
+    setIsOpeningDialogOpen,
+    isClosingDialogOpen,
+    setIsClosingDialogOpen
+  } = useCashierDialog();
 
   return (
     <div className="flex flex-col h-full">
