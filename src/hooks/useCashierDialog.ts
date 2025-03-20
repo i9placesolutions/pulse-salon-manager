@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useAppState } from "@/contexts/AppStateContext";
 import { useToast } from "./use-toast";
@@ -23,17 +22,8 @@ export function useCashierDialog() {
       return;
     }
     
-    // Parse opening amount
+    // Parse opening amount (could be "0,00" if no cash)
     const initialAmount = parseCurrency(openingAmount);
-    
-    if (initialAmount <= 0) {
-      toast({
-        variant: "destructive",
-        title: "Valor inválido",
-        description: "O valor inicial do caixa deve ser maior que zero.",
-      });
-      return;
-    }
     
     // Create new cashier session
     const newSession = {

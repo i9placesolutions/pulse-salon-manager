@@ -1,6 +1,8 @@
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { formatCurrency, parseCurrency } from "@/utils/currency";
 import {
   Dialog,
@@ -29,6 +31,7 @@ export function CashierOpenDialog({
 }: CashierOpenDialogProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [cursorPosition, setCursorPosition] = useState<number | null>(null);
+  const [hasCash, setHasCash] = useState(true);
   
   // Formata valor para exibição como moeda brasileira
   const formatBrazilianCurrency = (value: string): string => {
@@ -106,6 +109,16 @@ export function CashierOpenDialog({
     // Armazena a posição para aplicar após a renderização
     setCursorPosition(newCursorPosition);
   };
+
+  // Handle checkbox change
+  const handleHasCashChange = (checked: boolean) => {
+    setHasCash(checked);
+    
+    // If user indicates no cash, set opening amount to 0
+    if (!checked) {
+      onOpeningAmountChange("0,00");
+    }
+  };
   
   // Efeito para ajustar a posição do cursor após a formatação
   useEffect(() => {
@@ -125,22 +138,35 @@ export function CashierOpenDialog({
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-4">
-          <div className="space-y-2">
-            <Label>Valor Inicial</Label>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
-                R$
-              </span>
-              <Input
-                ref={inputRef}
-                type="text"
-                value={openingAmount}
-                onChange={handleInputChange}
-                placeholder="0,00"
-                className="pl-9"
-              />
-            </div>
+          <div className="flex items-center space-x-2">
+            <Checkbox 
+              id="hasCash"
+              checked={hasCash}
+              onCheckedChange={handleHasCashChange}
+            />
+            <Label htmlFor="hasCash" className="text-sm font-medium leading-none">
+              Iniciar caixa com dinheiro em espécie
+            </Label>
           </div>
+          
+          {hasCash && (
+            <div className="space-y-2">
+              <Label>Valor Inicial</Label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                  R$
+                </span>
+                <Input
+                  ref={inputRef}
+                  type="text"
+                  value={openingAmount}
+                  onChange={handleInputChange}
+                  placeholder="0,00"
+                  className="pl-9"
+                />
+              </div>
+            </div>
+          )}
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
