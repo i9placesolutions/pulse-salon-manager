@@ -1,3 +1,4 @@
+
 // Utilitário para exportação de dados em formato CSV e PDF
 import { formatDate, formatCampaignType, formatCampaignStatus } from './formatters';
 import { exportCampaignToPDF } from './pdfExport';
@@ -223,7 +224,7 @@ const formatCurrency = (value: number) => {
   }).format(value);
 };
 
-// Define a more specific type for field functions to resolve the 'never' issue
+// Define a specific type for field definitions with generic type parameter
 interface FieldDefinition<T = any> {
   header: string;
   key: string | keyof T;
@@ -341,7 +342,7 @@ export const prepareExportData = (clients: Client[], options: ClientExportOption
       let value: any;
       
       if (typeof keyName === 'string') {
-        // Acesso seguro à propriedade do cliente usando keyof
+        // Acesso seguro à propriedade do cliente usando index signature
         value = client[keyName as keyof Client];
       } else {
         // If keyName is already a keyof Client, use it directly
@@ -350,9 +351,8 @@ export const prepareExportData = (clients: Client[], options: ClientExportOption
       
       // Aplicar formatação se disponível e o valor existir
       if (field.format && value !== undefined) {
-        // Explicitly type the format function to avoid 'never' error
-        const formatFn = field.format as (val: any) => string;
-        clientData[field.header] = formatFn(value);
+        // Explicitly type the format function to avoid type error
+        clientData[field.header] = field.format(value);
       } else {
         // Converter valor para string ou usar string vazia
         clientData[field.header] = value?.toString() || '';
