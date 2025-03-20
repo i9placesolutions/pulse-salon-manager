@@ -1,3 +1,4 @@
+
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -37,6 +38,7 @@ const menuItems: MenuItem[] = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard", category: "principal" },
   { icon: Calendar, label: "Agendamentos", path: "/appointments", category: "principal" },
   { icon: Users, label: "Clientes", path: "/clientes", category: "principal" },
+  { icon: ShoppingCart, label: "PDV", path: "/pdv", category: "principal" },
   { icon: Scissors, label: "Serviços", path: "/servicos", category: "gestao" },
   { icon: UserSquare2, label: "Profissionais", path: "/profissionais", category: "gestao" },
   { icon: DollarSign, label: "Financeiro", path: "/financeiro", category: "gestao" },
