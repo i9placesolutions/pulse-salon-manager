@@ -330,16 +330,16 @@ export const prepareExportData = (clients: Client[], options: ClientExportOption
     const clientData: Record<string, any> = {};
     
     fields.forEach(field => {
-      // Use type assertion to safely access client properties
-      const key = field.key as keyof Client;
+      // Get the key name from the field definition
+      const keyName = field.key;
       
-      // Get the value, which might be of any type
-      const value = client[key];
+      // Get the value safely using an indexed access to avoid type errors
+      const value = client[keyName as keyof typeof client];
       
       // Apply formatting if available and value exists
       if (field.format && value !== undefined) {
-        // Use type casting to handle the 'any' type issue
-        clientData[field.header] = field.format(value as any);
+        // Use explicit type assertion to resolve the 'never' type issue
+        clientData[field.header] = field.format(value);
       } else {
         clientData[field.header] = value || '';
       }
