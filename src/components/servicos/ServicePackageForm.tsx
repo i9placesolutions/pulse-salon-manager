@@ -1,109 +1,13 @@
 
 import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
-import { ServicePackage, Service } from "@/types/service";
-import { Product } from "@/types/product";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
+import { ServicePackage } from "@/types/service";
 import { useToast } from "@/hooks/use-toast";
-import { formatCurrency } from "@/utils/currency";
-import { Plus, X, Package, ShoppingBag } from "lucide-react";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetClose
-} from "@/components/ui/sheet";
-
-// Mock de serviços para seleção
-const mockAvailableServices: Service[] = [
-  {
-    id: 1,
-    name: "Corte Feminino",
-    description: "Corte feminino tradicional",
-    category: "Corte",
-    duration: 60,
-    price: 80,
-    status: "active",
-    commission: {
-      type: "percentage",
-      value: 50
-    },
-    professionals: [1, 2],
-    products: []
-  },
-  {
-    id: 2,
-    name: "Coloração",
-    description: "Coloração completa",
-    category: "Tintura",
-    duration: 120,
-    price: 150,
-    status: "active",
-    commission: {
-      type: "percentage",
-      value: 40
-    },
-    professionals: [1, 3],
-    products: []
-  },
-  {
-    id: 3,
-    name: "Manicure",
-    description: "Esmaltação simples",
-    category: "Manicure",
-    duration: 45,
-    price: 50,
-    status: "active",
-    commission: {
-      type: "percentage",
-      value: 60
-    },
-    professionals: [3],
-    products: []
-  },
-];
-
-// Mock de produtos para seleção
-const mockAvailableProducts: Product[] = [
-  {
-    id: "1", // Changed to string to match the pattern in other files
-    name: "Shampoo Profissional",
-    price: 45,
-    stock: 10,
-    category: "Cabelo",
-  },
-  {
-    id: "2", // Changed to string
-    name: "Condicionador",
-    price: 40,
-    stock: 15,
-    category: "Cabelo",
-  },
-  {
-    id: "3", // Changed to string
-    name: "Máscara Capilar",
-    price: 60,
-    stock: 8,
-    category: "Tratamento",
-  },
-];
+import { PackageHeader } from "./packages/PackageHeader";
+import { PackageFormFields } from "./packages/PackageFormFields";
+import { PackageTabContent } from "./packages/PackageTabContent";
+import { PackageFormFooter } from "./packages/PackageFormFooter";
+import { useMockServiceData } from "./packages/useMockServiceData";
 
 interface ServicePackageFormProps {
   open: boolean;
@@ -118,9 +22,8 @@ interface PackageService {
   price: number;
 }
 
-// Updated to use string IDs for product
 interface PackageProduct {
-  id: string; // Changed to string
+  id: string;
   name: string;
   price: number;
   quantity: number;
@@ -133,6 +36,8 @@ export function ServicePackageForm({
   servicePackage,
 }: ServicePackageFormProps) {
   const { toast } = useToast();
+  const { mockAvailableServices, mockAvailableProducts } = useMockServiceData();
+  
   const [formData, setFormData] = useState<Partial<ServicePackage>>({
     name: "",
     description: "",
@@ -144,9 +49,6 @@ export function ServicePackageForm({
 
   const [selectedServices, setSelectedServices] = useState<PackageService[]>([]);
   const [selectedProducts, setSelectedProducts] = useState<PackageProduct[]>([]);
-  const [selectedServiceId, setSelectedServiceId] = useState<number | "">("");
-  const [selectedProductId, setSelectedProductId] = useState<string | "">("");
-  const [productQuantity, setProductQuantity] = useState<number>(1);
   const [activeTab, setActiveTab] = useState<string>("services");
 
   useEffect(() => {
@@ -191,22 +93,9 @@ export function ServicePackageForm({
       setSelectedServices([]);
       setSelectedProducts([]);
     }
-  }, [servicePackage, open]);
+  }, [servicePackage, open, mockAvailableServices, mockAvailableProducts]);
   
-  const handleAddService = () => {
-    if (!selectedServiceId) return;
-    
-    const serviceId = Number(selectedServiceId);
-    // Evita adicionar serviço duplicado
-    if (selectedServices.some(s => s.id === serviceId)) {
-      toast({
-        title: "Serviço já adicionado",
-        description: "Este serviço já está incluído no pacote.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
+  const handleAddService = (serviceId: number) => {
     const service = mockAvailableServices.find(s => s.id === serviceId);
     if (service) {
       const newService = {
@@ -220,8 +109,6 @@ export function ServicePackageForm({
         ...prev,
         services: [...(prev.services || []), service.id],
       }));
-      
-      setSelectedServiceId("");
     }
   };
   
@@ -233,39 +120,24 @@ export function ServicePackageForm({
     }));
   };
   
-  const handleAddProduct = () => {
-    if (!selectedProductId || productQuantity <= 0) return;
-    
-    // Evita adicionar produto duplicado
-    if (selectedProducts.some(p => p.id === selectedProductId)) {
-      toast({
-        title: "Produto já adicionado",
-        description: "Este produto já está incluído no pacote.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    const product = mockAvailableProducts.find(p => p.id === selectedProductId);
+  const handleAddProduct = (productId: string, quantity: number) => {
+    const product = mockAvailableProducts.find(p => p.id === productId);
     if (product) {
       const newProduct: PackageProduct = {
         id: product.id,
         name: product.name,
         price: product.price,
-        quantity: productQuantity,
+        quantity: quantity,
       };
       
       setSelectedProducts([...selectedProducts, newProduct]);
       setFormData(prev => ({
         ...prev,
         products: [...(prev.products || []), { 
-          productId: Number(product.id), // Convert back to number for ServicePackage structure
-          quantity: productQuantity 
+          productId: Number(product.id), // Convert to number for ServicePackage structure
+          quantity: quantity 
         }],
       }));
-      
-      setSelectedProductId("");
-      setProductQuantity(1);
     }
   };
   
@@ -287,16 +159,6 @@ export function ServicePackageForm({
     const total = calculateTotalPrice();
     const discount = (formData.discount || 0) / 100;
     return total * (1 - discount);
-  };
-
-  const handleDiscountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = parseInt(e.target.value);
-    // Limita o desconto a valores entre 0 e 100
-    const limitedValue = isNaN(value) ? 0 : Math.min(Math.max(0, value), 100);
-    setFormData({
-      ...formData,
-      discount: limitedValue,
-    });
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -327,270 +189,40 @@ export function ServicePackageForm({
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="p-0 w-full max-w-full sm:max-w-2xl border-l flex flex-col h-[100dvh] bg-white">
-        {/* Cabeçalho fixo */}
-        <div className="sticky top-0 z-10 bg-gradient-to-r from-blue-600 to-indigo-600 border-b">
-          <SheetHeader className="p-6">
-            <div className="flex items-center justify-between">
-              <SheetTitle className="text-xl flex items-center gap-2 text-white">
-                <Package className="h-5 w-5 text-white" />
-                {servicePackage ? "Editar Pacote" : "Novo Pacote de Serviços"}
-              </SheetTitle>
-              <SheetClose className="rounded-full opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 text-white">
-                <X className="h-4 w-4" />
-                <span className="sr-only">Fechar</span>
-              </SheetClose>
-            </div>
-            <SheetDescription className="text-blue-100">
-              Crie um pacote com desconto em serviços e produtos combinados
-            </SheetDescription>
-          </SheetHeader>
-        </div>
+        <PackageHeader isEditing={!!servicePackage} />
         
         {/* Conteúdo rolável */}
         <div className="flex-1 overflow-y-auto bg-white p-6">
           <form className="space-y-6">
-            <div className="grid grid-cols-1 gap-4">
-              <div className="space-y-2">
-                <label htmlFor="name" className="text-sm font-medium">
-                  Nome do Pacote <span className="text-red-500">*</span>
-                </label>
-                <Input
-                  id="name"
-                  placeholder="Ex: Dia da Noiva"
-                  value={formData.name}
-                  onChange={(e) =>
-                    setFormData({ ...formData, name: e.target.value })
-                  }
-                  className="w-full"
-                  required
-                />
-              </div>
+            <PackageFormFields 
+              formData={formData} 
+              setFormData={setFormData} 
+            />
 
-              <div className="space-y-2">
-                <label htmlFor="description" className="text-sm font-medium">
-                  Descrição
-                </label>
-                <Textarea
-                  id="description"
-                  placeholder="Descrição detalhada do pacote..."
-                  value={formData.description}
-                  onChange={(e) =>
-                    setFormData({ ...formData, description: e.target.value })
-                  }
-                  className="h-20 resize-none"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label htmlFor="discount" className="text-sm font-medium">
-                    Desconto (%) <span className="text-red-500">*</span>
-                  </label>
-                  <Input
-                    id="discount"
-                    type="number"
-                    min="0"
-                    max="100"
-                    value={formData.discount}
-                    onChange={handleDiscountChange}
-                    className="w-full"
-                    required
-                  />
-                  {formData.discount && formData.discount > 100 && (
-                    <p className="text-xs text-red-500 mt-1">
-                      O desconto não pode ser maior que 100%
-                    </p>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <label htmlFor="status" className="text-sm font-medium">
-                    Status
-                  </label>
-                  <div className="flex items-center justify-between rounded-md border p-3">
-                    <span className="text-sm">Ativo</span>
-                    <Switch
-                      checked={formData.status === "active"}
-                      onCheckedChange={(checked) =>
-                        setFormData({
-                          ...formData,
-                          status: checked ? "active" : "inactive",
-                        })
-                      }
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="p-4 border rounded-md bg-muted/40 space-y-3">
-                <Tabs defaultValue="services" value={activeTab} onValueChange={setActiveTab}>
-                  <div className="flex items-center justify-between mb-3">
-                    <TabsList>
-                      <TabsTrigger value="services" className="flex items-center gap-1">
-                        <Package className="h-4 w-4" />
-                        Serviços
-                      </TabsTrigger>
-                      <TabsTrigger value="products" className="flex items-center gap-1">
-                        <ShoppingBag className="h-4 w-4" />
-                        Produtos
-                      </TabsTrigger>
-                    </TabsList>
-                  </div>
-                  
-                  <TabsContent value="services" className="space-y-4">
-                    <div className="flex items-center gap-2">
-                      <Select value={selectedServiceId.toString()} onValueChange={(value) => setSelectedServiceId(Number(value))}>
-                        <SelectTrigger className="flex-1">
-                          <SelectValue placeholder="Selecione um serviço" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {mockAvailableServices.map((service) => (
-                            <SelectItem key={service.id} value={service.id.toString()}>
-                              {service.name} - {formatCurrency(service.price)}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <Button 
-                        type="button" 
-                        variant="outline" 
-                        onClick={handleAddService}
-                        className="shrink-0"
-                      >
-                        <Plus className="h-4 w-4 mr-1" />
-                        Adicionar
-                      </Button>
-                    </div>
-                    
-                    {selectedServices.length > 0 ? (
-                      <div className="space-y-2">
-                        {selectedServices.map((service) => (
-                          <div key={service.id} className="flex items-center justify-between p-2 bg-background rounded border">
-                            <span>{service.name}</span>
-                            <div className="flex items-center gap-2">
-                              <span className="text-muted-foreground">{formatCurrency(service.price)}</span>
-                              <Button 
-                                type="button" 
-                                variant="ghost" 
-                                size="sm" 
-                                onClick={() => handleRemoveService(service.id)}
-                                className="h-8 text-red-500 hover:text-red-700 hover:bg-red-50"
-                              >
-                                <X className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="text-center py-6 text-muted-foreground text-sm">
-                        Nenhum serviço adicionado ao pacote.
-                      </div>
-                    )}
-                  </TabsContent>
-                  
-                  <TabsContent value="products" className="space-y-4">
-                    <div className="flex items-center gap-2">
-                      <Select value={selectedProductId} onValueChange={(value) => setSelectedProductId(value)}>
-                        <SelectTrigger className="flex-1">
-                          <SelectValue placeholder="Selecione um produto" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {mockAvailableProducts.map((product) => (
-                            <SelectItem key={product.id} value={product.id}>
-                              {product.name} - {formatCurrency(product.price)}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <Input
-                        type="number"
-                        min="1"
-                        value={productQuantity}
-                        onChange={(e) => setProductQuantity(parseInt(e.target.value) || 1)}
-                        className="w-[80px]"
-                        placeholder="Qtd"
-                      />
-                      <Button 
-                        type="button" 
-                        variant="outline" 
-                        onClick={handleAddProduct}
-                        className="shrink-0"
-                      >
-                        <Plus className="h-4 w-4 mr-1" />
-                        Adicionar
-                      </Button>
-                    </div>
-                    
-                    {selectedProducts.length > 0 ? (
-                      <div className="space-y-2">
-                        {selectedProducts.map((product) => (
-                          <div key={product.id} className="flex items-center justify-between p-2 bg-background rounded border">
-                            <div>
-                              <span>{product.name}</span>
-                              <span className="text-xs text-muted-foreground ml-2">
-                                (Qtd: {product.quantity})
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <span className="text-muted-foreground">{formatCurrency(product.price * product.quantity)}</span>
-                              <Button 
-                                type="button" 
-                                variant="ghost" 
-                                size="sm" 
-                                onClick={() => handleRemoveProduct(product.id)}
-                                className="h-8 text-red-500 hover:text-red-700 hover:bg-red-50"
-                              >
-                                <X className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="text-center py-6 text-muted-foreground text-sm">
-                        Nenhum produto adicionado ao pacote.
-                      </div>
-                    )}
-                  </TabsContent>
-                </Tabs>
-                
-                {(selectedServices.length > 0 || selectedProducts.length > 0) && (
-                  <div className="flex items-center justify-between pt-2 border-t mt-2">
-                    <div>
-                      <div className="text-sm font-medium">Valor Total</div>
-                      <div className="text-sm text-muted-foreground">Desconto de {formData.discount}%</div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-sm line-through text-muted-foreground">{formatCurrency(calculateTotalPrice())}</div>
-                      <div className="font-medium text-primary">{formatCurrency(calculateDiscountedPrice())}</div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
+            <PackageTabContent 
+              activeTab={activeTab}
+              setActiveTab={setActiveTab}
+              selectedServices={selectedServices}
+              selectedProducts={selectedProducts}
+              availableServices={mockAvailableServices}
+              availableProducts={mockAvailableProducts}
+              handleAddService={handleAddService}
+              handleRemoveService={handleRemoveService}
+              handleAddProduct={handleAddProduct}
+              handleRemoveProduct={handleRemoveProduct}
+              calculateTotalPrice={calculateTotalPrice}
+              calculateDiscountedPrice={calculateDiscountedPrice}
+              discount={formData.discount || 0}
+            />
           </form>
         </div>
         
-        {/* Rodapé fixo */}
-        <div className="sticky bottom-0 mt-auto p-6 border-t bg-white shadow-sm">
-          <div className="flex flex-row gap-3 w-full justify-end">
-            <Button 
-              variant="outline" 
-              type="button" 
-              onClick={() => onOpenChange(false)}
-            >
-              Cancelar
-            </Button>
-            <Button 
-              type="submit" 
-              onClick={handleSubmit}
-              disabled={selectedServices.length === 0 || (formData.discount || 0) > 100}
-            >
-              {servicePackage ? "Atualizar" : "Criar"} Pacote
-            </Button>
-          </div>
-        </div>
+        <PackageFormFooter 
+          onCancel={() => onOpenChange(false)}
+          onSubmit={handleSubmit}
+          isSubmitDisabled={selectedServices.length === 0 || (formData.discount || 0) > 100}
+          isEditing={!!servicePackage}
+        />
       </SheetContent>
     </Sheet>
   );
