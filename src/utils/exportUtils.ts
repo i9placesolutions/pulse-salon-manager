@@ -224,9 +224,10 @@ const formatCurrency = (value: number) => {
   }).format(value);
 };
 
-interface FieldDefinition {
+// Define a more specific type for field functions to resolve the 'never' issue
+interface FieldDefinition<T = any> {
   header: string;
-  key: string;
+  key: string | keyof T;
   format?: (value: any) => string;
 }
 
@@ -236,42 +237,46 @@ export const prepareExportData = (clients: Client[], options: ClientExportOption
   const { exportFormat } = options;
   
   // Dados básicos (incluídos em todos os formatos)
-  const baseFields: FieldDefinition[] = [
+  const baseFields: FieldDefinition<Client>[] = [
     { header: 'Nome', key: 'name' },
     { header: 'CPF', key: 'cpf' }
   ];
   
   // Dados de contato
-  const contactFields: FieldDefinition[] = options.includeContact ? [
+  const contactFields: FieldDefinition<Client>[] = options.includeContact ? [
     { header: 'Email', key: 'email' },
     { header: 'Telefone', key: 'phone' }
   ] : [];
   
   // Data de aniversário
-  const birthdayFields: FieldDefinition[] = options.includeBirthday ? [
+  const birthdayFields: FieldDefinition<Client>[] = options.includeBirthday ? [
     { header: 'Data de Nascimento', key: 'birthDate', format: (value: string) => formatDateString(value) }
   ] : [];
   
   // Tags
-  const tagFields: FieldDefinition[] = options.includeTags ? [
-    { header: 'Tags', key: 'tags', format: (value: string[] | undefined) => value?.join(', ') || '' }
+  const tagFields: FieldDefinition<Client>[] = options.includeTags ? [
+    { 
+      header: 'Tags', 
+      key: 'tags', 
+      format: (value: string[] | undefined) => value?.join(', ') || '' 
+    }
   ] : [];
   
   // Dados financeiros
-  const financialFields: FieldDefinition[] = options.includeSpending ? [
+  const financialFields: FieldDefinition<Client>[] = options.includeSpending ? [
     { header: 'Total Gasto', key: 'totalSpent', format: (value: number) => formatCurrency(value) },
     { header: 'Cashback', key: 'cashback', format: (value: number) => formatCurrency(value) }
   ] : [];
   
   // Dados de visitas
-  const visitFields: FieldDefinition[] = options.includeVisitHistory ? [
+  const visitFields: FieldDefinition<Client>[] = options.includeVisitHistory ? [
     { header: 'Número de Visitas', key: 'visitsCount' },
     { header: 'Primeira Visita', key: 'firstVisit', format: (value: string) => formatDateString(value) },
     { header: 'Última Visita', key: 'lastVisit', format: (value: string) => formatDateString(value) }
   ] : [];
   
   // Status do cliente
-  const statusFields: FieldDefinition[] = [
+  const statusFields: FieldDefinition<Client>[] = [
     { 
       header: 'Status', 
       key: 'status', 
@@ -287,12 +292,12 @@ export const prepareExportData = (clients: Client[], options: ClientExportOption
   ];
 
   // Observações/preferências
-  const preferencesFields: FieldDefinition[] = options.includePreferences ? [
+  const preferencesFields: FieldDefinition<Client>[] = options.includePreferences ? [
     { header: 'Observações', key: 'observations' }
   ] : [];
   
   // Montar a lista de campos a incluir
-  let fields: FieldDefinition[] = [];
+  let fields: FieldDefinition<Client>[] = [];
   
   if (exportFormat === 'summary') {
     // Formato resumido: incluir apenas informações básicas
@@ -330,17 +335,23 @@ export const prepareExportData = (clients: Client[], options: ClientExportOption
     const clientData: Record<string, any> = {};
     
     fields.forEach(field => {
-      // Get the key name from the field definition
+      // Obter o nome da chave do campo
       const keyName = field.key;
       
-      // Type-safe access to client properties using a type assertion
-      const value = client[keyName as keyof Client];
+      // Acesso seguro às propriedades do cliente
+      let value: any;
       
-      // Apply formatting if available and value exists
+      if (typeof keyName === 'string') {
+        // Acesso seguro à propriedade do cliente usando keyof
+        value = client[keyName as keyof Client];
+      }
+      
+      // Aplicar formatação se disponível e o valor existir
       if (field.format && value !== undefined) {
-        // Use type assertion to explicitly cast the value to 'any' to resolve the type issue
-        clientData[field.header] = field.format(value as any);
+        // O tipo de retorno da função format sempre será string
+        clientData[field.header] = field.format(value);
       } else {
+        // Converter valor para string ou usar string vazia
         clientData[field.header] = value?.toString() || '';
       }
     });
