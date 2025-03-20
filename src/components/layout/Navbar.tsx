@@ -1,42 +1,64 @@
 
-import { Bell, User, Search, Sun, Moon } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { Menu, Bell, Plus, User, LogOut } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { SidebarTrigger } from "@/components/ui/sidebar";
-import { useState } from "react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
-export const Navbar = () => {
-  const [isDarkMode, setIsDarkMode] = useState(false);
+// Array of motivational quotes
+const motivationalQuotes = [
+  "Cada cliente é uma nova oportunidade",
+  "Pequenos progressos levam a grandes conquistas",
+  "Hoje é dia de fazer acontecer",
+  "Sua dedicação faz a diferença",
+  "Sorria, você está transformando vidas",
+  "Excelência em cada atendimento",
+  "Sua energia positiva contagia",
+];
 
-  const toggleDarkMode = () => {
-    setIsDarkMode(!isDarkMode);
-    // This would need to be connected to a theme provider to actually toggle dark mode
-  };
+interface NavbarProps {
+  onMenuClick: () => void;
+}
+
+export const Navbar = ({
+  onMenuClick
+}: NavbarProps) => {
+  const navigate = useNavigate();
+  
+  // Get current day of the year to select a quote
+  const dayOfYear = Math.floor((new Date().getTime() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 1000 / 60 / 60 / 24);
+  const todaysQuote = motivationalQuotes[dayOfYear % motivationalQuotes.length];
 
   return (
-    <div className="h-16 border-b border-border bg-background flex items-center px-4">
-      <div className="flex items-center gap-2">
-        <SidebarTrigger />
-        <div className="relative w-72 max-w-sm hidden md:flex">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <input
-            type="text"
-            placeholder="Buscar..."
-            className="w-full rounded-md border border-input bg-background pl-8 pr-4 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-          />
+    <header className="h-16 bg-white border-b sticky top-0 z-30">
+      <div className="h-full px-4 flex items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" size="icon" className="lg:hidden" onClick={onMenuClick}>
+            <Menu className="h-5 w-5" />
+          </Button>
+          <div>
+            <h1 className="font-semibold text-neutral">Barbearia Silva</h1>
+            <p className="text-xs text-muted-foreground animate-pulse-soft">{todaysQuote}</p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          {/* Notifications */}
+          <Button variant="ghost" size="icon" className="relative">
+            <Bell className="h-5 w-5" />
+            <span className="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full" />
+          </Button>
+
+          {/* User Profile */}
+          <Button variant="ghost" className="gap-2" onClick={() => navigate('/establishment-profile')}>
+            <Avatar className="h-8 w-8">
+              <AvatarImage src="/placeholder.svg" />
+              <AvatarFallback>JS</AvatarFallback>
+            </Avatar>
+            <span className="hidden md:inline">João Silva</span>
+          </Button>
         </div>
       </div>
-
-      <div className="ml-auto flex items-center gap-2">
-        <Button variant="ghost" size="icon" onClick={toggleDarkMode}>
-          {isDarkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-        </Button>
-        <Button variant="ghost" size="icon">
-          <Bell className="h-5 w-5" />
-        </Button>
-        <Button variant="ghost" size="icon">
-          <User className="h-5 w-5" />
-        </Button>
-      </div>
-    </div>
+    </header>
   );
-};
+}
