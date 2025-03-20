@@ -7,6 +7,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import {
   Select,
@@ -15,20 +16,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
-// Interface para o DateRangePicker simulada, pois não temos esse componente
-interface DateRangePickerProps {
-  className?: string;
-}
-
-// Componente simulado de DateRangePicker
-const DateRangePicker: React.FC<DateRangePickerProps> = ({ className }) => {
-  return (
-    <div className={className}>
-      <input type="date" className="w-full p-2 border rounded-md" />
-    </div>
-  );
-};
+import { DateRange } from "react-day-picker";
+import { CalendarIcon } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
+import { addDays, format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 interface ReportDialogProps {
   isOpen: boolean;
@@ -43,41 +41,88 @@ export const ReportDialog: React.FC<ReportDialogProps> = ({
 }) => {
   const [reportType, setReportType] = useState<string>("sales");
   const [reportFormat, setReportFormat] = useState<string>("pdf");
+  const [date, setDate] = useState<DateRange | undefined>({
+    from: new Date(),
+    to: addDays(new Date(), 7),
+  });
+
+  const handleGenerate = () => {
+    onGenerateReport({
+      type: reportType,
+      format: reportFormat,
+      dateRange: date
+    });
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Gerar Relatório</DialogTitle>
         </DialogHeader>
         <div className="grid gap-4 py-4">
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="reportType" className="col-span-4">
-              Tipo de Relatório
-            </Label>
+          <div className="grid gap-2">
+            <Label htmlFor="reportType">Tipo de Relatório</Label>
             <Select value={reportType} onValueChange={setReportType}>
-              <SelectTrigger className="col-span-4">
+              <SelectTrigger id="reportType">
                 <SelectValue placeholder="Selecione o tipo" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="sales">Vendas</SelectItem>
                 <SelectItem value="products">Produtos</SelectItem>
                 <SelectItem value="clients">Clientes</SelectItem>
+                <SelectItem value="cashFlow">Fluxo de Caixa</SelectItem>
               </SelectContent>
             </Select>
           </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="period" className="col-span-4">
-              Período
-            </Label>
-            <DateRangePicker className="col-span-4" />
+          
+          <div className="grid gap-2">
+            <Label>Período</Label>
+            <div className="grid gap-2">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    id="date"
+                    variant={"outline"}
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !date && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {date?.from ? (
+                      date.to ? (
+                        <>
+                          {format(date.from, "dd/MM/yyyy", { locale: ptBR })} -{" "}
+                          {format(date.to, "dd/MM/yyyy", { locale: ptBR })}
+                        </>
+                      ) : (
+                        format(date.from, "dd/MM/yyyy", { locale: ptBR })
+                      )
+                    ) : (
+                      <span>Selecione um período</span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    initialFocus
+                    mode="range"
+                    defaultMonth={date?.from}
+                    selected={date}
+                    onSelect={setDate}
+                    numberOfMonths={2}
+                    locale={ptBR}
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
           </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="format" className="col-span-4">
-              Formato
-            </Label>
+          
+          <div className="grid gap-2">
+            <Label htmlFor="format">Formato</Label>
             <Select value={reportFormat} onValueChange={setReportFormat}>
-              <SelectTrigger className="col-span-4">
+              <SelectTrigger id="format">
                 <SelectValue placeholder="Selecione o formato" />
               </SelectTrigger>
               <SelectContent>
@@ -88,15 +133,12 @@ export const ReportDialog: React.FC<ReportDialogProps> = ({
             </Select>
           </div>
         </div>
-        <div className="flex justify-end gap-4">
+        <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>
-          <Button onClick={() => onGenerateReport({
-            type: reportType,
-            format: reportFormat
-          })}>Gerar</Button>
-        </div>
+          <Button onClick={handleGenerate}>Gerar</Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

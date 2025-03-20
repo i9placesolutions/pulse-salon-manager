@@ -6,27 +6,35 @@ import { formatCurrency } from "@/utils/currency";
 import { Search, User, ShoppingCart, CreditCard } from "lucide-react";
 import { ProductCard } from "./ProductCard";
 import { CartItem } from "./CartItem";
-import { useCartState } from "@/hooks/useCartState";
 import { usePDVData } from "@/hooks/usePDVData";
 
 interface PDVTerminalProps {
   onViewOrders: () => void;
+  searchTerm: string;
+  setSearchTerm: (term: string) => void;
+  selectedClient: any;
+  cartItems: any[];
+  cartTotal: number;
+  handleAddToCart: (product: any) => void;
+  handleChangeQuantity: (id: string, quantity: number) => void;
+  handleRemoveFromCart: (id: string) => void;
+  handleOpenPaymentDialog: () => void;
+  setIsClientDialogOpen: (isOpen: boolean) => void;
 }
 
-export function PDVTerminal({ onViewOrders }: PDVTerminalProps) {
-  const { 
-    searchTerm, 
-    setSearchTerm,
-    selectedClient,
-    cartItems,
-    cartTotal,
-    handleAddToCart,
-    handleChangeQuantity,
-    handleRemoveFromCart,
-    handleOpenPaymentDialog,
-    setIsClientDialogOpen
-  } = useCartState();
-
+export function PDVTerminal({ 
+  onViewOrders,
+  searchTerm,
+  setSearchTerm,
+  selectedClient,
+  cartItems,
+  cartTotal,
+  handleAddToCart,
+  handleChangeQuantity,
+  handleRemoveFromCart,
+  handleOpenPaymentDialog,
+  setIsClientDialogOpen
+}: PDVTerminalProps) {
   const { filteredProducts } = usePDVData();
 
   return (

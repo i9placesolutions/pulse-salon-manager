@@ -1,6 +1,6 @@
 
 import { Button } from "@/components/ui/button";
-import { Lock, DollarSign, Clock } from "lucide-react";
+import { CreditCard, Lock, Calculator, ArrowUp, ArrowDown, BarChart2 } from "lucide-react";
 
 interface PDVHeaderProps {
   isCashierClosed: boolean;
@@ -17,52 +17,38 @@ export function PDVHeader({
   onCloseCashier,
   onWithdrawal,
   onSupply,
-  onReports
+  onReports,
 }: PDVHeaderProps) {
   return (
-    <div className="border-b">
-      <div className="container mx-auto py-4 flex items-center justify-between">
-        <h1 className="text-2xl font-bold">PDV</h1>
-        <div className="flex gap-2">
+    <div className="bg-white border-b">
+      <div className="container mx-auto py-4">
+        <div className="flex flex-wrap items-center gap-3">
           {isCashierClosed ? (
-            <Button 
-              variant="outline" 
-              onClick={onOpenCashier}
-            >
+            <Button onClick={onOpenCashier}>
               <Lock className="mr-2 h-4 w-4" />
               Abrir Caixa
             </Button>
           ) : (
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                onClick={onWithdrawal}
-              >
-                <DollarSign className="mr-2 h-4 w-4" />
-                Retirada
-              </Button>
-              <Button
-                variant="outline"
-                onClick={onSupply}
-              >
-                <DollarSign className="mr-2 h-4 w-4" />
-                Suprimento
-              </Button>
-              <Button 
-                variant="outline" 
-                className="text-red-600"
-                onClick={onCloseCashier}
-              >
-                <Lock className="mr-2 h-4 w-4" />
+            <>
+              <Button variant="outline" onClick={onCloseCashier}>
+                <Calculator className="mr-2 h-4 w-4" />
                 Fechar Caixa
               </Button>
-            </div>
+              
+              <Button variant="outline" onClick={onWithdrawal}>
+                <ArrowUp className="mr-2 h-4 w-4" />
+                Retirada
+              </Button>
+              
+              <Button variant="outline" onClick={onSupply}>
+                <ArrowDown className="mr-2 h-4 w-4" />
+                Suprimento
+              </Button>
+            </>
           )}
-          <Button
-            variant="outline"
-            onClick={onReports}
-          >
-            <Clock className="mr-2 h-4 w-4" />
+          
+          <Button variant="outline" onClick={onReports}>
+            <BarChart2 className="mr-2 h-4 w-4" />
             Relatórios
           </Button>
         </div>

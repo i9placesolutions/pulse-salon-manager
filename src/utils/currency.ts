@@ -1,24 +1,24 @@
-export function formatCurrency(value: number): string {
-  return new Intl.NumberFormat("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  }).format(value);
-}
 
-export function parseCurrency(value: string): number {
-  // Remove qualquer caractere não numérico exceto virgula e ponto
-  const numericString = value.replace(/[^\d,.-]/g, "");
+/**
+ * Format a number to Brazilian currency (BRL)
+ */
+export const formatCurrency = (value: number): string => {
+  return new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+  }).format(value);
+};
+
+/**
+ * Parse a currency string to a number
+ */
+export const parseCurrency = (value: string): number => {
+  // Remove any non-numeric character except commas and dots
+  const sanitized = value.replace(/[^\d,.]/g, '');
   
-  // Converte vírgula para ponto (padrão brasileiro para decimal)
-  const normalizedString = numericString.replace(",", ".");
+  // Replace comma with dot for JS parsing
+  const withDot = sanitized.replace(',', '.');
   
-  // Converte para número
-  const numericValue = parseFloat(normalizedString);
-  
-  // Verifica se é um número válido
-  if (isNaN(numericValue)) {
-    return 0;
-  }
-  
-  return numericValue;
-}
+  // Parse the string to a number
+  return parseFloat(withDot) || 0;
+};
