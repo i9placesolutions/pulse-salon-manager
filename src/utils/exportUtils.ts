@@ -1,3 +1,4 @@
+
 // Utilitário para exportação de dados em formato CSV e PDF
 import { formatDate, formatCampaignType, formatCampaignStatus } from './formatters';
 import { exportCampaignToPDF } from './pdfExport';
@@ -330,11 +331,15 @@ export const prepareExportData = (clients: Client[], options: ClientExportOption
     
     fields.forEach(field => {
       // Use type assertion to safely access client properties
-      const key = field.key as keyof typeof client;
+      const key = field.key as keyof Client;
       const value = client[key];
       
-      // Apply formatting if available
-      clientData[field.header] = field.format ? field.format(value as never) : value || '';
+      // Apply formatting if available, with proper type handling
+      if (field.format && value !== undefined) {
+        clientData[field.header] = field.format(value);
+      } else {
+        clientData[field.header] = value || '';
+      }
     });
     
     return clientData;
