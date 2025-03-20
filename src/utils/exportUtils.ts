@@ -333,15 +333,15 @@ export const prepareExportData = (clients: Client[], options: ClientExportOption
       // Get the key name from the field definition
       const keyName = field.key;
       
-      // Get the value safely using an indexed access to avoid type errors
-      const value = client[keyName as keyof typeof client];
+      // Type-safe access to client properties using a type assertion
+      const value = client[keyName as keyof Client];
       
       // Apply formatting if available and value exists
       if (field.format && value !== undefined) {
-        // Use explicit type assertion to resolve the 'never' type issue
-        clientData[field.header] = field.format(value);
+        // Use type assertion to explicitly cast the value to 'any' to resolve the type issue
+        clientData[field.header] = field.format(value as any);
       } else {
-        clientData[field.header] = value || '';
+        clientData[field.header] = value?.toString() || '';
       }
     });
     
