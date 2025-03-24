@@ -1,35 +1,22 @@
 
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Ban, Lock, Printer, Clock } from "lucide-react";
 import { useAppState } from "@/contexts/AppStateContext";
-import { useToast } from "@/hooks/use-toast";
-import { Sale, Client } from "@/types/pdv";
+import { useCartState } from "@/hooks/useCartState";
+import { usePDVData } from "@/hooks/usePDVData";
+import { usePDVDialogs } from "@/hooks/usePDVDialogs";
 import { PDVHeader } from "./PDVHeader";
-import { PDVTerminal } from "./PDVTerminal";
-import { OrderList } from "./OrderList";
+import { PDVContent } from "./PDVContent";
 import { CashierOpenDialog } from "./CashierOpenDialog";
 import { CashierCloseDialog } from "./CashierCloseDialog";
 import { CashOperationDialog } from "./CashOperationDialog";
-import { OrderDialog } from "./OrderDialog";
 import { ReportDialog } from "./ReportDialog";
 import { ClientSelectDialog } from "./ClientSelectDialog";
 import { PaymentDialog } from "./PaymentDialog";
-import { useCartState } from "@/hooks/useCartState";
-import { useCashierDialog } from "@/hooks/useCashierDialog";
-import { useCashOperationDialog } from "@/hooks/useCashOperationDialog";
-import { useReportDialog } from "@/hooks/useReportDialog";
-import { useOrderDialog } from "@/hooks/useOrderDialog";
-import { usePaymentDialog } from "@/hooks/usePaymentDialog";
-import { useClientDialog } from "@/hooks/useClientDialog";
-import { usePDVData } from "@/hooks/usePDVData";
+import { OrderDialog } from "./OrderDialog";
+import { Client } from "@/types/pdv";
 
 export function PDV() {
   // Core states
-  const { toast } = useToast();
-  const { pdvState } = useAppState();
   const [currentTab, setCurrentTab] = useState("terminal");
   
   // PDV data hook
@@ -49,8 +36,9 @@ export function PDV() {
     handleChangeQuantity,
   } = useCartState();
 
-  // Cashier dialog hooks
+  // Dialogs and operations state
   const {
+    // Cashier
     isOpeningDialogOpen,
     setIsOpeningDialogOpen,
     isClosingDialogOpen,
@@ -58,44 +46,35 @@ export function PDV() {
     openingAmount,
     setOpeningAmount,
     handleOpenCashier,
-    handleCloseCashier
-  } = useCashierDialog();
-
-  // Cash operation dialog hooks
-  const {
+    handleCloseCashier,
+    isCashierClosed,
+    
+    // Cash operation
     isCashOperationDialogOpen,
     setIsCashOperationDialogOpen,
     cashOperationType,
     setCashOperationType,
-    handleCashOperation
-  } = useCashOperationDialog();
-
-  // Report dialog hooks
-  const {
+    handleCashOperation,
+    
+    // Report
     isReportDialogOpen,
     setIsReportDialogOpen,
-    handleGenerateReport
-  } = useReportDialog();
-
-  // Client dialog hooks
-  const {
+    handleGenerateReport,
+    
+    // Client
     isClientDialogOpen,
     setIsClientDialogOpen,
-    handleSelectClient
-  } = useClientDialog();
-
-  // Order dialog hooks
-  const {
+    handleSelectClient,
+    
+    // Order
     isOrderDialogOpen,
     setIsOrderDialogOpen,
     selectedOrder,
-    setSelectedOrder,
     handleCancelOrder,
-    handlePrintReceipt
-  } = useOrderDialog();
-
-  // Payment dialog hooks
-  const {
+    handlePrintReceipt,
+    handleViewOrder,
+    
+    // Payment
     isPaymentDialogOpen,
     setIsPaymentDialogOpen,
     selectedPaymentMethod,
@@ -106,36 +85,36 @@ export function PDV() {
     setPaymentMethods,
     calculateRemainingAmount,
     calculateChangeAmount,
-    handleAddPayment,
-    handleFinalizeSale
-  } = usePaymentDialog();
+    handleAddPaymentWrapper,
+    handleFinalizeSaleWrapper,
+    
+    // State data
+    completedSales,
+    pendingSales
+  } = usePDVDialogs();
 
-  // Determine if cashier is closed
-  const isCashierClosed = !pdvState.cashierSession || pdvState.cashierSession.status === "closed";
-  
-  // Wrap payment handling
-  const handleAddPaymentWrapper = () => {
-    handleAddPayment(cartTotal);
+  // Handler for payment dialog
+  const handleOpenPaymentDialog = () => {
+    if (cartItems.length === 0) {
+      return;
+    }
+    
+    if (!selectedClient) {
+      setIsClientDialogOpen(true);
+      return;
+    }
+    
+    setIsPaymentDialogOpen(true);
   };
 
-  // Wrap sale finalization
-  const handleFinalizeSaleWrapper = () => {
-    const sale = handleFinalizeSale(cartItems, cartTotal, selectedClient);
+  // Handle finalize sale
+  const finalizeSale = () => {
+    const sale = handleFinalizeSaleWrapper(cartItems, cartTotal, selectedClient);
     if (sale) {
       setCartItems([]);
       setSelectedClient(null);
       setPaymentMethods([]);
-      toast({
-        title: "Venda finalizada",
-        description: `Venda ${sale.id} foi finalizada com sucesso.`,
-      });
     }
-  };
-
-  // View order handler
-  const handleViewOrder = (order: Sale) => {
-    setSelectedOrder(order);
-    setIsOrderDialogOpen(true);
   };
 
   return (
@@ -155,85 +134,27 @@ export function PDV() {
         onReports={() => setIsReportDialogOpen(true)}
       />
       
-      <Tabs 
-        defaultValue="terminal" 
-        className="flex-1"
-        value={currentTab}
-        onValueChange={setCurrentTab}
-      >
-        <div className="container mx-auto py-4">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="terminal">Terminal de Vendas</TabsTrigger>
-            <TabsTrigger value="orders">Pedidos</TabsTrigger>
-          </TabsList>
-        </div>
-        
-        <TabsContent value="terminal" className="flex-1">
-          <div className="container mx-auto py-4">
-            {isCashierClosed ? (
-              <Card>
-                <CardContent className="p-6 flex flex-col items-center justify-center text-center">
-                  <Ban className="h-16 w-16 text-muted-foreground/50 mb-4" />
-                  <h3 className="text-lg font-medium mb-2">Terminal bloqueado</h3>
-                  <p className="text-muted-foreground mb-4">
-                    O caixa está fechado. Abra o caixa para iniciar as vendas.
-                  </p>
-                  <Button onClick={() => setIsOpeningDialogOpen(true)}>
-                    <Lock className="mr-2 h-4 w-4" />
-                    Abrir Caixa
-                  </Button>
-                </CardContent>
-              </Card>
-            ) : (
-              <PDVTerminal 
-                onViewOrders={() => setCurrentTab("orders")}
-                searchTerm={searchTerm}
-                setSearchTerm={setSearchTerm}
-                selectedClient={selectedClient}
-                cartItems={cartItems}
-                cartTotal={cartTotal}
-                handleAddToCart={handleAddToCart}
-                handleChangeQuantity={handleChangeQuantity}
-                handleRemoveFromCart={handleRemoveFromCart}
-                handleOpenPaymentDialog={() => {
-                  if (cartItems.length === 0) {
-                    toast({
-                      variant: "destructive",
-                      title: "Carrinho vazio",
-                      description: "Adicione produtos ao carrinho antes de finalizar a venda.",
-                    });
-                    return;
-                  }
-                  
-                  if (!selectedClient) {
-                    setIsClientDialogOpen(true);
-                    toast({
-                      variant: "destructive", 
-                      title: "Cliente não selecionado",
-                      description: "Selecione um cliente antes de finalizar a venda.",
-                    });
-                    return;
-                  }
-                  
-                  setIsPaymentDialogOpen(true);
-                }}
-                setIsClientDialogOpen={setIsClientDialogOpen}
-              />
-            )}
-          </div>
-        </TabsContent>
-        
-        <TabsContent value="orders" className="flex-1">
-          <div className="container mx-auto py-4">
-            <OrderList
-              orders={[...pdvState.completedSales, ...pdvState.pendingSales]}
-              onCancel={handleCancelOrder}
-              onPrintReceipt={handlePrintReceipt}
-              onViewOrder={handleViewOrder}
-            />
-          </div>
-        </TabsContent>
-      </Tabs>
+      <PDVContent 
+        isCashierClosed={isCashierClosed}
+        currentTab={currentTab}
+        setCurrentTab={setCurrentTab}
+        searchTerm={searchTerm}
+        setSearchTerm={setSearchTerm}
+        selectedClient={selectedClient}
+        cartItems={cartItems}
+        cartTotal={cartTotal}
+        handleAddToCart={handleAddToCart}
+        handleChangeQuantity={handleChangeQuantity}
+        handleRemoveFromCart={handleRemoveFromCart}
+        handleOpenPaymentDialog={handleOpenPaymentDialog}
+        setIsClientDialogOpen={setIsClientDialogOpen}
+        setIsOpeningDialogOpen={setIsOpeningDialogOpen}
+        completedSales={completedSales}
+        pendingSales={pendingSales}
+        onViewOrder={handleViewOrder}
+        onCancelOrder={handleCancelOrder}
+        onPrintReceipt={handlePrintReceipt}
+      />
       
       {/* All Dialogs */}
       <CashierOpenDialog
@@ -247,8 +168,8 @@ export function PDV() {
       <CashierCloseDialog
         isOpen={isClosingDialogOpen}
         onOpenChange={setIsClosingDialogOpen}
-        initialAmount={pdvState.cashierSession?.initialAmount || 0}
-        sales={pdvState.cashierSession?.sales || []}
+        initialAmount={openingAmount ? parseFloat(openingAmount) : 0}
+        sales={completedSales}
         onConfirm={handleCloseCashier}
       />
       
@@ -284,11 +205,11 @@ export function PDV() {
         onSelectPaymentMethod={setSelectedPaymentMethod}
         paymentAmount={paymentAmount}
         onPaymentAmountChange={setPaymentAmount}
-        onAddPayment={handleAddPaymentWrapper}
+        onAddPayment={() => handleAddPaymentWrapper(cartTotal)}
         paymentMethods={paymentMethods}
         remainingAmount={calculateRemainingAmount(cartTotal)}
         changeAmount={calculateChangeAmount(cartTotal)}
-        onFinalize={handleFinalizeSaleWrapper}
+        onFinalize={finalizeSale}
       />
       
       <OrderDialog
