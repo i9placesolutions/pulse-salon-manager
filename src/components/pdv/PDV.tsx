@@ -5,13 +5,7 @@ import { usePDVData } from "@/hooks/usePDVData";
 import { usePDVDialogs } from "@/hooks/usePDVDialogs";
 import { PDVHeader } from "./PDVHeader";
 import { PDVContent } from "./PDVContent";
-import { CashierOpenDialog } from "./CashierOpenDialog";
-import { CashierCloseDialog } from "./CashierCloseDialog";
-import { CashOperationDialog } from "./CashOperationDialog";
-import { ReportDialog } from "./ReportDialog";
-import { ClientSelectDialog } from "./ClientSelectDialog";
-import { PaymentDialog } from "./PaymentDialog";
-import { OrderDialog } from "./OrderDialog";
+import { DialogsProvider } from "./DialogsProvider";
 import { Client } from "@/types/pdv";
 
 export function PDV() {
@@ -37,57 +31,27 @@ export function PDV() {
 
   // Dialogs and operations state
   const {
-    // Cashier
-    isOpeningDialogOpen,
-    setIsOpeningDialogOpen,
-    isClosingDialogOpen,
-    setIsClosingDialogOpen,
-    openingAmount,
-    setOpeningAmount,
-    handleOpenCashier,
-    handleCloseCashier,
+    // Cashier state
     isCashierClosed,
+    setIsOpeningDialogOpen,
+    setIsClosingDialogOpen,
     
-    // Cash operation
-    isCashOperationDialogOpen,
-    setIsCashOperationDialogOpen,
-    cashOperationType,
+    // Cash operation state
     setCashOperationType,
-    handleCashOperation,
+    setIsCashOperationDialogOpen,
     
-    // Report
-    isReportDialogOpen,
+    // Report state
     setIsReportDialogOpen,
-    handleGenerateReport,
     
-    // Client
-    isClientDialogOpen,
+    // Client state
     setIsClientDialogOpen,
-    handleSelectClient,
     
-    // Order
-    isOrderDialogOpen,
-    setIsOrderDialogOpen,
-    selectedOrder,
+    // Order state
+    handleViewOrder,
     handleCancelOrder,
     handlePrintReceipt,
-    handleViewOrder,
     
-    // Payment
-    isPaymentDialogOpen,
-    setIsPaymentDialogOpen,
-    selectedPaymentMethod,
-    setSelectedPaymentMethod,
-    paymentAmount,
-    setPaymentAmount,
-    paymentMethods,
-    setPaymentMethods,
-    calculateRemainingAmount,
-    calculateChangeAmount,
-    handleAddPaymentWrapper,
-    handleFinalizeSaleWrapper,
-    
-    // State data
+    // Completed and pending sales
     completedSales,
     pendingSales
   } = usePDVDialogs();
@@ -104,16 +68,6 @@ export function PDV() {
     }
     
     setIsPaymentDialogOpen(true);
-  };
-
-  // Handle finalize sale
-  const finalizeSale = () => {
-    const sale = handleFinalizeSaleWrapper(cartItems, cartTotal, selectedClient);
-    if (sale) {
-      setCartItems([]);
-      setSelectedClient(null);
-      setPaymentMethods([]);
-    }
   };
 
   return (
@@ -155,68 +109,12 @@ export function PDV() {
         onPrintReceipt={handlePrintReceipt}
       />
       
-      {/* All Dialogs */}
-      <CashierOpenDialog
-        isOpen={isOpeningDialogOpen}
-        onOpenChange={setIsOpeningDialogOpen}
-        openingAmount={openingAmount}
-        onOpeningAmountChange={setOpeningAmount}
-        onConfirm={handleOpenCashier}
-      />
-      
-      <CashierCloseDialog
-        isOpen={isClosingDialogOpen}
-        onOpenChange={setIsClosingDialogOpen}
-        initialAmount={openingAmount ? parseFloat(openingAmount) : 0}
-        sales={completedSales}
-        onConfirm={handleCloseCashier}
-      />
-      
-      <CashOperationDialog
-        isOpen={isCashOperationDialogOpen}
-        onOpenChange={setIsCashOperationDialogOpen}
-        type={cashOperationType}
-        onConfirm={handleCashOperation}
-      />
-      
-      <ReportDialog
-        isOpen={isReportDialogOpen}
-        onOpenChange={setIsReportDialogOpen}
-        onGenerateReport={handleGenerateReport}
-      />
-      
-      <ClientSelectDialog
-        isOpen={isClientDialogOpen}
-        onOpenChange={setIsClientDialogOpen}
-        clients={mockClients}
-        onSelect={(client: Client) => {
-          handleSelectClient(client);
-          setSelectedClient(client);
-        }}
-        isRequired={!selectedClient}
-      />
-      
-      <PaymentDialog
-        isOpen={isPaymentDialogOpen}
-        onOpenChange={setIsPaymentDialogOpen}
+      <DialogsProvider
+        cartItems={cartItems}
         cartTotal={cartTotal}
-        selectedPaymentMethod={selectedPaymentMethod}
-        onSelectPaymentMethod={setSelectedPaymentMethod}
-        paymentAmount={paymentAmount}
-        onPaymentAmountChange={setPaymentAmount}
-        onAddPayment={() => handleAddPaymentWrapper(cartTotal)}
-        paymentMethods={paymentMethods}
-        remainingAmount={calculateRemainingAmount(cartTotal)}
-        changeAmount={calculateChangeAmount(cartTotal)}
-        onFinalize={finalizeSale}
-      />
-      
-      <OrderDialog
-        isOpen={isOrderDialogOpen}
-        onOpenChange={setIsOrderDialogOpen}
-        order={selectedOrder}
-        onPrintReceipt={handlePrintReceipt}
-        onCancel={handleCancelOrder}
+        selectedClient={selectedClient}
+        setCartItems={setCartItems}
+        setSelectedClient={setSelectedClient}
       />
     </div>
   );

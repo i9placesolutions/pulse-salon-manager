@@ -6,43 +6,61 @@ import { PaymentDialog } from "./PaymentDialog";
 import { CashOperationDialog } from "./CashOperationDialog";
 import { OrderDialog } from "./OrderDialog";
 import { ReportDialog } from "./ReportDialog";
-import { useAppState } from "@/contexts/AppStateContext";
+import { usePDVDialogs } from "@/hooks/usePDVDialogs";
 import { useCartState } from "@/hooks/useCartState";
-import { usePDVData } from "@/hooks/usePDVData";
-import { useClientDialog } from "@/hooks/useClientDialog";
-import { useCashierDialog } from "@/hooks/useCashierDialog";
-import { useCashOperationDialog } from "@/hooks/useCashOperationDialog";
-import { usePaymentDialog } from "@/hooks/usePaymentDialog";
-import { useOrderDialog } from "@/hooks/useOrderDialog";
-import { useReportDialog } from "@/hooks/useReportDialog";
+import { Client, Sale } from "@/types/pdv";
 
-export function DialogsProvider() {
-  const { pdvState } = useAppState();
-  const { cartItems, cartTotal, setCartItems, setSelectedClient } = useCartState();
-  const { mockClients } = usePDVData();
-  
-  // Use refactored hooks
-  const {
-    selectedClient,
-    isClientDialogOpen,
-    setIsClientDialogOpen,
-    handleSelectClient
-  } = useClientDialog();
+interface DialogsProviderProps {
+  cartItems: any[];
+  cartTotal: number;
+  selectedClient: Client | null;
+  setCartItems: (items: any[]) => void;
+  setSelectedClient: (client: Client | null) => void;
+}
 
+export function DialogsProvider({
+  cartItems,
+  cartTotal,
+  selectedClient,
+  setCartItems,
+  setSelectedClient
+}: DialogsProviderProps) {
+  // Use all dialog related hooks from usePDVDialogs
   const {
+    // Cashier
+    isOpeningDialogOpen,
+    setIsOpeningDialogOpen,
     isClosingDialogOpen,
     setIsClosingDialogOpen,
-    handleCloseCashier
-  } = useCashierDialog();
-
-  const {
+    openingAmount,
+    setOpeningAmount,
+    handleOpenCashier,
+    handleCloseCashier,
+    
+    // Cash operation
     isCashOperationDialogOpen,
     setIsCashOperationDialogOpen,
     cashOperationType,
-    handleCashOperation
-  } = useCashOperationDialog();
-
-  const {
+    handleCashOperation,
+    
+    // Report
+    isReportDialogOpen,
+    setIsReportDialogOpen,
+    handleGenerateReport,
+    
+    // Client
+    isClientDialogOpen,
+    setIsClientDialogOpen,
+    handleSelectClient,
+    
+    // Order
+    isOrderDialogOpen,
+    setIsOrderDialogOpen,
+    selectedOrder,
+    handleCancelOrder,
+    handlePrintReceipt,
+    
+    // Payment
     isPaymentDialogOpen,
     setIsPaymentDialogOpen,
     selectedPaymentMethod,
@@ -50,56 +68,63 @@ export function DialogsProvider() {
     paymentAmount,
     setPaymentAmount,
     paymentMethods,
+    setPaymentMethods,
     calculateRemainingAmount,
     calculateChangeAmount,
-    handleAddPayment,
-    handleFinalizeSale
-  } = usePaymentDialog();
-
-  const {
-    isOrderDialogOpen,
-    setIsOrderDialogOpen,
-    selectedOrder,
-    handleCancelOrder,
-    handlePrintReceipt
-  } = useOrderDialog();
-
-  const {
-    isReportDialogOpen,
-    setIsReportDialogOpen,
-    handleGenerateReport
-  } = useReportDialog();
+    handleAddPaymentWrapper,
+    handleFinalizeSaleWrapper,
+  } = usePDVDialogs();
 
   // Wrap the finalize sale handler to reset cart items and selected client
-  const handleFinalizeSaleWrapper = () => {
-    const sale = handleFinalizeSale(cartItems, cartTotal, selectedClient);
+  const handleFinalizeSale = () => {
+    const sale = handleFinalizeSaleWrapper(cartItems, cartTotal, selectedClient);
     if (sale) {
       setCartItems([]);
       setSelectedClient(null);
+      setPaymentMethods([]);
     }
-  };
-
-  // Wrap the add payment handler for the specific cart total
-  const handleAddPaymentWrapper = () => {
-    handleAddPayment(cartTotal);
   };
 
   return (
     <>
-      <ClientSelectDialog
-        isOpen={isClientDialogOpen}
-        onOpenChange={setIsClientDialogOpen}
-        clients={mockClients as any}
-        onSelect={handleSelectClient as any}
-        isRequired={!selectedClient}
+      <CashierOpenDialog
+        isOpen={isOpeningDialogOpen}
+        onOpenChange={setIsOpeningDialogOpen}
+        openingAmount={openingAmount}
+        onOpeningAmountChange={setOpeningAmount}
+        onConfirm={handleOpenCashier}
       />
       
       <CashierCloseDialog
         isOpen={isClosingDialogOpen}
         onOpenChange={setIsClosingDialogOpen}
-        initialAmount={pdvState.cashierSession?.initialAmount || 0}
-        sales={pdvState.cashierSession?.sales || []}
+        initialAmount={openingAmount ? parseFloat(openingAmount) : 0}
+        sales={[]} // Will be filled from the cashier session
         onConfirm={handleCloseCashier}
+      />
+      
+      <CashOperationDialog
+        isOpen={isCashOperationDialogOpen}
+        onOpenChange={setIsCashOperationDialogOpen}
+        type={cashOperationType}
+        onConfirm={handleCashOperation}
+      />
+      
+      <ReportDialog
+        isOpen={isReportDialogOpen}
+        onOpenChange={setIsReportDialogOpen}
+        onGenerateReport={handleGenerateReport}
+      />
+      
+      <ClientSelectDialog
+        isOpen={isClientDialogOpen}
+        onOpenChange={setIsClientDialogOpen}
+        clients={[]} // Will be provided from mock data
+        onSelect={(client: Client) => {
+          handleSelectClient(client);
+          setSelectedClient(client);
+        }}
+        isRequired={!selectedClient}
       />
       
       <PaymentDialog
@@ -110,18 +135,11 @@ export function DialogsProvider() {
         onSelectPaymentMethod={setSelectedPaymentMethod}
         paymentAmount={paymentAmount}
         onPaymentAmountChange={setPaymentAmount}
-        onAddPayment={handleAddPaymentWrapper}
+        onAddPayment={() => handleAddPaymentWrapper(cartTotal)}
         paymentMethods={paymentMethods}
         remainingAmount={calculateRemainingAmount(cartTotal)}
         changeAmount={calculateChangeAmount(cartTotal)}
-        onFinalize={handleFinalizeSaleWrapper}
-      />
-      
-      <CashOperationDialog
-        isOpen={isCashOperationDialogOpen}
-        onOpenChange={setIsCashOperationDialogOpen}
-        type={cashOperationType}
-        onConfirm={handleCashOperation}
+        onFinalize={handleFinalizeSale}
       />
       
       <OrderDialog
@@ -130,12 +148,6 @@ export function DialogsProvider() {
         order={selectedOrder}
         onPrintReceipt={handlePrintReceipt}
         onCancel={handleCancelOrder}
-      />
-      
-      <ReportDialog
-        isOpen={isReportDialogOpen}
-        onOpenChange={setIsReportDialogOpen}
-        onGenerateReport={handleGenerateReport}
       />
     </>
   );

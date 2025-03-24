@@ -59,7 +59,7 @@ export function usePDVDialogs() {
     handlePrintReceipt
   } = useOrderDialog();
 
-  // Payment dialog hooks - using our new extracted hook
+  // Payment dialog hooks - using our extracted hook
   const {
     isPaymentDialogOpen,
     setIsPaymentDialogOpen,
