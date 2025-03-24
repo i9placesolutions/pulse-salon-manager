@@ -3,10 +3,10 @@ import { useState } from "react";
 import { Sale, Client } from "@/types/pdv";
 import { useOrderDialog } from "@/hooks/useOrderDialog";
 import { useClientDialog } from "@/hooks/useClientDialog";
-import { usePaymentDialog } from "@/hooks/usePaymentDialog";
 import { useReportDialog } from "@/hooks/useReportDialog";
 import { useCashOperationDialog } from "@/hooks/useCashOperationDialog";
 import { useCashierDialog } from "@/hooks/useCashierDialog";
+import { usePaymentHandling } from "@/hooks/usePaymentHandling";
 import { useToast } from "@/hooks/use-toast";
 import { useAppState } from "@/contexts/AppStateContext";
 
@@ -59,7 +59,7 @@ export function usePDVDialogs() {
     handlePrintReceipt
   } = useOrderDialog();
 
-  // Payment dialog hooks
+  // Payment dialog hooks - using our new extracted hook
   const {
     isPaymentDialogOpen,
     setIsPaymentDialogOpen,
@@ -72,8 +72,9 @@ export function usePDVDialogs() {
     calculateRemainingAmount,
     calculateChangeAmount,
     handleAddPayment,
-    handleFinalizeSale
-  } = usePaymentDialog();
+    handleFinalizeSale,
+    handleOpenPaymentDialog
+  } = usePaymentHandling();
   
   // Determine if cashier is closed
   const isCashierClosed = !pdvState.cashierSession || pdvState.cashierSession.status === "closed";
@@ -139,7 +140,7 @@ export function usePDVDialogs() {
     handlePrintReceipt,
     handleViewOrder,
     
-    // Payment
+    // Payment - now using our extracted hook
     isPaymentDialogOpen,
     setIsPaymentDialogOpen,
     selectedPaymentMethod,

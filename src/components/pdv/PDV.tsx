@@ -1,6 +1,5 @@
 
 import { useState } from "react";
-import { useAppState } from "@/contexts/AppStateContext";
 import { useCartState } from "@/hooks/useCartState";
 import { usePDVData } from "@/hooks/usePDVData";
 import { usePDVDialogs } from "@/hooks/usePDVDialogs";
