@@ -1,7 +1,7 @@
 export interface Client {
-  id: number;
+  id: string;
   name: string;
-  email?: string;
+  email: string;
   phone: string;
   birthDate: string;
   firstVisit?: string;
@@ -16,6 +16,10 @@ export interface Client {
   lastVisit?: string;
   observations?: string;
   tags?: string[];
+  benefits?: Array<{
+    type: string;
+    value: number;
+  }>;
 }
 
 export interface ClientPreference {

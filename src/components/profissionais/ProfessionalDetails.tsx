@@ -124,8 +124,8 @@ export const ProfessionalDetails = ({
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6">
-            <div className="flex flex-col md:flex-row md:items-center gap-4 md:gap-8 p-4 bg-primary/5 rounded-lg">
-              <div className="flex-shrink-0 w-24 h-24 rounded-full overflow-hidden bg-primary/10 flex items-center justify-center">
+            <div className="flex flex-col md:flex-row md:items-center gap-4 md:gap-8 p-4 bg-gradient-to-r from-indigo-50 via-blue-50 to-sky-50 rounded-lg">
+              <div className="flex-shrink-0 w-24 h-24 rounded-full overflow-hidden bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center border-2 border-white shadow-md">
                 {professional.avatar ? (
                   <img 
                     src={professional.avatar} 
@@ -133,100 +133,106 @@ export const ProfessionalDetails = ({
                     className="w-full h-full object-cover" 
                   />
                 ) : (
-                  <span className="text-3xl font-bold text-primary">
+                  <span className="text-3xl font-bold text-white">
                     {professional.name.charAt(0)}
                   </span>
                 )}
               </div>
               <div className="flex-grow">
-                <h3 className="text-2xl font-bold">{professional.name}</h3>
+                <h3 className="text-2xl font-bold text-indigo-800">{professional.name}</h3>
                 <div className="mt-1">
                   {renderSpecialtiesBadges()}
                 </div>
                 <div className="flex gap-3 mt-2">
                   <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
                     professional.status === "active"
-                      ? "bg-green-100 text-green-700"
-                      : "bg-red-100 text-red-700"
+                      ? "bg-gradient-to-r from-green-400 to-emerald-500 text-white"
+                      : "bg-gradient-to-r from-red-400 to-rose-500 text-white"
                   }`}>
                     {professional.status === "active" ? "Ativo" : "Inativo"}
                   </span>
-                  <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-blue-100 text-blue-700">
+                  <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-gradient-to-r from-blue-400 to-indigo-500 text-white">
                     {professional.experienceLevel === "beginner" ? "Iniciante" : 
                     professional.experienceLevel === "intermediate" ? "Intermediário" : "Avançado"}
                   </span>
                 </div>
               </div>
-              <div className="flex flex-col items-center justify-center p-4 border rounded-lg">
-                <Award className="h-6 w-6 text-primary mb-1" />
-                <p className="font-bold text-lg">#{professional.monthRanking || '-'}</p>
-                <p className="text-xs text-muted-foreground">Ranking</p>
+              <div className="flex flex-col items-center justify-center p-4 border rounded-lg bg-gradient-to-r from-amber-50 to-yellow-100 border-amber-200">
+                <Award className="h-6 w-6 text-amber-600 mb-1" />
+                <p className="font-bold text-lg text-amber-800">#{professional.monthRanking || '-'}</p>
+                <p className="text-xs text-amber-600">Ranking</p>
               </div>
             </div>
 
             <div className="grid gap-4 md:grid-cols-2">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Informações Pessoais</CardTitle>
+              <Card className="overflow-hidden border-indigo-200">
+                <div className="h-1 bg-gradient-to-r from-indigo-400 to-purple-500"></div>
+                <CardHeader className="bg-gradient-to-r from-indigo-50 to-indigo-100">
+                  <CardTitle className="text-indigo-700">Informações Pessoais</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-2">
-                  <p><strong>Email:</strong> {professional.email}</p>
-                  <p><strong>Telefone:</strong> {professional.phone}</p>
-                  <p><strong>Especialidades:</strong></p>
+                  <p><strong className="text-indigo-700">Email:</strong> {professional.email}</p>
+                  <p><strong className="text-indigo-700">Telefone:</strong> {professional.phone}</p>
+                  <p><strong className="text-indigo-700">Especialidades:</strong></p>
                   <div className="ml-4">{renderSpecialtiesBadges()}</div>
-                  <p><strong>Data de Contratação:</strong> {new Date(professional.hiringDate).toLocaleDateString('pt-BR')}</p>
-                  <p><strong>Dias de Trabalho:</strong> {professional.workingDays?.join(', ') || 'Não definido'}</p>
+                  <p><strong className="text-indigo-700">Data de Contratação:</strong> {new Date(professional.hiringDate).toLocaleDateString('pt-BR')}</p>
+                  <p><strong className="text-indigo-700">Dias de Trabalho:</strong> {professional.workingDays?.join(', ') || 'Não definido'}</p>
                 </CardContent>
               </Card>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle>Informações Profissionais</CardTitle>
+              <Card className="overflow-hidden border-emerald-200">
+                <div className="h-1 bg-gradient-to-r from-emerald-400 to-teal-500"></div>
+                <CardHeader className="bg-gradient-to-r from-emerald-50 to-emerald-100">
+                  <CardTitle className="text-emerald-700">Informações Profissionais</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-2">
-                  <p><strong>Nível de Experiência:</strong> {
+                  <p><strong className="text-emerald-700">Nível de Experiência:</strong> {
                     professional.experienceLevel === 'beginner' ? 'Iniciante' : 
                     professional.experienceLevel === 'intermediate' ? 'Intermediário' : 'Avançado'
                   }</p>
-                  <p><strong>Status:</strong> {professional.status === 'active' ? 'Ativo' : 'Inativo'}</p>
-                  <p><strong>Modelo de Pagamento:</strong> {professional.paymentModel === 'commission' ? 'Comissão' : 'Salário Fixo'}</p>
+                  <p><strong className="text-emerald-700">Status:</strong> {professional.status === 'active' ? 'Ativo' : 'Inativo'}</p>
+                  <p><strong className="text-emerald-700">Modelo de Pagamento:</strong> {professional.paymentModel === 'commission' ? 'Comissão' : 'Salário Fixo'}</p>
                   {professional.paymentModel === 'commission' && (
-                    <p><strong>Taxa de Comissão:</strong> {professional.commissionRate}%</p>
+                    <p><strong className="text-emerald-700">Taxa de Comissão:</strong> {professional.commissionRate}%</p>
                   )}
                   {professional.paymentModel === 'fixed' && (
-                    <p><strong>Salário Fixo:</strong> {formatCurrency(professional.fixedSalary || 0)}</p>
+                    <p><strong className="text-emerald-700">Salário Fixo:</strong> {formatCurrency(professional.fixedSalary || 0)}</p>
                   )}
                 </CardContent>
               </Card>
             </div>
 
             <div className="grid gap-4 md:grid-cols-4">
-              <Card>
-                <CardContent className="flex flex-col items-center justify-center p-6">
-                  <Calendar className="h-8 w-8 text-primary" />
-                  <p className="mt-2 text-2xl font-bold">{professional.totalAppointments}</p>
-                  <p className="text-sm text-muted-foreground">Atendimentos</p>
+              <Card className="overflow-hidden border-blue-200">
+                <div className="h-1 bg-gradient-to-r from-blue-400 to-cyan-500"></div>
+                <CardContent className="flex flex-col items-center justify-center p-6 bg-gradient-to-br from-blue-50 to-blue-100">
+                  <Calendar className="h-8 w-8 text-blue-600" />
+                  <p className="mt-2 text-2xl font-bold text-blue-700">{professional.totalAppointments}</p>
+                  <p className="text-sm text-blue-600">Atendimentos</p>
                 </CardContent>
               </Card>
-              <Card>
-                <CardContent className="flex flex-col items-center justify-center p-6">
-                  <DollarSign className="h-8 w-8 text-primary" />
-                  <p className="mt-2 text-2xl font-bold">{formatCurrency(professional.totalCommission || 0)}</p>
-                  <p className="text-sm text-muted-foreground">Comissão Total</p>
+              <Card className="overflow-hidden border-green-200">
+                <div className="h-1 bg-gradient-to-r from-green-400 to-emerald-500"></div>
+                <CardContent className="flex flex-col items-center justify-center p-6 bg-gradient-to-br from-green-50 to-green-100">
+                  <DollarSign className="h-8 w-8 text-green-600" />
+                  <p className="mt-2 text-2xl font-bold text-green-700">{formatCurrency(professional.totalCommission || 0)}</p>
+                  <p className="text-sm text-green-600">Comissão Total</p>
                 </CardContent>
               </Card>
-              <Card>
-                <CardContent className="flex flex-col items-center justify-center p-6">
-                  <TrendingUp className="h-8 w-8 text-primary" />
-                  <p className="mt-2 text-2xl font-bold">{formatCurrency(professional.averageMonthlyRevenue || 0)}</p>
-                  <p className="text-sm text-muted-foreground">Média Mensal</p>
+              <Card className="overflow-hidden border-purple-200">
+                <div className="h-1 bg-gradient-to-r from-purple-400 to-fuchsia-500"></div>
+                <CardContent className="flex flex-col items-center justify-center p-6 bg-gradient-to-br from-purple-50 to-purple-100">
+                  <TrendingUp className="h-8 w-8 text-purple-600" />
+                  <p className="mt-2 text-2xl font-bold text-purple-700">{formatCurrency(professional.averageMonthlyRevenue || 0)}</p>
+                  <p className="text-sm text-purple-600">Média Mensal</p>
                 </CardContent>
               </Card>
-              <Card>
-                <CardContent className="flex flex-col items-center justify-center p-6">
-                  <Clock className="h-8 w-8 text-primary" />
-                  <p className="mt-2 text-2xl font-bold">{professional.averageAppointmentDuration} min</p>
-                  <p className="text-sm text-muted-foreground">Tempo Médio</p>
+              <Card className="overflow-hidden border-amber-200">
+                <div className="h-1 bg-gradient-to-r from-amber-400 to-orange-500"></div>
+                <CardContent className="flex flex-col items-center justify-center p-6 bg-gradient-to-br from-amber-50 to-amber-100">
+                  <Clock className="h-8 w-8 text-amber-600" />
+                  <p className="mt-2 text-2xl font-bold text-amber-700">{professional.averageAppointmentDuration} min</p>
+                  <p className="text-sm text-amber-600">Tempo Médio</p>
                 </CardContent>
               </Card>
             </div>

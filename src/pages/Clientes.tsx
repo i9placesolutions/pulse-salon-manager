@@ -1,25 +1,18 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   UserPlus, 
   Search, 
   Cake, 
-  Download, 
   Filter, 
   X, 
-  Calendar, 
-  Wallet, 
-  FileSpreadsheet,
-  FileText,
-  Plus,
   Users,
   Crown,
   Clock,
   Check,
   BarChart,
-  CalendarIcon
+  Wallet
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { ClientList } from "@/components/clients/ClientList";
@@ -80,11 +73,14 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Calendar as CalendarDatePicker } from "@/components/ui/calendar";
+import { PageLayout } from "@/components/shared/PageLayout";
+import { PageHeader } from "@/components/shared/PageHeader";
+import { FormCard } from "@/components/shared/FormCard";
 
 // Dados mockados para demonstração
 const mockClients: Client[] = [
   {
-    id: 1,
+    id: "1",
     name: "Maria Silva",
     email: "maria@email.com",
     phone: "(11) 99999-9999",
@@ -102,7 +98,7 @@ const mockClients: Client[] = [
     observations: "Prefere atendimento pela manhã",
   },
   {
-    id: 2,
+    id: "2",
     name: "João Santos",
     email: "joao@email.com",
     phone: "(11) 98888-8888",
@@ -120,7 +116,7 @@ const mockClients: Client[] = [
     observations: "Cliente exigente, gosta de atendimento personalizado",
   },
   {
-    id: 3,
+    id: "3",
     name: "Ana Oliveira",
     email: "ana@email.com",
     phone: "(11) 97777-7777",
@@ -135,7 +131,7 @@ const mockClients: Client[] = [
     tags: ["Manicure", "Pedicure"],
   },
   {
-    id: 4,
+    id: "4",
     name: "Carla Mendes",
     email: "carla@email.com",
     phone: "(11) 96666-6666",
@@ -150,7 +146,7 @@ const mockClients: Client[] = [
     tags: ["Corte", "Manicure"],
   },
   {
-    id: 5,
+    id: "5",
     name: "Pedro Almeida",
     email: "pedro@email.com",
     phone: "(11) 95555-5555",
@@ -165,7 +161,7 @@ const mockClients: Client[] = [
     tags: ["Corte", "Coloração", "Premium"],
   },
   {
-    id: 6,
+    id: "6",
     name: "Luiza Fonseca",
     email: "luiza@email.com",
     phone: "(11) 94444-4444",
@@ -368,7 +364,7 @@ export default function Clientes() {
     // Simulando tempo de processamento
     setTimeout(() => {
       // Gerar ID para novo cliente
-      const newId = Math.max(...clients.map(c => c.id)) + 1;
+      const newId = String(Math.max(...clients.map(c => parseInt(c.id))) + 1);
       
       // Criar novo cliente com dados padrão para campos não preenchidos
       const newClient: Client = {
@@ -430,7 +426,7 @@ export default function Clientes() {
     }, 800);
   };
   
-  const handleDeleteClient = (clientId: number) => {
+  const handleDeleteClient = (clientId: string) => {
     setLoading(true);
     
     // Simulando tempo de processamento
@@ -493,8 +489,17 @@ export default function Clientes() {
         return client.status === "inactive";
       case "aniversariantes":
         const now = new Date();
+        const currentMonth = now.getMonth();
+        const currentDay = now.getDate();
+        
+        if (!client.birthDate) return false;
+        
         const birthDate = new Date(client.birthDate);
-        return birthDate.getMonth() === now.getMonth();
+        const birthMonth = birthDate.getMonth();
+        const birthDay = birthDate.getDate();
+        
+        // Mostrar apenas aniversariantes do mês atual cujos aniversários ainda não passaram
+        return birthMonth === currentMonth && birthDay >= currentDay;
       case "cashback":
         return client.cashback > 0;
       default:
@@ -587,8 +592,15 @@ export default function Clientes() {
       const birthDate = new Date(birthDateStr);
       if (isNaN(birthDate.getTime())) return false; // Verifica se a data é válida
       
-      const currentMonth = new Date().getMonth();
-      return birthDate.getMonth() === currentMonth;
+      const now = new Date();
+      const currentMonth = now.getMonth();
+      const currentDay = now.getDate();
+      
+      const birthMonth = birthDate.getMonth();
+      const birthDay = birthDate.getDate();
+      
+      // Verifica se o aniversário é neste mês e ainda não passou
+      return birthMonth === currentMonth && birthDay >= currentDay;
     } catch (error) {
       console.error("Erro ao verificar aniversário no mês:", error);
       return false;
@@ -743,175 +755,198 @@ export default function Clientes() {
   };
   
   return (
-    <div className="space-y-6 animate-in fade-in duration-500">
-      {/* Cabeçalho */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-neutral">Clientes</h1>
-          <p className="text-sm text-muted-foreground">
-            Gerencie seus clientes e relacionamentos
-          </p>
-        </div>
-        
-        <div className="flex flex-wrap gap-2 mt-4 md:mt-0">
-          <Button 
-            onClick={() => setIsNewClientOpen(true)} 
-            className="bg-primary hover:bg-primary/90 text-white"
-            size="sm"
-          >
-            <UserPlus className="mr-2 h-4 w-4" />
-            Novo Cliente
-          </Button>
-          
-          <Button 
-            onClick={handleExportData} 
-            variant="outline" 
-            size="sm"
-            className="bg-blue-50 text-blue-600 hover:bg-blue-100 border-blue-200"
-          >
-            <BarChart className="mr-2 h-4 w-4" />
-            Relatórios
-          </Button>
-        </div>
-      </div>
+    <PageLayout variant="blue">
+      <PageHeader 
+        title="Clientes" 
+        subtitle="Gerencie seus clientes e relacionamentos"
+        variant="blue"
+        badge="Cadastros"
+        action={
+          <div className="flex flex-wrap gap-2">
+            <Button 
+              variant="dashboard"
+              onClick={() => setIsNewClientOpen(true)} 
+              size="sm"
+              className="bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white shadow-md hover:shadow-lg transition-all duration-200"
+            >
+              <UserPlus className="mr-2 h-4 w-4" />
+              Novo Cliente
+            </Button>
+            
+            <Button 
+              variant="dashboard-outline"
+              onClick={handleExportData} 
+              size="sm"
+              className="border-indigo-400 text-indigo-600 hover:bg-indigo-50 shadow-sm"
+            >
+              <BarChart className="mr-2 h-4 w-4" />
+              Relatórios
+            </Button>
+          </div>
+        }
+      />
       
       {/* Estatísticas e filtros */}
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-        <Card className="md:col-span-9">
-          <div className="p-4">
-            <div className="mb-4">
-              <h3 className="text-sm font-medium">Visão geral dos clientes</h3>
-            </div>
-            <ClientStatistics 
-              totalClients={clientStats.total}
-              activeClients={clientStats.ativos}
-              vipClients={clientStats.vips}
-              inactiveClients={clientStats.inativos}
-              birthdayClients={clientStats.aniversariantes}
-              cashbackClients={clientStats.comCashback}
-              birthdaysThisMonth={clientStats.aniversariantes}
-              birthdaysLastMonth={clientStats.aniversariantes - 2}
-            />
-          </div>
-        </Card>
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-4 mb-6">
+        <FormCard 
+          variant="blue" 
+          title="Visão geral dos clientes"
+          className="md:col-span-9 border-indigo-200 shadow-md overflow-hidden"
+        >
+          <div className="h-1 w-full bg-gradient-to-r from-indigo-400 via-blue-500 to-sky-400"></div>
+          <ClientStatistics 
+            totalClients={clientStats.total}
+            activeClients={clientStats.ativos}
+            vipClients={clientStats.vips}
+            inactiveClients={clientStats.inativos}
+            birthdayClients={clientStats.aniversariantes}
+            cashbackClients={clientStats.comCashback}
+            birthdaysThisMonth={clientStats.aniversariantes}
+            birthdaysLastMonth={clientStats.aniversariantes - 2}
+          />
+        </FormCard>
         
-        <Card className="md:col-span-3">
-          <div className="p-4 space-y-4">
-            <h3 className="text-sm font-medium">Filtros rápidos</h3>
-            <div className="flex flex-col gap-2">
-              <Button 
-                variant="outline" 
-                size="sm"
-                className="justify-start"
-                onClick={() => setIsFiltersDialogOpen(true)}
-              >
-                <Filter className="mr-2 h-4 w-4 text-primary" />
-                Filtros avançados
-              </Button>
-              <Button 
-                variant="ghost" 
-                size="sm"
-                className="justify-start"
-                onClick={resetFilters}
-              >
-                <X className="mr-2 h-4 w-4 text-gray-500" />
-                Limpar filtros
-              </Button>
-            </div>
+        <FormCard 
+          variant="blue"
+          title="Filtros rápidos"
+          className="md:col-span-3 border-indigo-200 shadow-md overflow-hidden"
+        >
+          <div className="h-1 w-full bg-gradient-to-r from-purple-400 to-indigo-400"></div>
+          <div className="flex flex-col gap-2">
+            <Button 
+              variant="dashboard-outline" 
+              size="sm"
+              className="justify-start border-purple-200 text-purple-700 hover:bg-purple-50"
+              onClick={() => setIsFiltersDialogOpen(true)}
+            >
+              <Filter className="mr-2 h-4 w-4" />
+              Filtros avançados
+            </Button>
+            <Button 
+              variant="dashboard-ghost"
+              size="sm"
+              className="justify-start"
+              onClick={resetFilters}
+            >
+              <X className="mr-2 h-4 w-4" />
+              Limpar filtros
+            </Button>
           </div>
-        </Card>
+        </FormCard>
       </div>
       
       {/* Barra de pesquisa e abas */}
-      <div className="flex flex-col gap-4">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Buscar clientes por nome, telefone, e-mail..."
-            className="pl-10"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+      <FormCard variant="blue" className="mb-6" title="Busca e filtros">
+        <div className="flex flex-col gap-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Buscar clientes por nome, telefone, e-mail..."
+              className="pl-10"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          
+          <Tabs defaultValue="todos" value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+            <TabsList className="flex w-full h-10 bg-blue-50 border border-blue-200 rounded-xl overflow-hidden">
+              <TabsTrigger 
+                value="todos" 
+                className="flex-1 flex items-center justify-center gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=inactive]:text-gray-600 transition-all duration-200 rounded-lg"
+              >
+                <Users className="h-4 w-4" />
+                <span className="font-medium">Todos ({String(clientStats.total)})</span>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="ativos" 
+                className="flex-1 flex items-center justify-center gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=inactive]:text-gray-600 transition-all duration-200 rounded-lg"
+              >
+                <Check className="h-4 w-4" />
+                <span className="font-medium">Ativos ({String(clientStats.ativos)})</span>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="vips" 
+                className="flex-1 flex items-center justify-center gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=inactive]:text-gray-600 transition-all duration-200 rounded-lg"
+              >
+                <Crown className="h-4 w-4" />
+                <span className="font-medium">VIPs ({String(clientStats.vips)})</span>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="inativos" 
+                className="flex-1 flex items-center justify-center gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=inactive]:text-gray-600 transition-all duration-200 rounded-lg"
+              >
+                <Clock className="h-4 w-4" />
+                <span className="font-medium">Inativos ({String(clientStats.inativos)})</span>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="aniversariantes" 
+                className="flex-1 flex items-center justify-center gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=inactive]:text-gray-600 transition-all duration-200 rounded-lg"
+              >
+                <Cake className="h-4 w-4" />
+                <span className="font-medium">Aniversários ({String(clientStats.aniversariantes)})</span>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="cashback" 
+                className="flex-1 flex items-center justify-center gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=inactive]:text-gray-600 transition-all duration-200 rounded-lg"
+              >
+                <Wallet className="h-4 w-4" />
+                <span className="font-medium">Cashback ({String(clientStats.comCashback)})</span>
+              </TabsTrigger>
+            </TabsList>
+            
+            <FormCard variant="blue" className="mb-0" title="Lista de clientes">
+              <TabsContent value="todos" className="mt-0 p-0">
+                <ClientList 
+                  clients={filteredClients} 
+                  onViewProfile={handleViewProfile}
+                  services={mockServices}
+                />
+              </TabsContent>
+              
+              <TabsContent value="aniversariantes" className="mt-0 p-0">
+                <ClientList 
+                  clients={filteredClients} 
+                  onViewProfile={handleViewProfile}
+                  showBirthdayInfo={true}
+                  services={mockServices}
+                />
+              </TabsContent>
+              
+              <TabsContent value="ativos" className="mt-0 p-0">
+                <ClientList 
+                  clients={filteredClients} 
+                  onViewProfile={handleViewProfile}
+                  services={mockServices}
+                />
+              </TabsContent>
+              
+              <TabsContent value="vips" className="mt-0 p-0">
+                <ClientList 
+                  clients={filteredClients} 
+                  onViewProfile={handleViewProfile}
+                  services={mockServices}
+                />
+              </TabsContent>
+              
+              <TabsContent value="inativos" className="mt-0 p-0">
+                <ClientList 
+                  clients={filteredClients} 
+                  onViewProfile={handleViewProfile}
+                  services={mockServices}
+                />
+              </TabsContent>
+              
+              <TabsContent value="cashback" className="mt-0 p-0">
+                <ClientList 
+                  clients={filteredClients} 
+                  onViewProfile={handleViewProfile}
+                  services={mockServices}
+                />
+              </TabsContent>
+            </FormCard>
+          </Tabs>
         </div>
-        
-        <Tabs defaultValue="todos" value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid grid-cols-3 md:grid-cols-6 h-auto">
-            <TabsTrigger value="todos" className="data-[state=active]:bg-primary/10 text-xs rounded-md py-2">
-              <Users className="h-4 w-4 mr-1" />
-              Todos ({clientStats.total})
-            </TabsTrigger>
-            <TabsTrigger value="ativos" className="data-[state=active]:bg-primary/10 text-xs rounded-md py-2">
-              <Check className="h-4 w-4 mr-1 text-green-500" />
-              Ativos ({clientStats.ativos})
-            </TabsTrigger>
-            <TabsTrigger value="vips" className="data-[state=active]:bg-primary/10 text-xs rounded-md py-2">
-              <Crown className="h-4 w-4 mr-1 text-yellow-500" />
-              VIPs ({clientStats.vips})
-            </TabsTrigger>
-            <TabsTrigger value="inativos" className="data-[state=active]:bg-primary/10 text-xs rounded-md py-2">
-              <Clock className="h-4 w-4 mr-1 text-gray-500" />
-              Inativos ({clientStats.inativos})
-            </TabsTrigger>
-            <TabsTrigger value="aniversariantes" className="data-[state=active]:bg-primary/10 text-xs rounded-md py-2">
-              <Cake className="h-4 w-4 mr-1 text-[#db2777]" />
-              Aniversários ({clientStats.aniversariantes})
-            </TabsTrigger>
-            <TabsTrigger value="cashback" className="data-[state=active]:bg-primary/10 text-xs rounded-md py-2">
-              <Wallet className="h-4 w-4 mr-1 text-green-600" />
-              Cashback ({clientStats.comCashback})
-            </TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="todos" className="mt-4">
-            <ClientList 
-              clients={filteredClients} 
-              onViewProfile={handleViewProfile}
-              services={mockServices}
-            />
-          </TabsContent>
-          
-          <TabsContent value="aniversariantes" className="mt-4">
-            <ClientList 
-              clients={filteredClients} 
-              onViewProfile={handleViewProfile}
-              showBirthdayInfo={true}
-              services={mockServices}
-            />
-          </TabsContent>
-          
-          <TabsContent value="ativos" className="mt-4">
-            <ClientList 
-              clients={filteredClients} 
-              onViewProfile={handleViewProfile}
-              services={mockServices}
-            />
-          </TabsContent>
-          
-          <TabsContent value="vips" className="mt-4">
-            <ClientList 
-              clients={filteredClients} 
-              onViewProfile={handleViewProfile}
-              services={mockServices}
-            />
-          </TabsContent>
-          
-          <TabsContent value="inativos" className="mt-4">
-            <ClientList 
-              clients={filteredClients} 
-              onViewProfile={handleViewProfile}
-              services={mockServices}
-            />
-          </TabsContent>
-          
-          <TabsContent value="cashback" className="mt-4">
-            <ClientList 
-              clients={filteredClients} 
-              onViewProfile={handleViewProfile}
-              services={mockServices}
-            />
-          </TabsContent>
-        </Tabs>
-      </div>
+      </FormCard>
       
       {/* Dialogs de Funcionalidades */}
       <NewClientDialog 
@@ -927,7 +962,7 @@ export default function Clientes() {
           onClose={() => setIsProfileDialogOpen(false)}
           onUpdate={handleUpdateClient}
           onDelete={handleDeleteClient}
-          services={mockServices.filter(s => s.clientId === selectedClient.id)}
+          services={mockServices.filter(s => s.clientId === parseInt(selectedClient.id))}
         />
       )}
       
@@ -945,6 +980,6 @@ export default function Clientes() {
         onExport={handleExportClients}
         clientCount={filteredClients.length}
       />
-    </div>
+    </PageLayout>
   );
 }

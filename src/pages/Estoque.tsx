@@ -438,261 +438,271 @@ const Estoque = () => {
   };
 
   return (
-    <div className="space-y-6 bg-gray-50/50 min-h-screen -mt-4 -mx-4 p-4 md:p-6">
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between bg-white p-5 rounded-xl shadow-sm border">
-        <div>
-          <h1 className="text-2xl font-semibold text-neutral bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Gestão de Estoque</h1>
-          <p className="text-sm text-muted-foreground">
-            Gerencie seus produtos, movimentações e fornecedores
-          </p>
+    <div className="space-y-6">
+      {/* Header e Métricas */}
+      <div className="bg-gradient-to-r from-blue-50 to-blue-100 p-6 rounded-xl border border-blue-200 shadow-sm">
+        <div className="flex items-center space-x-3 mb-4">
+          <div className="bg-blue-100 p-3 rounded-full">
+            <Package className="h-5 w-5 text-blue-600" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-semibold bg-clip-text text-transparent bg-gradient-to-r from-blue-700 to-blue-800">
+              Estoque
+            </h1>
+            <p className="text-sm text-blue-700/70">
+              Gerencie produtos, fornecedores e controle seu estoque
+            </p>
+          </div>
         </div>
-        <div className="flex flex-wrap gap-2">
+        
+        <EstoqueMetrics 
+          totalProducts={products.length}
+          inStockProducts={products.filter(p => p.quantity > 0).length}
+          lowStockProducts={products.filter(p => p.quantity < p.minQuantity).length}
+          topSellingProducts={5}
+        />
+      </div>
+
+      {/* Ações rápidas */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-2">
           <Button 
-            onClick={() => {
-              setSelectedProduct(undefined);
-              setIsNewProductOpen(true);
-            }}
-            className="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 shadow-md hover:shadow-lg transition-all"
+            variant="dashboard" 
+            size="sm" 
+            onClick={() => setIsNewProductOpen(true)}
           >
             <Plus className="mr-2 h-4 w-4" />
             Novo Produto
           </Button>
           <Button 
-            variant="outline" 
+            variant="dashboard-outline" 
+            size="sm" 
             onClick={() => setIsEntradaOpen(true)}
-            className="border-blue-200 hover:bg-blue-50 hover:border-blue-300 transition-all"
           >
-            <ArrowUpCircle className="mr-2 h-4 w-4 text-emerald-600" />
+            <ArrowUpCircle className="mr-2 h-4 w-4" />
             Entrada
           </Button>
           <Button 
-            variant="outline" 
+            variant="dashboard-outline" 
+            size="sm" 
             onClick={() => setIsSaidaOpen(true)}
-            className="border-blue-200 hover:bg-blue-50 hover:border-blue-300 transition-all"
           >
-            <ArrowDownCircle className="mr-2 h-4 w-4 text-red-500" />
+            <ArrowDownCircle className="mr-2 h-4 w-4" />
             Saída
           </Button>
           <Button 
-            variant="pink" 
+            variant="dashboard-outline" 
+            size="sm" 
             onClick={() => setReportModalOpen(true)}
           >
             <FileText className="mr-2 h-4 w-4" />
             Relatórios
           </Button>
         </div>
-      </div>
-
-      <div className="bg-white rounded-xl shadow-sm border p-5 overflow-hidden">
-        <EstoqueMetrics
-          totalProducts={products.length}
-          inStockProducts={products.filter(p => p.quantity > 0).length}
-          lowStockProducts={lowStockProducts.length}
-          topSellingProducts={5}
-        />
-      </div>
-
-      {lowStockProducts.length > 0 && (
-        <div className="rounded-xl border border-amber-200 bg-gradient-to-r from-amber-50 to-amber-100/50 p-5 shadow-sm">
-          <div className="flex items-center gap-3 text-amber-800">
-            <div className="bg-amber-200 p-2 rounded-full">
-              <AlertTriangle className="h-6 w-6 text-amber-600" />
-            </div>
-            <div>
-              <h3 className="font-medium text-amber-900">
-                Alerta de Estoque Baixo
-              </h3>
-              <p className="text-sm text-amber-700">
-                {lowStockProducts.length} produto(s) abaixo do limite mínimo configurado
-              </p>
-            </div>
-          </div>
+        
+        <div className="flex-1 max-w-md relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
+          <Input
+            placeholder="Buscar produtos, fornecedores..."
+            className="pl-10"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
         </div>
-      )}
+      </div>
 
-      <div className="bg-white rounded-xl shadow-sm border p-4 overflow-hidden">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="w-full justify-start bg-blue-50/70 p-1 rounded-lg">
-            <TabsTrigger value="produtos" className="data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-sm">
-              <Package className="h-4 w-4 mr-2" />
-              Produtos
-            </TabsTrigger>
-            <TabsTrigger value="movimentacoes" className="data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-sm">
-              <ArrowUpCircle className="h-4 w-4 mr-2" />
-              Movimentações
-            </TabsTrigger>
-            <TabsTrigger value="fornecedores" className="data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-sm">
-              <TrendingUp className="h-4 w-4 mr-2" />
-              Fornecedores
-            </TabsTrigger>
-          </TabsList>
+      {/* Tabs e Conteúdo Principal */}
+      <Tabs 
+        defaultValue="produtos" 
+        value={activeTab} 
+        onValueChange={setActiveTab}
+        className="space-y-4"
+      >
+        <TabsList className="bg-gradient-to-r from-indigo-50 via-blue-50 to-sky-50 border border-blue-200 p-1 rounded-lg">
+          <TabsTrigger 
+            value="produtos" 
+            className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-indigo-600 data-[state=active]:text-white rounded"
+          >
+            <Package className="mr-2 h-4 w-4" />
+            Produtos
+          </TabsTrigger>
+          <TabsTrigger 
+            value="fornecedores" 
+            className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-emerald-600 data-[state=active]:to-teal-600 data-[state=active]:text-white rounded"
+          >
+            <TrendingUp className="mr-2 h-4 w-4" />
+            Fornecedores
+          </TabsTrigger>
+          <TabsTrigger 
+            value="relatorios" 
+            className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-fuchsia-600 data-[state=active]:text-white rounded"
+          >
+            <BarChart3 className="mr-2 h-4 w-4" />
+            Dashboard
+          </TabsTrigger>
+        </TabsList>
 
-          <TabsContent value="produtos" className="space-y-4 mt-6">
-            <div className="flex gap-4">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  placeholder="Buscar produtos por nome ou categoria..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-9 border-blue-200 focus-visible:ring-blue-400"
+        {/* Conteúdo Produtos */}
+        <TabsContent value="produtos" className="space-y-4">
+          <Card className="border-blue-200 shadow-sm overflow-hidden">
+            <CardHeader className="bg-gradient-to-r from-blue-100 via-blue-50 to-indigo-100 rounded-t-lg p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="bg-gradient-to-br from-blue-500 to-indigo-600 p-2 rounded-full shadow-md">
+                    <Package className="h-4 w-4 text-white" />
+                  </div>
+                  <CardTitle className="text-indigo-800 font-bold">Lista de Produtos</CardTitle>
+                </div>
+                
+                {/* Alertas para produtos com estoque baixo */}
+                {products.some(p => p.quantity < p.minQuantity) && (
+                  <div className="bg-gradient-to-r from-amber-100 to-orange-100 text-amber-800 px-3 py-1 rounded-full text-xs font-medium flex items-center shadow-sm">
+                    <AlertTriangle className="h-3 w-3 mr-1 text-amber-600" />
+                    {products.filter(p => p.quantity < p.minQuantity).length} produtos com estoque baixo
+                  </div>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gradient-to-r from-blue-50 to-indigo-50">
+                    <tr>
+                      <th className="text-xs font-medium text-indigo-800 uppercase tracking-wider py-3 px-4 text-left">Produto</th>
+                      <th className="text-xs font-medium text-indigo-800 uppercase tracking-wider py-3 px-4 text-left">Categoria</th>
+                      <th className="text-xs font-medium text-indigo-800 uppercase tracking-wider py-3 px-4 text-right">Estoque</th>
+                      <th className="text-xs font-medium text-indigo-800 uppercase tracking-wider py-3 px-4 text-right">Mínimo</th>
+                      <th className="text-xs font-medium text-indigo-800 uppercase tracking-wider py-3 px-4 text-right">Preço Compra</th>
+                      <th className="text-xs font-medium text-indigo-800 uppercase tracking-wider py-3 px-4 text-right">Preço Venda</th>
+                      <th className="text-xs font-medium text-indigo-800 uppercase tracking-wider py-3 px-4 text-right">Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-blue-100">
+                    {products
+                      .filter(product => 
+                        product.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                        product.category.toLowerCase().includes(searchTerm.toLowerCase())
+                      )
+                      .map((product, idx) => (
+                        <tr key={product.id} className={idx % 2 === 0 ? "bg-white hover:bg-blue-50/60" : "bg-gradient-to-r from-blue-50/30 to-indigo-50/30 hover:bg-blue-50/80"}>
+                          <td className="py-4 px-4">
+                            <div>
+                              <div className="font-medium text-indigo-800">{product.name}</div>
+                              <div className="text-xs text-blue-600">{product.description}</div>
+                            </div>
+                          </td>
+                          <td className="py-4 px-4">
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gradient-to-r from-blue-50 to-blue-100 text-blue-800 border border-blue-200">
+                              {product.category}
+                            </span>
+                          </td>
+                          <td className="py-4 px-4 text-right">
+                            <span className={`font-medium px-2 py-1 rounded-md ${
+                              product.quantity < product.minQuantity 
+                                ? 'bg-red-50 text-red-700 border border-red-200' 
+                                : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                            }`}>
+                              {product.quantity}
+                            </span>
+                          </td>
+                          <td className="py-4 px-4 text-right text-indigo-700">{product.minQuantity}</td>
+                          <td className="py-4 px-4 text-right font-medium text-blue-700">{formatCurrency(product.purchasePrice)}</td>
+                          <td className="py-4 px-4 text-right font-medium text-emerald-700">{formatCurrency(product.salePrice)}</td>
+                          <td className="py-4 px-4 text-right">
+                            <div className="flex justify-end space-x-2">
+                              <Button variant="dashboard-ghost" size="sm" onClick={() => handleEditProduct(product)} className="hover:bg-blue-100">
+                                <Edit className="h-4 w-4 text-blue-600" />
+                              </Button>
+                              <Button variant="dashboard-ghost" size="sm" onClick={() => setSelectedProduct(product)} className="hover:bg-indigo-100">
+                                <Settings className="h-4 w-4 text-indigo-600" />
+                              </Button>
+                              <Button variant="dashboard-ghost" size="sm" onClick={() => handleDeleteProduct(product.id)} className="hover:bg-red-100">
+                                <Trash2 className="h-4 w-4 text-red-600" />
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Conteúdo Fornecedores */}
+        <TabsContent value="fornecedores" className="space-y-4">
+          <Card className="border-emerald-200 shadow-sm overflow-hidden">
+            <CardHeader className="bg-gradient-to-r from-emerald-100 via-emerald-50 to-teal-100 rounded-t-lg p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="bg-gradient-to-br from-emerald-500 to-teal-600 p-2 rounded-full shadow-md">
+                    <TrendingUp className="h-4 w-4 text-white" />
+                  </div>
+                  <CardTitle className="text-emerald-800 font-bold">Fornecedores</CardTitle>
+                </div>
+                <Button 
+                  variant="dashboard-outline" 
+                  size="sm" 
+                  onClick={() => setIsNewSupplierOpen(true)}
+                  className="border-emerald-500 text-emerald-600 hover:bg-emerald-50"
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Novo Fornecedor
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <FornecedorList 
+                suppliers={mockSuppliers.filter(supplier => 
+                  supplier.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                  supplier.document.includes(searchTerm)
+                )} 
+                onEdit={(supplier) => setSelectedSupplier(supplier)}
+                onDelete={(id) => toast({
+                  title: "Fornecedor removido",
+                  description: "O fornecedor foi removido com sucesso."
+                })}
+              />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Conteúdo Dashboard/Relatórios */}
+        <TabsContent value="relatorios" className="space-y-4">
+          <Card className="border-purple-200 shadow-sm overflow-hidden">
+            <CardHeader className="bg-gradient-to-r from-purple-100 via-purple-50 to-fuchsia-100 rounded-t-lg p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="bg-gradient-to-br from-purple-500 to-fuchsia-600 p-2 rounded-full shadow-md">
+                    <BarChart3 className="h-4 w-4 text-white" />
+                  </div>
+                  <CardTitle className="text-purple-800 font-bold">Análise de Estoque</CardTitle>
+                </div>
+                <div className="flex space-x-2">
+                  <Button 
+                    variant="dashboard-outline" 
+                    size="sm" 
+                    onClick={() => setIsProdutoReportOpen(true)}
+                    className="border-purple-500 text-purple-600 hover:bg-purple-50"
+                  >
+                    <Download className="mr-2 h-4 w-4" />
+                    Exportar
+                  </Button>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-6 md:grid-cols-2">
+                <EstoqueCharts
+                  products={products}
+                  movements={mockMovements}
                 />
               </div>
-            </div>
-
-            <div className="border rounded-xl overflow-hidden">
-              <div className="bg-blue-50/70 p-3 border-b grid grid-cols-12 gap-4 font-medium text-sm text-blue-900">
-                <div className="col-span-5">Produto</div>
-                <div className="col-span-2 text-center">Categoria</div>
-                <div className="col-span-2 text-center">Preço</div>
-                <div className="col-span-2 text-center">Estoque</div>
-                <div className="col-span-1 text-center">Ações</div>
-              </div>
-              <div className="divide-y">
-                {filteredProducts.map((product) => (
-                  <div key={product.id} className="grid grid-cols-12 gap-4 p-4 hover:bg-blue-50/30 transition-colors items-center">
-                    <div className="col-span-5">
-                      <div className="flex items-center gap-3">
-                        <div className="rounded-full bg-blue-100 p-2">
-                          <Package className="h-4 w-4 text-blue-600" />
-                        </div>
-                        <div>
-                          <h3 className="font-medium text-blue-900">{product.name}</h3>
-                          <p className="text-xs text-gray-500 line-clamp-1">{product.description}</p>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="col-span-2 text-center">
-                      <span className="text-xs font-medium px-2 py-1 bg-blue-100 text-blue-800 rounded-full">{product.category}</span>
-                    </div>
-                    <div className="col-span-2 text-center">
-                      <p className="text-sm font-medium">{formatCurrency(product.salePrice)}</p>
-                      <p className="text-xs text-gray-500">Custo: {formatCurrency(product.purchasePrice)}</p>
-                    </div>
-                    <div className="col-span-2 text-center">
-                      <div className={`flex flex-col items-center ${product.quantity < product.minQuantity ? 'text-red-600' : 'text-gray-700'}`}>
-                        <span className="text-base font-semibold">{product.quantity} un</span>
-                        <span className="text-xs opacity-70">Mín: {product.minQuantity}</span>
-                      </div>
-                    </div>
-                    <div className="col-span-1">
-                      <div className="flex items-center justify-center space-x-1">
-                        <CommissionDialog 
-                          product={product}
-                          professionals={mockProfessionals}
-                          onSave={(commissions) => handleCommissionUpdate(product.id, commissions)}
-                        />
-                        <Button 
-                          variant="ghost" 
-                          size="icon"
-                          onClick={() => handleEditProduct(product)}
-                          className="h-8 w-8 text-blue-700 hover:text-blue-500 hover:bg-blue-50"
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          className="h-8 w-8 text-red-600 hover:text-red-500 hover:bg-red-50"
-                          onClick={() => handleDeleteProduct(product.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="movimentacoes" className="space-y-4 mt-6">
-            <div className="flex gap-4">
-              <Button 
-                variant="outline" 
-                onClick={() => setIsEntradaOpen(true)}
-                className="border-emerald-200 hover:bg-emerald-50 text-emerald-700"
-              >
-                <ArrowUpCircle className="mr-2 h-4 w-4 text-emerald-600" />
-                Nova Entrada
-              </Button>
-              <Button 
-                variant="outline" 
-                onClick={() => setIsSaidaOpen(true)}
-                className="border-red-200 hover:bg-red-50 text-red-700"
-              >
-                <ArrowDownCircle className="mr-2 h-4 w-4 text-red-500" />
-                Nova Saída
-              </Button>
-            </div>
-
-            <Card className="border-blue-100">
-              <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b pb-3">
-                <CardTitle className="text-lg text-blue-800 flex items-center gap-2">
-                  <FileText className="h-5 w-5 text-blue-600" />
-                  Histórico de Movimentações
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4 p-4">
-                {mockMovements.map((movement) => (
-                  <div
-                    key={movement.id}
-                    className={`flex items-center justify-between rounded-lg border p-4 ${
-                      movement.type === "in" 
-                        ? "border-l-4 border-l-emerald-500 bg-emerald-50/50" 
-                        : "border-l-4 border-l-red-500 bg-red-50/50"
-                    }`}
-                  >
-                    <div>
-                      <p className={`font-medium ${movement.type === "in" ? "text-emerald-800" : "text-red-800"}`}>
-                        {movement.type === "in" ? "Entrada" : "Saída"} de Estoque
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        {movement.quantity} unidades •{" "}
-                        {new Date(movement.date).toLocaleDateString()}
-                      </p>
-                    </div>
-                    {movement.type === "in" && (
-                      <div className="text-right">
-                        <p className="font-medium text-emerald-700">
-                          {formatCurrency(movement.totalCost || 0)}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          NF: {movement.invoiceNumber}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="fornecedores" className="space-y-4 mt-6">
-            <Button 
-              onClick={() => setIsNewSupplierOpen(true)}
-              className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 shadow-md transition-all"
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              Novo Fornecedor
-            </Button>
-
-            <FornecedorList
-              suppliers={mockSuppliers}
-              onEdit={(supplier) => {
-                setSelectedSupplier(supplier);
-                setIsNewSupplierOpen(true);
-              }}
-              onDelete={(id) =>
-                toast({
-                  title: "Fornecedor excluído",
-                  description: "O fornecedor foi excluído com sucesso!",
-                })
-              }
-            />
-          </TabsContent>
-        </Tabs>
-      </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
 
       <ProductForm
         open={isNewProductOpen}

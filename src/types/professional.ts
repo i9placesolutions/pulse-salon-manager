@@ -121,6 +121,10 @@ export interface ProfessionalPerformance {
   }[];
   rating: number;
   clientReturnRate: number;
+  newClientsPerMonth: number;
+  scheduleOccupancy: number;
+  quoteConversionRate: number;
+  additionalSalesRate: number;
 }
 
 export interface ProfessionalHistoryItem {

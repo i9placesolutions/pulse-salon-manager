@@ -7,6 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/components/ui/use-toast";
 import { MapPin, Phone, Mail, Instagram, Facebook, MessageSquare, Upload, Copy, QrCode, Eye, MessageCircle } from "lucide-react";
+import { PageLayout } from "@/components/shared/PageLayout";
+import { PageHeader } from "@/components/shared/PageHeader";
 
 interface EstablishmentProfile {
   name: string;
@@ -33,7 +35,7 @@ const defaultProfile: EstablishmentProfile = {
   logo: "",
   description: "Bem-vindo ao nosso salão! Oferecemos serviços de alta qualidade para cuidar da sua beleza.",
   customUrl: "meu-salao",
-  primaryColor: "#db2777"
+  primaryColor: "#1e40af"
 };
 
 export default function EstablishmentProfile() {
@@ -75,42 +77,66 @@ export default function EstablishmentProfile() {
   };
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold text-neutral">Perfil do Estabelecimento</h1>
-        <p className="text-sm text-muted-foreground">
-          Gerencie as informações e a identidade visual do seu salão
-        </p>
-      </div>
+    <PageLayout variant="blue">
+      <PageHeader 
+        title="Perfil do Estabelecimento" 
+        subtitle="Gerencie as informações e a identidade visual do seu salão"
+        variant="blue"
+        badge="Identificação"
+        action={
+          <Button onClick={handleSave} variant="dashboard">Salvar Alterações</Button>
+        }
+      />
 
       <Tabs defaultValue="info" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="info">Informações</TabsTrigger>
-          <TabsTrigger value="branding">Identidade Visual</TabsTrigger>
-          <TabsTrigger value="booking">Link de Agendamento</TabsTrigger>
-          <TabsTrigger value="social">Redes Sociais</TabsTrigger>
+        <TabsList className="bg-blue-50 border border-blue-100 p-1 rounded-lg">
+          <TabsTrigger 
+            value="info" 
+            className="data-[state=active]:bg-blue-600 data-[state=active]:text-white"
+          >
+            Informações
+          </TabsTrigger>
+          <TabsTrigger 
+            value="branding" 
+            className="data-[state=active]:bg-blue-600 data-[state=active]:text-white"
+          >
+            Identidade Visual
+          </TabsTrigger>
+          <TabsTrigger 
+            value="booking" 
+            className="data-[state=active]:bg-blue-600 data-[state=active]:text-white"
+          >
+            Link de Agendamento
+          </TabsTrigger>
+          <TabsTrigger 
+            value="social" 
+            className="data-[state=active]:bg-blue-600 data-[state=active]:text-white"
+          >
+            Redes Sociais
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="info" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Informações Básicas</CardTitle>
+          <Card className="border-blue-100">
+            <CardHeader className="bg-gradient-to-r from-blue-50 to-blue-100 border-b border-blue-100">
+              <CardTitle className="text-blue-700">Informações Básicas</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-4 p-6">
               <div className="space-y-2">
-                <Label htmlFor="name">Nome do Estabelecimento</Label>
+                <Label htmlFor="name" className="text-blue-700">Nome do Estabelecimento</Label>
                 <Input
                   id="name"
                   value={profile.name}
                   onChange={(e) => setProfile({ ...profile, name: e.target.value })}
                   placeholder="Nome do seu salão"
+                  className="border-blue-200 focus:border-blue-400"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="address">
+                <Label htmlFor="address" className="text-blue-700">
                   <div className="flex items-center gap-2">
-                    <MapPin className="h-4 w-4" />
+                    <MapPin className="h-4 w-4 text-blue-600" />
                     Endereço
                   </div>
                 </Label>
@@ -119,14 +145,15 @@ export default function EstablishmentProfile() {
                   value={profile.address}
                   onChange={(e) => setProfile({ ...profile, address: e.target.value })}
                   placeholder="Endereço completo"
+                  className="border-blue-200 focus:border-blue-400"
                 />
               </div>
 
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="whatsapp">
+                  <Label htmlFor="whatsapp" className="text-blue-700">
                     <div className="flex items-center gap-2">
-                      <Phone className="h-4 w-4" />
+                      <Phone className="h-4 w-4 text-blue-600" />
                       WhatsApp
                     </div>
                   </Label>
@@ -135,13 +162,14 @@ export default function EstablishmentProfile() {
                     value={profile.whatsapp}
                     onChange={(e) => setProfile({ ...profile, whatsapp: e.target.value })}
                     placeholder="+55 11 99999-9999"
+                    className="border-blue-200 focus:border-blue-400"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="email">
+                  <Label htmlFor="email" className="text-blue-700">
                     <div className="flex items-center gap-2">
-                      <Mail className="h-4 w-4" />
+                      <Mail className="h-4 w-4 text-blue-600" />
                       E-mail
                     </div>
                   </Label>
@@ -151,18 +179,20 @@ export default function EstablishmentProfile() {
                     value={profile.email}
                     onChange={(e) => setProfile({ ...profile, email: e.target.value })}
                     placeholder="contato@seusalao.com.br"
+                    className="border-blue-200 focus:border-blue-400"
                   />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="description">Descrição do Estabelecimento</Label>
+                <Label htmlFor="description" className="text-blue-700">Descrição do Estabelecimento</Label>
                 <Textarea
                   id="description"
                   value={profile.description}
                   onChange={(e) => setProfile({ ...profile, description: e.target.value })}
                   placeholder="Descreva seu estabelecimento..."
                   rows={4}
+                  className="border-blue-200 focus:border-blue-400"
                 />
               </div>
             </CardContent>
@@ -170,16 +200,16 @@ export default function EstablishmentProfile() {
         </TabsContent>
 
         <TabsContent value="branding" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Identidade Visual</CardTitle>
+          <Card className="border-blue-100">
+            <CardHeader className="bg-gradient-to-r from-blue-50 to-blue-100 border-b border-blue-100">
+              <CardTitle className="text-blue-700">Identidade Visual</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-4 p-6">
               <div className="space-y-4">
-                <Label>Logo do Estabelecimento</Label>
+                <Label className="text-blue-700">Logo do Estabelecimento</Label>
                 <div className="flex items-center gap-4">
                   {logoPreview && (
-                    <div className="h-24 w-24 rounded-lg border overflow-hidden">
+                    <div className="h-24 w-24 rounded-lg border border-blue-200 overflow-hidden">
                       <img
                         src={logoPreview}
                         alt="Logo preview"
@@ -187,7 +217,7 @@ export default function EstablishmentProfile() {
                       />
                     </div>
                   )}
-                  <Button variant="outline" className="gap-2" onClick={() => document.getElementById('logo-upload')?.click()}>
+                  <Button variant="dashboard-outline" className="gap-2" onClick={() => document.getElementById('logo-upload')?.click()}>
                     <Upload className="h-4 w-4" />
                     Upload Logo
                   </Button>
@@ -202,16 +232,16 @@ export default function EstablishmentProfile() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="primary-color">Cor Principal</Label>
+                <Label htmlFor="primary-color" className="text-blue-700">Cor Principal</Label>
                 <div className="flex items-center gap-2">
                   <Input
                     id="primary-color"
                     type="color"
                     value={profile.primaryColor}
                     onChange={(e) => setProfile({ ...profile, primaryColor: e.target.value })}
-                    className="w-20 h-10 p-1"
+                    className="w-20 h-10 p-1 border-blue-200"
                   />
-                  <span className="text-sm text-muted-foreground">
+                  <span className="text-sm text-blue-600">
                     {profile.primaryColor}
                   </span>
                 </div>
@@ -221,35 +251,35 @@ export default function EstablishmentProfile() {
         </TabsContent>
 
         <TabsContent value="booking" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Link de Agendamento</CardTitle>
+          <Card className="border-blue-100">
+            <CardHeader className="bg-gradient-to-r from-blue-50 to-blue-100 border-b border-blue-100">
+              <CardTitle className="text-blue-700">Link de Agendamento</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-4 p-6">
               <div className="space-y-2">
-                <Label htmlFor="custom-url">URL Personalizada</Label>
+                <Label htmlFor="custom-url" className="text-blue-700">URL Personalizada</Label>
                 <div className="flex items-center gap-2">
-                  <span className="text-sm text-muted-foreground">pulse-salon.com.br/</span>
+                  <span className="text-sm text-blue-600">pulse-salon.com.br/</span>
                   <Input
                     id="custom-url"
                     value={profile.customUrl}
                     onChange={(e) => setProfile({ ...profile, customUrl: e.target.value })}
                     placeholder="meu-salao"
-                    className="flex-1"
+                    className="flex-1 border-blue-200 focus:border-blue-400"
                   />
                 </div>
               </div>
 
               <div className="flex gap-2">
-                <Button variant="outline" className="gap-2" onClick={copyBookingLink}>
+                <Button variant="dashboard-outline" className="gap-2" onClick={copyBookingLink}>
                   <Copy className="h-4 w-4" />
                   Copiar Link
                 </Button>
-                <Button variant="outline" className="gap-2">
+                <Button variant="dashboard-outline" className="gap-2">
                   <QrCode className="h-4 w-4" />
                   Gerar QR Code
                 </Button>
-                <Button variant="outline" className="gap-2">
+                <Button variant="dashboard-outline" className="gap-2">
                   <Eye className="h-4 w-4" />
                   Visualizar Página
                 </Button>
@@ -259,16 +289,16 @@ export default function EstablishmentProfile() {
         </TabsContent>
 
         <TabsContent value="social" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Redes Sociais</CardTitle>
+          <Card className="border-blue-100">
+            <CardHeader className="bg-gradient-to-r from-blue-50 to-blue-100 border-b border-blue-100">
+              <CardTitle className="text-blue-700">Redes Sociais</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-4 p-6">
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="instagram">
+                  <Label htmlFor="instagram" className="text-blue-700">
                     <div className="flex items-center gap-2">
-                      <Instagram className="h-4 w-4" />
+                      <Instagram className="h-4 w-4 text-blue-600" />
                       Instagram
                     </div>
                   </Label>
@@ -277,13 +307,14 @@ export default function EstablishmentProfile() {
                     value={profile.instagram}
                     onChange={(e) => setProfile({ ...profile, instagram: e.target.value })}
                     placeholder="@seusalao"
+                    className="border-blue-200 focus:border-blue-400"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="facebook">
+                  <Label htmlFor="facebook" className="text-blue-700">
                     <div className="flex items-center gap-2">
-                      <Facebook className="h-4 w-4" />
+                      <Facebook className="h-4 w-4 text-blue-600" />
                       Facebook
                     </div>
                   </Label>
@@ -292,13 +323,14 @@ export default function EstablishmentProfile() {
                     value={profile.facebook}
                     onChange={(e) => setProfile({ ...profile, facebook: e.target.value })}
                     placeholder="/seusalao"
+                    className="border-blue-200 focus:border-blue-400"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="tiktok">
+                  <Label htmlFor="tiktok" className="text-blue-700">
                     <div className="flex items-center gap-2">
-                      <MessageSquare className="h-4 w-4" />
+                      <MessageSquare className="h-4 w-4 text-blue-600" />
                       TikTok
                     </div>
                   </Label>
@@ -307,17 +339,18 @@ export default function EstablishmentProfile() {
                     value={profile.tiktok}
                     onChange={(e) => setProfile({ ...profile, tiktok: e.target.value })}
                     placeholder="@seusalao"
+                    className="border-blue-200 focus:border-blue-400"
                   />
                 </div>
               </div>
 
               <div className="flex gap-2">
-                <Button className="gap-2" onClick={openWhatsApp}>
+                <Button variant="dashboard" className="gap-2" onClick={openWhatsApp}>
                   <MessageCircle className="h-4 w-4" />
                   Abrir WhatsApp
                 </Button>
                 <Button
-                  variant="outline"
+                  variant="dashboard-outline"
                   className="gap-2"
                   onClick={() => window.open(`https://instagram.com/${profile.instagram}`, '_blank')}
                 >
@@ -325,7 +358,7 @@ export default function EstablishmentProfile() {
                   Acessar Instagram
                 </Button>
                 <Button
-                  variant="outline"
+                  variant="dashboard-outline"
                   className="gap-2"
                   onClick={() => window.open(`https://facebook.com/${profile.facebook}`, '_blank')}
                 >
@@ -337,10 +370,6 @@ export default function EstablishmentProfile() {
           </Card>
         </TabsContent>
       </Tabs>
-
-      <div className="flex justify-end gap-2">
-        <Button onClick={handleSave}>Salvar Alterações</Button>
-      </div>
-    </div>
+    </PageLayout>
   );
 }

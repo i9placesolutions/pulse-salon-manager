@@ -1,4 +1,3 @@
-
 import { Link, useNavigate } from "react-router-dom";
 import { Bell, User, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -9,8 +8,8 @@ export function ProfessionalHeader() {
   const navigate = useNavigate();
 
   return (
-    <header className="h-16 bg-white border-b sticky top-0 z-30">
-      <div className="h-full px-4 flex items-center justify-between gap-4">
+    <header className="h-16 bg-white border-b sticky top-0 z-30 w-full">
+      <div className="h-full px-6 flex items-center justify-between gap-4 max-w-full mx-auto">
         <div>
           <h1 className="font-semibold text-neutral">Barbearia Silva</h1>
           <p className="text-xs text-muted-foreground">Área do Profissional</p>

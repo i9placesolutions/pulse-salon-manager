@@ -68,6 +68,8 @@ import {
   SheetFooter,
   SheetClose,
 } from "@/components/ui/sheet";
+import { PageLayout } from "@/components/shared/PageLayout";
+import { PageHeader } from "@/components/shared/PageHeader";
 
 const revenueData: RevenueData[] = [
   { date: "01/03", revenue: 1200, expenses: 800 },
@@ -302,7 +304,7 @@ const Financeiro = () => {
   const [accountsReceivableState, setAccountsReceivableState] = useState<AccountReceivable[]>(accountsReceivable);
   const { toast } = useToast();
   const [exportModalOpen, setExportModalOpen] = useState(false);
-  const [exportFormat, setExportFormat] = useState<"excel" | "pdf">("excel");
+  const [exportFormat, setExportFormat] = useState<"excel" | "pdf" | "csv">("excel");
   const [exportProgress, setExportProgress] = useState(0);
   const [isExporting, setIsExporting] = useState(false);
   const [reportTabActive, setReportTabActive] = useState("filters");
@@ -402,7 +404,7 @@ const Financeiro = () => {
           
           toast({
             title: "Relatório gerado com sucesso",
-            description: `O relatório foi exportado no formato ${exportFormat === 'excel' ? 'Excel' : 'PDF'}.`,
+            description: `O relatório foi exportado no formato ${exportFormat === 'excel' ? 'Excel' : exportFormat === 'pdf' ? 'PDF' : 'CSV'}.`,
             variant: "default",
             className: "bg-white border border-gray-200 text-foreground",
           });
@@ -635,28 +637,31 @@ const Financeiro = () => {
   }, [selectedPeriod, dateRange]);
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold">Financeiro</h1>
-          <p className="text-sm text-muted-foreground">
-            Controle de receitas, despesas e fluxo de caixa
-          </p>
-        </div>
-        <div className="flex space-x-2">
-          <Button variant="outline" className="gap-2 text-blue-600" onClick={() => setExportModalOpen(true)}>
-            <FileText className="h-4 w-4 text-blue-600" />
-            Relatórios
-          </Button>
-          <NewRevenueDialog />
-          <NewExpenseDialog />
-        </div>
-      </div>
+    <PageLayout variant="blue">
+      <PageHeader 
+        title="Financeiro" 
+        subtitle="Controle de receitas, despesas e fluxo de caixa"
+        variant="blue"
+        badge="Finanças"
+        action={
+          <div className="flex space-x-2">
+            <Button 
+              variant="dashboard-outline"
+              onClick={() => setExportModalOpen(true)}
+            >
+              <FileText className="mr-2 h-4 w-4" />
+              Relatórios
+            </Button>
+            <NewRevenueDialog />
+            <NewExpenseDialog />
+          </div>
+        }
+      />
 
       {/* SummaryCards movido para o topo, fora das abas */}
       <div className="space-y-4">
         <div className="flex justify-between items-center">
-          <h2 className="text-2xl font-bold">Visão Geral Financeira</h2>
+          <h2 className="text-xl font-bold text-blue-700">Visão Geral Financeira</h2>
         </div>
         
         <SummaryCards 
@@ -667,7 +672,7 @@ const Financeiro = () => {
       </div>
 
       <Tabs defaultValue="overview" className="space-y-4">
-        <TabsList className="flex w-full h-10 bg-white rounded-xl shadow-md overflow-hidden">
+        <TabsList className="flex w-full h-10 bg-blue-50 border border-blue-200 rounded-xl overflow-hidden">
           <TabsTrigger 
             value="overview" 
             className="flex-1 flex items-center justify-center gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=inactive]:text-gray-600 transition-all duration-200 rounded-lg"
@@ -677,21 +682,21 @@ const Financeiro = () => {
           </TabsTrigger>
           <TabsTrigger 
             value="revenues" 
-            className="flex-1 flex items-center justify-center gap-2 data-[state=active]:bg-green-600 data-[state=active]:text-white data-[state=inactive]:text-gray-600 transition-all duration-200 rounded-lg"
+            className="flex-1 flex items-center justify-center gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=inactive]:text-gray-600 transition-all duration-200 rounded-lg"
           >
             <FileUp className="h-4 w-4" />
             <span className="font-medium">Receitas</span>
           </TabsTrigger>
           <TabsTrigger 
             value="expenses"
-            className="flex-1 flex items-center justify-center gap-2 data-[state=active]:bg-red-600 data-[state=active]:text-white data-[state=inactive]:text-gray-600 transition-all duration-200 rounded-lg"
+            className="flex-1 flex items-center justify-center gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=inactive]:text-gray-600 transition-all duration-200 rounded-lg"
           >
             <FileText className="h-4 w-4" />
             <span className="font-medium">Despesas</span>
           </TabsTrigger>
           <TabsTrigger 
             value="taxes"
-            className="flex-1 flex items-center justify-center gap-2 data-[state=active]:bg-orange-600 data-[state=active]:text-white data-[state=inactive]:text-gray-600 transition-all duration-200 rounded-lg"
+            className="flex-1 flex items-center justify-center gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=inactive]:text-gray-600 transition-all duration-200 rounded-lg"
           >
             <FileSpreadsheet className="h-4 w-4" />
             <span className="font-medium">Impostos</span>
@@ -726,7 +731,7 @@ const Financeiro = () => {
             
             <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
               <div className="col-span-12">
-                {/* Componente FinancialAlerts removido conforme solicitado */}
+                {/* Componente FinancialAlerts removido conforme existente */}
               </div>
             </div>
             
@@ -797,234 +802,193 @@ const Financeiro = () => {
             {isExporting ? (
               <div className="py-12 space-y-6 px-6 flex flex-col items-center justify-center">
                 <div className="w-full max-w-md">
-                  <Progress value={exportProgress} className="h-2" />
-                  <p className="text-center mt-4 text-sm text-muted-foreground">
+                  <Progress value={exportProgress} className="h-2 bg-blue-100" />
+                  <p className="text-center mt-4 text-sm text-blue-700">
                     Preparando relatório... {exportProgress}%
                   </p>
                 </div>
               </div>
             ) : (
               <div className="p-6">
-                <div className="space-y-6">
-                  {/* Categoria de Relatório */}
-                  <div className="bg-muted/30 p-5 rounded-lg border">
-                    <h3 className="text-lg font-medium mb-4">Categoria de Relatório</h3>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                      <div 
-                        className={`flex flex-col items-center justify-center p-3 border rounded-md cursor-pointer hover:bg-muted/50 ${reportCategory === 'all' ? 'bg-primary/10 border-primary' : 'bg-white'}`}
-                        onClick={() => setReportCategory('all')}
-                      >
-                        <FileText className="h-6 w-6 text-blue-600 mb-1" />
-                        <span className="text-xs font-medium text-center">Geral</span>
-                      </div>
-                      <div 
-                        className={`flex flex-col items-center justify-center p-3 border rounded-md cursor-pointer hover:bg-muted/50 ${reportCategory === 'cashflow' ? 'bg-primary/10 border-primary' : 'bg-white'}`}
-                        onClick={() => setReportCategory('cashflow')}
-                      >
-                        <FileText className="h-6 w-6 text-green-600 mb-1" />
-                        <span className="text-xs font-medium text-center">Fluxo de Caixa</span>
-                      </div>
-                      <div 
-                        className={`flex flex-col items-center justify-center p-3 border rounded-md cursor-pointer hover:bg-muted/50 ${reportCategory === 'taxes' ? 'bg-primary/10 border-primary' : 'bg-white'}`}
-                        onClick={() => setReportCategory('taxes')}
-                      >
-                        <FileText className="h-6 w-6 text-red-600 mb-1" />
-                        <span className="text-xs font-medium text-center">Impostos</span>
-                      </div>
-                      <div 
-                        className={`flex flex-col items-center justify-center p-3 border rounded-md cursor-pointer hover:bg-muted/50 ${reportCategory === 'commissions' ? 'bg-primary/10 border-primary' : 'bg-white'}`}
-                        onClick={() => setReportCategory('commissions')}
-                      >
-                        <FileText className="h-6 w-6 text-purple-600 mb-1" />
-                        <span className="text-xs font-medium text-center">Comissões</span>
-                      </div>
-                      <div 
-                        className={`flex flex-col items-center justify-center p-3 border rounded-md cursor-pointer hover:bg-muted/50 ${reportCategory === 'costs' ? 'bg-primary/10 border-primary' : 'bg-white'}`}
-                        onClick={() => setReportCategory('costs')}
-                      >
-                        <FileText className="h-6 w-6 text-orange-600 mb-1" />
-                        <span className="text-xs font-medium text-center">Análise de Custos</span>
-                      </div>
-                      <div 
-                        className={`flex flex-col items-center justify-center p-3 border rounded-md cursor-pointer hover:bg-muted/50 ${reportCategory === 'projections' ? 'bg-primary/10 border-primary' : 'bg-white'}`}
-                        onClick={() => setReportCategory('projections')}
-                      >
-                        <FileText className="h-6 w-6 text-cyan-600 mb-1" />
-                        <span className="text-xs font-medium text-center">Projeções</span>
-                      </div>
-                    </div>
-                  </div>
+                <Tabs value={reportTabActive} onValueChange={handleTabChange} className="w-full">
+                  <TabsList className="grid w-full grid-cols-2 bg-blue-50 border border-blue-200 rounded-lg overflow-hidden">
+                    <TabsTrigger 
+                      value="filters" 
+                      className="data-[state=active]:bg-blue-600 data-[state=active]:text-white"
+                    >
+                      <Filter className="mr-2 h-4 w-4" />
+                      Filtros
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="format" 
+                      className="data-[state=active]:bg-blue-600 data-[state=active]:text-white"
+                    >
+                      <Settings className="mr-2 h-4 w-4" />
+                      Formato
+                    </TabsTrigger>
+                  </TabsList>
                   
-                  {/* Tipo de Relatório */}
-                  <div className="bg-muted/30 p-5 rounded-lg border">
-                    <h3 className="text-lg font-medium mb-4">Tipo de Relatório</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                      <div 
-                        className={`flex flex-col items-center justify-center p-4 border rounded-md cursor-pointer hover:bg-muted/50 ${reportType === 'complete' ? 'bg-primary/10 border-primary' : 'bg-white'}`}
-                        onClick={() => setReportType('complete')}
-                      >
-                        <FileSpreadsheet className="h-8 w-8 text-blue-600 mb-2" />
-                        <span className="text-sm font-medium">Relatório Completo</span>
-                      </div>
-                      <div 
-                        className={`flex flex-col items-center justify-center p-4 border rounded-md cursor-pointer hover:bg-muted/50 ${reportType === 'revenue' ? 'bg-primary/10 border-primary' : 'bg-white'}`}
-                        onClick={() => setReportType('revenue')}
-                      >
-                        <FileText className="h-8 w-8 text-green-600 mb-2" />
-                        <span className="text-sm font-medium">Receitas</span>
-                      </div>
-                      <div 
-                        className={`flex flex-col items-center justify-center p-4 border rounded-md cursor-pointer hover:bg-muted/50 ${reportType === 'expenses' ? 'bg-primary/10 border-primary' : 'bg-white'}`}
-                        onClick={() => setReportType('expenses')}
-                      >
-                        <FileText className="h-8 w-8 text-[#db2777] mb-2" />
-                        <span className="text-sm font-medium">Despesas</span>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {/* Período */}
-                  <div className="bg-muted/30 p-5 rounded-lg border">
-                    <h3 className="text-lg font-medium mb-4">Período</h3>
-                    <div className="space-y-4">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div 
-                          className={`flex flex-col items-center justify-center p-4 border rounded-md cursor-pointer hover:bg-muted/50 ${selectedPeriod === 'all' ? 'bg-primary/10 border-primary' : 'bg-white'}`}
-                          onClick={() => setSelectedPeriod('all')}
+                  <TabsContent value="filters" className="p-4 border border-blue-100 rounded-md mt-4 bg-blue-50/50">
+                    <div className="space-y-6">
+                      {/* Tipo de relatório */}
+                      <div className="space-y-2">
+                        <h3 className="font-medium text-blue-700">Tipo de Relatório</h3>
+                        <RadioGroup 
+                          defaultValue="cashflow" 
+                          value={reportType} 
+                          onValueChange={(value) => setReportType(value as ReportType)}
+                          className="grid gap-4 md:grid-cols-2"
                         >
-                          <Calendar className="h-8 w-8 text-blue-600 mb-2" />
-                          <span className="text-sm font-medium">Todo Período</span>
-                          <p className="text-xs text-muted-foreground mt-1">Incluir todos os dados disponíveis</p>
-                        </div>
-                        <div 
-                          className={`flex flex-col items-center justify-center p-4 border rounded-md cursor-pointer hover:bg-muted/50 ${selectedPeriod === 'custom' ? 'bg-primary/10 border-primary' : 'bg-white'}`}
-                          onClick={() => setSelectedPeriod('custom')}
-                        >
-                          <Calendar className="h-8 w-8 text-orange-500 mb-2" />
-                          <span className="text-sm font-medium">Personalizado</span>
-                          <p className="text-xs text-muted-foreground mt-1">Selecionar datas específicas</p>
-                        </div>
+                          <div className={`flex items-start gap-3 border rounded-md p-4 cursor-pointer hover:border-blue-400 ${reportType === 'cashflow' ? 'bg-blue-50 border-blue-300' : 'bg-white'}`}>
+                            <RadioGroupItem value="cashflow" id="report-cashflow" className="mt-1" />
+                            <div>
+                              <Label htmlFor="report-cashflow" className="font-medium text-blue-700">Fluxo de Caixa</Label>
+                              <p className="text-xs text-blue-600/70">Entradas e saídas de caixa no período</p>
+                            </div>
+                          </div>
+                          <div className={`flex items-start gap-3 border rounded-md p-4 cursor-pointer hover:border-blue-400 ${reportType === 'expense' ? 'bg-blue-50 border-blue-300' : 'bg-white'}`}>
+                            <RadioGroupItem value="expense" id="report-expense" className="mt-1" />
+                            <div>
+                              <Label htmlFor="report-expense" className="font-medium text-blue-700">Despesas</Label>
+                              <p className="text-xs text-blue-600/70">Detalhamento das despesas no período</p>
+                            </div>
+                          </div>
+                          <div className={`flex items-start gap-3 border rounded-md p-4 cursor-pointer hover:border-blue-400 ${reportType === 'revenue' ? 'bg-blue-50 border-blue-300' : 'bg-white'}`}>
+                            <RadioGroupItem value="revenue" id="report-revenue" className="mt-1" />
+                            <div>
+                              <Label htmlFor="report-revenue" className="font-medium text-blue-700">Receitas</Label>
+                              <p className="text-xs text-blue-600/70">Detalhamento das receitas no período</p>
+                            </div>
+                          </div>
+                          <div className={`flex items-start gap-3 border rounded-md p-4 cursor-pointer hover:border-blue-400 ${reportType === 'full' ? 'bg-blue-50 border-blue-300' : 'bg-white'}`}>
+                            <RadioGroupItem value="full" id="report-full" className="mt-1" />
+                            <div>
+                              <Label htmlFor="report-full" className="font-medium text-blue-700">Relatório Completo</Label>
+                              <p className="text-xs text-blue-600/70">Visão completa das finanças</p>
+                            </div>
+                          </div>
+                        </RadioGroup>
                       </div>
                       
-                      {/* Seleção de data personalizada */}
-                      {selectedPeriod === "custom" && (
-                        <div className="mt-4 p-4 border rounded-md bg-white">
-                          <h4 className="text-sm font-medium mb-3">Selecione o intervalo de datas:</h4>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {/* Data inicial */}
-                            <div className="space-y-2">
-                              <Label htmlFor="date-from">Data Inicial</Label>
-                              <Input
-                                id="date-from"
-                                type="date"
-                                value={dateRange.from ? format(dateRange.from, "yyyy-MM-dd") : ""}
-                                onChange={(e) => handleDateChange("from", e.target.value)}
-                                className="w-full"
-                              />
-                            </div>
-                            
-                            {/* Data final */}
-                            <div className="space-y-2">
-                              <Label htmlFor="date-to">Data Final</Label>
-                              <Input
-                                id="date-to"
-                                type="date"
-                                value={dateRange.to ? format(dateRange.to, "yyyy-MM-dd") : ""}
-                                onChange={(e) => handleDateChange("to", e.target.value)}
-                                className="w-full"
-                                min={dateRange.from ? format(dateRange.from, "yyyy-MM-dd") : undefined}
-                              />
-                            </div>
-                          </div>
+                      {/* Período */}
+                      <div className="space-y-2">
+                        <h3 className="font-medium text-blue-700">Período</h3>
+                        <div className="space-y-4">
+                          <Select 
+                            value={selectedPeriod} 
+                            onValueChange={setSelectedPeriod}
+                          >
+                            <SelectTrigger className="w-full border-blue-200">
+                              <SelectValue placeholder="Selecione um período" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="current-month">Mês atual</SelectItem>
+                              <SelectItem value="last-month">Mês anterior</SelectItem>
+                              <SelectItem value="last-3-months">Últimos 3 meses</SelectItem>
+                              <SelectItem value="year-to-date">Ano até o momento</SelectItem>
+                              <SelectItem value="custom">Período personalizado</SelectItem>
+                            </SelectContent>
+                          </Select>
                           
-                          {/* Mensagem informativa sobre o intervalo de datas */}
-                          {dateRange.from && dateRange.to && (
-                            <div className="mt-3 p-2 bg-blue-50 rounded-md border border-blue-100">
-                              <p className="text-sm text-blue-800 flex items-center">
-                                <Calendar className="h-3 w-3 mr-1 inline" />
-                                <span>
-                                  Período: {format(dateRange.from, "dd/MM/yyyy", { locale: ptBR })} até {format(dateRange.to, "dd/MM/yyyy", { locale: ptBR })}
-                                </span>
-                              </p>
+                          {selectedPeriod === "custom" && (
+                            <div className="grid grid-cols-2 gap-4">
+                              <div className="space-y-2">
+                                <Label className="text-sm text-blue-700">Data Inicial</Label>
+                                <Input 
+                                  type="date"
+                                  value={dateRange.from ? format(dateRange.from, 'yyyy-MM-dd') : ''}
+                                  onChange={(e) => handleDateChange('from', e.target.value)}
+                                  className="border-blue-200"
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label className="text-sm text-blue-700">Data Final</Label>
+                                <Input 
+                                  type="date"
+                                  value={dateRange.to ? format(dateRange.to, 'yyyy-MM-dd') : ''}
+                                  onChange={(e) => handleDateChange('to', e.target.value)}
+                                  className="border-blue-200"
+                                />
+                              </div>
                             </div>
                           )}
-                          
-                          {/* Botão para limpar o intervalo de datas */}
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            className="text-xs mt-3"
-                            onClick={() => setDateRange({ from: undefined, to: undefined })}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="mt-6 flex justify-end">
+                      <Button
+                        onClick={handleNextTab}
+                        className="gap-2 bg-blue-600 hover:bg-blue-700 text-white"
+                      >
+                        Próximo
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TabsContent>
+                  
+                  <TabsContent value="format" className="p-4 border border-blue-100 rounded-md mt-4 bg-blue-50/50">
+                    <div className="space-y-6">
+                      <div className="space-y-2">
+                        <h3 className="font-medium text-blue-700">Formato de Saída</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                          <div 
+                            className={`border rounded-md p-3 cursor-pointer ${exportFormat === 'excel' ? 'bg-blue-100 border-blue-300' : 'bg-white border-blue-100'}`}
+                            onClick={() => setExportFormat('excel')}
                           >
-                            <X className="h-3 w-3 mr-1" />
-                            Limpar datas
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  
-                  {/* Formato de Saída */}
-                  <div className="bg-muted/30 p-5 rounded-lg border">
-                    <h3 className="text-lg font-medium mb-4">Formato de Saída</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div 
-                        className={`border rounded-md p-4 cursor-pointer hover:border-primary ${exportFormat === 'excel' ? 'bg-primary/10 border-primary' : 'bg-white'}`}
-                        onClick={() => setExportFormat('excel')}
-                      >
-                        <div className="flex items-center gap-3">
-                          <FileSpreadsheet className="h-8 w-8 text-emerald-600" />
-                          <div>
-                            <h4 className="font-medium">Excel (.xlsx)</h4>
-                            <p className="text-xs text-muted-foreground">Planilha para análises detalhadas</p>
+                            <div className="flex flex-col items-center gap-2">
+                              <FileSpreadsheet className="h-8 w-8 text-green-600" />
+                              <span className="text-sm text-blue-700">Excel</span>
+                            </div>
                           </div>
-                        </div>
-                      </div>
-                      <div 
-                        className={`border rounded-md p-4 cursor-pointer hover:border-primary ${exportFormat === 'pdf' ? 'bg-primary/10 border-primary' : 'bg-white'}`}
-                        onClick={() => setExportFormat('pdf')}
-                      >
-                        <div className="flex items-center gap-3">
-                          <FileText className="h-8 w-8 text-[#db2777]" />
-                          <div>
-                            <h4 className="font-medium">PDF (.pdf)</h4>
-                            <p className="text-xs text-muted-foreground">Documento para impressão e apresentação</p>
+                          <div 
+                            className={`border rounded-md p-3 cursor-pointer ${exportFormat === 'csv' ? 'bg-blue-100 border-blue-300' : 'bg-white border-blue-100'}`}
+                            onClick={() => setExportFormat('csv')}
+                          >
+                            <div className="flex flex-col items-center gap-2">
+                              <FileText className="h-8 w-8 text-amber-600" />
+                              <span className="text-sm text-blue-700">CSV</span>
+                            </div>
+                          </div>
+                          <div 
+                            className={`border rounded-md p-3 cursor-pointer ${exportFormat === 'pdf' ? 'bg-blue-100 border-blue-300' : 'bg-white border-blue-100'}`}
+                            onClick={() => setExportFormat('pdf')}
+                          >
+                            <div className="flex flex-col items-center gap-2">
+                              <FileText className="h-8 w-8 text-red-600" />
+                              <span className="text-sm text-blue-700">PDF</span>
+                            </div>
                           </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                  
-                  {/* Nome do Arquivo */}
-                  <div className="space-y-2">
-                    <Label>Nome do Arquivo</Label>
-                    <Input 
-                      placeholder="Relatório Financeiro" 
-                      defaultValue="Relatório Financeiro"
-                    />
-                  </div>
-                </div>
+                    
+                    <div className="mt-6 flex justify-between">
+                      <Button
+                        variant="outline"
+                        onClick={() => setReportTabActive('filters')}
+                        className="gap-2 border-blue-200 text-blue-700"
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                        Voltar
+                      </Button>
+                      
+                      <Button
+                        onClick={handleExportReport}
+                        className="gap-2 bg-blue-600 hover:bg-blue-700 text-white"
+                      >
+                        Exportar
+                        <Download className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TabsContent>
+                </Tabs>
               </div>
             )}
           </div>
-          
-          {/* Rodapé fixo */}
-          <div className="sticky bottom-0 mt-auto p-6 border-t bg-white shadow-sm">
-            <div className="flex flex-row gap-3 w-full justify-end">
-              <Button variant="outline" onClick={() => setExportModalOpen(false)}>
-                Cancelar
-              </Button>
-              {!isExporting && (
-                <Button onClick={handleExportReport} variant="pink">
-                  <Download className="mr-2 h-4 w-4" />
-                  Gerar Relatório
-                </Button>
-              )}
-            </div>
-          </div>
         </SheetContent>
       </Sheet>
-    </div>
+    </PageLayout>
   );
 };
 

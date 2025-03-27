@@ -1,8 +1,7 @@
-
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { FormCard } from "@/components/shared/FormCard";
 
 interface Activity {
   id: number;
@@ -30,33 +29,36 @@ const activities: Activity[] = [
 ];
 
 export function ActivityHistory() {
-  return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>Histórico de Atividades</CardTitle>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm">
-            PDF
-          </Button>
-          <Button variant="outline" size="sm">
-            Excel
-          </Button>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4 mb-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Input type="date" placeholder="Data Inicial" />
-            <Input type="date" placeholder="Data Final" />
-            <select className="w-full p-2 border rounded-md">
-              <option value="">Todos os tipos</option>
-              <option value="login">Login</option>
-              <option value="security">Segurança</option>
-              <option value="profile">Perfil</option>
-            </select>
-          </div>
-        </div>
+  const headerActions = (
+    <div className="flex gap-2">
+      <Button variant="outline" size="sm">
+        PDF
+      </Button>
+      <Button variant="outline" size="sm">
+        Excel
+      </Button>
+    </div>
+  );
 
+  return (
+    <FormCard 
+      title="Histórico de Atividades"
+      action={headerActions}
+    >
+      <div className="space-y-4 mb-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Input type="date" placeholder="Data Inicial" />
+          <Input type="date" placeholder="Data Final" />
+          <select className="w-full p-2 border rounded-md">
+            <option value="">Todos os tipos</option>
+            <option value="login">Login</option>
+            <option value="security">Segurança</option>
+            <option value="profile">Perfil</option>
+          </select>
+        </div>
+      </div>
+
+      <div className="overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
@@ -79,17 +81,17 @@ export function ActivityHistory() {
             ))}
           </TableBody>
         </Table>
-        
-        <div className="mt-4 flex justify-between items-center">
-          <div className="text-sm text-muted-foreground">
-            Mostrando 10 de 50 registros
-          </div>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm">Anterior</Button>
-            <Button variant="outline" size="sm">Próxima</Button>
-          </div>
+      </div>
+      
+      <div className="mt-4 flex justify-between items-center">
+        <div className="text-sm text-muted-foreground">
+          Mostrando 10 de 50 registros
         </div>
-      </CardContent>
-    </Card>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm">Anterior</Button>
+          <Button variant="outline" size="sm">Próxima</Button>
+        </div>
+      </div>
+    </FormCard>
   );
 }

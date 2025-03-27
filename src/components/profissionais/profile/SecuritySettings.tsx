@@ -1,10 +1,11 @@
-
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Lock, Laptop, Smartphone } from "lucide-react";
+import { FormCard } from "@/components/shared/FormCard";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 
 interface ConnectedDevice {
   id: number;
@@ -39,12 +40,12 @@ const connectedDevices: ConnectedDevice[] = [
 
 export function SecuritySettings() {
   return (
-    <div className="grid gap-4">
-      <Card>
-        <CardHeader>
-          <CardTitle>Configurações de Segurança</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
+    <div className="grid gap-4 w-full">
+      <FormCard 
+        title="Configurações de Segurança"
+        footer={<Button>Salvar Configurações</Button>}
+      >
+        <div className="space-y-6">
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
@@ -70,45 +71,43 @@ export function SecuritySettings() {
               Alterar Senha
             </Button>
           </div>
-        </CardContent>
-      </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Dispositivos Conectados</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {connectedDevices.map((device) => (
-              <div key={device.id} className="flex items-center justify-between p-4 border rounded-lg">
-                <div className="flex items-center gap-4">
-                  {device.type === 'laptop' ? (
-                    <Laptop className="h-8 w-8 text-muted-foreground" />
-                  ) : (
-                    <Smartphone className="h-8 w-8 text-muted-foreground" />
-                  )}
-                  <div>
-                    <p className="font-medium">{device.device}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {device.browser} • {device.ip}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      Último acesso: {new Date(device.lastActive).toLocaleString()}
-                    </p>
+          <Separator />
+          
+          <div>
+            <h3 className="text-lg font-medium mb-4">Dispositivos Conectados</h3>
+            <div className="space-y-4">
+              {connectedDevices.map((device) => (
+                <div key={device.id} className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="flex items-center gap-4">
+                    {device.type === 'laptop' ? (
+                      <Laptop className="h-8 w-8 text-muted-foreground" />
+                    ) : (
+                      <Smartphone className="h-8 w-8 text-muted-foreground" />
+                    )}
+                    <div>
+                      <p className="font-medium">{device.device}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {device.browser} • {device.ip}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Último acesso: {new Date(device.lastActive).toLocaleString()}
+                      </p>
+                    </div>
                   </div>
+                  {device.isCurrentSession ? (
+                    <Badge>Sessão Atual</Badge>
+                  ) : (
+                    <Button variant="ghost" size="sm" className="text-destructive">
+                      Encerrar
+                    </Button>
+                  )}
                 </div>
-                {device.isCurrentSession ? (
-                  <Badge>Sessão Atual</Badge>
-                ) : (
-                  <Button variant="ghost" size="sm" className="text-destructive">
-                    Encerrar
-                  </Button>
-                )}
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </FormCard>
     </div>
   );
 }

@@ -216,6 +216,165 @@ export const exportToPDF = (clients: Client[], options: ClientExportOptions): vo
   doc.text(`Gerado em: ${currentDate}`, 14, 30);
   doc.text(`Total de clientes: ${clients.length}`, 14, 36);
   
+  // Inicializar posição Y
+  let yPosition = 45;
+  
+  // Verificar se deve incluir gráficos (apenas para relatórios analytics e formato PDF)
+  if (options.includeCharts && options.exportFormat === 'analytics') {
+    // --- Seção de análise estatística ---
+    doc.setFontSize(14);
+    doc.text('Análise Estatística', 14, yPosition);
+    yPosition += 10;
+    
+    // --- Status dos clientes ---
+    
+    // Calcular contagens para cada status
+    const statusCounts = {
+      active: clients.filter(c => c.status === 'active').length,
+      vip: clients.filter(c => c.status === 'vip').length,
+      inactive: clients.filter(c => c.status === 'inactive').length
+    };
+    
+    // Título da seção
+    doc.setFontSize(12);
+    doc.text('Distribuição por Status', 14, yPosition);
+    yPosition += 6;
+    
+    // Desenhar barras simples para representar os dados
+    const barStartX = 14;
+    const barMaxWidth = 80;
+    const barHeight = 8;
+    const total = statusCounts.active + statusCounts.vip + statusCounts.inactive;
+    
+    // Barra Ativos
+    if (total > 0) {
+      const activePercent = Math.round(statusCounts.active / total * 100);
+      const activeWidth = (statusCounts.active / total) * barMaxWidth;
+      
+      doc.setFillColor(76, 175, 80); // Verde
+      doc.rect(barStartX, yPosition, activeWidth, barHeight, 'F');
+      doc.setFontSize(9);
+      doc.text(`Ativos: ${statusCounts.active} (${activePercent}%)`, barStartX + activeWidth + 2, yPosition + 6);
+      yPosition += barHeight + 4;
+      
+      // Barra VIPs
+      const vipPercent = Math.round(statusCounts.vip / total * 100);
+      const vipWidth = (statusCounts.vip / total) * barMaxWidth;
+      
+      doc.setFillColor(255, 193, 7); // Amarelo
+      doc.rect(barStartX, yPosition, vipWidth, barHeight, 'F');
+      doc.text(`VIPs: ${statusCounts.vip} (${vipPercent}%)`, barStartX + vipWidth + 2, yPosition + 6);
+      yPosition += barHeight + 4;
+      
+      // Barra Inativos
+      const inactivePercent = Math.round(statusCounts.inactive / total * 100);
+      const inactiveWidth = (statusCounts.inactive / total) * barMaxWidth;
+      
+      doc.setFillColor(244, 67, 54); // Vermelho
+      doc.rect(barStartX, yPosition, inactiveWidth, barHeight, 'F');
+      doc.text(`Inativos: ${statusCounts.inactive} (${inactivePercent}%)`, barStartX + inactiveWidth + 2, yPosition + 6);
+      yPosition += barHeight + 12;
+    }
+    
+    // --- Frequência de visitas ---
+    
+    // Categorizar visitas
+    const visitBuckets = [
+      { label: 'Nenhuma', count: clients.filter(c => !c.visitsCount || c.visitsCount === 0).length },
+      { label: '1-5 visitas', count: clients.filter(c => c.visitsCount && c.visitsCount >= 1 && c.visitsCount <= 5).length },
+      { label: '6-10 visitas', count: clients.filter(c => c.visitsCount && c.visitsCount >= 6 && c.visitsCount <= 10).length },
+      { label: '11-20 visitas', count: clients.filter(c => c.visitsCount && c.visitsCount >= 11 && c.visitsCount <= 20).length },
+      { label: '21+ visitas', count: clients.filter(c => c.visitsCount && c.visitsCount > 20).length }
+    ];
+    
+    // Título da seção
+    doc.setFontSize(12);
+    doc.text('Frequência de Visitas', 14, yPosition);
+    yPosition += 6;
+    
+    // Encontrar o valor máximo para escalar as barras
+    const maxVisits = Math.max(...visitBuckets.map(b => b.count));
+    
+    // Desenhar barras para cada categoria
+    if (maxVisits > 0) {
+      visitBuckets.forEach(bucket => {
+        const barWidth = (bucket.count / maxVisits) * barMaxWidth;
+        
+        doc.setFillColor(41, 128, 185); // Azul
+        doc.rect(barStartX, yPosition, barWidth, barHeight, 'F');
+        doc.setFontSize(9);
+        doc.text(`${bucket.label}: ${bucket.count}`, barStartX + barWidth + 2, yPosition + 6);
+        yPosition += barHeight + 4;
+      });
+      yPosition += 8;
+    }
+    
+    // --- Faixas de Gastos ---
+    
+    // Categorizar gastos
+    const spendingBuckets = [
+      { label: 'R$0', count: clients.filter(c => !c.totalSpent || c.totalSpent === 0).length },
+      { label: 'Até R$500', count: clients.filter(c => c.totalSpent && c.totalSpent > 0 && c.totalSpent <= 500).length },
+      { label: 'R$501-1000', count: clients.filter(c => c.totalSpent && c.totalSpent > 500 && c.totalSpent <= 1000).length },
+      { label: 'R$1001-2000', count: clients.filter(c => c.totalSpent && c.totalSpent > 1000 && c.totalSpent <= 2000).length },
+      { label: 'Acima de R$2000', count: clients.filter(c => c.totalSpent && c.totalSpent > 2000).length }
+    ];
+    
+    // Título da seção
+    doc.setFontSize(12);
+    doc.text('Faixas de Gastos Totais', 14, yPosition);
+    yPosition += 6;
+    
+    // Encontrar o valor máximo para escalar as barras
+    const maxSpending = Math.max(...spendingBuckets.map(b => b.count));
+    
+    // Desenhar barras para cada categoria
+    if (maxSpending > 0) {
+      spendingBuckets.forEach(bucket => {
+        const barWidth = (bucket.count / maxSpending) * barMaxWidth;
+        
+        doc.setFillColor(76, 175, 80); // Verde
+        doc.rect(barStartX, yPosition, barWidth, barHeight, 'F');
+        doc.setFontSize(9);
+        doc.text(`${bucket.label}: ${bucket.count}`, barStartX + barWidth + 2, yPosition + 6);
+        yPosition += barHeight + 4;
+      });
+      yPosition += 8;
+    }
+    
+    // --- Estatísticas Gerais ---
+    
+    // Calcular métricas importantes
+    const totalSpent = clients.reduce((sum, client) => sum + (client.totalSpent || 0), 0);
+    const avgSpent = clients.length > 0 ? totalSpent / clients.length : 0;
+    const avgVisits = clients.length > 0 ? 
+      clients.reduce((sum, client) => sum + (client.visitsCount || 0), 0) / clients.length : 0;
+    
+    // Adicionar resumo de métricas
+    doc.setFontSize(12);
+    doc.text('Resumo', 14, yPosition);
+    yPosition += 5;
+    
+    doc.setFontSize(10);
+    doc.text(`• Total Gasto: ${formatCurrency(totalSpent)}`, 20, yPosition);
+    yPosition += 5;
+    doc.text(`• Gasto Médio por Cliente: ${formatCurrency(avgSpent)}`, 20, yPosition);
+    yPosition += 5;
+    doc.text(`• Média de Visitas por Cliente: ${avgVisits.toFixed(1)}`, 20, yPosition);
+    yPosition += 5;
+    doc.text(`• Total de Clientes Ativos: ${statusCounts.active + statusCounts.vip} (${Math.round((statusCounts.active + statusCounts.vip) / total * 100)}%)`, 20, yPosition);
+    yPosition += 15;
+    
+    // Adicionar nota
+    doc.setFontSize(9);
+    doc.setTextColor(100);
+    doc.text('* Os dados detalhados de cada cliente estão disponíveis na tabela abaixo', 14, yPosition);
+    yPosition += 10;
+    
+    // Reiniciar cor do texto para preto
+    doc.setTextColor(0);
+  }
+  
   // Configurar cabeçalhos para a tabela
   const headers = fields.map(field => field.header);
   
@@ -226,7 +385,7 @@ export const exportToPDF = (clients: Client[], options: ClientExportOptions): vo
   autoTable(doc, {
     head: [headers],
     body: rows,
-    startY: 45,
+    startY: yPosition,
     styles: { fontSize: 9, cellPadding: 3 },
     headStyles: { fillColor: [41, 128, 185], textColor: 255 },
     alternateRowStyles: { fillColor: [245, 245, 245] }

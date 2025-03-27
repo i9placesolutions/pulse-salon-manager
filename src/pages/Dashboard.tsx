@@ -15,7 +15,8 @@ import {
   BarChart3,
   TrendingUp,
   ShoppingBag,
-  Filter
+  Filter,
+  ChevronRight
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MetricsGrid } from "@/components/dashboard/MetricsGrid";
@@ -49,6 +50,7 @@ import {
   Pie,
   Cell
 } from "recharts";
+import { Badge } from "@/components/ui/badge";
 
 // Mock data
 const metrics: DashboardMetric[] = [
@@ -135,7 +137,8 @@ const revenueData = [
   { date: "07/03", revenue: 5000, expenses: 2600 }
 ];
 
-const COLORS = ['#db2777', '#db2777cc', '#db277799', '#db277766', '#db277733'];
+// Cores para os gráficos (usando as cores do sidebar)
+const COLORS = ['#0284c7', '#8b5cf6', '#10b981', '#f59e0b', '#f43f5e'];
 
 export default function Dashboard() {
   const [period, setPeriod] = useState<string>("daily");
@@ -154,24 +157,41 @@ export default function Dashboard() {
   return (
     <div className="space-y-6">
       {/* Header com Filtros */}
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <h1 className="text-2xl font-semibold text-neutral">Dashboard</h1>
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between bg-gradient-to-r from-blue-50 to-blue-100 p-6 rounded-xl border border-blue-100 shadow-sm">
+        <div className="flex items-center space-x-3">
+          <div className="bg-blue-100 p-3 rounded-full">
+            <ChevronRight className="h-5 w-5 text-blue-600" />
+          </div>
+          <div>
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl font-semibold bg-clip-text text-transparent bg-gradient-to-r from-blue-700 to-blue-800">
+                Dashboard
+              </h1>
+              <Badge variant="outline" className="bg-blue-500 text-white border-blue-600 uppercase text-xs font-semibold">
+                Principal
+              </Badge>
+            </div>
+            <p className="text-sm text-blue-700/70">
+              Visão geral do seu negócio
+            </p>
+          </div>
+        </div>
         <div className="flex flex-wrap gap-2 items-center">
           <Button 
-            className="bg-[#db2777] text-white hover:bg-[#be185d] mr-2" 
+            className="bg-blue-600 hover:bg-blue-700 text-white mr-2" 
             onClick={() => navigate("/appointments")}
           >
             <Calendar className="mr-2 h-4 w-4" />
             Agendamentos
           </Button>
 
-          <div className="flex items-center gap-1">
-            <Filter className="h-4 w-4 text-gray-500" />
-            <span className="text-sm font-medium text-gray-700">Filtrar por:</span>
+          <div className="flex items-center gap-1 bg-white/80 px-2 py-1 rounded-lg border border-blue-100">
+            <Filter className="h-4 w-4 text-blue-500" />
+            <span className="text-sm font-medium text-blue-700">Filtrar por:</span>
           </div>
           
           <Select value={periodoFilter} onValueChange={setPeriodoFilter}>
-            <SelectTrigger className="h-9 w-[160px]">
+            <SelectTrigger className="h-9 w-[160px] border-blue-200 text-blue-700 hover:border-blue-300 focus:ring-blue-500">
               <SelectValue placeholder="Período" />
             </SelectTrigger>
             <SelectContent>
@@ -190,61 +210,20 @@ export default function Dashboard() {
 
       {/* Gráficos e Métricas de Serviços */}
       <div className="grid gap-4 md:grid-cols-2">
-        {/* Gráfico de Receita */}
-        <Card className="col-span-2">
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              Receita x Despesas
-              <div className="flex items-center gap-2">
-                <Button
-                  variant={period === "daily" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setPeriod("daily")}
-                >
-                  Diário
-                </Button>
-                <Button
-                  variant={period === "weekly" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setPeriod("weekly")}
-                >
-                  Semanal
-                </Button>
-                <Button
-                  variant={period === "monthly" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setPeriod("monthly")}
-                >
-                  Mensal
-                </Button>
-              </div>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={revenueData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" />
-                  <YAxis tickFormatter={(value) => formatCurrency(value)} />
-                  <Tooltip 
-                    formatter={(value: number) => [formatCurrency(value)]}
-                    labelStyle={{ color: '#666' }}
-                  />
-                  <Bar dataKey="revenue" name="Receita" fill="#db2777" />
-                  <Bar dataKey="expenses" name="Despesas" fill="#94a3b8" />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Gráfico de Receita é renderizado pelo componente RevenueChart */}
+        <RevenueChart data={revenueData} period={period} setPeriod={setPeriod} />
 
         {/* Distribuição de Serviços */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Distribuição de Serviços</CardTitle>
+        <Card className="border-purple-200 shadow-sm hover:shadow transition-all">
+          <CardHeader className="bg-gradient-to-r from-purple-50 to-purple-100 rounded-t-lg">
+            <div className="flex items-center space-x-3">
+              <div className="bg-purple-100 p-2 rounded-full">
+                <ShoppingBag className="h-4 w-4 text-purple-600" />
+              </div>
+              <CardTitle className="text-purple-700">Distribuição de Serviços</CardTitle>
+            </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-6">
             <div className="h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
@@ -253,43 +232,54 @@ export default function Dashboard() {
                     cx="50%"
                     cy="50%"
                     labelLine={false}
-                    outerRadius={80}
+                    outerRadius={100}
                     fill="#8884d8"
                     dataKey="value"
-                    label={({name, percent}) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
                   >
                     {serviceDistribution.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip />
+                  <Tooltip 
+                    formatter={(value) => [`${value}%`, 'Percentual']} 
+                    contentStyle={{ backgroundColor: '#fff', borderColor: '#e5e7eb' }}
+                  />
                 </PieChart>
               </ResponsiveContainer>
             </div>
           </CardContent>
         </Card>
 
-        {/* Serviços Mais Vendidos */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Serviços Mais Vendidos</CardTitle>
+        {/* Serviços Populares */}
+        <Card className="border-amber-200 shadow-sm hover:shadow transition-all">
+          <CardHeader className="bg-gradient-to-r from-amber-50 to-amber-100 rounded-t-lg">
+            <div className="flex items-center space-x-3">
+              <div className="bg-amber-100 p-2 rounded-full">
+                <BarChart3 className="h-4 w-4 text-amber-600" />
+              </div>
+              <CardTitle className="text-amber-700">Serviços Mais Populares</CardTitle>
+            </div>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
+          <CardContent className="pt-6">
+            <div className="space-y-6">
               {topProducts.map((product, index) => (
-                <div key={product.name} className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium">{product.name}</p>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <span>{product.quantity} atendimentos</span>
-                      <span>•</span>
-                      <span>{formatCurrency(product.revenue)}</span>
+                <div key={product.name} className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium text-neutral-800">{product.name}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-amber-600 font-medium">{product.quantity}x</span>
+                      <span className="text-xs font-medium text-amber-600">{formatCurrency(product.revenue)}</span>
                     </div>
                   </div>
-                  <div className={`flex items-center gap-1 text-sm ${
-                    index < 2 ? 'text-green-600' : 'text-muted-foreground'
-                  }`}>
-                    {index < 2 ? <TrendingUp className="h-4 w-4" /> : <BarChart3 className="h-4 w-4" />}
+                  <div className="w-full h-2 bg-amber-100 rounded-full overflow-hidden">
+                    <div 
+                      className="h-full" 
+                      style={{ 
+                        width: `${(product.revenue / topProducts[0].revenue) * 100}%`,
+                        backgroundColor: COLORS[index % COLORS.length]
+                      }} 
+                    />
                   </div>
                 </div>
               ))}
@@ -297,82 +287,50 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        {/* Agendamentos do Dia */}
-        <Card className="col-span-2">
-          <CardHeader>
-            <CardTitle>Próximos Agendamentos</CardTitle>
+        {/* Próximos Agendamentos */}
+        <Card className="border-green-200 shadow-sm hover:shadow transition-all">
+          <CardHeader className="bg-gradient-to-r from-green-50 to-green-100 rounded-t-lg">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="bg-green-100 p-2 rounded-full">
+                  <Calendar className="h-4 w-4 text-green-600" />
+                </div>
+                <CardTitle className="text-green-700">Próximos Agendamentos</CardTitle>
+              </div>
+              <Button variant="ghost" className="text-green-700 hover:bg-green-100 hover:text-green-800">
+                Ver todos
+              </Button>
+            </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-0">
             <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Cliente</TableHead>
-                  <TableHead>Serviço</TableHead>
-                  <TableHead>Profissional</TableHead>
-                  <TableHead>Horário</TableHead>
-                  <TableHead>Status</TableHead>
+              <TableHeader className="bg-green-50">
+                <TableRow className="hover:bg-green-100/50">
+                  <TableHead className="text-green-700">Cliente</TableHead>
+                  <TableHead className="text-green-700">Serviço</TableHead>
+                  <TableHead className="text-green-700">Horário</TableHead>
+                  <TableHead className="text-right text-green-700">Valor</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {[
-                  { id: 1, client: "Maria Silva", service: "Corte", professional: "Ana", time: "10:00", status: "confirmed" },
-                  { id: 2, client: "João Santos", service: "Barba", professional: "Carlos", time: "11:30", status: "pending" },
-                  { id: 3, client: "Ana Oliveira", service: "Coloração", professional: "Patricia", time: "14:00", status: "confirmed" }
-                ].map((appointment) => (
-                  <TableRow key={appointment.id}>
-                    <TableCell>{appointment.client}</TableCell>
-                    <TableCell>{appointment.service}</TableCell>
-                    <TableCell>{appointment.professional}</TableCell>
-                    <TableCell>{appointment.time}</TableCell>
-                    <TableCell>
-                      <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
-                        appointment.status === 'confirmed' 
-                          ? 'bg-green-50 text-green-700' 
-                          : appointment.status === 'canceled'
-                          ? 'bg-red-50 text-red-700'
-                          : 'bg-yellow-50 text-yellow-700'
-                      }`}>
-                        {appointment.status === 'confirmed' ? 'Confirmado' 
-                          : appointment.status === 'canceled' ? 'Cancelado'
-                          : 'Pendente'}
-                      </span>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-
-        {/* Alertas de Estoque */}
-        <Card className="col-span-2">
-          <CardHeader>
-            <CardTitle>Alertas de Estoque</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Produto</TableHead>
-                  <TableHead>Quantidade Atual</TableHead>
-                  <TableHead>Mínimo</TableHead>
-                  <TableHead>Última Reposição</TableHead>
-                  <TableHead>Fornecedor</TableHead>
+                <TableRow className="hover:bg-green-50/50">
+                  <TableCell className="font-medium">Ana Silva</TableCell>
+                  <TableCell>Corte Feminino</TableCell>
+                  <TableCell>14:00</TableCell>
+                  <TableCell className="text-right">{formatCurrency(80)}</TableCell>
                 </TableRow>
-              </TableHeader>
-              <TableBody>
-                {[
-                  { id: 1, name: "Shampoo Premium", quantity: 2, minQuantity: 5, lastRestock: "28/02/2024", supplier: "Distribuidora A" },
-                  { id: 2, name: "Condicionador", quantity: 3, minQuantity: 5, lastRestock: "28/02/2024", supplier: "Distribuidora A" }
-                ].map((item) => (
-                  <TableRow key={item.id}>
-                    <TableCell>{item.name}</TableCell>
-                    <TableCell className="text-red-600 font-medium">{item.quantity}</TableCell>
-                    <TableCell>{item.minQuantity}</TableCell>
-                    <TableCell>{item.lastRestock}</TableCell>
-                    <TableCell>{item.supplier}</TableCell>
-                  </TableRow>
-                ))}
+                <TableRow className="bg-green-50/30 hover:bg-green-100/40">
+                  <TableCell className="font-medium">Carlos Mendes</TableCell>
+                  <TableCell>Barba e Cabelo</TableCell>
+                  <TableCell>15:30</TableCell>
+                  <TableCell className="text-right">{formatCurrency(65)}</TableCell>
+                </TableRow>
+                <TableRow className="hover:bg-green-50/50">
+                  <TableCell className="font-medium">Patricia Santos</TableCell>
+                  <TableCell>Coloração</TableCell>
+                  <TableCell>16:45</TableCell>
+                  <TableCell className="text-right">{formatCurrency(150)}</TableCell>
+                </TableRow>
               </TableBody>
             </Table>
           </CardContent>

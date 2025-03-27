@@ -117,25 +117,40 @@ export default function Marketing() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-5 gap-4">
-          <TabsTrigger value="campanhas" className="gap-2">
-            <Target className="h-4 w-4" />
+        <TabsList className="bg-gradient-to-r from-blue-50/70 to-purple-50/70 border border-indigo-200 p-1 rounded-lg">
+          <TabsTrigger 
+            value="campanhas" 
+            className="data-[state=active]:bg-blue-600 data-[state=active]:text-white rounded"
+          >
+            <Target className="mr-2 h-4 w-4" />
             Campanhas
           </TabsTrigger>
-          <TabsTrigger value="aniversarios" className="gap-2">
-            <Bell className="h-4 w-4" />
+          <TabsTrigger 
+            value="aniversarios" 
+            className="data-[state=active]:bg-purple-600 data-[state=active]:text-white rounded"
+          >
+            <Bell className="mr-2 h-4 w-4" />
             Aniversários
           </TabsTrigger>
-          <TabsTrigger value="automacao" className="gap-2">
-            <Zap className="h-4 w-4" />
+          <TabsTrigger 
+            value="automacao" 
+            className="data-[state=active]:bg-green-600 data-[state=active]:text-white rounded"
+          >
+            <Zap className="mr-2 h-4 w-4" />
             Automação
           </TabsTrigger>
-          <TabsTrigger value="mensagens" className="gap-2">
-            <MessageSquare className="h-4 w-4" />
+          <TabsTrigger 
+            value="mensagens" 
+            className="data-[state=active]:bg-pink-600 data-[state=active]:text-white rounded"
+          >
+            <MessageSquare className="mr-2 h-4 w-4" />
             Mensagens
           </TabsTrigger>
-          <TabsTrigger value="relatorios" className="gap-2">
-            <BarChart className="h-4 w-4" />
+          <TabsTrigger 
+            value="relatorios" 
+            className="data-[state=active]:bg-amber-600 data-[state=active]:text-white rounded"
+          >
+            <BarChart className="mr-2 h-4 w-4" />
             Relatórios
           </TabsTrigger>
         </TabsList>
@@ -163,16 +178,16 @@ export default function Marketing() {
         <TabsContent value="mensagens">
           <div className="space-y-4">
             <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-bold">Histórico de Mensagens</h2>
-              <Button onClick={handleNewMessage} variant="default">
+              <h2 className="text-2xl font-bold text-pink-700">Histórico de Mensagens</h2>
+              <Button onClick={handleNewMessage} variant="default" className="bg-pink-600 hover:bg-pink-700">
                 Nova Mensagem
               </Button>
             </div>
             {sentMessages.length === 0 ? (
-              <div className="bg-gray-50 rounded-lg p-8 text-center">
-                <MessageSquare className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-                <h3 className="text-lg font-medium">Nenhuma mensagem enviada</h3>
-                <p className="text-gray-500 mt-2">
+              <div className="bg-pink-50/60 border border-pink-200 rounded-lg p-8 text-center">
+                <MessageSquare className="h-12 w-12 mx-auto text-pink-400 mb-4" />
+                <h3 className="text-lg font-medium text-pink-700">Nenhuma mensagem enviada</h3>
+                <p className="text-pink-500 mt-2">
                   Clique em 'Nova Mensagem' para enviar sua primeira mensagem.
                 </p>
               </div>

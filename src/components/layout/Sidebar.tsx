@@ -1,4 +1,3 @@
-
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -16,7 +15,8 @@ import {
   Scissors,
   UserSquare2,
   CreditCard,
-  User
+  User,
+  ShoppingBag
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -38,15 +38,38 @@ const menuItems: MenuItem[] = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard", category: "principal" },
   { icon: Calendar, label: "Agendamentos", path: "/appointments", category: "principal" },
   { icon: Users, label: "Clientes", path: "/clientes", category: "principal" },
-  { icon: ShoppingCart, label: "PDV", path: "/pdv", category: "principal" },
-  { icon: Scissors, label: "Serviços", path: "/servicos", category: "gestao" },
-  { icon: UserSquare2, label: "Profissionais", path: "/profissionais", category: "gestao" },
-  { icon: DollarSign, label: "Financeiro", path: "/financeiro", category: "gestao" },
-  { icon: Package, label: "Estoque", path: "/estoque", category: "operacional" },
-  { icon: MessageSquare, label: "Marketing", path: "/marketing", category: "analise" },
+  { icon: Scissors, label: "Serviços", path: "/servicos", category: "principal" },
+  { icon: UserSquare2, label: "Profissionais", path: "/profissionais", category: "principal" },
+  { icon: ShoppingBag, label: "PDV", path: "/pdv", category: "principal" },
+  { icon: DollarSign, label: "Financeiro", path: "/financeiro", category: "principal" },
+  { icon: Package, label: "Estoque", path: "/estoque", category: "principal" },
+  { icon: BarChart, label: "Marketing", path: "/marketing", category: "principal" },
   { icon: CreditCard, label: "Mensalidade", path: "/mensalidade", category: "configuracoes" },
   { icon: Settings, label: "Configurações", path: "/configuracoes", category: "configuracoes" },
 ];
+
+const menuItemColors = {
+  // Cores para cada item do menu
+  "/dashboard": { color: "text-blue-600", bg: "bg-blue-100", hover: "hover:bg-blue-100" },
+  "/appointments": { color: "text-purple-600", bg: "bg-purple-100", hover: "hover:bg-purple-100" },
+  "/clientes": { color: "text-emerald-600", bg: "bg-emerald-100", hover: "hover:bg-emerald-100" },
+  "/servicos": { color: "text-amber-600", bg: "bg-amber-100", hover: "hover:bg-amber-100" },
+  "/profissionais": { color: "text-cyan-600", bg: "bg-cyan-100", hover: "hover:bg-cyan-100" },
+  "/pdv": { color: "text-emerald-600", bg: "bg-emerald-100", hover: "hover:bg-emerald-100" },
+  "/financeiro": { color: "text-green-600", bg: "bg-green-100", hover: "hover:bg-green-100" },
+  "/estoque": { color: "text-indigo-600", bg: "bg-indigo-100", hover: "hover:bg-indigo-100" },
+  "/marketing": { color: "text-rose-600", bg: "bg-rose-100", hover: "hover:bg-rose-100" },
+  "/mensalidade": { color: "text-orange-600", bg: "bg-orange-100", hover: "hover:bg-orange-100" },
+  "/configuracoes": { color: "text-gray-600", bg: "bg-gray-100", hover: "hover:bg-gray-100" },
+};
+
+// Cores para categorias
+const categoryColors = {
+  "principal": "text-blue-600 dark:text-blue-400",
+  "analise": "text-purple-600 dark:text-purple-400",
+  "configuracoes": "text-orange-600 dark:text-orange-400",
+  "outros": "text-gray-600 dark:text-gray-400"
+};
 
 interface SidebarProps {
   isOpen: boolean;
@@ -80,6 +103,7 @@ export const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
   const renderMenuItem = (item: MenuItem) => {
     const isActive = location.pathname === item.path;
     const isPinned = pinnedItems.includes(item.path);
+    const itemColors = menuItemColors[item.path];
 
     return (
       <Tooltip key={item.path}>
@@ -88,8 +112,9 @@ export const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
             to={item.path}
             className={cn(
               "flex items-center gap-2 px-3 py-2 rounded-lg text-neutral-soft transition-all duration-200",
-              "hover:bg-primary/5 hover:text-primary",
-              isActive && "bg-primary/10 text-primary",
+              itemColors.hover,
+              "hover:text-neutral-900 dark:hover:text-white",
+              isActive ? `${itemColors.bg} ${itemColors.color} font-medium dark:bg-opacity-20` : "",
               !isOpen && "justify-center",
               "group relative"
             )}
@@ -98,21 +123,34 @@ export const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
               togglePinnedItem(item.path);
             }}
           >
-            <item.icon className={cn(
-              "w-5 h-5 transition-transform duration-200",
+            <div className={cn(
+              "flex items-center justify-center w-7 h-7 rounded-md transition-transform duration-200",
+              isActive ? itemColors.bg : "bg-transparent",
               isActive && "scale-110"
-            )} />
+            )}>
+              <item.icon className={cn(
+                "w-4 h-4", 
+                itemColors.color,
+                "transition-all duration-200"
+              )} />
+            </div>
             {isOpen && (
-              <span className="text-sm font-medium truncate">
+              <span className={cn(
+                "text-sm truncate",
+                isActive ? itemColors.color : "text-neutral-600 dark:text-neutral-400"
+              )}>
                 {item.label}
               </span>
             )}
             {isPinned && isOpen && (
-              <div className="absolute right-2 top-1/2 -translate-y-1/2 w-1 h-1 bg-primary rounded-full" />
+              <div className={cn(
+                "absolute right-2 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full",
+                itemColors.color
+              )} />
             )}
           </Link>
         </TooltipTrigger>
-        <TooltipContent side="right" className="ml-2">
+        <TooltipContent side="right" className={cn("ml-2", itemColors.color)}>
           <p>{item.label}</p>
         </TooltipContent>
       </Tooltip>
@@ -132,7 +170,8 @@ export const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
       {/* Sidebar */}
       <aside
         className={cn(
-          "fixed top-0 left-0 z-40 h-full bg-white dark:bg-neutral-900 border-r dark:border-neutral-800 transition-all duration-300",
+          "fixed top-0 left-0 z-40 h-full border-r transition-all duration-300",
+          "bg-gradient-to-b from-white to-gray-50 dark:from-neutral-900 dark:to-neutral-950", 
           "shadow-sm dark:shadow-none",
           isOpen ? "w-64" : "w-20",
           "transform lg:translate-x-0",
@@ -142,25 +181,41 @@ export const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
         )}
       >
         {/* Logo */}
-        <div className="h-16 flex items-center justify-between px-4 border-b dark:border-neutral-800">
-          <Link to="/dashboard" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full bg-primary" />
-            {isOpen && (
-              <span className="font-semibold text-neutral dark:text-white animate-fade-in">
-                Pulse
-              </span>
+        <div className={cn(
+          "h-16 flex items-center justify-between px-4 border-b bg-gradient-to-r from-blue-600 to-purple-600 text-white",
+          !isOpen && "flex-col-reverse justify-center gap-4 px-2"
+        )}>
+          <Link to="/dashboard" className={cn(
+            "flex items-center gap-2",
+            !isOpen && "justify-center w-full"
+          )}>
+            {isOpen ? (
+              <img 
+                src="/LOGO.png" 
+                alt="Pulse Logo" 
+                className="h-8 object-contain animate-fade-in" 
+              />
+            ) : (
+              <img 
+                src="/favicon.ico" 
+                alt="Pulse Icon" 
+                className="w-8 h-8 animate-fade-in" 
+              />
             )}
           </Link>
           <Button
             variant="ghost"
             size="icon"
-            className="hidden lg:flex hover:bg-primary/5 dark:hover:bg-white/5"
+            className={cn(
+              "hidden lg:flex hover:bg-white/10 text-white",
+              isOpen ? "ml-auto mr-0" : "absolute -right-3 top-6 bg-white border hover:bg-gray-50 p-1 h-5 w-5 rounded-full"
+            )}
             onClick={() => setIsOpen(!isOpen)}
           >
             {isOpen ? (
               <ChevronLeft className="h-4 w-4" />
             ) : (
-              <ChevronRight className="h-4 w-4" />
+              <ChevronRight className="h-3 w-3 text-blue-600" />
             )}
           </Button>
         </div>
@@ -170,7 +225,7 @@ export const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
           {/* Itens fixados */}
           {pinnedItems.length > 0 && isOpen && (
             <div className="mb-4">
-              <div className="px-3 py-1 text-xs font-medium text-neutral-soft dark:text-neutral-400">
+              <div className="px-3 py-1 text-xs font-medium bg-gradient-to-r from-blue-100 to-blue-50 dark:from-blue-950 dark:to-blue-900 text-blue-700 dark:text-blue-300 rounded-md mb-2">
                 Fixados
               </div>
               {pinnedItems.map(path => {
@@ -185,7 +240,13 @@ export const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
           {Object.entries(groupedMenuItems).map(([category, items]) => (
             <div key={category}>
               {isOpen && (
-                <div className="px-3 py-1 text-xs font-medium text-neutral-soft dark:text-neutral-400 capitalize">
+                <div className={cn(
+                  "px-3 py-1 text-xs font-medium capitalize rounded-md mb-2",
+                  category === "principal" ? "bg-gradient-to-r from-blue-100 to-blue-50 dark:from-blue-950 dark:to-blue-900 text-blue-700 dark:text-blue-300" : "",
+                  category === "configuracoes" ? "bg-gradient-to-r from-orange-100 to-orange-50 dark:from-orange-950 dark:to-orange-900 text-orange-700 dark:text-orange-300" : "",
+                  category === "analise" ? "bg-gradient-to-r from-purple-100 to-purple-50 dark:from-purple-950 dark:to-purple-900 text-purple-700 dark:text-purple-300" : "",
+                  category === "outros" ? "bg-gradient-to-r from-gray-100 to-gray-50 dark:from-gray-900 dark:to-gray-800 text-gray-700 dark:text-gray-300" : ""
+                )}>
                   {category}
                 </div>
               )}
@@ -197,17 +258,19 @@ export const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
         </div>
 
         {/* Footer */}
-        <div className="absolute bottom-0 left-0 right-0 p-2 border-t dark:border-neutral-800 bg-white dark:bg-neutral-900">
+        <div className="absolute bottom-0 left-0 right-0 p-2 border-t bg-gradient-to-t from-gray-100 to-white dark:from-neutral-950 dark:to-neutral-900">
           <div className="space-y-2">
             <button
               className={cn(
                 "w-full flex items-center gap-2 px-3 py-2 rounded-lg",
-                "text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors",
+                "text-red-500 hover:bg-gradient-to-r hover:from-red-50 hover:to-pink-50 dark:hover:from-red-950 dark:hover:to-pink-950 transition-colors",
                 !isOpen && "justify-center"
               )}
             >
-              <LogOut className="w-5 h-5" />
-              {isOpen && <span>Sair</span>}
+              <div className="flex items-center justify-center w-7 h-7 rounded-md bg-red-100 dark:bg-red-900/30">
+                <LogOut className="w-4 h-4 text-red-600 dark:text-red-400" />
+              </div>
+              {isOpen && <span className="font-medium">Sair</span>}
             </button>
           </div>
         </div>

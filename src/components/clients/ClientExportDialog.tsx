@@ -257,7 +257,97 @@ export function ClientExportDialog({
       return;
     }
 
-    onExport(options);
+    // Ajustar as opções com base no tipo de relatório selecionado
+    let finalOptions = { ...options };
+
+    // Definir automaticamente as opções de acordo com o tipo de relatório
+    if (finalOptions.exportFormat === "summary") {
+      // Relatório Resumido (lista básica) - dados essenciais
+      finalOptions = {
+        ...finalOptions,
+        includeContact: true,
+        includeAddress: false,
+        includeServices: false,
+        includeSpending: true,
+        includePreferences: false,
+        includeBirthday: true,
+        includeTags: true,
+        includeVisitHistory: false,
+        includeCashbackHistory: false,
+        includeAverageTicket: false,
+        includeCharts: false,
+        includeAnalytics: false
+      };
+      
+      toast({
+        title: "Relatório resumido",
+        description: "Gerando lista básica com informações essenciais dos clientes"
+      });
+    } 
+    else if (finalOptions.exportFormat === "detailed") {
+      // Relatório Detalhado (com histórico) - inclui históricos
+      finalOptions = {
+        ...finalOptions,
+        includeContact: true,
+        includeAddress: true,
+        includeServices: true,
+        includeSpending: true,
+        includePreferences: true,
+        includeBirthday: true,
+        includeTags: true,
+        includeVisitHistory: true,
+        includeCashbackHistory: true,
+        includeAverageTicket: true,
+        includeCharts: false,
+        includeAnalytics: true
+      };
+      
+      toast({
+        title: "Relatório detalhado",
+        description: "Gerando relatório completo com histórico de serviços e visitas"
+      });
+    } 
+    else if (finalOptions.exportFormat === "analytics") {
+      // Relatório Estatístico (com gráficos) - foco em métricas
+      finalOptions = {
+        ...finalOptions,
+        includeContact: true,
+        includeAddress: false,
+        includeServices: true,
+        includeSpending: true,
+        includePreferences: false,
+        includeBirthday: true,
+        includeTags: true,
+        includeVisitHistory: true,
+        includeCashbackHistory: true,
+        includeAverageTicket: true,
+        includeCharts: true,
+        includeAnalytics: true
+      };
+      
+      // Forçar formato PDF para relatórios com gráficos
+      if (finalOptions.format !== "pdf") {
+        finalOptions.format = "pdf";
+        toast({
+          title: "Formato ajustado para PDF",
+          description: "Relatórios estatísticos com gráficos são gerados em PDF"
+        });
+      } else {
+        toast({
+          title: "Relatório estatístico",
+          description: "Gerando relatório com métricas e gráficos de análise"
+        });
+      }
+    }
+
+    // Marca a etapa final como concluída
+    setSteps(prev => ({
+      ...prev,
+      opcoes: 'complete'
+    }));
+
+    // Enviar as opções ajustadas para a função de exportação
+    onExport(finalOptions);
     onClose();
   };
 
@@ -634,6 +724,243 @@ export function ClientExportDialog({
                 
                 {/* Conteúdo para as outras abas */}
                 {/* ... resto do conteúdo ... */}
+
+                {/* Aba de dados para incluir no relatório */}
+                <TabsContent value="dados" className="space-y-4 mt-0">
+                  <FormatSelector />
+                  
+                  <div className="space-y-3 p-4 rounded-md border bg-muted/30">
+                    <h4 className="text-sm font-medium mb-2">Dados a incluir no relatório</h4>
+                    
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                          <User className="w-4 h-4 text-blue-500" />
+                          <Label htmlFor="include-contact" className="text-sm">Informações de contato</Label>
+                        </div>
+                        <Switch 
+                          id="include-contact" 
+                          checked={options.includeContact}
+                          onCheckedChange={(checked) => handleToggleOption("includeContact", checked)}
+                        />
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                          <Phone className="w-4 h-4 text-blue-500" />
+                          <Label htmlFor="include-address" className="text-sm">Endereço completo</Label>
+                        </div>
+                        <Switch 
+                          id="include-address" 
+                          checked={options.includeAddress}
+                          onCheckedChange={(checked) => handleToggleOption("includeAddress", checked)}
+                        />
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                          <Scissors className="w-4 h-4 text-purple-500" />
+                          <Label htmlFor="include-services" className="text-sm">Histórico de serviços</Label>
+                        </div>
+                        <Switch 
+                          id="include-services" 
+                          checked={options.includeServices}
+                          onCheckedChange={(checked) => handleToggleOption("includeServices", checked)}
+                        />
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                          <CreditCard className="w-4 h-4 text-green-500" />
+                          <Label htmlFor="include-spending" className="text-sm">Gastos e pagamentos</Label>
+                        </div>
+                        <Switch 
+                          id="include-spending" 
+                          checked={options.includeSpending}
+                          onCheckedChange={(checked) => handleToggleOption("includeSpending", checked)}
+                        />
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                          <Cake className="w-4 h-4 text-pink-500" />
+                          <Label htmlFor="include-birthday" className="text-sm">Aniversários</Label>
+                        </div>
+                        <Switch 
+                          id="include-birthday" 
+                          checked={options.includeBirthday}
+                          onCheckedChange={(checked) => handleToggleOption("includeBirthday", checked)}
+                        />
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                          <Tag className="w-4 h-4 text-yellow-500" />
+                          <Label htmlFor="include-tags" className="text-sm">Tags e categorias</Label>
+                        </div>
+                        <Switch 
+                          id="include-tags" 
+                          checked={options.includeTags}
+                          onCheckedChange={(checked) => handleToggleOption("includeTags", checked)}
+                        />
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                          <CalendarRange className="w-4 h-4 text-indigo-500" />
+                          <Label htmlFor="include-visit-history" className="text-sm">Histórico de visitas</Label>
+                        </div>
+                        <Switch 
+                          id="include-visit-history" 
+                          checked={options.includeVisitHistory}
+                          onCheckedChange={(checked) => handleToggleOption("includeVisitHistory", checked)}
+                        />
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                          <Heart className="w-4 h-4 text-red-500" />
+                          <Label htmlFor="include-preferences" className="text-sm">Preferências dos clientes</Label>
+                        </div>
+                        <Switch 
+                          id="include-preferences" 
+                          checked={options.includePreferences}
+                          onCheckedChange={(checked) => handleToggleOption("includePreferences", checked)}
+                        />
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                          <BarChart className="w-4 h-4 text-blue-500" />
+                          <Label htmlFor="include-analytics" className="text-sm">Análises e métricas</Label>
+                        </div>
+                        <Switch 
+                          id="include-analytics" 
+                          checked={options.includeAnalytics}
+                          onCheckedChange={(checked) => handleToggleOption("includeAnalytics", checked)}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex justify-between mt-3 gap-2">
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      onClick={() => goToPreviousStep('dados', 'periodo')}
+                    >
+                      Voltar: Período
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      onClick={() => goToNextStep('dados', 'opcoes')}
+                    >
+                      Próximo: Opções
+                    </Button>
+                  </div>
+                </TabsContent>
+
+                {/* Aba de opções avançadas */}
+                <TabsContent value="opcoes" className="space-y-4 mt-0">
+                  <FormatSelector />
+                  
+                  <div className="space-y-3 p-4 rounded-md border bg-muted/30">
+                    <h4 className="text-sm font-medium mb-2">Opções Avançadas</h4>
+                    
+                    <div className="space-y-3">
+                      <div className="space-y-1">
+                        <Label htmlFor="group-by" className="text-xs">Agrupar por</Label>
+                        <Select 
+                          value={options.groupBy} 
+                          onValueChange={(value) => handleSelectChange("groupBy", value)}
+                        >
+                          <SelectTrigger id="group-by" className="h-9">
+                            <SelectValue placeholder="Selecione o agrupamento" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">Sem agrupamento</SelectItem>
+                            <SelectItem value="status">Status do cliente</SelectItem>
+                            <SelectItem value="tag">Tags</SelectItem>
+                            <SelectItem value="lastVisit">Última visita</SelectItem>
+                            <SelectItem value="birthMonth">Mês de aniversário</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-1">
+                        <Label htmlFor="sort-by" className="text-xs">Ordenar por</Label>
+                        <Select 
+                          value={options.sortBy} 
+                          onValueChange={(value) => handleSelectChange("sortBy", value)}
+                        >
+                          <SelectTrigger id="sort-by" className="h-9">
+                            <SelectValue placeholder="Selecione a ordenação" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="name">Nome</SelectItem>
+                            <SelectItem value="lastVisit">Última visita</SelectItem>
+                            <SelectItem value="totalSpent">Total gasto</SelectItem>
+                            <SelectItem value="visitsCount">Número de visitas</SelectItem>
+                            <SelectItem value="birthDate">Data de aniversário</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="flex items-center justify-between pt-2">
+                        <div className="flex items-center space-x-2">
+                          <BarChart className="w-4 h-4 text-blue-500" />
+                          <Label htmlFor="include-charts" className="text-sm">Incluir gráficos</Label>
+                          <p className="text-xs text-muted-foreground">(apenas PDF)</p>
+                        </div>
+                        <Switch 
+                          id="include-charts" 
+                          checked={options.includeCharts}
+                          onCheckedChange={(checked) => handleToggleOption("includeCharts", checked)}
+                          disabled={options.format !== "pdf"}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="p-4 rounded-md border bg-blue-50">
+                    <div className="flex items-center mb-2">
+                      <BarChart className="h-5 w-5 text-blue-600 mr-2" />
+                      <h4 className="text-sm font-medium text-blue-800">Resumo do Relatório</h4>
+                    </div>
+                    <div className="space-y-2 text-xs text-blue-800">
+                      <p>Formato: <span className="font-medium">{options.format === "excel" ? "Excel" : "PDF"}</span></p>
+                      <p>Tipo: <span className="font-medium">
+                        {options.exportFormat === "summary" ? "Resumido" : 
+                         options.exportFormat === "detailed" ? "Detalhado" : "Estatístico"}
+                      </span></p>
+                      <p>Período: <span className="font-medium">
+                        {options.timeRange === "all" ? "Todo o histórico" : 
+                         options.timeRange === "last30" ? "Últimos 30 dias" :
+                         options.timeRange === "last90" ? "Últimos 90 dias" :
+                         options.timeRange === "last180" ? "Últimos 6 meses" :
+                         options.timeRange === "last365" ? "Último ano" : "Personalizado"}
+                      </span></p>
+                      <p>Clientes incluídos: <span className="font-medium">{clientCount}</span></p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex justify-between mt-3 gap-2">
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      onClick={() => goToPreviousStep('opcoes', 'dados')}
+                    >
+                      Voltar: Dados
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="pink"
+                      onClick={handleExport}
+                    >
+                      Concluir e Gerar
+                    </Button>
+                  </div>
+                </TabsContent>
               </div>
             </Tabs>
           </div>
@@ -651,7 +978,7 @@ export function ClientExportDialog({
             <Button 
               variant="pink"
               onClick={handleExport}
-              disabled={dateError !== null}
+              disabled={dateError !== null || steps.opcoes !== 'complete' && steps.opcoes !== 'current'}
             >
               <Download className="mr-2 h-4 w-4" />
               Gerar Relatório

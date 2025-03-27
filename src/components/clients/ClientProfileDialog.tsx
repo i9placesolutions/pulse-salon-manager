@@ -81,7 +81,7 @@ interface ClientProfileDialogProps {
   preferences?: ClientPreference[];
   coupons?: ClientCoupon[];
   onUpdate?: (client: Client) => void;
-  onDelete?: (clientId: number) => void;
+  onDelete?: (clientId: string) => void;
 }
 
 export function ClientProfileDialog({
@@ -103,9 +103,9 @@ export function ClientProfileDialog({
 
   if (!client) return null;
 
-  const clientServices = services.filter(service => service.clientId === client.id);
-  const clientPreferences = preferences.filter(pref => pref.clientId === client.id);
-  const clientCoupons = coupons.filter(coupon => coupon.clientId === client.id);
+  const clientServices = services.filter(service => service.clientId === parseInt(client.id));
+  const clientPreferences = preferences.filter(pref => pref.clientId === parseInt(client.id));
+  const clientCoupons = coupons.filter(coupon => coupon.clientId === parseInt(client.id));
 
   const completedServices = clientServices.filter(service => service.status === "completed");
   const scheduledServices = clientServices.filter(service => service.status === "scheduled");

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { CampaignCard } from "@/components/marketing/CampaignCard";
@@ -74,26 +73,26 @@ export function CampaignTypesSection({ selectedType, onTypeSelect }: CampaignTyp
   };
 
   return (
-    <Card>
-      <CardHeader>
+    <Card className="border-indigo-200 shadow-sm">
+      <CardHeader className="bg-gradient-to-r from-indigo-50 via-purple-50 to-pink-50 rounded-t-lg">
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle>Nova Campanha</CardTitle>
-            <CardDescription>
+            <CardTitle className="text-indigo-700">Nova Campanha</CardTitle>
+            <CardDescription className="text-indigo-600/70">
               {isFormVisible 
                 ? "Configure os detalhes da sua campanha" 
                 : "Selecione o tipo de campanha e configure seus detalhes"}
             </CardDescription>
           </div>
           {isFormVisible && (
-            <Button variant="ghost" onClick={handleCancel} className="flex items-center gap-1">
+            <Button variant="outline" onClick={handleCancel} className="flex items-center gap-1 border-indigo-300 text-indigo-700 hover:bg-indigo-50">
               <ArrowLeft className="h-4 w-4" />
               Voltar
             </Button>
           )}
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-4">
         {isFormVisible ? (
           renderForm()
         ) : (

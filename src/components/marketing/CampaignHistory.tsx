@@ -195,481 +195,294 @@ export function CampaignHistory({ selectedCampaignType }: CampaignHistoryProps) 
   // Filtrar a campanha selecionada
   const selectedCampaignData = filteredCampaigns.find(camp => camp.id === selectedCampaign);
   
+  // Obter as cores com base no tipo da campanha selecionada
+  const campaignTypeColors: Record<string, {
+    border: string,
+    gradient: string,
+    bg: string,
+    title: string,
+    text: string,
+    buttonBg: string,
+    tableBg: string
+  }> = {
+    discount: {
+      border: 'border-blue-200',
+      gradient: 'from-blue-50 to-blue-100',
+      bg: 'bg-blue-50',
+      title: 'text-blue-700',
+      text: 'text-blue-600',
+      buttonBg: 'bg-blue-600',
+      tableBg: 'bg-blue-50'
+    },
+    coupon: {
+      border: 'border-purple-200',
+      gradient: 'from-purple-50 to-purple-100',
+      bg: 'bg-purple-50',
+      title: 'text-purple-700',
+      text: 'text-purple-600',
+      buttonBg: 'bg-purple-600',
+      tableBg: 'bg-purple-50'
+    },
+    cashback: {
+      border: 'border-pink-200',
+      gradient: 'from-pink-50 to-pink-100',
+      bg: 'bg-pink-50',
+      title: 'text-pink-700',
+      text: 'text-pink-600',
+      buttonBg: 'bg-pink-600',
+      tableBg: 'bg-pink-50'
+    },
+    vip: {
+      border: 'border-amber-200',
+      gradient: 'from-amber-50 to-amber-100',
+      bg: 'bg-amber-50',
+      title: 'text-amber-700',
+      text: 'text-amber-600',
+      buttonBg: 'bg-amber-600',
+      tableBg: 'bg-amber-50'
+    }
+  };
+  
+  // Definir as cores padrão ou com base no tipo selecionado
+  const defaultColors = campaignTypeColors.discount;
+  const colors = selectedCampaignData 
+    ? campaignTypeColors[selectedCampaignData.type] || defaultColors
+    : defaultColors;
+  
   // Filtrar os usos com base na pesquisa
   const filteredUsage = selectedCampaignData?.usage.filter(usage => 
     usage.customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     usage.serviceOrProduct.toLowerCase().includes(searchQuery.toLowerCase())
   ) || [];
 
+  const handleExportCampaign = () => {
+    if (selectedCampaignData) {
+      // Simulação de exportação
+      toast({
+        title: "Relatório exportado",
+        description: `O relatório da campanha "${selectedCampaignData.name}" foi exportado com sucesso.`,
+      });
+    }
+  };
+
+  // Função para obter as cores de botão com base no tipo de campanha
+  const getButtonVariant = (campaignId: string) => {
+    const campaign = filteredCampaigns.find(c => c.id === campaignId);
+    if (!campaign) return "default";
+    
+    if (selectedCampaign === campaignId) {
+      return `bg-${campaign.type === 'discount' ? 'blue' : 
+              campaign.type === 'coupon' ? 'purple' : 
+              campaign.type === 'cashback' ? 'pink' : 'amber'}-600 hover:bg-${
+              campaign.type === 'discount' ? 'blue' : 
+              campaign.type === 'coupon' ? 'purple' : 
+              campaign.type === 'cashback' ? 'pink' : 'amber'}-700 text-white`;
+    }
+    
+    return `bg-white hover:bg-${campaign.type === 'discount' ? 'blue' : 
+            campaign.type === 'coupon' ? 'purple' : 
+            campaign.type === 'cashback' ? 'pink' : 'amber'}-50 text-${
+            campaign.type === 'discount' ? 'blue' : 
+            campaign.type === 'coupon' ? 'purple' : 
+            campaign.type === 'cashback' ? 'pink' : 'amber'}-700 border border-${
+            campaign.type === 'discount' ? 'blue' : 
+            campaign.type === 'coupon' ? 'purple' : 
+            campaign.type === 'cashback' ? 'pink' : 'amber'}-300`;
+  };
+
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between p-2">
-        <div className="flex-1">
-          <div className="flex items-center">
-            {selectedCampaignType && (
-              <div className={`rounded-lg p-2 mr-3 ${selectedCampaignType === 'discount' ? 'bg-orange-100 text-orange-600' : 
-                 selectedCampaignType === 'coupon' ? 'bg-purple-100 text-purple-600' : 
-                 selectedCampaignType === 'cashback' ? 'bg-blue-100 text-blue-600' : 'bg-emerald-100 text-emerald-600'}`}>
-                {getCampaignTypeIcon(selectedCampaignType)}
-              </div>
-            )}
-            <div>
-              <h1 className="text-2xl font-bold text-neutral flex items-center gap-2">
-                Histórico de Campanhas
-                {selectedCampaignType && (
-                  <Badge className={`ml-2 ${selectedCampaignType === 'discount' ? 'bg-orange-500' : 
-                    selectedCampaignType === 'coupon' ? 'bg-purple-500' : 
-                    selectedCampaignType === 'cashback' ? 'bg-blue-500' : 'bg-emerald-500'}`}>
-                    {selectedCampaignType === 'discount' ? 'Desconto Direto' : 
-                    selectedCampaignType === 'coupon' ? 'Cupom Promocional' : 
-                    selectedCampaignType === 'cashback' ? 'Cashback' : 'Programa VIP'}
-                  </Badge>
-                )}
-              </h1>
-              <p className="text-sm text-muted-foreground mt-1">
-                {selectedCampaignType 
-                  ? `Acompanhe os resultados, conversões e impacto das suas campanhas de ${selectedCampaignType === 'discount' ? 'desconto direto' : 
-                    selectedCampaignType === 'coupon' ? 'cupom promocional' : 
-                    selectedCampaignType === 'cashback' ? 'cashback' : 'programa VIP'}`
-                  : 'Visualize métricas detalhadas e o histórico de uso das suas campanhas'}
-              </p>
-            </div>
+    <Card className={`${colors.border} shadow-sm`}>
+      <CardHeader className={`bg-gradient-to-r ${colors.gradient} rounded-t-lg`}>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className={colors.title}>Histórico de Campanhas</CardTitle>
+            <CardDescription className={colors.text}>
+              Acompanhe o desempenho das suas campanhas de marketing
+            </CardDescription>
           </div>
+          {selectedCampaignData && (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleExportCampaign}
+              className={`flex items-center gap-1 border-${selectedCampaignData.type === 'discount' ? 'blue' : 
+                          selectedCampaignData.type === 'coupon' ? 'purple' : 
+                          selectedCampaignData.type === 'cashback' ? 'pink' : 'amber'}-300 text-${
+                          selectedCampaignData.type === 'discount' ? 'blue' : 
+                          selectedCampaignData.type === 'coupon' ? 'purple' : 
+                          selectedCampaignData.type === 'cashback' ? 'pink' : 'amber'}-700`}
+            >
+              <Download className="h-4 w-4" />
+              Exportar
+            </Button>
+          )}
         </div>
-        {selectedCampaignType ? (
-          // Quando um tipo de campanha está selecionado, mostra apenas o nome da campanha atual sem opção de mudança
-          <div className="bg-white border border-muted rounded-md px-4 py-2.5 shadow-sm w-full md:w-[350px] flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className={`p-2 rounded-md ${selectedCampaignType === 'discount' ? 'bg-orange-100' : 
-                selectedCampaignType === 'coupon' ? 'bg-purple-100' : 
-                selectedCampaignType === 'cashback' ? 'bg-blue-100' : 'bg-emerald-100'}`}>
-                {getCampaignTypeIcon(selectedCampaignType)}
-              </div>
-              <div>
-                <span className="font-medium">{selectedCampaignData?.name || "Campanha não selecionada"}</span>
-                {selectedCampaignData && (
-                  <Badge variant={selectedCampaignData.status === 'active' ? "default" : "secondary"} className="ml-2 text-xs">
-                    {selectedCampaignData.status === 'active' ? 'Ativa' : 
-                     selectedCampaignData.status === 'completed' ? 'Concluída' : 'Agendada'}
-                  </Badge>
-                )}
-              </div>
-            </div>
+      </CardHeader>
+      <CardContent className="p-0">
+        {filteredCampaigns.length === 0 ? (
+          <div className="p-8 text-center">
+            <BarChart3 className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+            <h3 className="text-lg font-medium text-gray-700 mb-2">Nenhuma campanha encontrada</h3>
+            <p className="text-gray-500 max-w-md mx-auto">
+              {selectedCampaignType 
+                ? `Você ainda não criou campanhas do tipo ${selectedCampaignType}. Crie uma nova na seção acima.`
+                : "Você ainda não tem campanhas criadas. Crie sua primeira campanha na seção acima."}
+            </p>
           </div>
         ) : (
-          // Quando nenhum tipo específico está selecionado, permite a seleção entre todas as campanhas
-          <Select 
-            value={selectedCampaign} 
-            onValueChange={setSelectedCampaign}
-          >
-            <SelectTrigger className="bg-white border border-muted hover:border-primary/50 transition-all shadow-sm w-full md:w-[350px]">
-              <SelectValue placeholder="Selecione uma campanha" />
-            </SelectTrigger>
-            <SelectContent>
-              {filteredCampaigns.map((campaign) => (
-                <SelectItem key={campaign.id} value={campaign.id}>
-                  <div className="flex items-center gap-3">
+          <div>
+            <div className="border-b border-gray-200">
+              <div className="px-4 py-3 flex items-center gap-2 overflow-x-auto scrollbar-hide">
+                {filteredCampaigns.map((campaign) => (
+                  <Button
+                    key={campaign.id}
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setSelectedCampaign(campaign.id)}
+                    className={`whitespace-nowrap ${
+                      selectedCampaign === campaign.id 
+                        ? `bg-${campaign.type === 'discount' ? 'blue' : 
+                           campaign.type === 'coupon' ? 'purple' : 
+                           campaign.type === 'cashback' ? 'pink' : 'amber'}-600 text-white` 
+                        : `text-${campaign.type === 'discount' ? 'blue' : 
+                           campaign.type === 'coupon' ? 'purple' : 
+                           campaign.type === 'cashback' ? 'pink' : 'amber'}-700 hover:bg-${
+                           campaign.type === 'discount' ? 'blue' : 
+                           campaign.type === 'coupon' ? 'purple' : 
+                           campaign.type === 'cashback' ? 'pink' : 'amber'}-100`
+                    }`}
+                  >
                     {getCampaignTypeIcon(campaign.type)}
-                    <span>{campaign.name}</span>
-                    <Badge variant={campaign.status === 'active' ? "default" : "secondary"} className="ml-2 text-xs">
-                      {campaign.status === 'active' ? 'Ativa' : campaign.status === 'completed' ? 'Concluída' : 'Agendada'}
+                    <span className="ml-1">{campaign.name}</span>
+                  </Button>
+                ))}
+              </div>
+            </div>
+
+            {selectedCampaignData && (
+              <div>
+                {/* Métricas da Campanha */}
+                <div className={`grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-1 p-4 ${colors.bg} border-b ${colors.border}`}>
+                  <div className="p-2 text-center">
+                    <p className={`text-xs ${colors.text} mb-1`}>Usos Totais</p>
+                    <h4 className={`text-lg font-bold ${colors.title}`}>{selectedCampaignData.metrics.totalUses}</h4>
+                  </div>
+                  <div className="p-2 text-center">
+                    <p className={`text-xs ${colors.text} mb-1`}>Clientes</p>
+                    <h4 className={`text-lg font-bold ${colors.title}`}>{selectedCampaignData.metrics.totalCustomers}</h4>
+                  </div>
+                  <div className="p-2 text-center">
+                    <p className={`text-xs ${colors.text} mb-1`}>Conversão</p>
+                    <h4 className={`text-lg font-bold ${colors.title}`}>{selectedCampaignData.metrics.conversionRate}%</h4>
+                  </div>
+                  <div className="p-2 text-center">
+                    <p className={`text-xs ${colors.text} mb-1`}>Gasto Médio</p>
+                    <h4 className={`text-lg font-bold ${colors.title}`}>R$ {selectedCampaignData.metrics.averageSpend.toFixed(2)}</h4>
+                  </div>
+                  <div className="p-2 text-center">
+                    <p className={`text-xs ${colors.text} mb-1`}>Receita Total</p>
+                    <h4 className={`text-lg font-bold ${colors.title}`}>R$ {selectedCampaignData.metrics.totalRevenue.toFixed(2)}</h4>
+                  </div>
+                  <div className="p-2 text-center">
+                    <p className={`text-xs ${colors.text} mb-1`}>Taxa de Resgate</p>
+                    <h4 className={`text-lg font-bold ${colors.title}`}>{selectedCampaignData.metrics.redemptionRate}%</h4>
+                  </div>
+                </div>
+
+                {/* Detalhes da Campanha */}
+                <div className={`p-4 border-b ${colors.border} flex flex-wrap gap-y-2`}>
+                  <div className="flex items-center gap-2 mr-4 text-sm">
+                    <Badge variant="outline" className={`${colors.bg} ${colors.title} ${colors.border}`}>
+                      {selectedCampaignData.type === 'discount' ? 'Desconto' : 
+                       selectedCampaignData.type === 'coupon' ? 'Cupom' : 
+                       selectedCampaignData.type === 'cashback' ? 'Cashback' : 'VIP'}
                     </Badge>
                   </div>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        )}
-      </div>
-      
-      {!selectedCampaignData && (
-        <div className="flex items-center justify-center h-48">
-          <div className="text-center space-y-2">
-            <div className="w-12 h-12 rounded-full bg-muted/10 flex items-center justify-center mx-auto">
-              <BarChart3 className="h-6 w-6 text-muted-foreground" />
-            </div>
-            <h3 className="font-medium text-lg">Nenhuma campanha encontrada</h3>
-            <p className="text-sm text-muted-foreground max-w-md">Não existem campanhas ativas para o filtro selecionado. Crie uma nova campanha ou selecione outro tipo de campanha.</p>
-          </div>
-        </div>
-      )}
-      
-      {selectedCampaignData && (
-        <div className="space-y-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Card className={`group overflow-hidden border-l-4 ${selectedCampaignType === 'discount' ? 'border-l-orange-500' : 
-              selectedCampaignType === 'coupon' ? 'border-l-purple-500' : 
-              selectedCampaignType === 'cashback' ? 'border-l-blue-500' : 'border-l-emerald-500'} 
-              shadow-sm hover:shadow-md transition-all bg-white`}>
-              <CardContent className="p-6">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Total de Usos</p>
-                    <h3 className="text-3xl font-bold mt-2 flex items-end gap-2">
-                      <span>{selectedCampaignData.metrics.totalUses}</span>
-                      <span className="text-sm font-normal text-muted-foreground mb-1">usos</span>
-                    </h3>
-                    <p className="text-xs text-muted-foreground mt-1.5">Último uso: {new Date(selectedCampaignData.usage[0]?.date || Date.now()).toLocaleDateString('pt-BR')}</p>
+                  <div className={`flex items-center gap-1 mr-4 text-sm ${colors.text}`}>
+                    <Calendar className="h-4 w-4" />
+                    <span>Início: {new Date(selectedCampaignData.startDate).toLocaleDateString()}</span>
                   </div>
-                  <div className={`p-2.5 rounded-full ${selectedCampaignType === 'discount' ? 'bg-orange-100 text-orange-600' : 
-                    selectedCampaignType === 'coupon' ? 'bg-purple-100 text-purple-600' : 
-                    selectedCampaignType === 'cashback' ? 'bg-blue-100 text-blue-600' : 'bg-emerald-100 text-emerald-600'}`}>
-                    <Calendar className="h-5 w-5" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card className="group overflow-hidden border border-muted shadow-sm hover:shadow-md transition-all bg-white">
-              <CardContent className="p-6">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Clientes Únicos</p>
-                    <h3 className="text-3xl font-bold mt-2 flex items-end gap-2">
-                      <span>{selectedCampaignData.metrics.totalCustomers}</span>
-                      <span className="text-sm font-normal text-muted-foreground mb-1">clientes</span>
-                    </h3>
-                    <div className="flex items-center text-xs text-muted-foreground mt-1.5">
-                      <span>Taxa de retorno:</span>
-                      <Badge variant="outline" className="ml-1 font-mono">
-                        {(selectedCampaignData.metrics.totalUses / Math.max(1, selectedCampaignData.metrics.totalCustomers)).toFixed(1)}x
-                      </Badge>
+                  {selectedCampaignData.endDate && (
+                    <div className={`flex items-center gap-1 mr-4 text-sm ${colors.text}`}>
+                      <Calendar className="h-4 w-4" />
+                      <span>Fim: {new Date(selectedCampaignData.endDate).toLocaleDateString()}</span>
                     </div>
-                  </div>
-                  <div className="p-2.5 bg-slate-100 text-slate-600 rounded-full">
-                    <Users className="h-5 w-5" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card className="group overflow-hidden border border-muted shadow-sm hover:shadow-md transition-all bg-white">
-              <CardContent className="p-6">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Taxa de Resgate</p>
-                    <h3 className="text-3xl font-bold mt-2 flex items-end gap-2">
-                      <span>{selectedCampaignData.metrics.redemptionRate}%</span>
-                    </h3>
-                    <div className="flex items-center text-xs text-muted-foreground mt-1.5">
-                      <span>Conversão:</span>
-                      <Badge variant="outline" className="ml-1 font-mono">
-                        {selectedCampaignData.metrics.conversionRate}%
-                      </Badge>
-                    </div>
-                  </div>
-                  <div className="p-2.5 bg-slate-100 text-slate-600 rounded-full">
-                    <Clock className="h-5 w-5" />
+                  )}
+                  <div className={`flex items-center gap-1 mr-4 text-sm ${colors.text}`}>
+                    <Clock className="h-4 w-4" />
+                    <span>Status: {selectedCampaignData.status === 'active' ? 'Ativa' : 
+                                   selectedCampaignData.status === 'scheduled' ? 'Agendada' : 
+                                   selectedCampaignData.status === 'completed' ? 'Concluída' : 'Rascunho'}</span>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-            
-            <Card className="group overflow-hidden border border-muted shadow-sm hover:shadow-md transition-all bg-white">
-              <CardContent className="p-6">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Receita Gerada</p>
-                    <h3 className="text-3xl font-bold mt-2 flex items-end gap-2">
-                      <span>R${selectedCampaignData.metrics.totalRevenue.toLocaleString('pt-BR')}</span>
-                    </h3>
-                    <div className="flex items-center text-xs text-muted-foreground mt-1.5">
-                      <span>Ticket médio:</span>
-                      <Badge variant="outline" className="ml-1 font-mono">
-                        R${selectedCampaignData.metrics.averageSpend.toFixed(2)}
-                      </Badge>
-                    </div>
-                  </div>
-                  <div className="p-2.5 bg-slate-100 text-slate-600 rounded-full">
-                    <Percent className="h-5 w-5" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
 
-          <Card className="border border-muted shadow-sm bg-white">
-                  <Tabs defaultValue="details" className="w-full">
-                    <CardHeader className="pb-0">
-                      <div className="flex items-center justify-between mb-3">
-                        <h3 className="text-lg font-semibold">Detalhes da Campanha</h3>
-                        <div className="flex items-center gap-2">
-                          <Button variant="outline" size="sm" className="h-8 gap-1">
-                            <Download className="h-4 w-4" />
-                            Exportar
-                          </Button>
-                        </div>
-                      </div>
-                      <TabsList className="w-full justify-start gap-4">
-                        <TabsTrigger value="details" className={`data-[state=active]:${selectedCampaignType === 'discount' ? 'bg-orange-100 text-orange-700' : 
-                          selectedCampaignType === 'coupon' ? 'bg-purple-100 text-purple-700' : 
-                          selectedCampaignType === 'cashback' ? 'bg-blue-100 text-blue-700' : 'bg-emerald-100 text-emerald-700'}`}>
-                          <FileType className="h-4 w-4 mr-2" />
-                          Detalhes
-                        </TabsTrigger>
-                        <TabsTrigger value="usage" className={`data-[state=active]:${selectedCampaignType === 'discount' ? 'bg-orange-100 text-orange-700' : 
-                          selectedCampaignType === 'coupon' ? 'bg-purple-100 text-purple-700' : 
-                          selectedCampaignType === 'cashback' ? 'bg-blue-100 text-blue-700' : 'bg-emerald-100 text-emerald-700'}`}>
-                          <Clock className="h-4 w-4 mr-2" />
-                          Histórico de Uso
-                        </TabsTrigger>
-                      </TabsList>
-                    </CardHeader>
-                  
-                  <TabsContent value="details" className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8">
-                      <Card className="border border-muted/30 shadow-sm bg-muted/5 hover:border-muted/50 transition-colors">
-                        <CardHeader className="pb-2">
-                          <h3 className="text-base font-semibold flex items-center gap-2">
-                            <FileType className="h-4 w-4 text-primary" />
-                            Informações da Campanha
-                          </h3>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="space-y-4">
-                            <div className="flex justify-between items-center py-2 border-b border-muted/30">
-                              <span className="text-muted-foreground font-medium">Nome</span>
-                              <span className="font-medium">{selectedCampaignData.name}</span>
-                            </div>
-                            <div className="grid grid-cols-2 gap-3 text-sm py-1.5">
-                              <span className="text-muted-foreground font-medium">Tipo:</span>
-                              <span className="font-medium flex items-center gap-1">
-                                {getCampaignTypeIcon(selectedCampaignData.type)}
-                                {selectedCampaignData.type === 'discount' ? 'Desconto' : 
-                                 selectedCampaignData.type === 'coupon' ? 'Cupom' : 
-                                 selectedCampaignData.type === 'cashback' ? 'Cashback' : 'Programa VIP'}
-                              </span>
-                            </div>
-                            <div className="grid grid-cols-2 gap-3 text-sm py-1.5">
-                              <span className="text-muted-foreground font-medium">Data de Início:</span>
-                              <span className="font-medium">{new Date(selectedCampaignData.startDate).toLocaleDateString('pt-BR')}</span>
-                            </div>
-                            {selectedCampaignData.endDate && (
-                              <div className="grid grid-cols-2 gap-3 text-sm py-1.5">
-                                <span className="text-muted-foreground font-medium">Data de Término:</span>
-                                <span className="font-medium">{new Date(selectedCampaignData.endDate).toLocaleDateString('pt-BR')}</span>
-                              </div>
-                            )}
-                            <div className="grid grid-cols-2 gap-3 text-sm py-1.5">
-                              <span className="text-muted-foreground font-medium">Status:</span>
-                              <Badge variant={selectedCampaignData.status === 'active' ? "default" : "secondary"}>
-                                {selectedCampaignData.status === 'active' ? 'Ativa' : 
-                                 selectedCampaignData.status === 'completed' ? 'Concluída' : 
-                                 selectedCampaignData.status === 'scheduled' ? 'Agendada' : 'Rascunho'}
-                              </Badge>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                      
-                      <Card className="border border-muted/30 shadow-sm bg-muted/5 hover:border-muted/50 transition-colors">
-                        <CardHeader className="pb-2">
-                          <h3 className="text-base font-semibold flex items-center gap-2">
-                            <BarChart3 className="h-4 w-4 text-primary" />
-                            Métricas de Desempenho
-                          </h3>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="space-y-4">
-                            <div className="flex justify-between items-center py-2 border-b border-muted/30">
-                              <span className="text-muted-foreground font-medium">Taxa de Conversão</span>
-                              <span className="font-medium text-primary">{selectedCampaignData.metrics.conversionRate}%</span>
-                            </div>
-                            <div className="grid grid-cols-2 gap-3 text-sm py-1.5">
-                              <span className="text-muted-foreground font-medium">Gasto Médio:</span>
-                              <span className="font-medium">R$ {selectedCampaignData.metrics.averageSpend.toFixed(2)}</span>
-                            </div>
-                            <div className="grid grid-cols-2 gap-3 text-sm py-1.5">
-                              <span className="text-muted-foreground font-medium">Receita Total:</span>
-                              <span className="font-medium">R$ {selectedCampaignData.metrics.totalRevenue.toFixed(2)}</span>
-                            </div>
-                            <div className="grid grid-cols-2 gap-3 text-sm py-1.5">
-                              <span className="text-muted-foreground font-medium">Taxa de Uso:</span>
-                              <span className="font-medium">{selectedCampaignData.metrics.redemptionRate}%</span>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
+                {/* Utilizações */}
+                <div>
+                  <div className="p-4">
+                    <h3 className={`text-lg font-medium ${colors.title} mb-3`}>Utilizações</h3>
+                    <div className="relative mb-4">
+                      <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 ${colors.text}`} />
+                      <Input 
+                        placeholder="Buscar por cliente ou serviço..." 
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className={`pl-9 ${colors.border} focus-visible:ring-${selectedCampaignData.type === 'discount' ? 'blue' : 
+                                  selectedCampaignData.type === 'coupon' ? 'purple' : 
+                                  selectedCampaignData.type === 'cashback' ? 'pink' : 'amber'}-500`}
+                      />
                     </div>
-                    
-                    <div className="flex justify-end gap-2">
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="gap-1"
-                        onClick={() => {
-                          if (selectedCampaignData) {
-                            exportCampaignReport(
-                              selectedCampaignData,
-                              selectedCampaignData.usage,
-                              `relatorio-${selectedCampaignData.name.toLowerCase().replace(/\s+/g, '-')}`
-                            );
-                            toast({
-                              title: "Relatório exportado",
-                              description: "O relatório foi exportado com sucesso.",
-                            });
-                          }
-                        }}
-                      >
-                        <Download className="h-4 w-4" />
-                        Exportar CSV
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="gap-1"
-                        onClick={() => {
-                          if (selectedCampaignData) {
-                            try {
-                              // Realiza a exportação do PDF
-                              const result = exportCampaignToPDF(
-                                selectedCampaignData,
-                                selectedCampaignData.usage,
-                                `relatorio-pdf-${selectedCampaignData.name.toLowerCase().replace(/\s+/g, '-')}`
-                              );
-                              
-                              if (result) {
-                                toast({
-                                  title: "Relatório PDF exportado",
-                                  description: "O relatório em PDF foi gerado com sucesso.",
-                                });
-                              }
-                            } catch (error: any) {
-                              console.error("Erro ao exportar PDF:", error);
-                              toast({
-                                title: "Erro ao exportar",
-                                description: `Falha ao gerar o PDF: ${error?.message || 'Erro desconhecido'}`,
-                                variant: "destructive"
-                              });
-                            }
-                          }
-                        }}
-                      >
-                        <FileType className="h-4 w-4" />
-                        Exportar PDF
-                      </Button>
-                    </div>
-                  </TabsContent>
-                  
-                  <TabsContent value="usage" className="space-y-4">
-                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 mb-6">
-                      <div className="relative flex-1">
-                        <div className="relative">
-                          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                          <Input
-                            placeholder="Buscar por cliente ou serviço..."
-                            className="pl-10 pr-4 h-10 bg-white border-muted shadow-sm focus:border-primary"
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                          />
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-1.5 ml-1">
-                          Mostrando {filteredUsage.length} de {selectedCampaignData?.usage.length || 0} registros
-                        </p>
-                      </div>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="gap-1"
-                        onClick={() => {
-                          if (selectedCampaignData) {
-                            downloadCSV(
-                              filteredUsage,
-                              [
-                                { key: (item: any) => item.customer.name, label: 'Cliente' },
-                                { key: 'date', label: 'Data' },
-                                { key: 'serviceOrProduct', label: 'Serviço/Produto' },
-                                { key: 'amount', label: 'Valor (R$)' },
-                              ],
-                              `historico-uso-${selectedCampaignData.name.toLowerCase().replace(/\s+/g, '-')}` 
-                            );
-                            toast({
-                              title: "Histórico exportado",
-                              description: "O histórico de uso foi exportado com sucesso.",
-                            });
-                          }
-                        }}
-                      >
-                        <Download className="h-4 w-4" />
-                        Exportar CSV
-                      </Button>
-                    </div>
-                    
-                    <div className="rounded-lg border border-muted overflow-hidden">
+
+                    <div className={`rounded-md ${colors.border} overflow-hidden`}>
                       <Table>
-                        <TableHeader>
-                          <TableRow className={`${selectedCampaignType === 'discount' ? 'bg-orange-50 border-orange-100' : 
-                            selectedCampaignType === 'coupon' ? 'bg-purple-50 border-purple-100' : 
-                            selectedCampaignType === 'cashback' ? 'bg-blue-50 border-blue-100' : 'bg-emerald-50 border-emerald-100'} 
-                            border-b hover:bg-opacity-80`}>
-                            <TableHead className="font-semibold">Cliente</TableHead>
-                            <TableHead className="font-semibold">Data</TableHead>
-                            <TableHead className="font-semibold">Serviço/Produto</TableHead>
-                            <TableHead className="text-right font-semibold">Valor</TableHead>
+                        <TableHeader className={colors.tableBg}>
+                          <TableRow>
+                            <TableHead className={colors.title}>Cliente</TableHead>
+                            <TableHead className={colors.title}>Data</TableHead>
+                            <TableHead className={colors.title}>Serviço/Produto</TableHead>
+                            <TableHead className={`${colors.title} text-right`}>Valor</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {filteredUsage.length > 0 ? (
-                            filteredUsage.map((usage, index) => (
-                              <TableRow key={usage.id} className={index % 2 === 0 ? 'bg-white' : 'bg-slate-50/50 hover:bg-slate-50/80'}>
-                                <TableCell>
-                                  <div className="flex items-center gap-3">
-                                    <Avatar className="h-8 w-8 border border-muted shadow-sm">
-                                      {usage.customer.avatar && <AvatarImage src={usage.customer.avatar} alt={usage.customer.name} />}
-                                      <AvatarFallback className={`${selectedCampaignType === 'discount' ? 'bg-orange-100 text-orange-700' : 
-                                        selectedCampaignType === 'coupon' ? 'bg-purple-100 text-purple-700' : 
-                                        selectedCampaignType === 'cashback' ? 'bg-blue-100 text-blue-700' : 'bg-emerald-100 text-emerald-700'}`}>
-                                        {usage.customer.name.split(' ').map(part => part[0]).join('').substring(0, 2).toUpperCase()}
+                          {filteredUsage && filteredUsage.length > 0 ? (
+                            filteredUsage.map((usage) => (
+                              <TableRow key={usage.id} className={`hover:${colors.bg}/50`}>
+                                <TableCell className="font-medium">
+                                  <div className="flex items-center gap-2">
+                                    <Avatar className="h-8 w-8">
+                                      <AvatarImage src={usage.customer.avatar} />
+                                      <AvatarFallback className={`${colors.bg} ${colors.title}`}>
+                                        {usage.customer.name.charAt(0)}
                                       </AvatarFallback>
                                     </Avatar>
-                                    <div>
-                                      <span className="font-medium text-neutral-800 block">{usage.customer.name}</span>
-                                      <span className="text-xs text-muted-foreground">Cliente #{usage.customer.id}</span>
-                                    </div>
+                                    <span className="text-gray-900">{usage.customer.name}</span>
                                   </div>
                                 </TableCell>
-                                <TableCell>
-                                  <div className="font-medium">{new Date(usage.date).toLocaleDateString('pt-BR')}</div>
-                                  <div className="text-xs text-muted-foreground">
-                                    {new Date(usage.date).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'})}h
-                                  </div>
+                                <TableCell className={colors.text}>
+                                  {new Date(usage.date).toLocaleDateString()}
                                 </TableCell>
-                                <TableCell>
-                                  <div className="font-medium">{usage.serviceOrProduct}</div>
-                                  <Badge variant="outline" className="mt-0.5 text-xs font-normal">
-                                    {selectedCampaignType === 'discount' ? 'Desconto Aplicado' : 
-                                     selectedCampaignType === 'coupon' ? 'Cupom Utilizado' : 
-                                     selectedCampaignType === 'cashback' ? 'Cashback Gerado' : 'Benefício VIP'}
-                                  </Badge>
-                                </TableCell>
-                                <TableCell className="text-right">
-                                  <div className={`font-bold ${selectedCampaignType === 'discount' ? 'text-orange-600' : 
-                                    selectedCampaignType === 'coupon' ? 'text-purple-600' : 
-                                    selectedCampaignType === 'cashback' ? 'text-blue-600' : 'text-emerald-600'}`}>
-                                    R$ {usage.amount.toFixed(2)}
-                                  </div>
+                                <TableCell className={colors.text}>{usage.serviceOrProduct}</TableCell>
+                                <TableCell className={`text-right font-medium ${colors.title}`}>
+                                  R$ {usage.amount.toFixed(2)}
                                 </TableCell>
                               </TableRow>
                             ))
                           ) : (
                             <TableRow>
-                              <TableCell colSpan={4} className="text-center py-8">
-                                <div className="flex flex-col items-center justify-center gap-2">
-                                  <Search className="h-8 w-8 text-muted-foreground opacity-20" />
-                                  <p className="text-muted-foreground font-medium">Nenhum registro encontrado</p>
-                                  <p className="text-xs text-muted-foreground">Tente modificar os critérios de busca</p>
-                                </div>
+                              <TableCell colSpan={4} className="text-center py-6 text-gray-500">
+                                Nenhum registro encontrado para esta busca.
                               </TableCell>
                             </TableRow>
                           )}
                         </TableBody>
                       </Table>
                     </div>
-                  </TabsContent>
-                </Tabs>
-              </Card>
-        </div>
-      )}
-    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }

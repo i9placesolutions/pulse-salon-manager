@@ -54,10 +54,14 @@ interface Client {
   email: string;
 }
 
-interface AppointmentFormData {
-  clientId: number;
+interface SelectedService {
   serviceId: number;
   professionalId: number;
+}
+
+interface AppointmentFormData {
+  clientId: number;
+  selectedServices: SelectedService[];
   date: string;
   time: string;
   notes?: string;
@@ -84,8 +88,7 @@ export const AppointmentDialog = ({
   const { toast } = useToast();
   const [formData, setFormData] = useState<AppointmentFormData>({
     clientId: 0,
-    serviceId: 0,
-    professionalId: 0,
+    selectedServices: [],
     date: format(new Date(), "yyyy-MM-dd"),
     time: "09:00",
     notes: "",
@@ -94,12 +97,27 @@ export const AppointmentDialog = ({
   const [isConfirmCancelOpen, setIsConfirmCancelOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [clientSearch, setClientSearch] = useState("");
+  const [open, setOpen] = useState(isOpen || false);
+
+  // Sincronizar o estado open com a prop isOpen
+  useEffect(() => {
+    if (isOpen !== undefined) {
+      setOpen(isOpen);
+    }
+  }, [isOpen]);
+
+  // Notificar mudanças no estado para o componente pai
+  const handleOpenChange = (newOpen: boolean) => {
+    setOpen(newOpen);
+    if (onOpenChange) {
+      onOpenChange(newOpen);
+    }
+  };
 
   // Validação dos campos
   const [formErrors, setFormErrors] = useState({
     clientId: "",
-    serviceId: "",
-    professionalId: "",
+    selectedServices: "",
     date: "",
     time: ""
   });
@@ -107,8 +125,7 @@ export const AppointmentDialog = ({
   // Estado para controlar se os campos foram tocados
   const [touched, setTouched] = useState({
     clientId: false,
-    serviceId: false,
-    professionalId: false,
+    selectedServices: false,
     date: false,
     time: false
   });
@@ -162,10 +179,8 @@ export const AppointmentDialog = ({
     switch (field) {
       case "clientId":
         return value > 0 ? "" : "Cliente é obrigatório";
-      case "serviceId":
-        return value > 0 ? "" : "Serviço é obrigatório";
-      case "professionalId":
-        return value > 0 ? "" : "Profissional é obrigatório";
+      case "selectedServices":
+        return (Array.isArray(value) && value.length > 0) ? "" : "Pelo menos um serviço é obrigatório";
       case "date":
         return value ? "" : "Data é obrigatória";
       case "time":
@@ -190,14 +205,20 @@ export const AppointmentDialog = ({
   };
 
   const isFormValid = (): boolean => {
-    return !formErrors.clientId && 
-           !formErrors.serviceId && 
-           !formErrors.professionalId && 
+    // Verificar se os campos obrigatórios estão preenchidos
+    const basicFieldsValid = !formErrors.clientId && 
+           !formErrors.selectedServices && 
            !formErrors.date && 
            !formErrors.time &&
            formData.clientId > 0 &&
-           formData.serviceId > 0 &&
-           formData.professionalId > 0;
+           formData.selectedServices.length > 0;
+    
+    // Verificar se todos os serviços têm profissionais selecionados
+    const servicesComplete = formData.selectedServices.every(
+      service => service.serviceId > 0 && service.professionalId > 0
+    );
+    
+    return basicFieldsValid && servicesComplete;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -207,51 +228,68 @@ export const AppointmentDialog = ({
     // Validar todos os campos
     const allTouched = {
       clientId: true,
-      serviceId: true,
-      professionalId: true,
+      selectedServices: true,
       date: true,
       time: true
     };
     setTouched(allTouched);
     
-    // Validar disponibilidade do profissional
-    const selectedService = services.find(s => s.id === formData.serviceId);
-    const selectedProfessional = professionals.find(p => p.id === formData.professionalId);
-    const appointmentDate = new Date(formData.date);
-    const dayOfWeek = String(appointmentDate.getDay() + 1);
-
-    if (!selectedService || !selectedProfessional) {
+    // Verificar se todos os serviços têm profissionais selecionados
+    const servicesComplete = formData.selectedServices.every(
+      service => service.serviceId > 0 && service.professionalId > 0
+    );
+    
+    if (!servicesComplete) {
       toast({
         title: "Erro",
-        description: "Selecione o serviço e o profissional",
+        description: "Cada serviço deve ter um profissional selecionado",
         variant: "destructive"
       });
       setIsSubmitting(false);
       return;
     }
+    
+    // Validar disponibilidade dos profissionais
+    const appointmentDate = new Date(formData.date);
+    const dayOfWeek = String(appointmentDate.getDay() + 1);
+    
+    for (const selectedService of formData.selectedServices) {
+      const service = services.find(s => s.id === selectedService.serviceId);
+      const professional = professionals.find(p => p.id === selectedService.professionalId);
+      
+      if (!service || !professional) {
+        toast({
+          title: "Erro",
+          description: "Serviço ou profissional não encontrado",
+          variant: "destructive"
+        });
+        setIsSubmitting(false);
+        return;
+      }
+      
+      // Check if professional works on this day
+      const schedule = professional.schedule[dayOfWeek];
+      if (!schedule) {
+        toast({
+          title: "Horário indisponível",
+          description: `O profissional ${professional.name} não atende neste dia`,
+          variant: "destructive"
+        });
+        setIsSubmitting(false);
+        return;
+      }
 
-    // Check if professional works on this day
-    const schedule = selectedProfessional.schedule[dayOfWeek];
-    if (!schedule) {
-      toast({
-        title: "Horário indisponível",
-        description: "O profissional não atende neste dia",
-        variant: "destructive"
-      });
-      setIsSubmitting(false);
-      return;
-    }
-
-    // Check if time is within professional's working hours
-    const selectedTime = formData.time;
-    if (selectedTime < schedule.start || selectedTime > schedule.end) {
-      toast({
-        title: "Horário indisponível",
-        description: `O profissional só atende entre ${schedule.start} e ${schedule.end} neste dia`,
-        variant: "destructive"
-      });
-      setIsSubmitting(false);
-      return;
+      // Check if time is within professional's working hours
+      const selectedTime = formData.time;
+      if (selectedTime < schedule.start || selectedTime > schedule.end) {
+        toast({
+          title: "Horário indisponível",
+          description: `O profissional ${professional.name} só atende entre ${schedule.start} e ${schedule.end} neste dia`,
+          variant: "destructive"
+        });
+        setIsSubmitting(false);
+        return;
+      }
     }
 
     // Simulate submitting to server with a delay
@@ -277,8 +315,7 @@ export const AppointmentDialog = ({
   const resetForm = () => {
     setFormData({
       clientId: 0,
-      serviceId: 0,
-      professionalId: 0,
+      selectedServices: [],
       date: format(new Date(), "yyyy-MM-dd"),
       time: "09:00",
       notes: "",
@@ -286,15 +323,13 @@ export const AppointmentDialog = ({
     });
     setFormErrors({
       clientId: "",
-      serviceId: "",
-      professionalId: "",
+      selectedServices: "",
       date: "",
       time: ""
     });
     setTouched({
       clientId: false,
-      serviceId: false,
-      professionalId: false,
+      selectedServices: false,
       date: false,
       time: false
     });
@@ -304,8 +339,7 @@ export const AppointmentDialog = ({
   const handleCancelClick = () => {
     if (
       formData.clientId !== 0 ||
-      formData.serviceId !== 0 ||
-      formData.professionalId !== 0 ||
+      formData.selectedServices.length > 0 ||
       formData.notes !== ""
     ) {
       setIsConfirmCancelOpen(true);
@@ -318,170 +352,211 @@ export const AppointmentDialog = ({
     }
   };
 
-  // O conteúdo do formulário agora é retornado diretamente
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap gap-2 mb-4">
-        <div className="bg-blue-50 text-blue-800 rounded-md px-3 py-2 text-sm flex items-center gap-2 flex-grow">
-          <CalendarClock className="h-4 w-4" />
-          <span>
-            {initialDate
-              ? `Data selecionada: ${format(initialDate, "dd 'de' MMMM", { locale: ptBR })}`
-              : "Selecione a data do agendamento"}
-            
-            {initialTime && ` às ${initialTime}`}
-          </span>
-        </div>
-      </div>
-
-      <form className="space-y-6" onSubmit={handleSubmit}>
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="client">
-              <span className="flex items-center gap-1.5">
-                <User className="h-4 w-4 text-primary" />
-                Cliente
-              </span>
-            </Label>
-            <div className="relative">
-              <Input
-                id="client-search"
-                placeholder="Buscar cliente por nome, telefone ou email"
-                value={clientSearch}
-                onChange={(e) => setClientSearch(e.target.value)}
-                className={cn(
-                  "pl-10",
-                  touched.clientId && formErrors.clientId && "border-red-500"
-                )}
-              />
-              <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-            </div>
-            
-            {clientSearch && filteredClients.length > 0 && (
-              <div className="bg-white border rounded-md mt-1 max-h-40 overflow-y-auto">
-                {filteredClients.map(client => (
-                  <div
-                    key={client.id}
-                    onClick={() => {
-                      handleFieldChange("clientId", client.id);
-                      setClientSearch(client.name);
-                    }}
-                    className="px-3 py-2 hover:bg-blue-50 cursor-pointer flex justify-between"
-                  >
-                    <span className="font-medium">{client.name}</span>
-                    <span className="text-sm text-gray-500">{client.phone}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-            
-            {touched.clientId && formErrors.clientId && (
-              <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
-                <AlertCircle className="h-3 w-3" />
-                {formErrors.clientId}
-              </p>
-            )}
-            
-            <div className="flex justify-between items-center mt-2">
-              <Button type="button" variant="link" size="sm" className="text-primary p-0 h-auto">
-                <Plus className="h-3 w-3 mr-1" />
-                Cadastrar novo cliente
+    <div>
+      <Dialog open={open} onOpenChange={handleOpenChange}>
+        <DialogContent className="sm:max-w-[600px] max-h-[85vh] overflow-y-auto">
+          <DialogHeader className="bg-blue-600 text-white p-6 -mx-6 -mt-6 rounded-t-lg">
+            <DialogTitle className="text-xl font-semibold flex items-center gap-2 text-white">
+              <CalendarClock className="h-6 w-6" />
+              Novo Agendamento
+            </DialogTitle>
+            <DialogDescription className="text-white/80 mt-1">
+              Preencha os dados para criar um novo agendamento
+            </DialogDescription>
+          </DialogHeader>
+          
+          <form onSubmit={handleSubmit} className="space-y-6 py-4 px-1">
+            {/* Serviços */}
+            <div>
+              <Button 
+                type="button" 
+                variant="outline" 
+                size="sm" 
+                className="w-full border-dashed flex items-center justify-center h-12 gap-2"
+                onClick={() => {
+                  const newService: SelectedService = {
+                    serviceId: 0,
+                    professionalId: 0
+                  };
+                  handleFieldChange("selectedServices", [
+                    ...formData.selectedServices,
+                    newService
+                  ]);
+                }}
+              >
+                <Plus className="h-5 w-5" />
+                Adicionar serviço
               </Button>
               
-              {formData.clientId > 0 && (
-                <div className="flex items-center gap-1 text-sm text-green-600">
-                  <CheckCircle2 className="h-4 w-4" />
-                  <span>Cliente selecionado</span>
+              {/* Lista de serviços selecionados */}
+              {formData.selectedServices.length > 0 && (
+                <div className="space-y-3 mt-4">
+                  {formData.selectedServices.map((selectedService, index) => {
+                    const service = services.find(s => s.id === selectedService.serviceId);
+                    const professional = professionals.find(p => p.id === selectedService.professionalId);
+                    
+                    return (
+                      <div key={index} className="bg-blue-50 rounded-md p-3 relative">
+                        <Button 
+                          type="button" 
+                          variant="ghost" 
+                          size="icon" 
+                          className="absolute right-1 top-1 h-6 w-6 text-gray-500 hover:text-red-500"
+                          onClick={() => {
+                            const newServices = [...formData.selectedServices];
+                            newServices.splice(index, 1);
+                            handleFieldChange("selectedServices", newServices);
+                          }}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                        
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="space-y-1">
+                            <Label className="text-xs text-gray-600">Serviço</Label>
+                            <Select
+                              value={String(selectedService.serviceId)}
+                              onValueChange={(value) => {
+                                const newServices = [...formData.selectedServices];
+                                newServices[index].serviceId = parseInt(value);
+                                newServices[index].professionalId = 0; // Resetar profissional
+                                handleFieldChange("selectedServices", newServices);
+                              }}
+                            >
+                              <SelectTrigger className="h-8 text-sm">
+                                <SelectValue placeholder="Selecione" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {services.map(service => (
+                                  <SelectItem key={service.id} value={String(service.id)}>
+                                    {service.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          
+                          <div className="space-y-1">
+                            <Label className="text-xs text-gray-600">Profissional</Label>
+                            <Select
+                              value={String(selectedService.professionalId || "")}
+                              onValueChange={(value) => {
+                                const newServices = [...formData.selectedServices];
+                                newServices[index].professionalId = parseInt(value);
+                                handleFieldChange("selectedServices", newServices);
+                              }}
+                              disabled={!selectedService.serviceId}
+                            >
+                              <SelectTrigger className="h-8 text-sm">
+                                <SelectValue placeholder="Selecione" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {selectedService.serviceId > 0 && 
+                                 services.find(s => s.id === selectedService.serviceId)?.professionals.map(profId => {
+                                   const professional = professionals.find(p => p.id === profId);
+                                   return professional ? (
+                                     <SelectItem key={professional.id} value={String(professional.id)}>
+                                       {professional.name}
+                                     </SelectItem>
+                                   ) : null;
+                                 })
+                                }
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                        
+                        {service && (
+                          <div className="mt-2 text-xs text-gray-700 flex justify-between">
+                            <span>Duração: {service.duration} min</span>
+                            <span>R$ {service.price.toFixed(2)}</span>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               )}
+              
+              {touched.selectedServices && formErrors.selectedServices && (
+                <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                  <AlertCircle className="h-3 w-3" />
+                  {formErrors.selectedServices}
+                </p>
+              )}
             </div>
-          </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="service">
-              <span className="flex items-center gap-1.5">
-                <Scissors className="h-4 w-4 text-primary" />
-                Serviço
-              </span>
-            </Label>
-            <Select
-              value={formData.serviceId !== 0 ? String(formData.serviceId) : ""}
-              onValueChange={(value) => handleFieldChange("serviceId", parseInt(value))}
-            >
-              <SelectTrigger 
-                id="service" 
-                className={cn(touched.serviceId && formErrors.serviceId && "border-red-500")}
-              >
-                <SelectValue placeholder="Selecione o serviço" />
-              </SelectTrigger>
-              <SelectContent>
-                {services.map(service => (
-                  <SelectItem key={service.id} value={String(service.id)}>
-                    <div className="flex justify-between items-center w-full">
-                      <span>{service.name}</span>
-                      <span className="text-gray-500 text-sm ml-4">
-                        {service.duration} min - R$ {service.price.toFixed(2)}
-                      </span>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {touched.serviceId && formErrors.serviceId && (
-              <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
-                <AlertCircle className="h-3 w-3" />
-                {formErrors.serviceId}
-              </p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="professional">
-              <span className="flex items-center gap-1.5">
-                <UserCheck className="h-4 w-4 text-primary" />
-                Profissional
-              </span>
-            </Label>
-            <Select
-              value={formData.professionalId !== 0 ? String(formData.professionalId) : ""}
-              onValueChange={(value) => handleFieldChange("professionalId", parseInt(value))}
-              disabled={formData.serviceId === 0}
-            >
-              <SelectTrigger 
-                id="professional" 
-                className={cn(touched.professionalId && formErrors.professionalId && "border-red-500")}
-              >
-                <SelectValue placeholder={formData.serviceId === 0 ? "Selecione o serviço primeiro" : "Selecione o profissional"} />
-              </SelectTrigger>
-              <SelectContent>
-                {formData.serviceId !== 0 && 
-                 services.find(s => s.id === formData.serviceId)?.professionals.map(profId => {
-                   const professional = professionals.find(p => p.id === profId);
-                   return professional ? (
-                     <SelectItem key={professional.id} value={String(professional.id)}>
-                       {professional.name}
-                     </SelectItem>
-                   ) : null;
-                 })
-                }
-              </SelectContent>
-            </Select>
-            {touched.professionalId && formErrors.professionalId && (
-              <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
-                <AlertCircle className="h-3 w-3" />
-                {formErrors.professionalId}
-              </p>
-            )}
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Cliente */}
             <div className="space-y-2">
-              <Label htmlFor="date">
-                <span className="flex items-center gap-1.5">
-                  <Calendar className="h-4 w-4 text-primary" />
+              <div className="flex items-center gap-1.5 mb-1">
+                <User className="h-5 w-5 text-primary" />
+                <Label htmlFor="client" className="text-base font-medium">
+                  Cliente
+                </Label>
+              </div>
+              <div className="relative">
+                <Input
+                  id="client-search"
+                  placeholder="Buscar cliente por nome, telefone ou email"
+                  value={clientSearch}
+                  onChange={(e) => setClientSearch(e.target.value)}
+                  className={cn(
+                    "pl-10",
+                    touched.clientId && formErrors.clientId && "border-red-500"
+                  )}
+                />
+                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              </div>
+              
+              {clientSearch && filteredClients.length > 0 && (
+                <div className="bg-white border rounded-md mt-1 max-h-40 overflow-y-auto">
+                  {filteredClients.map(client => (
+                    <div
+                      key={client.id}
+                      onClick={() => {
+                        handleFieldChange("clientId", client.id);
+                        setClientSearch(client.name);
+                      }}
+                      className="px-3 py-2 hover:bg-blue-50 cursor-pointer flex justify-between"
+                    >
+                      <span className="font-medium">{client.name}</span>
+                      <span className="text-sm text-gray-500">{client.phone}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+              
+              {touched.clientId && formErrors.clientId && (
+                <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                  <AlertCircle className="h-3 w-3" />
+                  {formErrors.clientId}
+                </p>
+              )}
+              
+              <div className="flex justify-between items-center mt-2">
+                <Button type="button" variant="link" size="sm" className="text-primary p-0 h-auto">
+                  <Plus className="h-3 w-3 mr-1" />
+                  Cadastrar novo cliente
+                </Button>
+                
+                {formData.clientId > 0 && (
+                  <div className="flex items-center gap-1 text-sm text-green-600">
+                    <CheckCircle2 className="h-4 w-4" />
+                    <span>Cliente selecionado</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Data e Hora */}
+            <div>
+              <div className="flex items-center gap-1.5 mb-1">
+                <Calendar className="h-5 w-5 text-primary" />
+                <Label htmlFor="date" className="text-base font-medium">
                   Data
-                </span>
-              </Label>
+                </Label>
+              </div>
               <Input 
                 id="date" 
                 type="date" 
@@ -497,13 +572,13 @@ export const AppointmentDialog = ({
               )}
             </div>
             
-            <div className="space-y-2">
-              <Label htmlFor="time">
-                <span className="flex items-center gap-1.5">
-                  <Clock className="h-4 w-4 text-primary" />
+            <div>
+              <div className="flex items-center gap-1.5 mb-1">
+                <Clock className="h-5 w-5 text-primary" />
+                <Label htmlFor="time" className="text-base font-medium">
                   Horário
-                </span>
-              </Label>
+                </Label>
+              </div>
               <Input 
                 id="time" 
                 type="time" 
@@ -518,42 +593,72 @@ export const AppointmentDialog = ({
                 </p>
               )}
             </div>
-          </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="notes">
-              <span className="flex items-center gap-1.5">
-                <MessageSquare className="h-4 w-4 text-primary" />
-                Observações (opcional)
-              </span>
-            </Label>
-            <Input 
-              id="notes" 
-              value={formData.notes || ""} 
-              onChange={(e) => handleFieldChange("notes", e.target.value)}
-              placeholder="Preferências do cliente, detalhes do serviço, etc."
-            />
-          </div>
-          
-          <Separator />
-          
-          <div className="flex items-center gap-3 pt-2">
-            <input
-              type="checkbox"
-              id="sendReminder"
-              checked={formData.sendReminder}
-              onChange={(e) => handleFieldChange("sendReminder", e.target.checked)}
-              className="h-4 w-4 text-primary"
-            />
-            <Label htmlFor="sendReminder" className="cursor-pointer flex items-center gap-2">
-              <MessageCircle className="h-4 w-4 text-primary" />
-              Enviar lembrete por WhatsApp
-            </Label>
-          </div>
-        </div>
-      </form>
+            {/* Observações */}
+            <div>
+              <div className="flex items-center gap-1.5 mb-1">
+                <MessageSquare className="h-5 w-5 text-primary" />
+                <Label htmlFor="notes" className="text-base font-medium">
+                  Observações (opcional)
+                </Label>
+              </div>
+              <Input 
+                id="notes" 
+                value={formData.notes || ""} 
+                onChange={(e) => handleFieldChange("notes", e.target.value)}
+                placeholder="Preferências do cliente, detalhes do serviço, etc."
+              />
+            </div>
+            
+            {/* Lembrete WhatsApp */}
+            <div className="flex items-center gap-2 pt-2">
+              <input
+                type="checkbox"
+                id="sendReminder"
+                checked={formData.sendReminder}
+                onChange={(e) => handleFieldChange("sendReminder", e.target.checked)}
+                className="h-4 w-4 text-primary"
+              />
+              <MessageCircle className="h-5 w-5 text-primary" />
+              <Label htmlFor="sendReminder" className="cursor-pointer">
+                Enviar lembrete por WhatsApp
+              </Label>
+            </div>
+            
+            {/* Botões de ação */}
+            <div className="flex justify-end gap-2 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleCancelClick}
+                className="gap-1"
+              >
+                <X className="h-4 w-4" />
+                Cancelar
+              </Button>
+              <Button
+                type="submit"
+                disabled={!isFormValid() || isSubmitting}
+                className="bg-blue-600 hover:bg-blue-700 gap-1"
+              >
+                {isSubmitting ? (
+                  <span className="flex items-center gap-1">
+                    <span className="animate-spin">&#9696;</span>
+                    Salvando...
+                  </span>
+                ) : (
+                  <>
+                    <CalendarClock className="h-4 w-4" />
+                    Criar Agendamento
+                  </>
+                )}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
 
-      {/* Diálogo de confirmação de cancelamento */}
+      {/* Modal de confirmação para cancelar */}
       <Dialog open={isConfirmCancelOpen} onOpenChange={setIsConfirmCancelOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -581,6 +686,7 @@ export const AppointmentDialog = ({
                 } else if (onOpenChange) {
                   onOpenChange(false);
                 }
+                handleOpenChange(false);
               }}
             >
               Sim, cancelar

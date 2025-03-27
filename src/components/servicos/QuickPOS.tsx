@@ -1,4 +1,3 @@
-
 import {
   Card,
   CardContent,
@@ -63,7 +62,7 @@ export function QuickPOS({ services, professionals, onSale }: QuickPOSProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>PDV Rápido</CardTitle>
+        <CardTitle>Venda Rápida</CardTitle>
         <CardDescription>Registre serviços rapidamente</CardDescription>
       </CardHeader>
       <CardContent>

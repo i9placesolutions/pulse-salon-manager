@@ -4,9 +4,7 @@ import { DashboardHeader } from "@/components/profissionais/dashboard/DashboardH
 import { MetricsCards } from "@/components/profissionais/dashboard/MetricsCards";
 import { DashboardTabs } from "@/components/profissionais/dashboard/DashboardTabs";
 import { ProfessionalHeader } from "@/components/profissionais/dashboard/ProfessionalHeader";
-import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
-import { User } from "lucide-react";
+import { PageLayout } from "@/components/shared/PageLayout";
 import { Professional, ProfessionalCommission, ProfessionalAppointment } from "@/types/professional";
 
 // Mock data para teste
@@ -16,7 +14,7 @@ const mockProfessional: Professional = {
   email: "joao@example.com",
   phone: "(11) 99999-9999",
   specialty: "Cabelereiro",
-  specialties: [{ id: "1", name: "Cabelereiro", color: "#dc8c95", isActive: true }],
+  specialties: [{ id: "1", name: "Cabelereiro", color: "#1e40af", isActive: true }],
   hiringDate: "2024-01-01",
   experienceLevel: "expert",
   status: "active",
@@ -87,59 +85,43 @@ const mockAppointments: ProfessionalAppointment[] = [
 export default function ProfissionalDashboard() {
   const [isWorkingHoursOpen, setIsWorkingHoursOpen] = useState(false);
   const [agendaOpen, setAgendaOpen] = useState(true);
-  const navigate = useNavigate();
 
   const handleToggleAgenda = () => {
     setAgendaOpen(!agendaOpen);
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <PageLayout variant="blue">
       <ProfessionalHeader />
-      
-      <main className="container mx-auto px-4 py-6 max-w-7xl">
-        <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <DashboardHeader
-              agendaOpen={agendaOpen}
-              onToggleAgenda={handleToggleAgenda}
-              onManageHours={() => setIsWorkingHoursOpen(true)}
-            />
-            <Button
-              variant="outline"
-              onClick={() => navigate("/profissional-profile")}
-              className="flex items-center gap-2 hover:bg-primary/5 hover:text-primary transition-colors"
-            >
-              <User className="h-4 w-4" />
-              Meu Perfil
-            </Button>
-          </div>
+      <DashboardHeader
+        agendaOpen={agendaOpen}
+        onToggleAgenda={handleToggleAgenda}
+        onManageHours={() => setIsWorkingHoursOpen(true)}
+      />
 
-          <MetricsCards 
-            professional={mockProfessional}
-            performance={mockPerformance}
-          />
+      <MetricsCards 
+        professional={mockProfessional}
+        performance={mockPerformance}
+      />
 
-          <div className="bg-white p-6 rounded-lg shadow">
-            <DashboardTabs
-              professional={mockProfessional}
-              performance={mockPerformance}
-              appointments={mockAppointments}
-              commissions={mockCommissions}
-            />
-          </div>
-        </div>
-
-        <WorkingHoursForm
-          open={isWorkingHoursOpen}
-          onOpenChange={setIsWorkingHoursOpen}
-          onSave={(workingHours, blockedDates) => {
-            console.log("Horários salvos:", workingHours);
-            console.log("Datas bloqueadas:", blockedDates);
-            setIsWorkingHoursOpen(false);
-          }}
+      <div className="bg-white p-6 rounded-lg shadow border border-blue-100">
+        <DashboardTabs
+          professional={mockProfessional}
+          performance={mockPerformance}
+          appointments={mockAppointments}
+          commissions={mockCommissions}
         />
-      </main>
-    </div>
+      </div>
+
+      <WorkingHoursForm
+        open={isWorkingHoursOpen}
+        onOpenChange={setIsWorkingHoursOpen}
+        onSave={(workingHours, blockedDates) => {
+          console.log("Horários salvos:", workingHours);
+          console.log("Datas bloqueadas:", blockedDates);
+          setIsWorkingHoursOpen(false);
+        }}
+      />
+    </PageLayout>
   );
 }

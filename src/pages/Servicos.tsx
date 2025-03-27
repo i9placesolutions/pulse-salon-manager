@@ -63,6 +63,8 @@ import {
 import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Calendar } from "@/components/ui/calendar";
+import { PageLayout } from "@/components/shared/PageLayout";
+import { PageHeader } from "@/components/shared/PageHeader";
 
 // Interface para dados de desempenho adicionais
 interface PerformanceData {
@@ -784,75 +786,80 @@ export default function Servicos() {
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-300">
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-primary">Serviços</h1>
-          <p className="text-sm text-muted-foreground">
-            Gerencie os serviços oferecidos pelo seu salão
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button 
-            variant="outline"
-            className="gap-2 border-amber-300 text-amber-600 hover:bg-amber-50"
-            onClick={() => setIsPackageFormOpen(true)}
-          >
-            <Package className="h-4 w-4" />
-            Novo Pacote
-          </Button>
-          <Button 
-            className="gap-2 bg-primary hover:bg-primary/90" 
-            onClick={() => {
-              setSelectedService(undefined);
-              setIsServiceFormOpen(true);
-            }}
-          >
-            <Plus className="h-4 w-4" />
-            Novo Serviço
-          </Button>
+    <PageLayout variant="blue">
+      <PageHeader 
+        title="Serviços" 
+        subtitle="Gerencie os serviços oferecidos pelo seu salão"
+        variant="blue"
+        badge="Catálogo"
+        action={
+          <div className="flex flex-wrap gap-2">
+            <Button 
+              variant="outline"
+              className="gap-2 border-amber-300 text-amber-600 hover:bg-amber-50"
+              onClick={() => setIsPackageFormOpen(true)}
+            >
+              <Package className="h-4 w-4" />
+              Novo Pacote
+            </Button>
+            <Button 
+              variant="dashboard"
+              onClick={() => {
+                setSelectedService(undefined);
+                setIsServiceFormOpen(true);
+              }}
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Novo Serviço
+            </Button>
           
-              <Button
-                variant="outline"
-            className="gap-2 border-purple-300 text-purple-600 hover:bg-purple-50"
-            onClick={() => setIsExportDialogOpen(true)}
-              >
-                <FileSpreadsheet className="h-4 w-4" />
-            Relatórios
-                </Button>
-        </div>
-      </div>
+            <Button 
+              variant="dashboard-outline"
+              onClick={() => setIsExportDialogOpen(true)}
+            >
+              <FileSpreadsheet className="mr-2 h-4 w-4" />
+              Relatórios
+            </Button>
+          </div>
+        }
+      />
 
       <ServiceMetrics {...mockMetrics} />
 
-      <Tabs defaultValue="services" value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="mb-4 bg-muted/80">
-          <TabsTrigger value="services" className="flex items-center gap-2 data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
+      <Tabs defaultValue="services" value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+        <TabsList className="flex w-full h-10 bg-blue-50 border border-blue-200 rounded-xl overflow-hidden">
+          <TabsTrigger 
+            value="services" 
+            className="flex-1 flex items-center justify-center gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=inactive]:text-gray-600 transition-all duration-200 rounded-lg"
+          >
             <Package className="h-4 w-4" />
-            Serviços
+            <span className="font-medium">Serviços</span>
           </TabsTrigger>
-          <TabsTrigger value="overview" className="flex items-center gap-2 data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
+          <TabsTrigger 
+            value="overview" 
+            className="flex-1 flex items-center justify-center gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=inactive]:text-gray-600 transition-all duration-200 rounded-lg"
+          >
             <BarChart2 className="h-4 w-4" />
-            Visão Geral
+            <span className="font-medium">Visão Geral</span>
           </TabsTrigger>
         </TabsList>
       
         <TabsContent value="services" className="mt-0 space-y-4">
-          <Card className="p-4 bg-white border border-indigo-100 shadow-sm">
+          <Card className="p-4 bg-white border border-blue-100 shadow-sm">
             <div className="flex flex-col gap-4 md:flex-row md:items-center">
               <div className="relative flex-1">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-blue-500" />
                 <Input
                   placeholder="Buscar serviços..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-8 border-indigo-200 focus:border-indigo-400"
+                  className="pl-8 border-blue-200 focus:border-blue-400"
                 />
               </div>
               <select
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
-                className="h-10 rounded-md border border-indigo-200 bg-background px-3 text-sm min-w-[180px] focus:border-indigo-400"
+                className="h-10 rounded-md border border-blue-200 bg-background px-3 text-sm min-w-[180px] focus:border-blue-400"
               >
                 <option value="">Todas as categorias</option>
                 <option value="Corte">Corte</option>
@@ -864,9 +871,9 @@ export default function Servicos() {
               
               <div className="flex gap-2">
                 <Button 
-                  variant="outline" 
+                  variant="outline"
                   size="icon"
-                  className={isFilterOpen ? "bg-primary/10 text-primary border-primary" : "border-indigo-200"}
+                  className={isFilterOpen ? "bg-blue-100 text-blue-600 border-blue-300" : "border-blue-200"}
                   onClick={() => setIsFilterOpen(!isFilterOpen)}
                 >
                   <Filter className="h-4 w-4" />
@@ -874,9 +881,9 @@ export default function Servicos() {
                 
                 {(searchTerm || selectedCategory || statusFilter || priceRangeFilter || popularityFilter) && (
                   <Button 
-                    variant="outline" 
+                    variant="outline"
                     size="sm"
-                    className="border-[#db2777]/20 text-[#db2777] hover:bg-[#db2777]/10"
+                    className="border-red-200 text-red-600 hover:bg-red-50"
                     onClick={resetFilters}
                   >
                     Limpar Filtros
@@ -886,15 +893,15 @@ export default function Servicos() {
             </div>
             
             {isFilterOpen && (
-              <div className="mt-4 p-4 border rounded-md bg-gradient-to-r from-indigo-50 to-purple-50 border-indigo-100">
-                <h3 className="font-medium mb-3 text-indigo-700">Filtros Avançados</h3>
+              <div className="mt-4 p-4 border rounded-md bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-100">
+                <h3 className="font-medium mb-3 text-blue-700">Filtros Avançados</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-indigo-600">Status</label>
+                    <label className="text-sm font-medium text-blue-600">Status</label>
                     <select
                       value={statusFilter}
                       onChange={(e) => setStatusFilter(e.target.value)}
-                      className="w-full h-10 rounded-md border border-indigo-200 bg-white px-3 text-sm focus:border-indigo-400"
+                      className="w-full h-10 rounded-md border border-blue-200 bg-white px-3 text-sm focus:border-blue-400"
                     >
                       <option value="">Todos os status</option>
                       <option value="active">Ativo</option>
@@ -903,11 +910,11 @@ export default function Servicos() {
                   </div>
                   
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-indigo-600">Faixa de Preço</label>
+                    <label className="text-sm font-medium text-blue-600">Faixa de Preço</label>
                     <select
                       value={priceRangeFilter}
                       onChange={(e) => setPriceRangeFilter(e.target.value)}
-                      className="w-full h-10 rounded-md border border-indigo-200 bg-white px-3 text-sm focus:border-indigo-400"
+                      className="w-full h-10 rounded-md border border-blue-200 bg-white px-3 text-sm focus:border-blue-400"
                     >
                       <option value="">Todas as faixas</option>
                       <option value="lt50">Até R$ 50,00</option>
@@ -918,11 +925,11 @@ export default function Servicos() {
                   </div>
                   
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-indigo-600">Popularidade</label>
+                    <label className="text-sm font-medium text-blue-600">Popularidade</label>
                     <select
                       value={popularityFilter}
                       onChange={(e) => setPopularityFilter(e.target.value)}
-                      className="w-full h-10 rounded-md border border-indigo-200 bg-white px-3 text-sm focus:border-indigo-400"
+                      className="w-full h-10 rounded-md border border-blue-200 bg-white px-3 text-sm focus:border-blue-400"
                     >
                       <option value="">Todos os níveis</option>
                       <option value="high">Alta (Top 2)</option>
@@ -935,42 +942,42 @@ export default function Servicos() {
             )}
           </Card>
 
-          <Card className="border border-indigo-100 shadow-sm overflow-hidden">
-            <CardHeader className="px-6 border-b bg-gradient-to-r from-primary/5 to-indigo-50">
+          <Card className="border border-blue-100 shadow-sm overflow-hidden">
+            <CardHeader className="px-6 border-b bg-gradient-to-r from-blue-50 to-blue-100">
               <div className="flex justify-between items-center">
-                <CardTitle className="text-primary">Lista de Serviços</CardTitle>
-                <Badge variant="outline" className="text-sm bg-indigo-100 text-indigo-700 border-indigo-200">
+                <CardTitle className="text-blue-700">Lista de Serviços</CardTitle>
+                <Badge variant="outline" className="text-sm bg-blue-100 text-blue-700 border-blue-200">
                   {filteredServices.length} serviços encontrados
                 </Badge>
               </div>
             </CardHeader>
             <CardContent className="p-0">
               <Table>
-                <TableHeader className="bg-muted/30">
+                <TableHeader className="bg-blue-50/50">
                   <TableRow className="hover:bg-transparent">
-                    <TableHead className="text-indigo-700">Serviço</TableHead>
-                    <TableHead className="text-indigo-700">Categoria</TableHead>
-                    <TableHead className="text-indigo-700">Duração</TableHead>
-                    <TableHead className="text-indigo-700">Valor</TableHead>
-                    <TableHead className="text-indigo-700">Desempenho</TableHead>
-                    <TableHead className="text-indigo-700">Status</TableHead>
-                    <TableHead className="text-right text-indigo-700">Ações</TableHead>
+                    <TableHead className="text-blue-700">Serviço</TableHead>
+                    <TableHead className="text-blue-700">Categoria</TableHead>
+                    <TableHead className="text-blue-700">Duração</TableHead>
+                    <TableHead className="text-blue-700">Valor</TableHead>
+                    <TableHead className="text-blue-700">Desempenho</TableHead>
+                    <TableHead className="text-blue-700">Status</TableHead>
+                    <TableHead className="text-right text-blue-700">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredServices.length > 0 ? (
                     filteredServices.map((service, idx) => (
-                      <TableRow key={service.id} className={idx % 2 === 0 ? "bg-white hover:bg-muted/30" : "bg-indigo-50/40 hover:bg-muted/30"}>
+                      <TableRow key={service.id} className={idx % 2 === 0 ? "bg-white hover:bg-blue-50/30" : "bg-blue-50/20 hover:bg-blue-50/40"}>
                         <TableCell>
                           <div>
-                            <div className="font-medium text-primary">{service.name}</div>
-                            <div className="text-sm text-muted-foreground">
+                            <div className="font-medium text-blue-700">{service.name}</div>
+                            <div className="text-sm text-blue-600/70">
                               {service.description}
                             </div>
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Badge variant="outline" className="bg-violet-50 text-violet-700 border-violet-200">
+                          <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
                             {service.category}
                           </Badge>
                         </TableCell>
@@ -1001,7 +1008,7 @@ export default function Servicos() {
                           <div className="flex flex-col">
                             <div className="font-medium text-emerald-700">{formatCurrency(service.price)}</div>
                             {service.performanceData?.priceHistory && service.performanceData.priceHistory.length > 1 && (
-                              <div className="text-xs text-muted-foreground">
+                              <div className="text-xs text-blue-600/70">
                                 Último ajuste: {getLastPriceAdjustment(service.performanceData.priceHistory)}
                               </div>
                             )}
@@ -1027,17 +1034,17 @@ export default function Servicos() {
                               variant="ghost"
                               size="icon"
                               onClick={() => handleEditService(service)}
-                              className="text-indigo-600 hover:bg-indigo-50 hover:text-indigo-700"
+                              className="text-blue-600 hover:bg-blue-50 hover:text-blue-700"
                             >
                               <Edit className="h-4 w-4" />
                             </Button>
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="text-[#db2777] hover:bg-[#db2777]/10 hover:text-[#db2777]"
+                              className="text-red-600 hover:bg-red-50 hover:text-red-700"
                               onClick={() => handleDeleteService(service.id)}
                             >
-                              <Trash2 className="h-4 w-4 text-[#db2777]" />
+                              <Trash2 className="h-4 w-4" />
                             </Button>
                           </div>
                         </TableCell>
@@ -1045,7 +1052,7 @@ export default function Servicos() {
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center py-8 text-muted-foreground bg-muted/10">
+                      <TableCell colSpan={7} className="text-center py-8 text-blue-600/70 bg-blue-50/10">
                         Nenhum serviço encontrado com os filtros selecionados.
                       </TableCell>
                     </TableRow>
@@ -1057,12 +1064,12 @@ export default function Servicos() {
         </TabsContent>
 
         <TabsContent value="overview" className="space-y-6">
-          <Card className="border border-indigo-100 shadow-sm overflow-hidden">
-            <CardHeader className="bg-gradient-to-r from-primary/5 to-indigo-50 border-b">
+          <Card className="border border-blue-100 shadow-sm overflow-hidden">
+            <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b">
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle className="text-primary">Visão Geral</CardTitle>
-                  <CardDescription>Dados consolidados dos serviços</CardDescription>
+                  <CardTitle className="text-blue-700">Visão Geral</CardTitle>
+                  <CardDescription className="text-blue-600/70">Dados consolidados dos serviços</CardDescription>
                 </div>
               </div>
             </CardHeader>
@@ -1076,17 +1083,17 @@ export default function Servicos() {
         </TabsContent>
       </Tabs>
 
-      <ServiceForm
+      <ServiceForm 
         open={isServiceFormOpen}
         onOpenChange={setIsServiceFormOpen}
         onSubmit={handleServiceSubmit}
-        service={selectedService}
+        service={selectedService} 
       />
 
-      <ServicePackageForm
+      <ServicePackageForm 
         open={isPackageFormOpen}
         onOpenChange={setIsPackageFormOpen}
-        onSubmit={handlePackageSubmit}
+        onSubmit={handlePackageSubmit} 
       />
 
       {/* Drawer lateral para relatórios */}
@@ -1115,49 +1122,49 @@ export default function Servicos() {
           <div className="flex-1 overflow-y-auto bg-white p-6">
             <div className="space-y-6">
               {/* Formato do relatório */}
-              <div className="bg-muted/30 p-5 rounded-lg border">
-                <h3 className="text-lg font-medium mb-4">Formato de Saída</h3>
+              <div className="bg-blue-50/50 p-5 rounded-lg border border-blue-100">
+                <h3 className="text-lg font-medium mb-4 text-blue-700">Formato de Saída</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div 
-                    className={`border rounded-md p-4 cursor-pointer hover:border-primary ${reportFormat === 'excel' ? 'bg-primary/10 border-primary' : 'bg-white'}`}
+                    className={`border rounded-md p-4 cursor-pointer hover:border-blue-400 ${reportFormat === 'excel' ? 'bg-blue-50 border-blue-300' : 'bg-white'}`}
                     onClick={() => setReportFormat('excel')}
                   >
                     <div className="flex items-center gap-3">
                       <FileSpreadsheet className="h-8 w-8 text-emerald-600" />
                       <div>
-                        <h4 className="font-medium">Excel (.xlsx)</h4>
-                        <p className="text-xs text-muted-foreground">Planilha para análises detalhadas</p>
+                        <h4 className="font-medium text-blue-700">Excel (.xlsx)</h4>
+                        <p className="text-xs text-blue-600/70">Planilha para análises detalhadas</p>
                       </div>
                     </div>
                   </div>
                   <div 
-                    className={`border rounded-md p-4 cursor-pointer hover:border-primary ${reportFormat === 'pdf' ? 'bg-primary/10 border-primary' : 'bg-white'}`}
+                    className={`border rounded-md p-4 cursor-pointer hover:border-blue-400 ${reportFormat === 'pdf' ? 'bg-blue-50 border-blue-300' : 'bg-white'}`}
                     onClick={() => setReportFormat('pdf')}
                   >
                     <div className="flex items-center gap-3">
-                      <FileText className="h-8 w-8 text-[#db2777]" />
+                      <FileText className="h-8 w-8 text-red-600" />
                       <div>
-                        <h4 className="font-medium">PDF (.pdf)</h4>
-                        <p className="text-xs text-muted-foreground">Documento para impressão e apresentação</p>
+                        <h4 className="font-medium text-blue-700">PDF (.pdf)</h4>
+                        <p className="text-xs text-blue-600/70">Documento para impressão e apresentação</p>
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
-              
+
               {/* Período */}
-              <div className="bg-muted/30 p-5 rounded-lg border">
-                <h3 className="text-lg font-medium mb-4">Período</h3>
+              <div className="bg-blue-50/50 p-5 rounded-lg border border-blue-100">
+                <h3 className="text-lg font-medium mb-4 text-blue-700">Período</h3>
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label className="text-sm text-muted-foreground">Data Inicial</Label>
+                      <Label className="text-sm text-blue-600">Data Inicial</Label>
                       <Popover>
                         <PopoverTrigger asChild>
                           <Button
                             variant="outline"
                             className={cn(
-                              "w-full justify-start text-left font-normal",
+                              "w-full justify-start text-left font-normal border-blue-200",
                               !dateRange.from && "text-muted-foreground"
                             )}
                           >
@@ -1182,13 +1189,13 @@ export default function Servicos() {
                     </div>
                     
                     <div className="space-y-2">
-                      <Label className="text-sm text-muted-foreground">Data Final</Label>
+                      <Label className="text-sm text-blue-600">Data Final</Label>
                       <Popover>
                         <PopoverTrigger asChild>
                           <Button
                             variant="outline"
                             className={cn(
-                              "w-full justify-start text-left font-normal",
+                              "w-full justify-start text-left font-normal border-blue-200",
                               !dateRange.to && "text-muted-foreground"
                             )}
                           >
@@ -1228,7 +1235,7 @@ export default function Servicos() {
                   <Button 
                     variant="outline" 
                     size="sm" 
-                    className="text-xs mt-3"
+                    className="text-xs mt-3 border-red-200 text-red-600 hover:bg-red-50"
                     onClick={() => setDateRange({ from: undefined, to: undefined })}
                   >
                     <X className="h-3 w-3 mr-1" />
@@ -1236,191 +1243,29 @@ export default function Servicos() {
                   </Button>
                 </div>
               </div>
-              
-              {/* Filtros do relatório */}
-              <div className="bg-muted/30 p-5 rounded-lg border">
-                <h3 className="text-lg font-medium mb-4">Filtros do Relatório</h3>
-                
-                <div className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* Categoria */}
-                    <div className="space-y-2">
-                      <Label>Categoria</Label>
-                      <select
-                        id="category-select"
-                        className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
-                      >
-                        <option value="">Todas as categorias</option>
-                        <option value="Corte">Corte</option>
-                        <option value="Tintura">Tintura</option>
-                        <option value="Tratamento">Tratamento</option>
-                        <option value="Manicure">Manicure</option>
-                        <option value="Estética">Estética</option>
-                      </select>
-                    </div>
-                    
-                    {/* Status */}
-                    <div className="space-y-2">
-                      <Label>Status do Serviço</Label>
-                      <div className="grid grid-cols-3 gap-2">
-                        <div className="flex items-center gap-2">
-                          <input 
-                            type="radio" 
-                            id="status-all" 
-                            name="status" 
-                            defaultChecked
-                            className="h-4 w-4 text-primary"
-                          />
-                          <Label htmlFor="status-all" className="cursor-pointer">Todos</Label>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <input 
-                            type="radio" 
-                            id="status-active" 
-                            name="status" 
-                            className="h-4 w-4 text-primary"
-                          />
-                          <Label htmlFor="status-active" className="cursor-pointer">Ativos</Label>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <input 
-                            type="radio" 
-                            id="status-inactive" 
-                            name="status" 
-                            className="h-4 w-4 text-primary"
-                          />
-                          <Label htmlFor="status-inactive" className="cursor-pointer">Inativos</Label>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* Faixa de Preço */}
-                    <div className="space-y-2">
-                      <Label>Faixa de Preço</Label>
-                      <select
-                        id="price-select"
-                        className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
-                      >
-                        <option value="">Todas as faixas</option>
-                        <option value="lt50">Até R$ 50,00</option>
-                        <option value="50-100">R$ 50,00 - R$ 100,00</option>
-                        <option value="100-200">R$ 100,00 - R$ 200,00</option>
-                        <option value="gt200">Acima de R$ 200,00</option>
-                      </select>
-                    </div>
-                    
-                    {/* Popularidade */}
-                    <div className="space-y-2">
-                      <Label>Popularidade</Label>
-                      <select
-                        id="popularity-select"
-                        className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
-                      >
-                        <option value="">Todos os níveis</option>
-                        <option value="high">Alta (Top 2)</option>
-                        <option value="medium">Média</option>
-                        <option value="low">Baixa</option>
-                      </select>
-                    </div>
-                  </div>
-                  
-                  {/* Agrupamento */}
-                  <div className="space-y-2">
-                    <Label>Agrupar por</Label>
-                    <select
-                      id="groupby-select"
-                      className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
-                    >
-                      <option value="">Sem agrupamento</option>
-                      <option value="category">Categoria</option>
-                      <option value="professional">Profissional</option>
-                      <option value="status">Status</option>
-                      <option value="price">Faixa de Preço</option>
-                    </select>
-                  </div>
+
+              <div className="sticky bottom-0 mt-auto p-6 border-t bg-white shadow-sm">
+                <div className="flex flex-row gap-3 w-full justify-end">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setIsExportDialogOpen(false)}
+                    className="border-gray-200"
+                  >
+                    Cancelar
+                  </Button>
+                  <Button 
+                    onClick={handleExportServices}
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    <Download className="mr-2 h-4 w-4" />
+                    Gerar Relatório
+                  </Button>
                 </div>
               </div>
-              
-              {/* Profissionais */}
-              <div className="bg-muted/30 p-5 rounded-lg border">
-                <h3 className="text-lg font-medium mb-4">Profissionais</h3>
-                <div className="grid grid-cols-2 gap-2">
-                  {mockProfessionals.map(prof => (
-                    <div key={prof.id} className="flex items-center gap-2">
-                      <input 
-                        type="checkbox" 
-                        id={`prof-${prof.id}`} 
-                        className="h-4 w-4 text-primary rounded"
-                      />
-                      <Label htmlFor={`prof-${prof.id}`} className="cursor-pointer">{prof.name}</Label>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              
-              {/* Colunas para exibir */}
-              <div className="bg-muted/30 p-5 rounded-lg border">
-                <h3 className="text-lg font-medium mb-4">Colunas para exibir</h3>
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="flex items-center gap-2">
-                    <input type="checkbox" id="col-name" defaultChecked className="h-4 w-4 text-primary rounded" />
-                    <Label htmlFor="col-name" className="cursor-pointer">Nome</Label>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <input type="checkbox" id="col-category" defaultChecked className="h-4 w-4 text-primary rounded" />
-                    <Label htmlFor="col-category" className="cursor-pointer">Categoria</Label>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <input type="checkbox" id="col-price" defaultChecked className="h-4 w-4 text-primary rounded" />
-                    <Label htmlFor="col-price" className="cursor-pointer">Preço</Label>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <input type="checkbox" id="col-duration" defaultChecked className="h-4 w-4 text-primary rounded" />
-                    <Label htmlFor="col-duration" className="cursor-pointer">Duração</Label>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <input type="checkbox" id="col-status" defaultChecked className="h-4 w-4 text-primary rounded" />
-                    <Label htmlFor="col-status" className="cursor-pointer">Status</Label>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <input type="checkbox" id="col-commission" className="h-4 w-4 text-primary rounded" />
-                    <Label htmlFor="col-commission" className="cursor-pointer">Comissão</Label>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <input type="checkbox" id="col-popularity" className="h-4 w-4 text-primary rounded" />
-                    <Label htmlFor="col-popularity" className="cursor-pointer">Popularidade</Label>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <input type="checkbox" id="col-rating" className="h-4 w-4 text-primary rounded" />
-                    <Label htmlFor="col-rating" className="cursor-pointer">Avaliação</Label>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          {/* Rodapé fixo */}
-          <div className="sticky bottom-0 mt-auto p-6 border-t bg-white shadow-sm">
-            <div className="flex flex-row gap-3 w-full justify-end">
-              <Button 
-                variant="outline" 
-                onClick={() => setIsExportDialogOpen(false)}
-              >
-                Cancelar
-              </Button>
-              <Button 
-                onClick={handleExportServices}
-                variant="pink"
-              >
-                <Download className="mr-2 h-4 w-4" />
-                Gerar Relatório
-              </Button>
             </div>
           </div>
         </SheetContent>
       </Sheet>
-    </div>
+    </PageLayout>
   );
 }

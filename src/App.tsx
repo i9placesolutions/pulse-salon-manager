@@ -1,39 +1,49 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { lazy, Suspense } from "react";
 import AppLayout from "./components/layout/AppLayout";
 import Index from "./pages/Index";
 import Register from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
 import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
-import Dashboard from "./pages/Dashboard";
-import Appointments from "./pages/Appointments";
-import Financeiro from "./pages/Financeiro";
-import Estoque from "./pages/Estoque";
-import Clientes from "./pages/Clientes";
-import Marketing from "./pages/Marketing";
-import Configuracoes from "./pages/Configuracoes";
-import Servicos from "./pages/Servicos";
-import Profissionais from "./pages/Profissionais";
-import Mensalidade from "./pages/Mensalidade";
-import ProfissionalDashboard from "./pages/ProfissionalDashboard";
-import EstablishmentProfile from "./pages/EstablishmentProfile";
-import PDV from "./pages/PDV";
 import NotFound from "./pages/NotFound";
 import { SpecialtiesProvider } from "./contexts/SpecialtiesContext";
 import { AppStateProvider } from "./contexts/AppStateContext";
+
+// Componente de carregamento
+const Loading = () => (
+  <div className="flex h-screen w-full items-center justify-center bg-white">
+    <div className="h-16 w-16 animate-spin rounded-full border-4 border-solid border-blue-500 border-t-transparent"></div>
+  </div>
+);
+
+// Lazy loading das páginas principais
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const Appointments = lazy(() => import("./pages/Appointments"));
+const Financeiro = lazy(() => import("./pages/Financeiro"));
+const Estoque = lazy(() => import("./pages/Estoque"));
+const Clientes = lazy(() => import("./pages/Clientes"));
+const Marketing = lazy(() => import("./pages/Marketing"));
+const Configuracoes = lazy(() => import("./pages/Configuracoes"));
+const Servicos = lazy(() => import("./pages/Servicos"));
+const Profissionais = lazy(() => import("./pages/Profissionais"));
+const Mensalidade = lazy(() => import("./pages/Mensalidade"));
+const ProfissionalDashboard = lazy(() => import("./pages/ProfissionalDashboard"));
+const ProfissionalProfile = lazy(() => import("./pages/ProfissionalProfile"));
+const EstablishmentProfile = lazy(() => import("./pages/EstablishmentProfile"));
+const PDV = lazy(() => import("./pages/PDV"));
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <SpecialtiesProvider>
-        <AppStateProvider>
+    <AppStateProvider>
+      <TooltipProvider>
+        <SpecialtiesProvider>
           <Toaster />
           <Sonner />
           <BrowserRouter>
@@ -46,67 +56,100 @@ const App = () => (
               <Route path="/privacy" element={<Privacy />} />
               
               {/* Professional routes without sidebar */}
-              <Route path="/profissional-dashboard" element={<ProfissionalDashboard />} />
+              <Route path="/profissional-dashboard" element={
+                <Suspense fallback={<Loading />}>
+                  <ProfissionalDashboard />
+                </Suspense>
+              } />
+              <Route path="/profissional-profile" element={
+                <Suspense fallback={<Loading />}>
+                  <ProfissionalProfile />
+                </Suspense>
+              } />
               
               {/* Protected routes with sidebar */}
               <Route path="/dashboard" element={
                 <AppLayout>
-                  <Dashboard />
+                  <Suspense fallback={<Loading />}>
+                    <Dashboard />
+                  </Suspense>
                 </AppLayout>
               } />
               <Route path="/appointments" element={
                 <AppLayout>
-                  <Appointments />
+                  <Suspense fallback={<Loading />}>
+                    <Appointments />
+                  </Suspense>
                 </AppLayout>
               } />
               <Route path="/clientes" element={
                 <AppLayout>
-                  <Clientes />
+                  <Suspense fallback={<Loading />}>
+                    <Clientes />
+                  </Suspense>
                 </AppLayout>
               } />
               <Route path="/servicos" element={
                 <AppLayout>
-                  <Servicos />
+                  <Suspense fallback={<Loading />}>
+                    <Servicos />
+                  </Suspense>
                 </AppLayout>
               } />
               <Route path="/profissionais" element={
                 <AppLayout>
-                  <Profissionais />
+                  <Suspense fallback={<Loading />}>
+                    <Profissionais />
+                  </Suspense>
                 </AppLayout>
               } />
               <Route path="/financeiro" element={
                 <AppLayout>
-                  <Financeiro />
+                  <Suspense fallback={<Loading />}>
+                    <Financeiro />
+                  </Suspense>
                 </AppLayout>
               } />
               <Route path="/estoque" element={
                 <AppLayout>
-                  <Estoque />
-                </AppLayout>
-              } />
-              <Route path="/marketing" element={
-                <AppLayout>
-                  <Marketing />
-                </AppLayout>
-              } />
-              <Route path="/configuracoes" element={
-                <AppLayout>
-                  <Configuracoes />
-                </AppLayout>
-              } />
-              <Route path="/mensalidade" element={
-                <AppLayout>
-                  <Mensalidade />
-                </AppLayout>
-              } />
-              <Route path="/establishment-profile" element={
-                <AppLayout>
-                  <EstablishmentProfile />
+                  <Suspense fallback={<Loading />}>
+                    <Estoque />
+                  </Suspense>
                 </AppLayout>
               } />
               <Route path="/pdv" element={
                 <AppLayout>
-                  <PDV />
+                  <Suspense fallback={<Loading />}>
+                    <PDV />
+                  </Suspense>
+                </AppLayout>
+              } />
+              <Route path="/marketing" element={
+                <AppLayout>
+                  <Suspense fallback={<Loading />}>
+                    <Marketing />
+                  </Suspense>
+                </AppLayout>
+              } />
+              <Route path="/configuracoes" element={
+                <AppLayout>
+                  <Suspense fallback={<Loading />}>
+                    <Configuracoes />
+                  </Suspense>
+                </AppLayout>
+              } />
+              <Route path="/mensalidade" element={
+                <AppLayout>
+                  <Suspense fallback={<Loading />}>
+                    <Mensalidade />
+                  </Suspense>
+                </AppLayout>
+              } />
+              <Route path="/establishment-profile" element={
+                <AppLayout>
+                  <Suspense fallback={<Loading />}>
+                    <EstablishmentProfile />
+                  </Suspense>
                 </AppLayout>
               } />
               
@@ -114,9 +157,9 @@ const App = () => (
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
-        </AppStateProvider>
-      </SpecialtiesProvider>
-    </TooltipProvider>
+        </SpecialtiesProvider>
+      </TooltipProvider>
+    </AppStateProvider>
   </QueryClientProvider>
 );
 
