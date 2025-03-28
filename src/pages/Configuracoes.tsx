@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { 
   Tabs, 
@@ -28,6 +29,15 @@ import { PageLayout } from "@/components/shared/PageLayout";
 import { PageHeader } from "@/components/shared/PageHeader";
 
 export default function Configuracoes() {
+  const location = useLocation();
+  const [activeTab, setActiveTab] = useState("geral");
+  
+  // Obter a aba inicial da navegação, se disponível
+  useEffect(() => {
+    if (location.state && location.state.initialTab) {
+      setActiveTab(location.state.initialTab);
+    }
+  }, [location]);
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSave = () => {
@@ -77,7 +87,7 @@ export default function Configuracoes() {
         </AlertDescription>
       </Alert>
 
-      <Tabs defaultValue="geral" className="space-y-6">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2 bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 p-2 rounded-lg border border-blue-100 shadow-sm">
 
           <TabsTrigger 
