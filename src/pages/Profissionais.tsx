@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -269,6 +270,7 @@ const mockPerformance: ProfessionalPerformance = {
 };
 
 const Profissionais = () => {
+  const navigate = useNavigate();
   const { specialties } = useSpecialties();
   const [searchTerm, setSearchTerm] = useState("");
   const [specialtyFilter, setSpecialtyFilter] = useState<string | null>(null);
@@ -493,7 +495,7 @@ const Profissionais = () => {
             </Button>
             <Button
               variant="dashboard"
-              onClick={() => alert("Funcionalidade em desenvolvimento!")}
+              onClick={() => navigate("/configuracoes", { state: { initialTab: "usuarios" } })}
             >
               <UserPlus className="mr-2 h-4 w-4" />
               Novo Profissional
