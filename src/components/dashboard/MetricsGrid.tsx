@@ -1,8 +1,14 @@
-
-import { DashboardMetric } from "@/types/dashboard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowUp, ArrowDown, Minus, TrendingUp, DollarSign, Users, ShoppingBag, Clock, Calendar } from "lucide-react";
-import React from "react";
+import { LucideIcon } from "lucide-react";
+
+interface MetricCardProps {
+  title: string;
+  value: string | number;
+  description?: string;
+  icon: LucideIcon;
+  iconColor?: string;
+  trend?: number;
+}
 
 interface MetricsGridProps {
   metrics: DashboardMetric[];
@@ -57,7 +63,6 @@ export const MetricsGrid = React.memo(({ metrics }: MetricsGridProps) => {
     }
   ];
 
-  // Cores para os diferentes tipos de métricas baseados no menu sidebar
   const metricColors = {
     "revenue": { bg: "from-green-50 to-green-100", border: "border-green-200", text: "text-green-700", icon: "text-green-600", iconBg: "bg-green-100", iconHover: "group-hover:bg-green-200" },
     "ticket": { bg: "from-blue-50 to-blue-100", border: "border-blue-200", text: "text-blue-700", icon: "text-blue-600", iconBg: "bg-blue-100", iconHover: "group-hover:bg-blue-200" },
@@ -72,7 +77,6 @@ export const MetricsGrid = React.memo(({ metrics }: MetricsGridProps) => {
     "avg-time": { bg: "from-rose-50 to-rose-100", border: "border-rose-200", text: "text-rose-700", icon: "text-rose-600", iconBg: "bg-rose-100", iconHover: "group-hover:bg-rose-200" }
   };
 
-  // Função para obter cores do card com fallback para cores padrão
   const getCardColors = (metricId: string) => {
     return metricColors[metricId as keyof typeof metricColors] || {
       bg: "from-blue-50 to-blue-100",
@@ -95,7 +99,6 @@ export const MetricsGrid = React.memo(({ metrics }: MetricsGridProps) => {
     }
   };
 
-  // Função para renderizar o ícone correto
   const renderIcon = (iconName: string | LucideIcon | undefined) => {
     if (!iconName) return null;
     
@@ -111,7 +114,6 @@ export const MetricsGrid = React.memo(({ metrics }: MetricsGridProps) => {
       }
     }
     
-    // Se for um componente React (LucideIcon)
     const Icon = iconName;
     return <Icon className="h-4 w-4" />;
   };

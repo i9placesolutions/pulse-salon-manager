@@ -6,17 +6,19 @@ import { WorkingHours, DaySchedule } from "@/types/professional";
 
 interface WeeklyScheduleProps {
   workingHours: WorkingHours;
-  onDayScheduleChange: (day: keyof WorkingHours, field: keyof DaySchedule, value: string | boolean) => void;
+  onDayScheduleChange: (day: string, field: string, value: string | boolean) => void;
 }
 
-const DAYS_OF_WEEK = [
-  { id: "monday" as const, label: "Segunda-feira" },
-  { id: "tuesday" as const, label: "Terça-feira" },
-  { id: "wednesday" as const, label: "Quarta-feira" },
-  { id: "thursday" as const, label: "Quinta-feira" },
-  { id: "friday" as const, label: "Sexta-feira" },
-  { id: "saturday" as const, label: "Sábado" },
-  { id: "sunday" as const, label: "Domingo" },
+type DayKey = 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday';
+
+const DAYS_OF_WEEK: { id: DayKey; label: string }[] = [
+  { id: "monday", label: "Segunda-feira" },
+  { id: "tuesday", label: "Terça-feira" },
+  { id: "wednesday", label: "Quarta-feira" },
+  { id: "thursday", label: "Quinta-feira" },
+  { id: "friday", label: "Sexta-feira" },
+  { id: "saturday", label: "Sábado" },
+  { id: "sunday", label: "Domingo" },
 ];
 
 export const WeeklySchedule = ({

@@ -1,12 +1,13 @@
+
 import { useState, useEffect, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { Alert as AlertUI, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { format, differenceInDays, isPast, isFuture, parseISO, isValid } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Clock, AlertTriangle, XCircle, AlertCircle, ChevronDown, ChevronUp, CheckCircle2 } from "lucide-react";
-import { AccountReceivable, Expense } from "@/types/financial";
+import { AccountReceivable, Expense, Alert } from "@/types/financial";
 import { formatCurrency } from "@/utils/currency";
 import { cn } from "@/lib/utils";
 
@@ -14,17 +15,6 @@ interface FinancialAlertsProps {
   expenses: Expense[];
   accountsReceivable: AccountReceivable[];
   onActionClick?: (item: Expense | AccountReceivable, action: string) => void;
-}
-
-interface Alert {
-  id: string;
-  type: 'expense' | 'receivable';
-  title: string;
-  message: string;
-  value: number;
-  date: string;
-  severity: 'high' | 'medium' | 'low';
-  item: any;
 }
 
 export function FinancialAlerts({ 
@@ -56,92 +46,89 @@ export function FinancialAlerts({
   // Usar useMemo para processar alertas só quando as dependências mudarem
   useEffect(() => {
     // Processar contas a pagar vencidas ou próximas de vencer
-    const processedAlerts = useMemo(() => {
-      // Processar contas a pagar vencidas ou próximas de vencer
-      const expenseAlerts = expenses
-        .filter(expense => expense.status !== 'Pago')
-        .map(expense => {
-          const dueDate = parseDate(expense.date);
-          if (!dueDate) return null;
-          
-          const daysToExpire = differenceInDays(dueDate, new Date());
-          let severity = 'low';
-          let message = '';
-          
-          if (isPast(dueDate)) {
-            severity = 'high';
-            message = `Conta vencida há ${Math.abs(daysToExpire)} dias`;
-          } else if (daysToExpire <= 3) {
-            severity = 'medium';
-            message = daysToExpire === 0 
-              ? 'Vence hoje' 
-              : `Vence em ${daysToExpire} ${daysToExpire === 1 ? 'dia' : 'dias'}`;
-          } else if (daysToExpire <= 7) {
-            severity = 'low';
-            message = `Vence em ${daysToExpire} dias`;
-          } else {
-            return null; // Ignora contas que vencem em mais de 7 dias
-          }
-          
-          return {
-            id: `expense-${expense.id}`,
-            type: 'expense',
-            title: expense.name,
-            message,
-            value: expense.value,
-            date: expense.date,
-            severity,
-            item: expense
-          };
-        })
-        .filter(Boolean);
-      
-      // Processar contas a receber vencidas
-      const receivableAlerts = accountsReceivable
-        .filter(acc => acc.status !== 'Pago')
-        .map(account => {
-          const dueDate = parseDate(account.dueDate);
-          if (!dueDate) return null;
-          
-          const daysOverdue = differenceInDays(new Date(), dueDate);
-          let severity = 'low';
-          let message = '';
-          
-          if (isPast(dueDate)) {
-            severity = daysOverdue > 30 ? 'high' : 'medium';
-            message = `Pagamento atrasado há ${daysOverdue} dias`;
-          } else {
-            return null; // Ignora contas que ainda não venceram
-          }
-          
-          return {
-            id: `receivable-${account.id}`,
-            type: 'receivable',
-            title: `Cliente ${account.client}: Parcela ${account.installment}`,
-            message,
-            value: account.value,
-            date: account.dueDate,
-            severity,
-            item: account
-          };
-        })
-        .filter(Boolean);
-      
-      // Combinar e ordenar alertas
-      return [...expenseAlerts, ...receivableAlerts].sort((a, b) => {
-        // Primeiro ordenar por severidade (high -> medium -> low)
-        const severityOrder = { high: 0, medium: 1, low: 2 };
-        const severityDiff = severityOrder[a.severity as keyof typeof severityOrder] - 
-                            severityOrder[b.severity as keyof typeof severityOrder];
+    const expenseAlerts = expenses
+      .filter(expense => expense.status !== 'Pago')
+      .map(expense => {
+        const dueDate = parseDate(expense.date);
+        if (!dueDate) return null;
         
-        if (severityDiff !== 0) return severityDiff;
+        const daysToExpire = differenceInDays(dueDate, new Date());
+        let severity: 'high' | 'medium' | 'low' = 'low';
+        let message = '';
         
-        // Se mesma severidade, ordenar por data (mais próximo primeiro)
-        const dateA = parseDate(a.date) || new Date();
-        const dateB = parseDate(b.date) || new Date();
-        return dateA.getTime() - dateB.getTime();
-      });
-    }, [expenses, accountsReceivable, parseDate]);
+        if (isPast(dueDate)) {
+          severity = 'high';
+          message = `Conta vencida há ${Math.abs(daysToExpire)} dias`;
+        } else if (daysToExpire <= 3) {
+          severity = 'medium';
+          message = daysToExpire === 0 
+            ? 'Vence hoje' 
+            : `Vence em ${daysToExpire} ${daysToExpire === 1 ? 'dia' : 'dias'}`;
+        } else if (daysToExpire <= 7) {
+          severity = 'low';
+          message = `Vence em ${daysToExpire} dias`;
+        } else {
+          return null; // Ignora contas que vencem em mais de 7 dias
+        }
+        
+        return {
+          id: `expense-${expense.id}`,
+          type: 'expense' as const,
+          title: expense.name,
+          message,
+          value: expense.value,
+          date: expense.date,
+          severity,
+          item: expense
+        };
+      })
+      .filter(Boolean) as Alert[];
+    
+    // Processar contas a receber vencidas
+    const receivableAlerts = accountsReceivable
+      .filter(acc => acc.status !== 'Pago')
+      .map(account => {
+        const dueDate = parseDate(account.dueDate);
+        if (!dueDate) return null;
+        
+        const daysOverdue = differenceInDays(new Date(), dueDate);
+        let severity: 'high' | 'medium' | 'low' = 'low';
+        let message = '';
+        
+        if (isPast(dueDate)) {
+          severity = daysOverdue > 30 ? 'high' : 'medium';
+          message = `Pagamento atrasado há ${daysOverdue} dias`;
+        } else {
+          return null; // Ignora contas que ainda não venceram
+        }
+        
+        return {
+          id: `receivable-${account.id}`,
+          type: 'receivable' as const,
+          title: `Cliente ${account.client}: Parcela ${account.installment}`,
+          message,
+          value: account.value,
+          date: account.dueDate,
+          severity,
+          item: account
+        };
+      })
+      .filter(Boolean) as Alert[];
+    
+    // Combinar e ordenar alertas
+    const processedAlerts = [...expenseAlerts, ...receivableAlerts].sort((a, b) => {
+      // Primeiro ordenar por severidade (high -> medium -> low)
+      const severityOrder = { high: 0, medium: 1, low: 2 };
+      const severityDiff = severityOrder[a.severity] - 
+                          severityOrder[b.severity];
+      
+      if (severityDiff !== 0) return severityDiff;
+      
+      // Se mesma severidade, ordenar por data (mais próximo primeiro)
+      const dateA = parseDate(a.date) || new Date();
+      const dateB = parseDate(b.date) || new Date();
+      return dateA.getTime() - dateB.getTime();
+    });
     
     setAlerts(processedAlerts);
   }, [expenses, accountsReceivable, parseDate]);
@@ -177,7 +164,7 @@ export function FinancialAlerts({
       {expanded && (
         <CardContent className="space-y-2 pt-1">
           {alerts.map(alert => (
-            <Alert 
+            <AlertUI 
               key={alert.id}
               variant={
                 alert.severity === 'high' 
@@ -208,17 +195,17 @@ export function FinancialAlerts({
                     variant="secondary"
                     size="sm"
                     className={cn(
-                      alert.type === "Despesa" 
+                      alert.type === "expense" 
                         ? "bg-red-100 hover:bg-red-200 text-red-700" 
                         : "bg-blue-100 hover:bg-blue-200 text-blue-700"
                     )}
-                    onClick={() => onActionClick?.(alert.item, alert.type === "Despesa" ? "pagar" : "cobrar")}
+                    onClick={() => onActionClick?.(alert.item, alert.type === "expense" ? "pagar" : "cobrar")}
                   >
-                    {alert.type === "Despesa" ? "PAGUEI" : "RECEBIDO"}
+                    {alert.type === "expense" ? "PAGUEI" : "RECEBIDO"}
                   </Button>
                 )}
               </div>
-            </Alert>
+            </AlertUI>
           ))}
           
           {alerts.length > 3 && (
@@ -230,4 +217,4 @@ export function FinancialAlerts({
       )}
     </Card>
   );
-} 
+}

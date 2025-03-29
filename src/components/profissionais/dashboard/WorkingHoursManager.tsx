@@ -1,7 +1,7 @@
 
 import React from "react";
 import { WorkingHoursForm } from "@/components/profissionais/WorkingHoursForm";
-import { ProfessionalWorkingHours, BlockedDate } from "@/types/professional";
+import { WorkingHours, BlockedDate } from "@/types/professional";
 
 interface WorkingHoursManagerProps {
   isOpen: boolean;
@@ -12,7 +12,7 @@ export const WorkingHoursManager: React.FC<WorkingHoursManagerProps> = ({
   isOpen,
   onOpenChange
 }) => {
-  const handleSave = (workingHours: ProfessionalWorkingHours[], blockedDates: BlockedDate[]) => {
+  const handleSave = (workingHours: WorkingHours, blockedDates: BlockedDate[]) => {
     console.log("Horários salvos:", workingHours);
     console.log("Datas bloqueadas:", blockedDates);
     onOpenChange(false);

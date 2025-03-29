@@ -12,7 +12,7 @@ export interface Professional {
     isActive: boolean;
   }[];
   hiringDate: string;
-  experienceLevel?: 'junior' | 'mid' | 'senior' | 'expert';
+  experienceLevel?: 'junior' | 'mid' | 'senior' | 'expert' | 'beginner' | 'intermediate';
   status: 'active' | 'inactive' | 'vacation' | 'sick_leave';
   totalAppointments?: number;
   totalCommission?: number;
@@ -20,6 +20,23 @@ export interface Professional {
   paymentModel: 'commission' | 'fixed';
   commissionRate?: number;
   fixedSalary?: number;
+  
+  // Additional properties used in components:
+  avatar?: string;
+  monthRanking?: number;
+  workingDays?: string[];
+  averageAppointmentDuration?: number;
+  clientAttendanceRate?: number;
+  lastAppointmentDate?: string;
+  workingHours?: WorkingHours;
+  blockedDates?: BlockedDate[];
+  history?: {
+    id: string;
+    date: string;
+    service?: string;
+    client?: string;
+    description: string;
+  }[];
 }
 
 export interface ProfessionalPerformance {
@@ -54,6 +71,31 @@ export interface ProfessionalAppointment {
   status: 'pending' | 'confirmed' | 'canceled' | 'completed';
 }
 
+export interface ProfessionalPayment {
+  id: string | number;
+  professionalId?: number;
+  date?: string;
+  amount?: number;
+  value: number;
+  status: 'pending' | 'paid' | 'canceled' | 'partial';
+  type: 'commission' | 'salary' | 'bonus';
+  description?: string;
+  notes?: string;
+  referenceMonth: string;
+  paymentDate?: string;
+}
+
+export interface WorkingHours {
+  dayOfWeek?: number;
+  monday?: { isWorking: boolean; startTime?: string; endTime?: string; breakStart?: string; breakEnd?: string; };
+  tuesday?: { isWorking: boolean; startTime?: string; endTime?: string; breakStart?: string; breakEnd?: string; };
+  wednesday?: { isWorking: boolean; startTime?: string; endTime?: string; breakStart?: string; breakEnd?: string; };
+  thursday?: { isWorking: boolean; startTime?: string; endTime?: string; breakStart?: string; breakEnd?: string; };
+  friday?: { isWorking: boolean; startTime?: string; endTime?: string; breakStart?: string; breakEnd?: string; };
+  saturday?: { isWorking: boolean; startTime?: string; endTime?: string; breakStart?: string; breakEnd?: string; };
+  sunday?: { isWorking: boolean; startTime?: string; endTime?: string; breakStart?: string; breakEnd?: string; };
+}
+
 export interface ProfessionalWorkingHours {
   dayOfWeek: number;
   startTime: string;
@@ -62,9 +104,11 @@ export interface ProfessionalWorkingHours {
 }
 
 export interface BlockedDate {
-  id: string;
-  date: string;
+  id: string | number;
+  date?: string;
   reason: string;
+  startDate?: string;
+  endDate?: string;
 }
 
 // Para corrigir problemas com arquivos existentes
@@ -75,27 +119,16 @@ export interface ProfessionalSpecialty {
   isActive: boolean;
 }
 
-export interface ProfessionalPayment {
-  id: string;
-  date: string;
-  amount: number;
-  status: 'pending' | 'paid' | 'canceled';
-  type: 'commission' | 'salary' | 'bonus';
-  description?: string;
-}
-
-export interface WorkingHours {
-  dayOfWeek: number;
-  startTime: string;
-  endTime: string;
-  isActive: boolean;
-}
-
 export interface DaySchedule {
-  id: number;
-  day: string;
-  isActive: boolean;
-  timeSlots: {
+  id?: number;
+  day?: string;
+  isWorking?: boolean;
+  isActive?: boolean;
+  startTime?: string;
+  endTime?: string;
+  breakStart?: string;
+  breakEnd?: string;
+  timeSlots?: {
     start: string;
     end: string;
   }[];

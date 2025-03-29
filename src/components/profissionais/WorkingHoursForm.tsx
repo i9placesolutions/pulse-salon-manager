@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { WorkingHours, DaySchedule, BlockedDate } from "@/types/professional";
+import { WorkingHours, BlockedDate } from "@/types/professional";
 import { WeeklySchedule } from "./working-hours/WeeklySchedule";
 import { BlockedDateForm } from "./working-hours/BlockedDateForm";
 import { BlockedDatesList } from "./working-hours/BlockedDatesList";
@@ -45,14 +45,14 @@ export const WorkingHoursForm = ({
   });
 
   const handleDayScheduleChange = (
-    day: keyof WorkingHours,
-    field: keyof DaySchedule,
+    day: string,
+    field: string,
     value: string | boolean
   ) => {
     setWorkingHours((prev) => ({
       ...prev,
       [day]: {
-        ...prev[day],
+        ...(prev as any)[day],
         [field]: value,
       },
     }));
@@ -60,18 +60,22 @@ export const WorkingHoursForm = ({
 
   const handleAddBlockedDate = () => {
     if (newBlockedDate.startDate && newBlockedDate.endDate && newBlockedDate.reason) {
+      const newDate: BlockedDate = {
+        id: String(Date.now()),
+        startDate: newBlockedDate.startDate,
+        endDate: newBlockedDate.endDate,
+        reason: newBlockedDate.reason,
+      };
+      
       setBlockedDates([
         ...blockedDates,
-        {
-          id: Date.now(),
-          ...newBlockedDate,
-        },
+        newDate
       ]);
       setNewBlockedDate({ startDate: "", endDate: "", reason: "" });
     }
   };
 
-  const handleRemoveBlockedDate = (id: number) => {
+  const handleRemoveBlockedDate = (id: string | number) => {
     setBlockedDates(blockedDates.filter((date) => date.id !== id));
   };
 
