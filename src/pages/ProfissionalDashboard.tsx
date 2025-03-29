@@ -38,7 +38,11 @@ const mockPerformance = {
     { month: "Mar", revenue: 3200 }
   ],
   rating: 4.8,
-  clientReturnRate: 0.75
+  clientReturnRate: 0.75,
+  newClientsPerMonth: 10,
+  scheduleOccupancy: 0.8,
+  quoteConversionRate: 0.6,
+  additionalSalesRate: 0.25
 };
 
 const mockCommissions: ProfessionalCommission[] = [

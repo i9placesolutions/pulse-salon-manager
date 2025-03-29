@@ -24,7 +24,7 @@ interface Alert {
   value: number;
   date: string;
   severity: 'high' | 'medium' | 'low';
-  item: any;
+  item: Expense | AccountReceivable;
 }
 
 export function FinancialAlerts({ 
@@ -65,7 +65,7 @@ export function FinancialAlerts({
           if (!dueDate) return null;
           
           const daysToExpire = differenceInDays(dueDate, new Date());
-          let severity = 'low';
+          let severity: 'high' | 'medium' | 'low' = 'low';
           let message = '';
           
           if (isPast(dueDate)) {
@@ -85,7 +85,7 @@ export function FinancialAlerts({
           
           return {
             id: `expense-${expense.id}`,
-            type: 'expense',
+            type: 'expense' as const,
             title: expense.name,
             message,
             value: expense.value,
@@ -94,7 +94,7 @@ export function FinancialAlerts({
             item: expense
           };
         })
-        .filter(Boolean);
+        .filter(Boolean) as Alert[];
       
       // Processar contas a receber vencidas
       const receivableAlerts = accountsReceivable
@@ -104,7 +104,7 @@ export function FinancialAlerts({
           if (!dueDate) return null;
           
           const daysOverdue = differenceInDays(new Date(), dueDate);
-          let severity = 'low';
+          let severity: 'high' | 'medium' | 'low' = 'low';
           let message = '';
           
           if (isPast(dueDate)) {
@@ -116,7 +116,7 @@ export function FinancialAlerts({
           
           return {
             id: `receivable-${account.id}`,
-            type: 'receivable',
+            type: 'receivable' as const,
             title: `Cliente ${account.client}: Parcela ${account.installment}`,
             message,
             value: account.value,
@@ -125,7 +125,7 @@ export function FinancialAlerts({
             item: account
           };
         })
-        .filter(Boolean);
+        .filter(Boolean) as Alert[];
       
       // Combinar e ordenar alertas
       return [...expenseAlerts, ...receivableAlerts].sort((a, b) => {
@@ -208,13 +208,13 @@ export function FinancialAlerts({
                     variant="secondary"
                     size="sm"
                     className={cn(
-                      alert.type === "Despesa" 
+                      alert.type === 'expense' 
                         ? "bg-red-100 hover:bg-red-200 text-red-700" 
                         : "bg-blue-100 hover:bg-blue-200 text-blue-700"
                     )}
-                    onClick={() => onActionClick?.(alert.item, alert.type === "Despesa" ? "pagar" : "cobrar")}
+                    onClick={() => onActionClick?.(alert.item, alert.type === 'expense' ? "pagar" : "cobrar")}
                   >
-                    {alert.type === "Despesa" ? "PAGUEI" : "RECEBIDO"}
+                    {alert.type === 'expense' ? "PAGUEI" : "RECEBIDO"}
                   </Button>
                 )}
               </div>

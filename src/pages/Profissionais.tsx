@@ -267,6 +267,10 @@ const mockPerformance: ProfessionalPerformance = {
   ],
   rating: 4.8,
   clientReturnRate: 0.75,
+  newClientsPerMonth: 15,
+  scheduleOccupancy: 0.85,
+  quoteConversionRate: 0.65,
+  additionalSalesRate: 0.3
 };
 
 const Profissionais = () => {
@@ -475,6 +479,20 @@ const Profissionais = () => {
       case 'expert': return 'Especialista';
       default: return level;
     }
+  };
+
+  const createDefaultPerformance = (): ProfessionalPerformance => {
+    return {
+      totalAppointments: 0,
+      topServices: [],
+      monthlyRevenue: [],
+      rating: 0,
+      clientReturnRate: 0,
+      newClientsPerMonth: 0,
+      scheduleOccupancy: 0,
+      quoteConversionRate: 0,
+      additionalSalesRate: 0
+    };
   };
 
   return (
@@ -803,13 +821,7 @@ const Profissionais = () => {
               appointments={[]}
               commissions={[]}
               payments={[]}
-              performance={{
-                totalAppointments: selectedProfessional.totalAppointments || 0,
-                topServices: [],
-                monthlyRevenue: [],
-                rating: selectedProfessional.rating || 0,
-                clientReturnRate: 0
-              }}
+              performance={mockPerformance}
             />
           }
         </DialogContent>
