@@ -232,6 +232,75 @@ export default function Financeiro() {
     },
   ];
 
+  const [revenueData, setRevenueData] = useState<RevenueData[]>(mockRevenueData);
+  const [view, setView] = useState<'month' | 'week' | 'year'>('month');
+  const [payments, setPayments] = useState<Payment[]>(mockPayments);
+  const [professionals, setProfessionals] = useState<Professional[]>(mockProfessionals);
+  const [cashFlowState, setCashFlowState] = useState<CashFlow[]>(mockCashFlow);
+  const [taxRecords, setTaxRecords] = useState<TaxRecord[]>(mockTaxes);
+  const [paymentMethods, setPaymentMethods] = useState<PaymentMethodConfig[]>(mockPaymentMethods);
+  const [expensesState, setExpensesState] = useState<Expense[]>([
+    { id: 1, name: "Aluguel", value: 2500, date: "2023-07-05", status: "paid", category: "Operacional" },
+    { id: 2, name: "Água", value: 150, date: "2023-07-10", status: "pending", category: "Utilidades" },
+    { id: 3, name: "Luz", value: 320, date: "2023-07-15", status: "pending", category: "Utilidades" },
+    { id: 4, name: "Internet", value: 180, date: "2023-07-08", status: "paid", category: "Tecnologia" },
+  ]);
+  const [accountsReceivableState, setAccountsReceivableState] = useState<AccountReceivable[]>([
+    { id: 1, client: "Maria Silva", value: 250, dueDate: "2023-08-05", status: "pending", description: "Coloração e Corte" },
+    { id: 2, client: "João Santos", value: 120, dueDate: "2023-08-12", status: "pending", description: "Barba e Cabelo" },
+    { id: 3, client: "Ana Oliveira", value: 180, dueDate: "2023-07-25", status: "overdue", description: "Tratamento Capilar" },
+  ]);
+
+  const [exportModalOpen, setExportModalOpen] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportProgress, setExportProgress] = useState(0);
+  const [reportTabActive, setReportTabActive] = useState('filters');
+  const [reportType, setReportType] = useState<'cashflow' | 'expense' | 'revenue' | 'full'>('cashflow');
+  const [selectedPeriod, setSelectedPeriod] = useState('current-month');
+  const [exportFormat, setExportFormat] = useState('pdf');
+  const [dateRange, setDateRange] = useState<{
+    from: Date | null;
+    to: Date | null;
+  }>({
+    from: new Date(),
+    to: new Date(),
+  });
+
+  const handleUpdateCashFlow = (newCashFlow: CashFlow[]) => {
+    setCashFlowState(newCashFlow);
+  };
+
+  const handleTabChange = (tab: string) => {
+    setReportTabActive(tab);
+  };
+
+  const handleNextTab = () => {
+    setReportTabActive('format');
+  };
+
+  const handleDateChange = (field: 'from' | 'to', value: string) => {
+    setDateRange(prev => ({
+      ...prev,
+      [field]: value ? new Date(value) : null
+    }));
+  };
+
+  const handleExportReport = () => {
+    setIsExporting(true);
+    
+    let progress = 0;
+    const interval = setInterval(() => {
+      progress += 10;
+      setExportProgress(progress);
+      
+      if (progress >= 100) {
+        clearInterval(interval);
+        setIsExporting(false);
+        setExportModalOpen(false);
+      }
+    }, 300);
+  };
+
   return (
     <PageLayout>
       <PageHeader 
@@ -325,7 +394,10 @@ export default function Financeiro() {
             
             <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
               <div className="col-span-12">
-                <FinancialAlerts />
+                <FinancialAlerts 
+                  expenses={expensesState}
+                  accountsReceivable={accountsReceivableState}
+                />
               </div>
             </div>
             
@@ -425,7 +497,7 @@ export default function Financeiro() {
                         <RadioGroup 
                           defaultValue="cashflow" 
                           value={reportType} 
-                          onValueChange={(value) => setReportType(value as ReportType)}
+                          onValueChange={(value) => setReportType(value as typeof reportType)}
                           className="grid gap-4 md:grid-cols-2"
                         >
                           <div className={`flex items-start gap-3 border rounded-md p-4 cursor-pointer hover:border-blue-400 ${reportType === 'cashflow' ? 'bg-blue-50 border-blue-300' : 'bg-white'}`}>
