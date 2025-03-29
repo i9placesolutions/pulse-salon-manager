@@ -1,6 +1,7 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { formatCurrency } from "@/utils/currency";
+import { formatCurrency } from "@/lib/utils";
 import {
   Area,
   AreaChart,

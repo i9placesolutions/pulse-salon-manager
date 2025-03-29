@@ -41,3 +41,18 @@ export interface TopProduct {
   quantity: number;
   revenue: number;
 }
+
+export interface CashFlowEntry {
+  type: 'income' | 'expense';
+  category: string;
+  amount: number;
+  date: string;
+  description?: string;
+  paymentMethod?: string;
+}
+
+export interface FinancialSummary {
+  totalIncome: number;
+  totalExpenses: number;
+  balance: number;
+}

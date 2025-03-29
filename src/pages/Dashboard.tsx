@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
@@ -22,7 +23,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MetricsGrid } from "@/components/dashboard/MetricsGrid";
 import { RevenueChart } from "@/components/dashboard/RevenueChart";
 import { DashboardMetric, ServiceDistribution, TopProduct } from "@/types/dashboard";
-import { formatCurrency } from "@/utils/currency";
+import { formatCurrency } from "@/lib/utils";
 import {
   Table,
   TableBody,

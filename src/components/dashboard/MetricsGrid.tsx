@@ -1,3 +1,4 @@
+
 import { DashboardMetric } from "@/types/dashboard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowUp, ArrowDown, Minus, TrendingUp, DollarSign, Users, ShoppingBag, Clock } from "lucide-react";
