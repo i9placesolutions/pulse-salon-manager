@@ -10,11 +10,12 @@ import { Expense, AccountReceivable, Alert } from "@/types/financial";
 import { CostControlPanel } from "@/components/financeiro/CostControlPanel";
 import { TaxManagementPanel } from "@/components/financeiro/TaxManagementPanel";
 import { FinancialAlerts } from "@/components/financeiro/FinancialAlerts";
-import { AccountReceivablePanel } from "@/components/financeiro/AccountReceivablePanel";
 import { CashFlowPanel } from "@/components/financeiro/CashFlowPanel";
 import { PaymentMethodsPanel } from "@/components/financeiro/PaymentMethodsPanel";
 import { ProfessionalsList } from "@/components/financeiro/ProfessionalsList";
 import { FinancialProjections } from "@/components/financeiro/FinancialProjections";
+import { AccountsReceivable } from "@/components/financeiro/AccountsReceivable";
+import { Button } from "@/components/ui/button";
 import { 
   Payment, 
   Professional,
@@ -24,6 +25,41 @@ import {
   TaxRecord,
   PaymentMethodConfig
 } from "@/types/financial";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetFooter,
+  SheetClose,
+} from "@/components/ui/sheet";
+import {
+  Eye,
+  FileUp,
+  FileText,
+  FileSpreadsheet,
+  ChevronLeft,
+  ChevronRight,
+  Filter,
+  Settings,
+  X,
+  Download
+} from "lucide-react";
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger, 
+  SelectValue
+} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Progress } from "@/components/ui/progress";
+import { format } from "date-fns";
+import { NewRevenueDialog } from "@/components/financeiro/NewRevenueDialog";
+import { NewExpenseDialog } from "@/components/financeiro/NewExpenseDialog";
 
 export default function Financeiro() {
   const mockRevenueData: RevenueData[] = [
