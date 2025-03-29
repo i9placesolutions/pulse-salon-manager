@@ -66,3 +66,37 @@ export interface BlockedDate {
   date: string;
   reason: string;
 }
+
+// Para corrigir problemas com arquivos existentes
+export interface ProfessionalSpecialty {
+  id: string;
+  name: string;
+  color: string;
+  isActive: boolean;
+}
+
+export interface ProfessionalPayment {
+  id: string;
+  date: string;
+  amount: number;
+  status: 'pending' | 'paid' | 'canceled';
+  type: 'commission' | 'salary' | 'bonus';
+  description?: string;
+}
+
+export interface WorkingHours {
+  dayOfWeek: number;
+  startTime: string;
+  endTime: string;
+  isActive: boolean;
+}
+
+export interface DaySchedule {
+  id: number;
+  day: string;
+  isActive: boolean;
+  timeSlots: {
+    start: string;
+    end: string;
+  }[];
+}
