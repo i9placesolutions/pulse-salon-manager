@@ -1,168 +1,102 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { LucideIcon } from "lucide-react";
 
-interface MetricCardProps {
-  title: string;
-  value: string | number;
-  description?: string;
-  icon: LucideIcon;
-  iconColor?: string;
-  trend?: number;
-}
+import React from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { 
+  DollarSign, 
+  TrendingUp, 
+  Users, 
+  ShoppingBag, 
+  Clock, 
+  Calendar, 
+  ArrowUp, 
+  ArrowDown, 
+  Minus,
+  LucideIcon
+} from "lucide-react";
+import { DashboardMetric } from "@/types/dashboard";
+import { cn } from "@/lib/utils";
 
 interface MetricsGridProps {
   metrics: DashboardMetric[];
 }
 
-export const MetricsGrid = React.memo(({ metrics }: MetricsGridProps) => {
-  const defaultMetrics: DashboardMetric[] = [
-    {
-      id: "revenue",
-      title: "Faturamento",
-      value: "R$ 45.980",
-      change: 12.3,
-      trend: "up",
-      description: "em relação ao mês passado",
-      icon: "DollarSign"
-    },
-    {
-      id: "ticket",
-      title: "Ticket Médio",
-      value: "R$ 120",
-      change: 8.5,
-      trend: "up",
-      description: "em relação ao mês passado",
-      icon: "TrendingUp"
-    },
-    {
-      id: "clients",
-      title: "Clientes Atendidos",
-      value: "382",
-      change: 5.2,
-      trend: "up",
-      description: "este mês",
-      icon: "Users"
-    },
-    {
-      id: "services",
-      title: "Serviços Realizados",
-      value: "456",
-      change: 7.8,
-      trend: "up",
-      description: "este mês",
-      icon: "ShoppingBag"
-    },
-    {
-      id: "waiting",
-      title: "Tempo Médio Espera",
-      value: "12min",
-      change: -2.5,
-      trend: "down",
-      description: "em relação a ontem",
-      icon: "Clock"
-    }
-  ];
-
-  const metricColors = {
-    "revenue": { bg: "from-green-50 to-green-100", border: "border-green-200", text: "text-green-700", icon: "text-green-600", iconBg: "bg-green-100", iconHover: "group-hover:bg-green-200" },
-    "ticket": { bg: "from-blue-50 to-blue-100", border: "border-blue-200", text: "text-blue-700", icon: "text-blue-600", iconBg: "bg-blue-100", iconHover: "group-hover:bg-blue-200" },
-    "clients": { bg: "from-emerald-50 to-emerald-100", border: "border-emerald-200", text: "text-emerald-700", icon: "text-emerald-600", iconBg: "bg-emerald-100", iconHover: "group-hover:bg-emerald-200" },
-    "services": { bg: "from-amber-50 to-amber-100", border: "border-amber-200", text: "text-amber-700", icon: "text-amber-600", iconBg: "bg-amber-100", iconHover: "group-hover:bg-amber-200" },
-    "waiting": { bg: "from-purple-50 to-purple-100", border: "border-purple-200", text: "text-purple-700", icon: "text-purple-600", iconBg: "bg-purple-100", iconHover: "group-hover:bg-purple-200" },
-    "monthly-revenue": { bg: "from-green-50 to-green-100", border: "border-green-200", text: "text-green-700", icon: "text-green-600", iconBg: "bg-green-100", iconHover: "group-hover:bg-green-200" },
-    "ticket-medio": { bg: "from-blue-50 to-blue-100", border: "border-blue-200", text: "text-blue-700", icon: "text-blue-600", iconBg: "bg-blue-100", iconHover: "group-hover:bg-blue-200" },
-    "appointments": { bg: "from-purple-50 to-purple-100", border: "border-purple-200", text: "text-purple-700", icon: "text-purple-600", iconBg: "bg-purple-100", iconHover: "group-hover:bg-purple-200" },
-    "new_clients": { bg: "from-emerald-50 to-emerald-100", border: "border-emerald-200", text: "text-emerald-700", icon: "text-emerald-600", iconBg: "bg-emerald-100", iconHover: "group-hover:bg-emerald-200" },
-    "products": { bg: "from-indigo-50 to-indigo-100", border: "border-indigo-200", text: "text-indigo-700", icon: "text-indigo-600", iconBg: "bg-indigo-100", iconHover: "group-hover:bg-indigo-200" },
-    "avg-time": { bg: "from-rose-50 to-rose-100", border: "border-rose-200", text: "text-rose-700", icon: "text-rose-600", iconBg: "bg-rose-100", iconHover: "group-hover:bg-rose-200" }
-  };
-
-  const getCardColors = (metricId: string) => {
-    return metricColors[metricId as keyof typeof metricColors] || {
-      bg: "from-blue-50 to-blue-100",
-      border: "border-blue-200",
-      text: "text-blue-700",
-      icon: "text-blue-600",
-      iconBg: "bg-blue-100",
-      iconHover: "group-hover:bg-blue-200"
-    };
-  };
-
-  const getTrendIcon = (trend: 'up' | 'down' | 'neutral') => {
+export const MetricsGrid: React.FC<MetricsGridProps> = ({ metrics }) => {
+  // Helper para renderizar ícones de tendência
+  const renderTrendIcon = (trend: 'up' | 'down' | 'neutral', size = 16) => {
     switch (trend) {
       case 'up':
-        return <ArrowUp className="h-4 w-4 text-green-600" />;
+        return <ArrowUp size={size} className="text-emerald-500" />;
       case 'down':
-        return <ArrowDown className="h-4 w-4 text-rose-600" />;
-      default:
-        return <Minus className="h-4 w-4 text-gray-500" />;
+        return <ArrowDown size={size} className="text-rose-500" />;
+      case 'neutral':
+        return <Minus size={size} className="text-gray-400" />;
     }
   };
 
-  const renderIcon = (iconName: string | LucideIcon | undefined) => {
-    if (!iconName) return null;
+  // Função para garantir que temos um ícone para cada métrica
+  const getMetricIcon = (iconName?: LucideIcon | string) => {
+    if (!iconName) return <DollarSign className="h-5 w-5 text-blue-600" />;
     
-    if (typeof iconName === "string") {
-      switch (iconName) {
-        case "DollarSign": return <DollarSign className="h-4 w-4" />;
-        case "TrendingUp": return <TrendingUp className="h-4 w-4" />;
-        case "Users": return <Users className="h-4 w-4" />;
-        case "ShoppingBag": return <ShoppingBag className="h-4 w-4" />;
-        case "Clock": return <Clock className="h-4 w-4" />;
-        case "Calendar": return <Calendar className="h-4 w-4" />;
-        default: return <DollarSign className="h-4 w-4" />;
-      }
+    // Se for um ícone Lucide já passado, retornar ele mesmo
+    if (typeof iconName !== 'string') {
+      return React.createElement(iconName, { className: "h-5 w-5 text-blue-600" });
     }
-    
-    const Icon = iconName;
-    return <Icon className="h-4 w-4" />;
-  };
 
-  const metricsToShow = metrics.length > 0 ? metrics : defaultMetrics;
+    // Se for string, mapear para o ícone correspondente
+    const iconMap: Record<string, LucideIcon> = {
+      "dollar": DollarSign,
+      "trending-up": TrendingUp,
+      "users": Users,
+      "shopping-bag": ShoppingBag,
+      "clock": Clock,
+      "calendar": Calendar,
+      "money": DollarSign
+    };
+
+    const IconComponent = iconMap[iconName] || DollarSign;
+    return <IconComponent className="h-5 w-5 text-blue-600" />;
+  };
 
   return (
-    <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-      {metricsToShow.map((metric) => {
-        const colors = getCardColors(metric.id);
-        
-        return (
-          <Card 
-            key={metric.id} 
-            className={`${colors.border} shadow-sm hover:shadow transition-all group`}
-          >
-            <CardHeader className={`flex flex-row items-center justify-between pb-2 bg-gradient-to-r ${colors.bg} rounded-t-lg`}>
-              <CardTitle className={`text-sm font-medium ${colors.text}`}>
-                {metric.title}
-              </CardTitle>
-              {metric.icon && (
-                <div className={`p-2 rounded-full ${colors.iconBg} ${colors.iconHover} transition-colors`}>
-                  {renderIcon(metric.icon)}
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      {metrics.map((metric) => (
+        <Card key={metric.id} className="border-blue-100 overflow-hidden transition-all hover:shadow-md">
+          <CardContent className="p-6">
+            <div className="flex justify-between items-start">
+              <div className="space-y-1">
+                <h3 className="font-medium text-sm text-blue-700">{metric.title}</h3>
+                <div className="text-2xl font-bold text-slate-800">
+                  {metric.prefix}
+                  {typeof metric.value === 'number' 
+                    ? new Intl.NumberFormat('pt-BR').format(metric.value)
+                    : metric.value}
+                  {metric.suffix}
                 </div>
-              )}
-            </CardHeader>
-            <CardContent className="pt-4">
-              <div className={`text-2xl font-bold ${colors.text}`}>
-                {metric.prefix}{metric.value}{metric.suffix}
               </div>
-              <p className="text-xs flex items-center mt-1">
-                <span className="flex items-center mr-1">
-                  {getTrendIcon(metric.trend)}
-                  <span className={`ml-1 ${
-                    metric.trend === 'up' ? 'text-green-600' : 
-                    metric.trend === 'down' ? 'text-rose-600' : 
-                    'text-gray-500'
-                  }`}>
-                    {Math.abs(metric.change)}%
-                  </span>
-                </span>
-                <span className={`text-${colors.text.split('-')[1]}-600/70`}>{metric.description}</span>
-              </p>
-            </CardContent>
-          </Card>
-        );
-      })}
+              <div className="bg-blue-50 p-3 rounded-full">
+                {getMetricIcon(metric.icon)}
+              </div>
+            </div>
+            
+            <div className="mt-4 flex items-center text-sm">
+              <Badge 
+                variant="outline" 
+                className={cn(
+                  "gap-1 px-1.5 font-normal border-0",
+                  metric.trend === 'up' ? "bg-emerald-50 text-emerald-700" : 
+                  metric.trend === 'down' ? "bg-rose-50 text-rose-700" : 
+                  "bg-gray-50 text-gray-700"
+                )}
+              >
+                {renderTrendIcon(metric.trend)}
+                {metric.change > 0 ? '+' : ''}{metric.change}%
+              </Badge>
+              <span className="ml-2 text-muted-foreground text-xs">{metric.description}</span>
+            </div>
+          </CardContent>
+        </Card>
+      ))}
     </div>
   );
-});
-
-MetricsGrid.displayName = "MetricsGrid";
+};

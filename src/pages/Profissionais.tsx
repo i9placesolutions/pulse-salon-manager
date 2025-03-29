@@ -103,7 +103,6 @@ import { ptBR } from "date-fns/locale";
 import { PageLayout } from "@/components/shared/PageLayout";
 import { PageHeader } from "@/components/shared/PageHeader";
 
-// Atualização dos dados simulados para usar o novo sistema de especialidades
 const mockProfessionals: Professional[] = [
   {
     id: "1",
@@ -123,7 +122,6 @@ const mockProfessionals: Professional[] = [
     averageMonthlyRevenue: 5000,
     paymentModel: "commission",
     commissionRate: 30,
-    // Novas métricas adicionadas
     lastAppointmentDate: "2024-04-18T14:30:00",
     averageAppointmentDuration: 45,
     monthRanking: 1,
@@ -151,7 +149,6 @@ const mockProfessionals: Professional[] = [
     averageMonthlyRevenue: 3500,
     paymentModel: "fixed",
     fixedSalary: 3000,
-    // Novas métricas adicionadas
     lastAppointmentDate: "2024-04-17T16:45:00",
     averageAppointmentDuration: 30,
     monthRanking: 2,
@@ -180,7 +177,6 @@ const mockProfessionals: Professional[] = [
     averageMonthlyRevenue: 2800,
     paymentModel: "commission",
     commissionRate: 25,
-    // Novas métricas adicionadas
     lastAppointmentDate: "2024-04-18T10:15:00",
     averageAppointmentDuration: 60,
     monthRanking: 3,
@@ -267,6 +263,10 @@ const mockPerformance: ProfessionalPerformance = {
   ],
   rating: 4.8,
   clientReturnRate: 0.75,
+  newClientsPerMonth: 10,
+  scheduleOccupancy: 0.85,
+  quoteConversionRate: 0.72,
+  additionalSalesRate: 0.35
 };
 
 const Profissionais = () => {
@@ -303,10 +303,7 @@ const Profissionais = () => {
     }
   };
 
-  // Validar os filtros do relatório para permitir avançar para a próxima aba
   const validateReportFilters = () => {
-    // Verificar se pelo menos um filtro foi selecionado
-    // Verifica se o profissional foi selecionado
     if (!selectedProfessionalForReport) {
       toast({
         title: "Profissional não selecionado",
@@ -316,7 +313,6 @@ const Profissionais = () => {
       return false;
     }
 
-    // Se o período personalizado for selecionado, verificar se as datas foram preenchidas
     if (selectedPeriod === "custom") {
       if (!dateRange.from || !dateRange.to) {
         toast({
@@ -331,7 +327,6 @@ const Profissionais = () => {
     return true;
   };
   
-  // Função para avançar para a próxima aba após validar os filtros
   const handleNextTab = () => {
     if (validateReportFilters()) {
       setReportTabActive("format");
@@ -344,10 +339,8 @@ const Profissionais = () => {
     }
   };
   
-  // Manipulador de evento para tentar mudar a aba diretamente
   const handleTabChange = (value: string) => {
     if (value === "format" && reportTabActive === "filters") {
-      // Se estiver tentando ir para a aba de formato a partir da aba de filtros
       if (validateReportFilters()) {
         setReportTabActive(value);
       } else {
@@ -358,19 +351,15 @@ const Profissionais = () => {
         });
       }
     } else {
-      // Para outras transições (ex: de formato para filtros), permitir diretamente
       setReportTabActive(value);
     }
   };
 
-  // Filtrar profissionais com base nos critérios
   const filteredProfessionals = mockProfessionals.filter((professional) => {
-    // Busca por texto
     const matchesSearch =
       professional.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       professional.email.toLowerCase().includes(searchTerm.toLowerCase());
 
-    // Filtro por especialidade
     const matchesSpecialty =
       !specialtyFilter ||
       professional.specialties.some((s) => s.id === specialtyFilter);
@@ -378,7 +367,6 @@ const Profissionais = () => {
     return matchesSearch && matchesSpecialty;
   });
 
-  // Ordenar profissionais
   let sortedProfessionals = [...filteredProfessionals];
   if (sortBy === "name") {
     sortedProfessionals.sort((a, b) => a.name.localeCompare(b.name));
@@ -400,18 +388,15 @@ const Profissionais = () => {
     setIsExporting(true);
     setExportProgress(10);
 
-    // Simulação de processamento
     setTimeout(() => setExportProgress(30), 500);
     setTimeout(() => setExportProgress(50), 1000);
     setTimeout(() => setExportProgress(70), 1500);
 
     try {
-      // Preparar dados para exportação
       const professionalData = prepareExportData();
 
       setExportProgress(90);
 
-      // Exportar dados usando a função genérica
       exportData(professionalData, exportFormat, 'Relatorio_Profissionais');
       
       setExportProgress(100);
@@ -439,7 +424,6 @@ const Profissionais = () => {
     }
   };
 
-  // Formatador de data
   const formatDate = (dateString: string) => {
     if (!dateString) return 'N/A';
     const date = new Date(dateString);
@@ -452,7 +436,6 @@ const Profissionais = () => {
     });
   };
 
-  // Função para preparar dados para exportação
   const prepareExportData = () => {
     return mockProfessionals.map(prof => ({
       Nome: prof.name,
@@ -792,7 +775,6 @@ const Profissionais = () => {
         </CardContent>
       </Card>
 
-      {/* Modal de detalhes do profissional */}
       <Dialog open={detailsModalOpen} onOpenChange={setDetailsModalOpen}>
         <DialogContent className="max-w-screen-md">
           {selectedProfessional && 
@@ -808,14 +790,17 @@ const Profissionais = () => {
                 topServices: [],
                 monthlyRevenue: [],
                 rating: selectedProfessional.rating || 0,
-                clientReturnRate: 0
+                clientReturnRate: 0,
+                newClientsPerMonth: 0,
+                scheduleOccupancy: 0,
+                quoteConversionRate: 0,
+                additionalSalesRate: 0
               }}
             />
           }
         </DialogContent>
       </Dialog>
 
-      {/* Drawer para exportação de relatórios */}
       <Sheet open={exportModalOpen} onOpenChange={setExportModalOpen}>
         <SheetContent side="right" className="p-0 sm:max-w-md md:max-w-lg flex flex-col overflow-hidden">
           <div className="sticky top-0 z-10 bg-gradient-to-r from-blue-600 to-indigo-600 p-6">

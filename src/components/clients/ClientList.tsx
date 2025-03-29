@@ -1,5 +1,6 @@
+
 import { useState } from "react";
-import { Client } from "@/types/client";
+import { Client, ClientService } from "@/types/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -47,7 +48,6 @@ import {
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
-import { ClientService } from "@/types/client";
 
 interface ClientListProps {
   clients: Client[];
@@ -89,7 +89,8 @@ export function ClientList({
     
     // Usa o ID do cliente para selecionar um serviço da lista
     // Em uma implementação real, isso viria do backend
-    return defaultServices[client.id % defaultServices.length];
+    const clientId = typeof client.id === 'string' ? parseInt(client.id, 10) : client.id;
+    return defaultServices[clientId % defaultServices.length];
   };
 
   // Função para extrair a data da última visita formatada
@@ -145,7 +146,12 @@ export function ClientList({
 
   // Obter os serviços de um cliente específico
   const getClientServices = (clientId: number) => {
-    return services.filter(service => service.clientId === clientId);
+    return services.filter(service => {
+      const serviceClientId = typeof service.clientId === 'string' 
+        ? parseInt(service.clientId, 10) 
+        : service.clientId;
+      return serviceClientId === clientId;
+    });
   };
 
   // Obter o status do cliente
@@ -193,8 +199,12 @@ export function ClientList({
         try {
           const birthdayInfo = getBirthdayInfo(client);
           const isTodayBirthday = isBirthdayToday(client);
-          const clientServices = services && Array.isArray(services) ? getClientServices(client.id) : [];
-          const isExpanded = expandedClient === client.id;
+          const clientServices = services && Array.isArray(services) ? getClientServices(
+            typeof client.id === 'string' ? parseInt(client.id, 10) : client.id
+          ) : [];
+          const isExpanded = expandedClient === (
+            typeof client.id === 'string' ? parseInt(client.id, 10) : client.id
+          );
           
           return (
             <Card 
@@ -345,7 +355,9 @@ export function ClientList({
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => toggleExpandClient(client.id)}
+                        onClick={() => toggleExpandClient(
+                          typeof client.id === 'string' ? parseInt(client.id, 10) : client.id
+                        )}
                         className="rounded-full border border-primary/30 text-primary hover:bg-primary/10 hover:text-primary-dark"
                         aria-label={isExpanded ? "Recolher detalhes" : "Expandir detalhes"}
                       >
@@ -522,7 +534,9 @@ export function ClientList({
                     variant="ghost"
                     size="sm"
                     className="h-7 text-xs text-primary hover:bg-primary/10"
-                    onClick={() => toggleExpandClient(client.id)}
+                    onClick={() => toggleExpandClient(
+                      typeof client.id === 'string' ? parseInt(client.id, 10) : client.id
+                    )}
                   >
                     {isExpanded ? (
                       <>
