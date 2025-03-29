@@ -385,7 +385,9 @@ export default function Financeiro() {
                 onNewEntry={(entry) => {
                   const newEntry = {
                     ...entry,
-                    id: cashFlowState.length > 0 ? Math.max(...cashFlowState.map(item => item.id)) + 1 : 1
+                    id: cashFlowState.length > 0 
+                      ? Math.max(...cashFlowState.map(item => typeof item.id === 'number' ? item.id : 0)) + 1 
+                      : 1
                   };
                   handleUpdateCashFlow([...cashFlowState, newEntry]);
                 }} 
@@ -426,7 +428,9 @@ export default function Financeiro() {
               onNewEntry={(entry) => {
                 const newEntry = {
                   ...entry,
-                  id: cashFlowState.length > 0 ? Math.max(...cashFlowState.map(item => item.id)) + 1 : 1
+                  id: cashFlowState.length > 0 
+                    ? Math.max(...cashFlowState.map(item => typeof item.id === 'number' ? item.id : 0)) + 1 
+                    : 1
                 };
                 handleUpdateCashFlow([...cashFlowState, newEntry]);
               }}

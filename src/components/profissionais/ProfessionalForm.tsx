@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -69,6 +70,8 @@ export const ProfessionalForm = ({ open, onOpenChange, onSubmit, professional }:
       onOpenChange(false);
     }
   };
+  
+  type ExperienceLevel = "junior" | "mid" | "senior" | "expert" | "beginner" | "intermediate";
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -139,8 +142,8 @@ export const ProfessionalForm = ({ open, onOpenChange, onSubmit, professional }:
                 Nível de Experiência <span className="text-destructive">*</span>
               </Label>
               <Select
-                value={formData.experienceLevel}
-                onValueChange={(value) =>
+                value={formData.experienceLevel as ExperienceLevel}
+                onValueChange={(value: ExperienceLevel) =>
                   setFormData({ ...formData, experienceLevel: value })
                 }
               >
@@ -160,7 +163,7 @@ export const ProfessionalForm = ({ open, onOpenChange, onSubmit, professional }:
                 Status <span className="text-destructive">*</span>
               </Label>
               <Select
-                value={formData.status}
+                value={formData.status as 'active' | 'inactive'}
                 onValueChange={(value: 'active' | 'inactive') =>
                   setFormData({ ...formData, status: value })
                 }

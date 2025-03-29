@@ -46,7 +46,7 @@ export interface Payment {
 export interface CashFlow {
   id: string | number;
   date: string;
-  type: 'income' | 'expense';
+  type: 'income' | 'expense';  // Standardized to 'income' | 'expense'
   category: string;
   description: string;
   value: number;
@@ -84,10 +84,15 @@ export interface PaymentMethodConfig {
   fee: number;
   isActive: boolean;
   processingTime: number;
-  type?: string;
+  type: string;
   enabled?: boolean;
-  pixKeys?: string[];
-  cardBrands?: string[];
+  pixKeys?: Array<{key: string, type: string}>;  // Updated to be an object with key and type
+  cardBrands?: Array<{
+    name: string,
+    enabled: boolean,
+    maxInstallments: number,
+    minValue: number
+  }>;  // Updated to be a proper object
 }
 
 export interface CommissionConfig {

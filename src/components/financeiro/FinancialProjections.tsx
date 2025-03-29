@@ -1,3 +1,4 @@
+
 import { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -77,7 +78,7 @@ export function FinancialProjections({
     const initialBalance = cashFlow
       .filter(cf => cf.status === 'realizado')
       .reduce((acc, cf) => {
-        return cf.type === 'entrada' ? acc + cf.value : acc - cf.value;
+        return cf.type === 'income' ? acc + cf.value : acc - cf.value;
       }, 0);
     
     // Adicionar despesas futuras
@@ -126,7 +127,7 @@ export function FinancialProjections({
         const dateKey = format(flowDate, 'yyyy-MM-dd');
         if (dateMap.has(dateKey)) {
           const dayData = dateMap.get(dateKey);
-          if (flow.type === 'entrada') {
+          if (flow.type === 'income') {
             dayData.income += flow.value;
           } else {
             dayData.expense += flow.value;
@@ -290,4 +291,4 @@ export function FinancialProjections({
       </CardContent>
     </Card>
   );
-} 
+}

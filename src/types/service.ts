@@ -41,6 +41,14 @@ export interface Service {
   };
   professionals?: number[];
   products?: { productId: number; quantity: number }[];
+  performanceData?: {  // Add performanceData property
+    appointmentsLastMonth: number;
+    rating: number;
+    popularityRank: number;
+    avgDuration: number;
+    priceHistory: { date: string; price: number }[];
+    trend: 'up' | 'down' | 'stable';
+  };
 }
 
 export interface ServicePackage {
@@ -71,7 +79,7 @@ export interface ExtendedService extends Service {
 }
 
 export interface PackageService {
-  id: number;
+  id: number | string;  // Allow string IDs as well
   name: string;
   price: number;
 }
