@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { WorkingHoursForm } from "@/components/profissionais/WorkingHoursForm";
 import { DashboardHeader } from "@/components/profissionais/dashboard/DashboardHeader";
@@ -5,7 +6,7 @@ import { MetricsCards } from "@/components/profissionais/dashboard/MetricsCards"
 import { DashboardTabs } from "@/components/profissionais/dashboard/DashboardTabs";
 import { ProfessionalHeader } from "@/components/profissionais/dashboard/ProfessionalHeader";
 import { PageLayout } from "@/components/shared/PageLayout";
-import { Professional, ProfessionalCommission, ProfessionalAppointment } from "@/types/professional";
+import { Professional, ProfessionalCommission, ProfessionalAppointment, ProfessionalPerformance } from "@/types/professional";
 
 // Mock data para teste
 const mockProfessional: Professional = {
@@ -25,7 +26,7 @@ const mockProfessional: Professional = {
   commissionRate: 50
 };
 
-const mockPerformance = {
+const mockPerformance: ProfessionalPerformance = {
   totalAppointments: 45,
   topServices: [
     { serviceName: "Corte", count: 20 },
@@ -38,7 +39,11 @@ const mockPerformance = {
     { month: "Mar", revenue: 3200 }
   ],
   rating: 4.8,
-  clientReturnRate: 0.75
+  clientReturnRate: 0.75,
+  newClientsPerMonth: 10,
+  scheduleOccupancy: 0.85,
+  quoteConversionRate: 0.7,
+  additionalSalesRate: 0.3
 };
 
 const mockCommissions: ProfessionalCommission[] = [

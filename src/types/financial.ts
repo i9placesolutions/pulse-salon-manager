@@ -1,3 +1,14 @@
+export interface Alert {
+  id: string;
+  type: "expense" | "receivable";
+  title: string;
+  message: string;
+  value: number;
+  date: string;
+  severity: string;
+  item: Expense | AccountReceivable;
+}
+
 export interface Payment {
   id: number;
   client: string;

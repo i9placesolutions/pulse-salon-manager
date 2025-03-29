@@ -10,7 +10,7 @@ export interface DashboardMetric {
   description: string;
   prefix?: string;
   suffix?: string;
-  icon?: LucideIcon;
+  icon?: LucideIcon | string;
 }
 
 export interface AppointmentSummary {

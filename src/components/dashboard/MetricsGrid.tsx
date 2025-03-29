@@ -1,12 +1,14 @@
+
 import { DashboardMetric } from "@/types/dashboard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowUp, ArrowDown, Minus, TrendingUp, DollarSign, Users, ShoppingBag, Clock } from "lucide-react";
+import { ArrowUp, ArrowDown, Minus, TrendingUp, DollarSign, Users, ShoppingBag, Clock, Calendar } from "lucide-react";
+import React from "react";
 
 interface MetricsGridProps {
   metrics: DashboardMetric[];
 }
 
-export function MetricsGrid({ metrics }: MetricsGridProps) {
+export const MetricsGrid = React.memo(({ metrics }: MetricsGridProps) => {
   const defaultMetrics: DashboardMetric[] = [
     {
       id: "revenue",
@@ -15,7 +17,7 @@ export function MetricsGrid({ metrics }: MetricsGridProps) {
       change: 12.3,
       trend: "up",
       description: "em relação ao mês passado",
-      icon: DollarSign
+      icon: "DollarSign"
     },
     {
       id: "ticket",
@@ -24,7 +26,7 @@ export function MetricsGrid({ metrics }: MetricsGridProps) {
       change: 8.5,
       trend: "up",
       description: "em relação ao mês passado",
-      icon: TrendingUp
+      icon: "TrendingUp"
     },
     {
       id: "clients",
@@ -33,7 +35,7 @@ export function MetricsGrid({ metrics }: MetricsGridProps) {
       change: 5.2,
       trend: "up",
       description: "este mês",
-      icon: Users
+      icon: "Users"
     },
     {
       id: "services",
@@ -42,7 +44,7 @@ export function MetricsGrid({ metrics }: MetricsGridProps) {
       change: 7.8,
       trend: "up",
       description: "este mês",
-      icon: ShoppingBag
+      icon: "ShoppingBag"
     },
     {
       id: "waiting",
@@ -51,7 +53,7 @@ export function MetricsGrid({ metrics }: MetricsGridProps) {
       change: -2.5,
       trend: "down",
       description: "em relação a ontem",
-      icon: Clock
+      icon: "Clock"
     }
   ];
 
@@ -93,6 +95,27 @@ export function MetricsGrid({ metrics }: MetricsGridProps) {
     }
   };
 
+  // Função para renderizar o ícone correto
+  const renderIcon = (iconName: string | LucideIcon | undefined) => {
+    if (!iconName) return null;
+    
+    if (typeof iconName === "string") {
+      switch (iconName) {
+        case "DollarSign": return <DollarSign className="h-4 w-4" />;
+        case "TrendingUp": return <TrendingUp className="h-4 w-4" />;
+        case "Users": return <Users className="h-4 w-4" />;
+        case "ShoppingBag": return <ShoppingBag className="h-4 w-4" />;
+        case "Clock": return <Clock className="h-4 w-4" />;
+        case "Calendar": return <Calendar className="h-4 w-4" />;
+        default: return <DollarSign className="h-4 w-4" />;
+      }
+    }
+    
+    // Se for um componente React (LucideIcon)
+    const Icon = iconName;
+    return <Icon className="h-4 w-4" />;
+  };
+
   const metricsToShow = metrics.length > 0 ? metrics : defaultMetrics;
 
   return (
@@ -111,7 +134,7 @@ export function MetricsGrid({ metrics }: MetricsGridProps) {
               </CardTitle>
               {metric.icon && (
                 <div className={`p-2 rounded-full ${colors.iconBg} ${colors.iconHover} transition-colors`}>
-                  <metric.icon className={`h-4 w-4 ${colors.icon}`} />
+                  {renderIcon(metric.icon)}
                 </div>
               )}
             </CardHeader>
@@ -138,4 +161,6 @@ export function MetricsGrid({ metrics }: MetricsGridProps) {
       })}
     </div>
   );
-}
+});
+
+MetricsGrid.displayName = "MetricsGrid";
