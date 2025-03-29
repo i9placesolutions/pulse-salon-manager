@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
-import { ServicePackage, PackageService } from "@/types/service";
+import { ServicePackage } from "@/types/service";
 import { useToast } from "@/hooks/use-toast";
 import { PackageHeader } from "./packages/PackageHeader";
 import { PackageFormFields } from "./packages/PackageFormFields";
@@ -16,8 +16,14 @@ interface ServicePackageFormProps {
   servicePackage?: ServicePackage;
 }
 
+interface PackageService {
+  id: number;
+  name: string;
+  price: number;
+}
+
 interface PackageProduct {
-  id: string | number;
+  id: string;
   name: string;
   price: number;
   quantity: number;
@@ -50,12 +56,12 @@ export function ServicePackageForm({
       setFormData(servicePackage);
       
       // Carrega serviços (em uma aplicação real, você buscaria os dados dos serviços)
-      const serviceDetails = servicePackage.services?.map(service => {
-        const serviceInfo = mockAvailableServices.find(s => s.id === service.serviceId);
-        return serviceInfo ? {
-          id: serviceInfo.id,
-          name: serviceInfo.name,
-          price: serviceInfo.price
+      const serviceDetails = servicePackage.services?.map(serviceId => {
+        const service = mockAvailableServices.find(s => s.id === serviceId);
+        return service ? {
+          id: service.id,
+          name: service.name,
+          price: service.price
         } : null;
       }).filter(Boolean) as PackageService[];
       
@@ -64,8 +70,8 @@ export function ServicePackageForm({
       // Carrega produtos (em uma aplicação real, você buscaria os dados dos produtos)
       const productDetails = servicePackage.products?.map(product => {
         // Ensure product.productId is treated as a string
-        const productId = product.productId.toString();
-        const productInfo = mockAvailableProducts.find(p => p.id === productId);
+        const productStringId = String(product.productId);
+        const productInfo = mockAvailableProducts.find(p => p.id === productStringId);
         return productInfo ? {
           id: productInfo.id,
           name: productInfo.name,
@@ -89,39 +95,32 @@ export function ServicePackageForm({
     }
   }, [servicePackage, open, mockAvailableServices, mockAvailableProducts]);
   
-  const handleAddService = (serviceId: number | string) => {
+  const handleAddService = (serviceId: number) => {
     const service = mockAvailableServices.find(s => s.id === serviceId);
     if (service) {
-      const newService: PackageService = {
+      const newService = {
         id: service.id,
         name: service.name,
         price: service.price,
       };
       
       setSelectedServices([...selectedServices, newService]);
-      
-      // Create a new service entry with the right structure
-      const serviceEntry = {
-        serviceId: service.id,
-        discount: 0
-      };
-      
       setFormData(prev => ({
         ...prev,
-        services: [...(prev.services || []), serviceEntry],
+        services: [...(prev.services || []), service.id],
       }));
     }
   };
   
-  const handleRemoveService = (serviceId: number | string) => {
+  const handleRemoveService = (serviceId: number) => {
     setSelectedServices(selectedServices.filter(s => s.id !== serviceId));
     setFormData(prev => ({
       ...prev,
-      services: (prev.services || []).filter(service => service.serviceId !== serviceId),
+      services: (prev.services || []).filter(id => id !== serviceId),
     }));
   };
   
-  const handleAddProduct = (productId: string | number, quantity: number) => {
+  const handleAddProduct = (productId: string, quantity: number) => {
     const product = mockAvailableProducts.find(p => p.id === productId);
     if (product) {
       const newProduct: PackageProduct = {
@@ -135,22 +134,19 @@ export function ServicePackageForm({
       setFormData(prev => ({
         ...prev,
         products: [...(prev.products || []), { 
-          productId: typeof product.id === 'string' ? parseInt(product.id, 10) : product.id,
+          productId: Number(product.id), // Convert to number for ServicePackage structure
           quantity: quantity 
         }],
       }));
     }
   };
   
-  const handleRemoveProduct = (productId: string | number) => {
+  const handleRemoveProduct = (productId: string) => {
     setSelectedProducts(selectedProducts.filter(p => p.id !== productId));
-    setFormData(prev => {
-      const numericProductId = typeof productId === 'string' ? parseInt(productId, 10) : productId;
-      return {
-        ...prev,
-        products: (prev.products || []).filter(item => item.productId !== numericProductId),
-      };
-    });
+    setFormData(prev => ({
+      ...prev,
+      products: (prev.products || []).filter(item => String(item.productId) !== productId),
+    }));
   };
 
   const calculateTotalPrice = () => {

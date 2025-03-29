@@ -1,4 +1,3 @@
-
 import {
   Card,
   CardContent,
@@ -27,7 +26,7 @@ interface QuickPOSProps {
 export function QuickPOS({ services, professionals, onSale }: QuickPOSProps) {
   const { toast } = useToast();
   const [selectedService, setSelectedService] = useState<Service | null>(null);
-  const [selectedProfessional, setSelectedProfessional] = useState<number | null>(null); 
+  const [selectedProfessional, setSelectedProfessional] = useState<number | "">(""); 
   const [searchTerm, setSearchTerm] = useState("");
 
   const filteredServices = services.filter((service) =>
@@ -45,8 +44,8 @@ export function QuickPOS({ services, professionals, onSale }: QuickPOSProps) {
     }
 
     onSale?.({
-      serviceId: Number(selectedService.id),
-      professionalId: selectedProfessional,
+      serviceId: selectedService.id,
+      professionalId: Number(selectedProfessional),
       price: selectedService.price,
     });
 
@@ -57,7 +56,7 @@ export function QuickPOS({ services, professionals, onSale }: QuickPOSProps) {
 
     // Reset form
     setSelectedService(null);
-    setSelectedProfessional(null);
+    setSelectedProfessional("");
   };
 
   return (
@@ -98,8 +97,8 @@ export function QuickPOS({ services, professionals, onSale }: QuickPOSProps) {
           <div className="space-y-2">
             <label className="text-sm font-medium">Profissional</label>
             <select
-              value={selectedProfessional || ""}
-              onChange={(e) => setSelectedProfessional(e.target.value ? Number(e.target.value) : null)}
+              value={selectedProfessional}
+              onChange={(e) => setSelectedProfessional(Number(e.target.value) || "")}
               className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
             >
               <option value="">Selecione um profissional...</option>

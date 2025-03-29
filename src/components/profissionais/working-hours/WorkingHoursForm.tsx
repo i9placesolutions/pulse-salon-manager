@@ -1,26 +1,27 @@
 
-import React, { useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { WorkingHours, DaySchedule, BlockedDate } from "@/types/professional";
 import { WeeklySchedule } from "./WeeklySchedule";
-import { BlockedDatesList } from "./BlockedDatesList";
 import { BlockedDateForm } from "./BlockedDateForm";
-import { WorkingHours, BlockedDate, DaySchedule } from "@/types/professional";
-import { useToast } from "@/hooks/use-toast";
+import { BlockedDatesList } from "./BlockedDatesList";
 
 interface WorkingHoursFormProps {
-  initialWorkingHours?: WorkingHours;
-  initialBlockedDates?: BlockedDate[];
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  workingHours?: WorkingHours;
+  blockedDates?: BlockedDate[];
   onSave: (workingHours: WorkingHours, blockedDates: BlockedDate[]) => void;
 }
 
-export function WorkingHoursForm({
-  initialWorkingHours,
-  initialBlockedDates = [],
+export const WorkingHoursForm = ({
+  open,
+  onOpenChange,
+  workingHours: initialWorkingHours,
+  blockedDates: initialBlockedDates = [],
   onSave,
-}: WorkingHoursFormProps) {
-  const { toast } = useToast();
+}: WorkingHoursFormProps) => {
   const [workingHours, setWorkingHours] = useState<WorkingHours>(
     initialWorkingHours || {
       monday: { isWorking: true, startTime: "09:00", endTime: "18:00" },
@@ -28,82 +29,89 @@ export function WorkingHoursForm({
       wednesday: { isWorking: true, startTime: "09:00", endTime: "18:00" },
       thursday: { isWorking: true, startTime: "09:00", endTime: "18:00" },
       friday: { isWorking: true, startTime: "09:00", endTime: "18:00" },
-      saturday: { isWorking: false, startTime: "09:00", endTime: "13:00" },
-      sunday: { isWorking: false, startTime: "09:00", endTime: "18:00" }
+      saturday: { isWorking: true, startTime: "09:00", endTime: "13:00" },
+      sunday: { isWorking: false },
     }
   );
-  const [blockedDates, setBlockedDates] = useState<BlockedDate[]>(initialBlockedDates);
-  const [showBlockedDateForm, setShowBlockedDateForm] = useState(false);
-  const [activeTab, setActiveTab] = useState("schedule");
 
-  const handleUpdateSchedule = (day: keyof WorkingHours, data: DaySchedule) => {
-    setWorkingHours({ ...workingHours, [day]: data });
+  const [blockedDates, setBlockedDates] = useState<BlockedDate[]>(
+    initialBlockedDates
+  );
+
+  const [newBlockedDate, setNewBlockedDate] = useState({
+    startDate: "",
+    endDate: "",
+    reason: "",
+  });
+
+  const handleDayScheduleChange = (
+    day: keyof WorkingHours,
+    field: keyof DaySchedule,
+    value: string | boolean
+  ) => {
+    setWorkingHours((prev) => ({
+      ...prev,
+      [day]: {
+        ...prev[day],
+        [field]: value,
+      },
+    }));
   };
 
-  const handleAddBlockedDate = (newBlockedDate: BlockedDate) => {
-    setBlockedDates([...blockedDates, newBlockedDate]);
-    setShowBlockedDateForm(false);
-    toast({
-      title: "Data bloqueada",
-      description: "A data foi bloqueada com sucesso.",
-    });
+  const handleAddBlockedDate = () => {
+    if (newBlockedDate.startDate && newBlockedDate.endDate && newBlockedDate.reason) {
+      setBlockedDates([
+        ...blockedDates,
+        {
+          id: Date.now(),
+          ...newBlockedDate,
+        },
+      ]);
+      setNewBlockedDate({ startDate: "", endDate: "", reason: "" });
+    }
   };
 
-  const handleRemoveBlockedDate = (id: string | number) => {
+  const handleRemoveBlockedDate = (id: number) => {
     setBlockedDates(blockedDates.filter((date) => date.id !== id));
-    toast({
-      title: "Data desbloqueada",
-      description: "O bloqueio foi removido com sucesso.",
-    });
   };
 
-  const handleSave = () => {
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
     onSave(workingHours, blockedDates);
-    toast({
-      title: "Configurações salvas",
-      description: "As configurações de horário foram salvas com sucesso.",
-    });
+    onOpenChange(false);
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Configuração de Horários</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="schedule">Horários Semanais</TabsTrigger>
-            <TabsTrigger value="blocked-dates">Datas Bloqueadas</TabsTrigger>
-          </TabsList>
-          <TabsContent value="schedule" className="py-4">
-            <WeeklySchedule 
-              workingHours={workingHours} 
-              onUpdateSchedule={handleUpdateSchedule} 
-            />
-          </TabsContent>
-          <TabsContent value="blocked-dates" className="py-4 space-y-4">
-            {showBlockedDateForm ? (
-              <BlockedDateForm 
-                onSubmit={handleAddBlockedDate}
-                onCancel={() => setShowBlockedDateForm(false)} 
-              />
-            ) : (
-              <Button onClick={() => setShowBlockedDateForm(true)}>
-                Adicionar Data Bloqueada
-              </Button>
-            )}
-            <BlockedDatesList
-              blockedDates={blockedDates}
-              onRemove={handleRemoveBlockedDate}
-            />
-          </TabsContent>
-        </Tabs>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[800px] max-h-[80vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Configurar Horários de Trabalho</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <WeeklySchedule
+            workingHours={workingHours}
+            onDayScheduleChange={handleDayScheduleChange}
+          />
 
-        <div className="flex justify-end">
-          <Button onClick={handleSave}>Salvar Configurações</Button>
-        </div>
-      </CardContent>
-    </Card>
+          <BlockedDateForm
+            values={newBlockedDate}
+            onChange={setNewBlockedDate}
+            onAdd={handleAddBlockedDate}
+          />
+
+          <BlockedDatesList
+            blockedDates={blockedDates}
+            onRemove={handleRemoveBlockedDate}
+          />
+
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              Cancelar
+            </Button>
+            <Button type="submit">Salvar</Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
-}
+};

@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -26,7 +25,7 @@ export const ProfessionalForm = ({ open, onOpenChange, onSubmit, professional }:
       specialty: "",
       specialties: [],
       hiringDate: new Date().toISOString().split('T')[0],
-      experienceLevel: "junior",
+      experienceLevel: "beginner",
       status: "active",
     }
   );
@@ -70,8 +69,6 @@ export const ProfessionalForm = ({ open, onOpenChange, onSubmit, professional }:
       onOpenChange(false);
     }
   };
-  
-  type ExperienceLevel = "junior" | "mid" | "senior" | "expert" | "beginner" | "intermediate";
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -142,8 +139,8 @@ export const ProfessionalForm = ({ open, onOpenChange, onSubmit, professional }:
                 Nível de Experiência <span className="text-destructive">*</span>
               </Label>
               <Select
-                value={formData.experienceLevel as ExperienceLevel}
-                onValueChange={(value: ExperienceLevel) =>
+                value={formData.experienceLevel}
+                onValueChange={(value: 'beginner' | 'intermediate' | 'expert') =>
                   setFormData({ ...formData, experienceLevel: value })
                 }
               >
@@ -151,9 +148,8 @@ export const ProfessionalForm = ({ open, onOpenChange, onSubmit, professional }:
                   <SelectValue placeholder="Selecione o nível" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="junior">Iniciante</SelectItem>
-                  <SelectItem value="mid">Intermediário</SelectItem>
-                  <SelectItem value="senior">Avançado</SelectItem>
+                  <SelectItem value="beginner">Iniciante</SelectItem>
+                  <SelectItem value="intermediate">Intermediário</SelectItem>
                   <SelectItem value="expert">Especialista</SelectItem>
                 </SelectContent>
               </Select>
@@ -163,7 +159,7 @@ export const ProfessionalForm = ({ open, onOpenChange, onSubmit, professional }:
                 Status <span className="text-destructive">*</span>
               </Label>
               <Select
-                value={formData.status as 'active' | 'inactive'}
+                value={formData.status}
                 onValueChange={(value: 'active' | 'inactive') =>
                   setFormData({ ...formData, status: value })
                 }

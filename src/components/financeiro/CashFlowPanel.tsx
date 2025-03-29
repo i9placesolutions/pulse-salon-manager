@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useMemo } from "react";
 import { 
   Card, 
@@ -26,61 +25,24 @@ import {
 import { CashFlow } from "@/types/financial";
 import { formatCurrency } from "@/utils/currency";
 import { Download, Plus, RotateCcw, FileUp } from "lucide-react";
+import { calculateCashFlowBalance, filterCashFlowData, prepareFinancialReportData } from "@/utils/financial";
+import { exportData } from "@/utils/export";
+import { useToast } from "@/hooks/use-toast";
+import { NewCashFlowEntryDialog } from "./NewCashFlowEntryDialog";
 import { Badge } from "@/components/ui/badge";
 import { ArrowUpCircle, ArrowDownCircle, FileQuestion } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { useToast } from "@/hooks/use-toast";
-import { NewCashFlowEntryDialog } from "./NewCashFlowEntryDialog";
 
 interface CashFlowPanelProps {
   data: CashFlow[];
   onUpdateData?: (data: CashFlow[]) => void;
 }
 
-// Function to calculate cash flow balance - moved inline to avoid import errors
-const calculateCashFlowBalance = (data: CashFlow[]) => {
-  const totalIncome = data
-    .filter(item => item.type === "income")
-    .reduce((sum, item) => sum + item.value, 0);
-  
-  const totalExpenses = data
-    .filter(item => item.type === "expense")
-    .reduce((sum, item) => sum + item.value, 0);
-  
-  return {
-    income: totalIncome,
-    expense: totalExpenses,
-    balance: totalIncome - totalExpenses
-  };
-};
-
-// Function for preparing export data - moved inline to avoid import errors
-const prepareFinancialReportData = (data: CashFlow[], title: string) => {
-  return {
-    title,
-    data: data.map(item => ({
-      Data: new Date(item.date).toLocaleDateString('pt-BR'),
-      Tipo: item.type === "income" ? "Entrada" : "Saída",
-      Categoria: item.category,
-      Descrição: item.description,
-      Valor: formatCurrency(item.value),
-      Status: item.status,
-      "Método de Pagamento": item.paymentMethod || "-",
-    }))
-  };
-};
-
-// Simple export function implementation
-const exportData = (data: any[], fileName: string) => {
-  console.log(`Exporting ${fileName} with ${data.length} items`);
-  // In a real app, this would handle the actual export
-};
-
 export function CashFlowPanel({ data, onUpdateData }: CashFlowPanelProps) {
   const [categoryFilter, setCategoryFilter] = useState<string>("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [dateFilter, setDateFilter] = useState<string>("");
-  const [typeFilter, setTypeFilter] = useState<"income" | "expense" | "all">("all");
+  const [typeFilter, setTypeFilter] = useState<"entrada" | "saida" | "all">("all");
   const [filteredData, setFilteredData] = useState<CashFlow[]>(data);
   const { toast } = useToast();
 
@@ -143,9 +105,7 @@ export function CashFlowPanel({ data, onUpdateData }: CashFlowPanelProps) {
     // Criar nova entrada com ID
     const newEntry: CashFlow = {
       ...entry,
-      id: typeof data[0]?.id === 'number' 
-        ? Math.max(...data.map(item => Number(item.id))) + 1 
-        : String(Date.now())
+      id: data.length > 0 ? Math.max(...data.map(item => item.id)) + 1 : 1
     };
     
     // Atualizar dados
@@ -154,204 +114,258 @@ export function CashFlowPanel({ data, onUpdateData }: CashFlowPanelProps) {
     
     toast({
       title: "Movimentação registrada",
-      description: `${entry.type === "income" ? "Receita" : "Despesa"} registrada com sucesso!`
+      description: `${entry.type === "entrada" ? "Receita" : "Despesa"} registrada com sucesso!`
     });
   };
 
-  const exportCashFlowData = () => {
+  const exportCashFlowData = (format: 'excel' | 'csv' | 'pdf') => {
     try {
-      const preparedData = filteredData.map(item => ({
-        Data: new Date(item.date).toLocaleDateString('pt-BR'),
-        Tipo: item.type === "income" ? "Entrada" : "Saída",
-        Categoria: item.category,
+      // Preparar dados para exportação
+      const dataToExport = filteredData.map(item => ({
+        Data: item.date,
         Descrição: item.description,
-        Valor: formatCurrency(item.value),
-        Status: item.status,
-        "Método de Pagamento": item.paymentMethod || "-",
+        Categoria: item.category,
+        Tipo: item.type === 'entrada' ? 'Entrada' : 'Saída',
+        Valor: item.value,
+        Status: item.status === 'realizado' ? 'Realizado' : 'Previsto'
       }));
       
-      exportData(preparedData, "fluxo-de-caixa");
+      // Exportar usando a função global
+      const titulo = "Relatório de Fluxo de Caixa";
+      exportData(dataToExport, format, "fluxo-de-caixa", titulo);
       
       toast({
         title: "Exportação concluída",
-        description: "Os dados foram exportados com sucesso!"
+        description: `Dados exportados com sucesso no formato ${format.toUpperCase()}.`
       });
     } catch (error) {
-      console.error("Erro ao exportar dados:", error);
+      console.error("Erro ao exportar:", error);
       toast({
         title: "Erro na exportação",
-        description: "Ocorreu um erro ao exportar os dados. Tente novamente.",
+        description: "Não foi possível completar a exportação. Tente novamente.",
         variant: "destructive"
       });
     }
   };
 
-  // Calcular saldo e totais
-  const balance = useMemo(() => {
-    return calculateCashFlowBalance(filteredData);
+  // Calcular totais
+  const totals = useMemo(() => {
+    const totalIncome = filteredData
+      .filter(item => item.type === "entrada")
+      .reduce((sum, item) => sum + item.value, 0);
+    
+    const totalExpense = filteredData
+      .filter(item => item.type === "saida")
+      .reduce((sum, item) => sum + item.value, 0);
+    
+    return {
+      income: totalIncome,
+      expense: totalExpense,
+      balance: totalIncome - totalExpense
+    };
   }, [filteredData]);
 
   return (
-    <Card className="h-full flex flex-col">
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <CardTitle>Fluxo de Caixa</CardTitle>
-          <div className="flex gap-2">
-            <NewCashFlowEntryDialog onNewEntry={handleAddCashFlowEntry} type="income" />
-            <NewCashFlowEntryDialog onNewEntry={handleAddCashFlowEntry} type="expense" />
-            <Button variant="outline" size="sm" onClick={exportCashFlowData}>
-              <Download className="mr-2 h-4 w-4" />
-              Exportar
-            </Button>
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent className="flex-1 flex flex-col">
-        <div className="grid grid-cols-3 gap-4 mb-6">
-          <Card className="bg-green-50">
-            <CardContent className="p-4 flex items-center justify-between">
-              <div>
-                <p className="text-xs font-medium text-green-700">Entradas</p>
-                <h3 className="text-xl font-bold text-green-700">{formatCurrency(balance.income)}</h3>
-              </div>
-              <ArrowUpCircle className="h-8 w-8 text-green-500" />
-            </CardContent>
-          </Card>
-          
-          <Card className="bg-red-50">
-            <CardContent className="p-4 flex items-center justify-between">
-              <div>
-                <p className="text-xs font-medium text-red-700">Saídas</p>
-                <h3 className="text-xl font-bold text-red-700">{formatCurrency(balance.expense)}</h3>
-              </div>
-              <ArrowDownCircle className="h-8 w-8 text-red-500" />
-            </CardContent>
-          </Card>
-          
-          <Card className={balance.balance >= 0 ? "bg-blue-50" : "bg-amber-50"}>
-            <CardContent className="p-4 flex items-center justify-between">
-              <div>
-                <p className="text-xs font-medium text-blue-700">Saldo</p>
-                <h3 className={`text-xl font-bold ${balance.balance >= 0 ? "text-blue-700" : "text-amber-700"}`}>
-                  {formatCurrency(balance.balance)}
-                </h3>
-              </div>
-              <FileQuestion className={`h-8 w-8 ${balance.balance >= 0 ? "text-blue-500" : "text-amber-500"}`} />
-            </CardContent>
-          </Card>
+    <div className="space-y-4">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+        <div>
+          <h2 className="text-2xl font-bold">Fluxo de Caixa</h2>
+          <p className="text-muted-foreground">Gerenciamento de entradas e saídas</p>
         </div>
         
-        <div className="grid grid-cols-4 gap-4 mb-4">
-          <div>
-            <Input
-              placeholder="Filtrar por categoria..."
-              value={categoryFilter}
-              onChange={e => setCategoryFilter(e.target.value)}
-            />
-          </div>
-          
-          <div>
-            <Select value={typeFilter} onValueChange={(value: "income" | "expense" | "all") => setTypeFilter(value)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Todos os tipos" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos os tipos</SelectItem>
-                <SelectItem value="income">Entradas</SelectItem>
-                <SelectItem value="expense">Saídas</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          
-          <div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger>
-                <SelectValue placeholder="Todos os status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos os status</SelectItem>
-                <SelectItem value="realizado">Realizado</SelectItem>
-                <SelectItem value="previsto">Previsto</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          
-          <div>
-            <Input
-              type="date"
-              value={dateFilter}
-              onChange={e => setDateFilter(e.target.value)}
-            />
-          </div>
+        <div className="flex flex-wrap gap-2">
+          <NewCashFlowEntryDialog
+            type="entrada"
+            onNewEntry={handleAddCashFlowEntry}
+          />
+          <NewCashFlowEntryDialog
+            type="saida"
+            onNewEntry={handleAddCashFlowEntry}
+          />
         </div>
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-xl">Entradas</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-3xl font-bold text-green-600">{formatCurrency(totals.income)}</p>
+          </CardContent>
+        </Card>
         
-        <div className="flex items-center gap-2 mb-4">
-          <Button variant="outline" size="sm" onClick={applyFilters}>
-            Aplicar Filtros
-          </Button>
-          <Button variant="ghost" size="sm" onClick={resetFilters}>
-            <RotateCcw className="mr-2 h-3 w-3" />
-            Limpar Filtros
-          </Button>
-        </div>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-xl">Saídas</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-3xl font-bold text-red-600">{formatCurrency(totals.expense)}</p>
+          </CardContent>
+        </Card>
         
-        <div className="flex-1 overflow-auto border rounded-md">
-          <Table>
-            <TableHeader className="bg-muted/50">
-              <TableRow>
-                <TableHead>Data</TableHead>
-                <TableHead>Tipo</TableHead>
-                <TableHead>Categoria</TableHead>
-                <TableHead>Descrição</TableHead>
-                <TableHead className="text-right">Valor</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Método</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredData.length > 0 ? (
-                filteredData.map((item) => (
-                  <TableRow key={item.id.toString()}>
-                    <TableCell>
-                      {new Date(item.date).toLocaleDateString('pt-BR')}
-                    </TableCell>
-                    <TableCell>
-                      <Badge 
-                        variant="outline" 
-                        className={item.type === "income" ? "bg-green-50 text-green-700 hover:bg-green-50" : "bg-red-50 text-red-700 hover:bg-red-50"}
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-xl">Saldo</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className={`text-3xl font-bold ${totals.balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              {formatCurrency(totals.balance)}
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+      
+      <Card>
+        <CardHeader>
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <CardTitle>Movimentações</CardTitle>
+            
+            <div className="flex flex-wrap gap-2">
+              <div className="flex items-center gap-2">
+                <Select value={typeFilter} onValueChange={(value) => setTypeFilter(value as any)}>
+                  <SelectTrigger className="w-28">
+                    <SelectValue placeholder="Tipo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos</SelectItem>
+                    <SelectItem value="entrada">Entradas</SelectItem>
+                    <SelectItem value="saida">Saídas</SelectItem>
+                  </SelectContent>
+                </Select>
+                
+                <Input 
+                  placeholder="Categoria" 
+                  value={categoryFilter}
+                  onChange={(e) => setCategoryFilter(e.target.value)}
+                  className="w-full md:w-28"
+                />
+                
+                <Input 
+                  placeholder="Data" 
+                  value={dateFilter}
+                  onChange={(e) => setDateFilter(e.target.value)}
+                  className="w-full md:w-28"
+                />
+                
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="w-32">
+                    <SelectValue placeholder="Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos</SelectItem>
+                    <SelectItem value="realizado">Realizado</SelectItem>
+                    <SelectItem value="previsto">Previsto</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <Button variant="outline" onClick={resetFilters} size="sm">
+                  <RotateCcw className="mr-2 h-4 w-4" />
+                  Limpar
+                </Button>
+                
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      <FileUp className="mr-2 h-4 w-4" />
+                      Exportar
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-40">
+                    <div className="flex flex-col gap-2">
+                      <Button 
+                        variant="ghost" 
+                        className="justify-start" 
+                        onClick={() => exportCashFlowData('excel')}
                       >
-                        {item.type === "income" ? "Entrada" : "Saída"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{item.category}</TableCell>
-                    <TableCell className="max-w-[200px] truncate" title={item.description}>
-                      {item.description}
-                    </TableCell>
-                    <TableCell className="text-right font-medium">
-                      {formatCurrency(item.value)}
-                    </TableCell>
-                    <TableCell>
-                      <Badge 
-                        variant="outline" 
-                        className={item.status === "realizado" ? "bg-blue-50 text-blue-700 hover:bg-blue-50" : "bg-amber-50 text-amber-700 hover:bg-amber-50"}
+                        Excel
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        className="justify-start" 
+                        onClick={() => exportCashFlowData('csv')}
                       >
-                        {item.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{item.paymentMethod || "-"}</TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={7} className="text-center py-4 text-muted-foreground">
-                    Nenhum registro encontrado
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </div>
-      </CardContent>
-    </Card>
+                        CSV
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        className="justify-start" 
+                        onClick={() => exportCashFlowData('pdf')}
+                      >
+                        PDF
+                      </Button>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              </div>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {filteredData.length > 0 ? (
+              filteredData.map((item) => (
+                <div
+                  key={item.id}
+                  className={`flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-lg border ${
+                    item.type === 'entrada' 
+                      ? 'border-green-100 bg-green-50' 
+                      : 'border-red-100 bg-red-50'
+                  }`}
+                >
+                  <div className="flex-1 mb-2 sm:mb-0">
+                    <div className="flex items-start gap-2">
+                      <div className={`rounded-full p-2 ${
+                        item.type === 'entrada' 
+                          ? 'bg-green-100' 
+                          : 'bg-red-100'
+                      }`}>
+                        {item.type === 'entrada' ? (
+                          <ArrowUpCircle className="h-5 w-5 text-green-600" />
+                        ) : (
+                          <ArrowDownCircle className="h-5 w-5 text-red-600" />
+                        )}
+                      </div>
+                      <div>
+                        <h3 className="font-medium">{item.description}</h3>
+                        <div className="flex flex-wrap text-sm text-muted-foreground gap-2">
+                          <span>{item.date}</span>
+                          <span>•</span>
+                          <span>{item.category}</span>
+                          <span>•</span>
+                          <Badge variant="outline">
+                            {item.status === 'realizado' ? 'Realizado' : 'Previsto'}
+                          </Badge>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="text-right font-medium">
+                    <span className={`text-lg ${
+                      item.type === 'entrada' 
+                        ? 'text-green-600' 
+                        : 'text-red-600'
+                    }`}>
+                      {item.type === 'entrada' ? '+' : '-'} {formatCurrency(item.value)}
+                    </span>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="flex flex-col items-center justify-center py-10 text-center">
+                <FileQuestion className="mb-2 h-12 w-12 text-muted-foreground" />
+                <h3 className="text-lg font-medium">Nenhuma movimentação encontrada</h3>
+                <p className="text-muted-foreground">
+                  Adicione uma nova movimentação ou ajuste os filtros para ver resultados.
+                </p>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 }

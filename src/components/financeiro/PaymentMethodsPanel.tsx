@@ -19,11 +19,11 @@ export function PaymentMethodsPanel({ config }: PaymentMethodsPanelProps) {
   return (
     <div className="space-y-6">
       {config.map((method) => (
-        <Card key={method.id.toString()}>
+        <Card key={method.type}>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle>{method.name}</CardTitle>
-              <Switch checked={method.enabled || method.isActive} />
+              <CardTitle>{method.type}</CardTitle>
+              <Switch checked={method.enabled} />
             </div>
           </CardHeader>
           <CardContent>
@@ -31,22 +31,26 @@ export function PaymentMethodsPanel({ config }: PaymentMethodsPanelProps) {
               <div className="space-y-4">
                 <h4 className="font-medium">Taxas</h4>
                 <div className="grid gap-4 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label>Taxa (%)</Label>
-                    <Input
-                      type="number"
-                      value={method.fee}
-                      step="0.01"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Tempo de Processamento (dias)</Label>
-                    <Input
-                      type="number"
-                      value={method.processingTime}
-                      step="1"
-                    />
-                  </div>
+                  {method.fees.fixed !== undefined && (
+                    <div className="space-y-2">
+                      <Label>Taxa Fixa</Label>
+                      <Input
+                        type="number"
+                        value={method.fees.fixed}
+                        step="0.01"
+                      />
+                    </div>
+                  )}
+                  {method.fees.percentage !== undefined && (
+                    <div className="space-y-2">
+                      <Label>Taxa Percentual (%)</Label>
+                      <Input
+                        type="number"
+                        value={method.fees.percentage}
+                        step="0.01"
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -54,11 +58,11 @@ export function PaymentMethodsPanel({ config }: PaymentMethodsPanelProps) {
                 <div className="space-y-4">
                   <h4 className="font-medium">Chaves PIX</h4>
                   <div className="space-y-2">
-                    {method.pixKeys.map((keyItem, index) => (
+                    {method.pixKeys.map((key, index) => (
                       <div key={index} className="flex items-center gap-2">
-                        <Input value={keyItem.key} readOnly />
+                        <Input value={key.key} readOnly />
                         <span className="text-sm text-muted-foreground">
-                          ({keyItem.type})
+                          ({key.type})
                         </span>
                       </div>
                     ))}
@@ -73,8 +77,8 @@ export function PaymentMethodsPanel({ config }: PaymentMethodsPanelProps) {
                 <div className="space-y-4">
                   <h4 className="font-medium">Bandeiras</h4>
                   <div className="space-y-4">
-                    {method.cardBrands.map((brand, index) => (
-                      <div key={index} className="space-y-2">
+                    {method.cardBrands.map((brand) => (
+                      <div key={brand.name} className="space-y-2">
                         <div className="flex items-center justify-between">
                           <Label>{brand.name}</Label>
                           <Switch checked={brand.enabled} />

@@ -4,7 +4,7 @@ import { BlockedDate } from "@/types/professional";
 
 interface BlockedDatesListProps {
   blockedDates: BlockedDate[];
-  onRemove: (id: string | number) => void;
+  onRemove: (id: number) => void;
 }
 
 export const BlockedDatesList = ({ blockedDates, onRemove }: BlockedDatesListProps) => {
@@ -21,14 +21,8 @@ export const BlockedDatesList = ({ blockedDates, onRemove }: BlockedDatesListPro
           >
             <div>
               <p className="font-medium">
-                {date.startDate && date.endDate ? (
-                  <>
-                    {new Date(date.startDate).toLocaleDateString()} até{" "}
-                    {new Date(date.endDate).toLocaleDateString()}
-                  </>
-                ) : (
-                  date.date && new Date(date.date).toLocaleDateString()
-                )}
+                {new Date(date.startDate).toLocaleDateString()} até{" "}
+                {new Date(date.endDate).toLocaleDateString()}
               </p>
               <p className="text-sm text-muted-foreground">
                 {date.reason}

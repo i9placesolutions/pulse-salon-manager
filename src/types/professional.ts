@@ -1,38 +1,41 @@
-
-// Create or update the professional.ts file to include all required types
 export interface Professional {
-  id: string | number;
+  id: string;
   name: string;
   email: string;
   phone: string;
   specialty: string;
   specialties: ProfessionalSpecialty[];
+  profileImage?: string;
   hiringDate: string;
-  experienceLevel: "junior" | "mid" | "senior" | "expert" | "beginner" | "intermediate";
-  status: "active" | "inactive";
-  totalAppointments?: number;
-  totalCommission?: number;
-  averageMonthlyRevenue?: number;
-  paymentModel?: string;
-  commissionRate?: number;
+  experienceLevel: 'beginner' | 'intermediate' | 'expert';
+  status: 'active' | 'inactive';
+  totalAppointments: number;
+  totalCommission: number;
+  averageMonthlyRevenue: number;
+  workingHours?: WorkingHours;
+  blockedDates?: BlockedDate[];
+  paymentModel: 'commission' | 'fixed';
   fixedSalary?: number;
+  commissionRate?: number;
+  benefits?: ProfessionalBenefit[];
   lastAppointmentDate?: string;
   averageAppointmentDuration?: number;
   monthRanking?: number;
   clientAttendanceRate?: number;
   workingDays?: string[];
-  history?: {
-    id: string;
-    date: string;
-    service: string;
-    client: string;
-    description: string;
-  }[];
-  workingHours?: WorkingHours;
-  blockedDates?: BlockedDate[];
-  rating?: number;
+  history?: ProfessionalHistoryItem[];
   avatar?: string;
-  services?: string[];
+  rating?: number;
+  completedAppointments?: number;
+  canceledAppointments?: number;
+  revenue?: number;
+  appointmentHistory?: AppointmentHistoryItem[];
+  metrics?: {
+    clientRetention: number;
+    avgSessionDuration: number;
+    satisfactionRate: number;
+    revenueTrend: number[];
+  };
 }
 
 export interface ProfessionalSpecialty {
@@ -42,6 +45,39 @@ export interface ProfessionalSpecialty {
   isActive: boolean;
 }
 
+export interface ProfessionalBenefit {
+  id: number;
+  name: string;
+  value: number;
+  type: 'monthly' | 'yearly' | 'one-time';
+  description?: string;
+}
+
+export interface WorkingHours {
+  monday?: DaySchedule;
+  tuesday?: DaySchedule;
+  wednesday?: DaySchedule;
+  thursday?: DaySchedule;
+  friday?: DaySchedule;
+  saturday?: DaySchedule;
+  sunday?: DaySchedule;
+}
+
+export interface DaySchedule {
+  isWorking: boolean;
+  startTime?: string;
+  endTime?: string;
+  breakStart?: string;
+  breakEnd?: string;
+}
+
+export interface BlockedDate {
+  id: number;
+  startDate: string;
+  endDate: string;
+  reason: string;
+}
+
 export interface ProfessionalAppointment {
   id: number;
   date: string;
@@ -49,71 +85,63 @@ export interface ProfessionalAppointment {
   serviceName: string;
   value: number;
   commission: number;
-  status: "confirmed" | "pending" | "canceled" | "completed";
   notes?: string;
+  status: 'pending' | 'confirmed' | 'canceled' | 'completed';
 }
 
 export interface ProfessionalCommission {
   id: number;
   paymentDate: string;
   value: number;
-  referenceType: string;
+  referenceType: 'service' | 'product';
   referenceName: string;
-  status: "paid" | "pending";
+  status: 'pending' | 'paid';
 }
 
 export interface ProfessionalPayment {
   id: number;
-  professionalId?: number;
+  professionalId: number;
   value: number;
   referenceMonth: string;
-  status: "paid" | "pending" | "canceled" | "partial" | "completed";
+  status: 'pending' | 'partial' | 'paid';
   paymentDate?: string;
-  type: "commission" | "salary";
   notes?: string;
-}
-
-export interface WorkingHours {
-  [key: string]: {
-    isWorking: boolean;
-    startTime: string;
-    endTime: string;
-    breakStart?: string;
-    breakEnd?: string;
-  };
-}
-
-export interface BlockedDate {
-  id: string | number;
-  date?: string;
-  startDate?: string;
-  endDate?: string;
-  reason: string;
-}
-
-export interface DaySchedule {
-  isWorking: boolean;
-  startTime: string;
-  endTime: string;
-  breakStart?: string;
-  breakEnd?: string;
+  type: 'salary' | 'commission' | 'benefit';
 }
 
 export interface ProfessionalPerformance {
-  id?: number;
-  professionalId?: number;
-  date?: string;
-  revenue?: number;
-  commission?: number;
   totalAppointments: number;
-  topServices: { serviceName: string; count: number }[];
-  monthlyRevenue: { month: string; revenue: number }[];
+  topServices: {
+    serviceName: string;
+    count: number;
+  }[];
+  monthlyRevenue: {
+    month: string;
+    revenue: number;
+  }[];
   rating: number;
   clientReturnRate: number;
   newClientsPerMonth: number;
   scheduleOccupancy: number;
   quoteConversionRate: number;
   additionalSalesRate: number;
-  serviceId?: number;
-  clientSatisfaction?: number;
+}
+
+export interface ProfessionalHistoryItem {
+  id: string;
+  date: string;
+  service: string;
+  client: string;
+  rating?: number;
+  notes?: string;
+  description: string;
+}
+
+export interface AppointmentHistoryItem {
+  id: string;
+  date: string;
+  client: string;
+  service: string;
+  status: 'completed' | 'canceled' | 'scheduled';
+  revenue: number;
 }

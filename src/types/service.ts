@@ -1,85 +1,64 @@
-
-export interface ProfessionalGoal {
-  id?: string | number;
-  month: string;
-  serviceTarget: number;
-  revenueTarget: number;
-  commissionsTarget: number;
-}
-
-export interface ProfessionalPerformance {
-  id?: number;
-  professionalId?: number;
-  date?: string;
-  revenue?: number;
-  commission?: number;
-  totalAppointments: number;
-  topServices: { serviceName: string; count: number }[];
-  monthlyRevenue: { month: string; revenue: number }[];
-  rating: number;
-  clientReturnRate: number;
-  newClientsPerMonth: number;
-  scheduleOccupancy: number;
-  quoteConversionRate: number;
-  additionalSalesRate: number;
-  serviceId?: number;
-  clientSatisfaction?: number;
-}
-
-// Add Service and ServicePackage interfaces
 export interface Service {
-  id: number | string;
+  id: number;
   name: string;
-  description?: string;
+  description: string;
   category: string;
   duration: number;
   price: number;
   status: 'active' | 'inactive';
   commission: {
-    type: 'percentage' | 'fixed';
+    type: 'fixed' | 'percentage';
     value: number;
   };
-  professionals?: number[];
-  products?: { productId: number; quantity: number }[];
-  performanceData?: {  // Add performanceData property
-    appointmentsLastMonth: number;
-    rating: number;
-    popularityRank: number;
-    avgDuration: number;
-    priceHistory: { date: string; price: number }[];
-    trend: 'up' | 'down' | 'stable';
-  };
+  professionals: number[];
+  products: {
+    productId: number;
+    quantity: number;
+  }[];
+}
+
+export interface ServiceCategory {
+  id: number;
+  name: string;
+  description?: string;
+  status: 'active' | 'inactive';
+}
+
+export interface ProfessionalCommission {
+  professionalId: number;
+  serviceId: number;
+  type: 'fixed' | 'percentage';
+  value: number;
 }
 
 export interface ServicePackage {
-  id: number | string;
+  id: number;
   name: string;
-  description?: string;
-  services: {
-    serviceId: number | string;
-    discount: number;
+  description: string;
+  services: number[];
+  products?: {
+    productId: number;
+    quantity: number;
   }[];
-  price: number;
+  discount: number;
   status: 'active' | 'inactive';
-  expirationDays?: number;
-  discount?: number;
-  products?: { productId: number; quantity: number }[];
 }
 
-// Extended service interface to include performance data
-export interface ExtendedService extends Service {
-  performanceData?: {
-    appointmentsLastMonth: number;
-    rating: number;
-    popularityRank: number;
-    avgDuration: number;
-    priceHistory: { date: string; price: number }[];
-    trend: 'up' | 'down' | 'stable';
-  };
+export interface ProfessionalGoal {
+  id: number;
+  professionalId: number;
+  month: string; // formato YYYY-MM
+  serviceTarget: number; // meta de quantidade de serviços
+  revenueTarget: number; // meta de faturamento
+  commissionsTarget: number; // meta de comissões
 }
 
-export interface PackageService {
-  id: number | string;  // Allow string IDs as well
-  name: string;
-  price: number;
+export interface ProfessionalPerformance {
+  id: number;
+  professionalId: number;
+  serviceId: number;
+  date: string;
+  revenue: number;
+  commission: number;
+  clientSatisfaction: number; // 0-5
 }

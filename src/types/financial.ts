@@ -1,132 +1,139 @@
-
-export interface Expense {
-  id: string | number;
-  name: string;
+export interface Payment {
+  id: number;
+  client: string;
+  service: string;
   value: number;
+  method: 'Pix' | 'Cartão' | 'Dinheiro' | 'Boleto';
   date: string;
-  status: string;
-  category?: string;
-  description?: string;
-  costCenter?: string;
-  isRecurring?: boolean;
+  status: 'Pago' | 'Pendente' | 'Cancelado';
+  taxes?: number;
+  fees?: number;
+  pixKey?: string;
+  cardBrand?: string;
+  installments?: number;
+}
+
+export interface Professional {
+  id: number;
+  name: string;
+  commission: number;
+  services: number;
+  status: 'A Pagar' | 'Pago';
+}
+
+export interface RevenueData {
+  date: string;
+  revenue: number;
+  expenses: number;
+  forecast?: {
+    revenue: number;
+    expenses: number;
+  };
 }
 
 export interface AccountReceivable {
-  id: string | number;
+  id: number;
   client: string;
   value: number;
   dueDate: string;
-  installment?: string | number;
-  status: string;
-  description?: string;
+  status: 'Em Aberto' | 'Atrasado' | 'Pago';
+  installment: string;
 }
 
-export interface Alert {
-  id: string;
-  type: 'expense' | 'receivable';
-  title: string;
-  message: string;
+export interface Expense {
+  id: number;
+  name: string;
   value: number;
   date: string;
-  severity: 'high' | 'medium' | 'low';
-  item: Expense | AccountReceivable;
+  category: 'Fixo' | 'Variável';
+  status: 'Pago' | 'Pendente' | 'Vencido';
+  isRecurring: boolean;
+  costCenter?: string;
+  taxRate?: number;
+  taxValue?: number;
+  taxDueDate?: string;
+  split?: ExpenseSplit[];
 }
 
-export interface Payment {
-  id: string | number;
-  date: string;
+export interface ExpenseSplit {
+  department: string;
+  percentage: number;
   value: number;
-  client?: string;
-  method: string;
-  description?: string;
-  status: string;
-  service?: string;
+}
+
+export interface Supplier {
+  id: number;
+  name: string;
+  document: string;
+  phone: string;
+  email: string;
+  paymentMethods: ('Pix' | 'Cartão' | 'Boleto')[];
+  status: 'Ativo' | 'Inativo';
+  bankInfo?: {
+    bank: string;
+    agency: string;
+    account: string;
+    pixKey?: string;
+  };
+}
+
+export interface CommissionConfig {
+  id: number;
+  name: string;
+  type: 'service' | 'product';
+  commissionType: 'fixed' | 'percentage';
+  defaultValue: number;
+  customValues?: {
+    professionalId: number;
+    value: number;
+  }[];
 }
 
 export interface CashFlow {
-  id: string | number;
+  id: number;
   date: string;
-  type: 'income' | 'expense';  // Standardized to 'income' | 'expense'
+  type: 'entrada' | 'saida';
   category: string;
   description: string;
   value: number;
-  status?: string;
+  status: 'realizado' | 'previsto';
   paymentMethod?: string;
   relatedDocument?: string;
   isRecurring?: boolean;
 }
 
-export interface RevenueData {
-  date: string;
-  income: number;
-  expenses: number;
-  balance: number;
-  revenue?: number;
-}
-
 export interface TaxRecord {
-  id: string | number;
+  id: number;
   name: string;
-  description?: string;
+  type: string;
   value: number;
+  baseValue: number;
+  rate: number;
   dueDate: string;
+  status: 'Pendente' | 'Pago' | 'Atrasado';
   paymentDate?: string;
-  status: string;
-  type?: string;
-  baseValue?: number;
-  rate?: number;
+  attachments?: string[];
 }
 
 export interface PaymentMethodConfig {
-  id: string | number;
-  name: string;
-  description?: string;
-  fee: number;
-  isActive: boolean;
-  processingTime: number;
-  type: string;
-  enabled?: boolean;
-  pixKeys?: Array<{key: string, type: string}>;  // Updated to be an object with key and type
-  cardBrands?: Array<{
-    name: string,
-    enabled: boolean,
-    maxInstallments: number,
-    minValue: number
-  }>;  // Updated to be a proper object
-}
-
-export interface CommissionConfig {
-  id: string | number;
-  serviceType: string;
-  rate: number;
-  description?: string;
-  name?: string;
-  type?: string;
-  commissionType?: string;
-  defaultValue?: number;
-  customValues?: any[];
-}
-
-// Reference to professional for financial modules
-export interface Professional {
-  id: string | number;
-  name: string;
-  role?: string;
-  commission?: number;
-  commissionType?: string;
-  status?: string;
-  services?: string[];
-}
-
-// Dashboard metric type needed by MetricsGrid
-export interface DashboardMetric {
-  id: string | number;
-  title: string;
-  value: string | number;
-  change: number;
-  trend: 'up' | 'down' | 'neutral';
-  description?: string;
-  prefix?: string;
-  suffix?: string;
-  icon?: any;
+  type: 'Pix' | 'Cartão' | 'Boleto';
+  enabled: boolean;
+  fees: {
+    fixed?: number;
+    percentage?: number;
+  };
+  pixKeys?: {
+    key: string;
+    type: 'CPF' | 'CNPJ' | 'Email' | 'Telefone' | 'Aleatória';
+  }[];
+  cardBrands?: {
+    name: string;
+    enabled: boolean;
+    maxInstallments: number;
+    minValue: number;
+    fees: {
+      fixed?: number;
+      percentage?: number;
+    };
+  }[];
 }
