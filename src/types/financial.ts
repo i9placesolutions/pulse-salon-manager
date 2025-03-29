@@ -32,7 +32,6 @@ export interface Alert {
   item: Expense | AccountReceivable;
 }
 
-// Add missing interfaces needed by components
 export interface Payment {
   id: string | number;
   date: string;
@@ -41,6 +40,7 @@ export interface Payment {
   method: string;
   description?: string;
   status: string;
+  service?: string;
 }
 
 export interface CashFlow {
@@ -50,6 +50,10 @@ export interface CashFlow {
   category: string;
   description: string;
   value: number;
+  status?: string;
+  paymentMethod?: string;
+  relatedDocument?: string;
+  isRecurring?: boolean;
 }
 
 export interface RevenueData {
@@ -57,6 +61,7 @@ export interface RevenueData {
   income: number;
   expenses: number;
   balance: number;
+  revenue?: number;
 }
 
 export interface TaxRecord {
@@ -67,6 +72,9 @@ export interface TaxRecord {
   dueDate: string;
   paymentDate?: string;
   status: string;
+  type?: string;
+  baseValue?: number;
+  rate?: number;
 }
 
 export interface PaymentMethodConfig {
@@ -76,6 +84,10 @@ export interface PaymentMethodConfig {
   fee: number;
   isActive: boolean;
   processingTime: number;
+  type?: string;
+  enabled?: boolean;
+  pixKeys?: string[];
+  cardBrands?: string[];
 }
 
 export interface CommissionConfig {
@@ -83,6 +95,11 @@ export interface CommissionConfig {
   serviceType: string;
   rate: number;
   description?: string;
+  name?: string;
+  type?: string;
+  commissionType?: string;
+  defaultValue?: number;
+  customValues?: any[];
 }
 
 // Reference to professional for financial modules
@@ -92,4 +109,19 @@ export interface Professional {
   role?: string;
   commission?: number;
   commissionType?: string;
+  status?: string;
+  services?: string[];
+}
+
+// Dashboard metric type needed by MetricsGrid
+export interface DashboardMetric {
+  id: string | number;
+  title: string;
+  value: string | number;
+  change: number;
+  trend: 'up' | 'down' | 'neutral';
+  description?: string;
+  prefix?: string;
+  suffix?: string;
+  icon?: any;
 }

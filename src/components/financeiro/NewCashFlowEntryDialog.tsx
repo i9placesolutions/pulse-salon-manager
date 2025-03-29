@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -75,7 +76,7 @@ export function NewCashFlowEntryDialog({ onNewEntry, type }: NewCashFlowEntryDia
     
     const newEntry: Omit<CashFlow, "id"> = {
       date,
-      type,
+      type: type === "entrada" ? "income" : "expense",
       category,
       description,
       value: numericValue,

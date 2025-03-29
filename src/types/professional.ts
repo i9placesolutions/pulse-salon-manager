@@ -32,6 +32,7 @@ export interface Professional {
   blockedDates?: BlockedDate[];
   rating?: number;
   avatar?: string;
+  services?: string[];
 }
 
 export interface ProfessionalSpecialty {
@@ -48,7 +49,8 @@ export interface ProfessionalAppointment {
   serviceName: string;
   value: number;
   commission: number;
-  status: "confirmed" | "pending" | "canceled";
+  status: "confirmed" | "pending" | "canceled" | "completed";
+  notes?: string;
 }
 
 export interface ProfessionalCommission {
@@ -65,7 +67,7 @@ export interface ProfessionalPayment {
   professionalId?: number;
   value: number;
   referenceMonth: string;
-  status: "paid" | "pending" | "canceled" | "partial";
+  status: "paid" | "pending" | "canceled" | "partial" | "completed";
   paymentDate?: string;
   type: "commission" | "salary";
   notes?: string;
@@ -76,41 +78,8 @@ export interface WorkingHours {
     isWorking: boolean;
     startTime: string;
     endTime: string;
-  };
-  monday: {
-    isWorking: boolean;
-    startTime: string;
-    endTime: string;
-  };
-  tuesday: {
-    isWorking: boolean;
-    startTime: string;
-    endTime: string;
-  };
-  wednesday: {
-    isWorking: boolean;
-    startTime: string;
-    endTime: string;
-  };
-  thursday: {
-    isWorking: boolean;
-    startTime: string;
-    endTime: string;
-  };
-  friday: {
-    isWorking: boolean;
-    startTime: string;
-    endTime: string;
-  };
-  saturday: {
-    isWorking: boolean;
-    startTime: string;
-    endTime: string;
-  };
-  sunday: {
-    isWorking: boolean;
-    startTime: string;
-    endTime: string;
+    breakStart?: string;
+    breakEnd?: string;
   };
 }
 
@@ -120,4 +89,31 @@ export interface BlockedDate {
   startDate?: string;
   endDate?: string;
   reason: string;
+}
+
+export interface DaySchedule {
+  isWorking: boolean;
+  startTime: string;
+  endTime: string;
+  breakStart?: string;
+  breakEnd?: string;
+}
+
+export interface ProfessionalPerformance {
+  id?: number;
+  professionalId?: number;
+  date?: string;
+  revenue?: number;
+  commission?: number;
+  totalAppointments: number;
+  topServices: { serviceName: string; count: number }[];
+  monthlyRevenue: { month: string; revenue: number }[];
+  rating: number;
+  clientReturnRate: number;
+  newClientsPerMonth: number;
+  scheduleOccupancy: number;
+  quoteConversionRate: number;
+  additionalSalesRate: number;
+  serviceId?: number;
+  clientSatisfaction?: number;
 }

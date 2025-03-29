@@ -34,7 +34,7 @@ import {
   FileText,
   X,
 } from "lucide-react";
-import { Service, ServicePackage, ExtendedService } from "@/types/service";
+import { Service, ServicePackage } from "@/types/service";
 import { useToast } from "@/hooks/use-toast";
 import { ServiceForm } from "@/components/servicos/ServiceForm";
 import { ServicePackageForm } from "@/components/servicos/ServicePackageForm";
@@ -75,11 +75,10 @@ interface PerformanceData {
   trend: 'up' | 'down' | 'stable';
 }
 
-interface ExtendedService extends Service {
-  performanceData?: PerformanceData;
-}
+// Using the Service interface from /types/service.ts directly
+// instead of redefining ExtendedService
 
-const mockServices: ExtendedService[] = [
+const mockServices: Service[] = [
   {
     id: 1,
     name: "Corte Feminino",
@@ -231,6 +230,261 @@ const mockProfessionals = [
   { id: 3, name: "Maria Oliveira" },
 ];
 
-export default function Servicos() {
-  // Rest of the code remains unchanged
-}
+// Export as a function component that returns JSX
+const Servicos: React.FC = () => {
+  // Add state and component implementation here
+  const [servicesPanelOpen, setServicesPanelOpen] = useState(false);
+  const [selectedService, setSelectedService] = useState<Service | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [priceFilter, setPriceFilter] = useState<[number, number]>([0, 1000]);
+  const [services, setServices] = useState<Service[]>(mockServices);
+  const { toast } = useToast();
+
+  const [packagePanelOpen, setPackagePanelOpen] = useState(false);
+  const [selectedPackage, setSelectedPackage] = useState<ServicePackage | null>(null);
+
+  const filteredServices = services.filter((service) => {
+    const searchMatch = service.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const categoryMatch = categoryFilter ? service.category === categoryFilter : true;
+    const statusMatch = statusFilter ? service.status === statusFilter : true;
+    const priceMatch = service.price >= priceFilter[0] && service.price <= priceFilter[1];
+    return searchMatch && categoryMatch && statusMatch && priceMatch;
+  });
+
+  const handleCreateService = (service: Service) => {
+    setServices([...services, service]);
+    toast({
+      title: "Serviço criado",
+      description: "O serviço foi criado com sucesso!",
+    });
+  };
+
+  const handleUpdateService = (updatedService: Service) => {
+    const updatedServices = services.map((service) =>
+      service.id === updatedService.id ? updatedService : service
+    );
+    setServices(updatedServices);
+    toast({
+      title: "Serviço atualizado",
+      description: "O serviço foi atualizado com sucesso!",
+    });
+  };
+
+  const handleDeleteService = (id: number) => {
+    setServices(services.filter((service) => service.id !== id));
+    toast({
+      title: "Serviço excluído",
+      description: "O serviço foi excluído com sucesso!",
+    });
+  };
+
+  const handleCreatePackage = (servicePackage: ServicePackage) => {
+    toast({
+      title: "Pacote criado",
+      description: "O pacote foi criado com sucesso!",
+    });
+  };
+
+  const handleUpdatePackage = (updatedPackage: ServicePackage) => {
+    toast({
+      title: "Pacote atualizado",
+      description: "O pacote foi atualizado com sucesso!",
+    });
+  };
+
+  const handleDeletePackage = (id: number) => {
+    toast({
+      title: "Pacote excluído",
+      description: "O pacote foi excluído com sucesso!",
+    });
+  };
+
+  const totalServices = services.length;
+  const activeServices = services.filter((service) => service.status === "active").length;
+  const totalProfessionals = mockProfessionals.length;
+  const totalPackages = 5;
+
+  return (
+    <PageLayout>
+      <PageHeader title="Serviços" description="Gerenciamento de serviços e pacotes" />
+      
+      <div className="space-y-6">
+        <ServiceMetrics
+          totalServices={totalServices}
+          activeServices={activeServices}
+          totalProfessionals={totalProfessionals}
+          totalPackages={totalPackages}
+        />
+
+        <ServiceCharts services={services} professionals={mockProfessionals} />
+
+        <Tabs defaultValue="services" className="space-y-4">
+          <TabsList>
+            <TabsTrigger value="services">Serviços</TabsTrigger>
+            <TabsTrigger value="packages">Pacotes</TabsTrigger>
+          </TabsList>
+          <TabsContent value="services" className="space-y-4">
+            <div className="flex justify-between items-center">
+              <h2 className="text-xl font-bold">Serviços</h2>
+              <Button onClick={() => setServicesPanelOpen(true)}>
+                <Plus className="mr-2 h-4 w-4" />
+                Adicionar Serviço
+              </Button>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-4">
+              <Input
+                placeholder="Buscar serviço..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Categoria" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Todas</SelectItem>
+                  <SelectItem value="Corte">Corte</SelectItem>
+                  <SelectItem value="Tintura">Tintura</SelectItem>
+                  <SelectItem value="Tratamento">Tratamento</SelectItem>
+                  <SelectItem value="Manicure">Manicure</SelectItem>
+                  <SelectItem value="Estética">Estética</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Todos</SelectItem>
+                  <SelectItem value="active">Ativo</SelectItem>
+                  <SelectItem value="inactive">Inativo</SelectItem>
+                </SelectContent>
+              </Select>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" role="combobox" aria-expanded={true} className="justify-start w-full text-left font-normal">
+                    <Filter className="mr-2 h-4 w-4" />
+                    Preço
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="p-4 space-y-2">
+                  <div className="space-y-1">
+                    <Label>Mínimo</Label>
+                    <Input
+                      type="number"
+                      placeholder="0"
+                      value={priceFilter[0]}
+                      onChange={(e) => setPriceFilter([Number(e.target.value), priceFilter[1]])}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label>Máximo</Label>
+                    <Input
+                      type="number"
+                      placeholder="1000"
+                      value={priceFilter[1]}
+                      onChange={(e) => setPriceFilter([priceFilter[0], Number(e.target.value)])}
+                    />
+                  </div>
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nome</TableHead>
+                  <TableHead>Categoria</TableHead>
+                  <TableHead>Duração</TableHead>
+                  <TableHead>Preço</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredServices.map((service) => (
+                  <TableRow key={service.id}>
+                    <TableCell>{service.name}</TableCell>
+                    <TableCell>{service.category}</TableCell>
+                    <TableCell>{service.duration} min</TableCell>
+                    <TableCell>{formatCurrency(service.price)}</TableCell>
+                    <TableCell>
+                      <Badge variant={service.status === "active" ? "default" : "secondary"}>
+                        {service.status === "active" ? "Ativo" : "Inativo"}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button variant="ghost" size="icon" onClick={() => setSelectedService(service)}>
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" onClick={() => handleDeleteService(service.id)}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TabsContent>
+
+          <TabsContent value="packages" className="space-y-4">
+            <div className="flex justify-between items-center">
+              <h2 className="text-xl font-bold">Pacotes</h2>
+              <Button onClick={() => setPackagePanelOpen(true)}>
+                <Package className="mr-2 h-4 w-4" />
+                Adicionar Pacote
+              </Button>
+            </div>
+
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nome</TableHead>
+                  <TableHead>Serviços</TableHead>
+                  <TableHead>Preço</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                <TableRow>
+                  <TableCell>Pacote 1</TableCell>
+                  <TableCell>Corte, Barba</TableCell>
+                  <TableCell>R$ 150,00</TableCell>
+                  <TableCell>Ativo</TableCell>
+                  <TableCell className="text-right">
+                    <Button variant="ghost" size="icon">
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon">
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
+          </TabsContent>
+        </Tabs>
+
+        <ServiceForm
+          open={servicesPanelOpen}
+          onOpenChange={setServicesPanelOpen}
+          onSubmit={handleCreateService}
+          service={selectedService}
+        />
+
+        <ServicePackageForm
+          open={packagePanelOpen}
+          onOpenChange={setPackagePanelOpen}
+          onSubmit={handleCreatePackage}
+          servicePackage={selectedPackage}
+        />
+      </div>
+    </PageLayout>
+  );
+};
+
+export default Servicos;

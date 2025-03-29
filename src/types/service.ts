@@ -54,6 +54,8 @@ export interface ServicePackage {
   price: number;
   status: 'active' | 'inactive';
   expirationDays?: number;
+  discount?: number;
+  products?: { productId: number; quantity: number }[];
 }
 
 // Extended service interface to include performance data
@@ -66,4 +68,10 @@ export interface ExtendedService extends Service {
     priceHistory: { date: string; price: number }[];
     trend: 'up' | 'down' | 'stable';
   };
+}
+
+export interface PackageService {
+  id: number;
+  name: string;
+  price: number;
 }

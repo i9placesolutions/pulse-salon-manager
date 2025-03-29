@@ -14,7 +14,7 @@ import {
   Minus,
   LucideIcon
 } from "lucide-react";
-import { DashboardMetric } from "@/types/dashboard";
+import { DashboardMetric } from "@/types/financial";
 import { cn } from "@/lib/utils";
 
 interface MetricsGridProps {
