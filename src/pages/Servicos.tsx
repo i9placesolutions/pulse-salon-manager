@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -82,9 +81,6 @@ interface PerformanceData {
   priceHistory: { date: string; price: number }[];
   trend: 'up' | 'down' | 'stable';
 }
-
-// Using the Service interface from /types/service.ts directly
-// instead of redefining ExtendedService
 
 const mockServices: Service[] = [
   {
@@ -238,9 +234,7 @@ const mockProfessionals = [
   { id: 3, name: "Maria Oliveira" },
 ];
 
-// Export as a function component that returns JSX
 const Servicos: React.FC = () => {
-  // Add state and component implementation here
   const [servicesPanelOpen, setServicesPanelOpen] = useState(false);
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -316,7 +310,7 @@ const Servicos: React.FC = () => {
 
   return (
     <PageLayout>
-      <PageHeader title="Serviços" description="Gerenciamento de serviços e pacotes" />
+      <PageHeader title="Serviços" subtitle="Gerenciamento de serviços e pacotes" />
       
       <div className="space-y-6">
         <ServiceMetrics
@@ -353,7 +347,7 @@ const Servicos: React.FC = () => {
                   <SelectValue placeholder="Categoria" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todas</SelectItem>
+                  <SelectItem value="all">Todas</SelectItem>
                   <SelectItem value="Corte">Corte</SelectItem>
                   <SelectItem value="Tintura">Tintura</SelectItem>
                   <SelectItem value="Tratamento">Tratamento</SelectItem>
@@ -366,7 +360,7 @@ const Servicos: React.FC = () => {
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos</SelectItem>
+                  <SelectItem value="all">Todos</SelectItem>
                   <SelectItem value="active">Ativo</SelectItem>
                   <SelectItem value="inactive">Inativo</SelectItem>
                 </SelectContent>
@@ -428,7 +422,7 @@ const Servicos: React.FC = () => {
                       <Button variant="ghost" size="icon" onClick={() => setSelectedService(service)}>
                         <Edit className="h-4 w-4" />
                       </Button>
-                      <Button variant="ghost" size="icon" onClick={() => handleDeleteService(service.id)}>
+                      <Button variant="ghost" size="icon" onClick={() => handleDeleteService(Number(service.id))}>
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </TableCell>
