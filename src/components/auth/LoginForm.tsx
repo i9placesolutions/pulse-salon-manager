@@ -1,10 +1,9 @@
-
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
-import { Mail, Lock, Loader2 } from "lucide-react";
+import { Mail, Lock, Loader2, LogIn } from "lucide-react";
 
 const LoginForm = () => {
   const [email, setEmail] = useState("");
@@ -55,26 +54,26 @@ const LoginForm = () => {
   return (
     <form onSubmit={handleSubmit} className="w-full space-y-6 animate-fade-in">
       <div className="space-y-4">
-        <div className="relative">
-          <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+        <div className="relative group">
+          <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-pink-500 transition-colors duration-200" size={20} />
           <Input
             type="email"
             placeholder="Seu email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="input-styles pl-10"
+            className="pl-10 border-gray-200 focus:border-pink-500 focus:ring-pink-200 transition-all duration-300"
             required
           />
         </div>
 
-        <div className="relative">
-          <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+        <div className="relative group">
+          <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-pink-500 transition-colors duration-200" size={20} />
           <Input
             type="password"
             placeholder="Sua senha"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="input-styles pl-10"
+            className="pl-10 border-gray-200 focus:border-pink-500 focus:ring-pink-200 transition-all duration-300"
             required
           />
         </div>
@@ -85,7 +84,7 @@ const LoginForm = () => {
           <input
             type="checkbox"
             id="remember"
-            className="rounded border-gray-300 text-primary focus:ring-primary"
+            className="rounded border-gray-300 text-pink-500 focus:ring-pink-300"
             checked={rememberMe}
             onChange={(e) => setRememberMe(e.target.checked)}
           />
@@ -94,7 +93,7 @@ const LoginForm = () => {
           </label>
         </div>
 
-        <Link to="/forgot-password" className="text-sm link-text">
+        <Link to="/forgot-password" className="text-sm text-pink-600 hover:text-pink-700 transition-colors duration-200">
           Esqueceu sua senha?
         </Link>
       </div>
@@ -102,13 +101,15 @@ const LoginForm = () => {
       <div className="space-y-3">
         <Button
           type="submit"
-          className="btn-primary w-full"
+          className="w-full bg-gradient-to-r from-pink-500 to-pink-600 hover:from-pink-600 hover:to-pink-700 text-white font-medium py-2.5 rounded-lg transition-all duration-300 transform hover:translate-y-[-1px] hover:shadow-lg flex items-center justify-center"
           disabled={isLoading}
         >
           {isLoading ? (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            <Loader2 className="h-5 w-5 animate-spin" />
           ) : (
-            "Entrar"
+            <>
+              <LogIn className="h-4 w-4 mr-2" /> Entrar
+            </>
           )}
         </Button>
 
@@ -116,15 +117,14 @@ const LoginForm = () => {
           <Button
             type="button"
             variant="outline"
-            className="w-full"
+            className="w-full border-gray-200 hover:bg-gray-50 hover:border-gray-300 transition-colors duration-200"
             onClick={handleQuickFill}
           >
             Preencher Teste
           </Button>
           <Button
             type="button"
-            variant="outline"
-            className="w-full"
+            className="w-full bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100 hover:border-blue-300 transition-colors duration-200"
             onClick={handleTestLogin}
           >
             Login Rápido
@@ -134,7 +134,7 @@ const LoginForm = () => {
 
       <div className="relative">
         <div className="absolute inset-0 flex items-center">
-          <span className="w-full border-t" />
+          <span className="w-full border-t border-gray-200" />
         </div>
         <div className="relative flex justify-center text-xs uppercase">
           <span className="bg-white px-2 text-neutral-soft">Ou entre com</span>
@@ -144,8 +144,7 @@ const LoginForm = () => {
       <div className="grid grid-cols-2 gap-4">
         <Button
           type="button"
-          variant="outline"
-          className="w-full"
+          className="w-full bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 hover:border-gray-300 transition-all duration-200"
           onClick={() => {
             toast({
               title: "Google Login",
@@ -157,8 +156,7 @@ const LoginForm = () => {
         </Button>
         <Button
           type="button"
-          variant="outline"
-          className="w-full"
+          className="w-full bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 hover:border-gray-300 transition-all duration-200"
           onClick={() => {
             toast({
               title: "Facebook Login",

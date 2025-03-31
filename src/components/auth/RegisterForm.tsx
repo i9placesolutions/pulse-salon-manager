@@ -1,10 +1,9 @@
-
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
-import { Mail, Lock, User, Loader2, Eye, EyeOff } from "lucide-react";
+import { Mail, Lock, User, Loader2, Eye, EyeOff, UserPlus } from "lucide-react";
 
 const RegisterForm = () => {
   const [fullName, setFullName] = useState("");
@@ -64,15 +63,15 @@ const RegisterForm = () => {
   return (
     <form onSubmit={handleSubmit} className="w-full space-y-6 animate-fade-in">
       <div className="space-y-4">
-        <div className="relative">
-          <User className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+        <div className="relative group">
+          <User className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-pink-500 transition-colors duration-200" size={20} />
           <Input
             type="text"
             placeholder="Nome completo"
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
-            className={`input-styles pl-10 ${
-              fullName && fullName.length < 3 ? "border-red-300" : ""
+            className={`pl-10 border-gray-200 focus:border-pink-500 focus:ring-pink-200 transition-all duration-300 ${
+              fullName && fullName.length < 3 ? "border-red-300 focus:border-red-500 focus:ring-red-200" : ""
             }`}
             required
           />
@@ -83,15 +82,15 @@ const RegisterForm = () => {
           )}
         </div>
 
-        <div className="relative">
-          <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+        <div className="relative group">
+          <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-pink-500 transition-colors duration-200" size={20} />
           <Input
             type="email"
             placeholder="Seu email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className={`input-styles pl-10 ${
-              email && !validateEmail(email) ? "border-red-300" : ""
+            className={`pl-10 border-gray-200 focus:border-pink-500 focus:ring-pink-200 transition-all duration-300 ${
+              email && !validateEmail(email) ? "border-red-300 focus:border-red-500 focus:ring-red-200" : ""
             }`}
             required
           />
@@ -102,24 +101,24 @@ const RegisterForm = () => {
           )}
         </div>
 
-        <div className="relative">
-          <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+        <div className="relative group">
+          <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-pink-500 transition-colors duration-200" size={20} />
           <Input
             type={showPassword ? "text" : "password"}
             placeholder="Sua senha"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className={`input-styles pl-10 ${
-              password && password.length < 6 ? "border-red-300" : ""
+            className={`pl-10 border-gray-200 focus:border-pink-500 focus:ring-pink-200 transition-all duration-300 ${
+              password && password.length < 6 ? "border-red-300 focus:border-red-500 focus:ring-red-200" : ""
             }`}
             required
           />
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-pink-500 transition-colors duration-200"
           >
-            {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
           </button>
           {password && password.length < 6 && (
             <p className="mt-1 text-xs text-red-500">
@@ -128,24 +127,24 @@ const RegisterForm = () => {
           )}
         </div>
 
-        <div className="relative">
-          <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+        <div className="relative group">
+          <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-pink-500 transition-colors duration-200" size={20} />
           <Input
             type={showConfirmPassword ? "text" : "password"}
             placeholder="Confirme sua senha"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
-            className={`input-styles pl-10 ${
-              confirmPassword && confirmPassword !== password ? "border-red-300" : ""
+            className={`pl-10 border-gray-200 focus:border-pink-500 focus:ring-pink-200 transition-all duration-300 ${
+              confirmPassword && confirmPassword !== password ? "border-red-300 focus:border-red-500 focus:ring-red-200" : ""
             }`}
             required
           />
           <button
             type="button"
             onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-pink-500 transition-colors duration-200"
           >
-            {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+            {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
           </button>
           {confirmPassword && confirmPassword !== password && (
             <p className="mt-1 text-xs text-red-500">
@@ -158,18 +157,18 @@ const RegisterForm = () => {
           <input
             type="checkbox"
             id="terms"
-            className="mt-1 rounded border-gray-300 text-primary focus:ring-primary"
+            className="mt-1 rounded border-gray-300 text-pink-500 focus:ring-pink-300"
             checked={acceptTerms}
             onChange={(e) => setAcceptTerms(e.target.checked)}
             required
           />
           <label htmlFor="terms" className="text-sm text-neutral-soft">
             Li e aceito os{" "}
-            <Link to="/terms" className="link-text" target="_blank">
+            <Link to="/terms" className="text-pink-600 hover:text-pink-700 transition-colors duration-200 hover:underline" target="_blank">
               termos de uso
             </Link>{" "}
             e a{" "}
-            <Link to="/privacy" className="link-text" target="_blank">
+            <Link to="/privacy" className="text-pink-600 hover:text-pink-700 transition-colors duration-200 hover:underline" target="_blank">
               política de privacidade
             </Link>
           </label>
@@ -178,13 +177,15 @@ const RegisterForm = () => {
 
       <Button
         type="submit"
-        className="btn-primary w-full"
+        className="w-full bg-gradient-to-r from-pink-500 to-pink-600 hover:from-pink-600 hover:to-pink-700 text-white font-medium py-2.5 rounded-lg transition-all duration-300 transform hover:translate-y-[-1px] hover:shadow-lg flex items-center justify-center"
         disabled={isLoading || !isFormValid()}
       >
         {isLoading ? (
-          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          <Loader2 className="h-5 w-5 animate-spin" />
         ) : (
-          "Criar conta"
+          <>
+            <UserPlus className="h-4 w-4 mr-2" /> Criar conta
+          </>
         )}
       </Button>
     </form>

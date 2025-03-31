@@ -5,8 +5,8 @@ import type {
   ToastProps,
 } from "@/components/ui/toast"
 
-const TOAST_LIMIT = 1
-const TOAST_REMOVE_DELAY = 1000000
+const TOAST_LIMIT = 5
+const TOAST_REMOVE_DELAY = 5000
 
 type ToasterToast = ToastProps & {
   id: string
@@ -139,8 +139,13 @@ function dispatch(action: Action) {
 
 type Toast = Omit<ToasterToast, "id">
 
-function toast({ ...props }: Toast) {
-  const id = genId()
+// Nova interface para permitir id nas funções de toast
+interface ToastOptions extends Omit<ToasterToast, "id"> {
+  id?: string;
+}
+
+function toast(props: ToastOptions) {
+  const id = props.id || genId()
 
   const update = (props: ToasterToast) =>
     dispatch({
@@ -184,8 +189,89 @@ function useToast() {
   return {
     ...state,
     toast,
+    success: (props: ToastOptions) => 
+      toast({ ...props, variant: "success" }),
+    error: (props: ToastOptions) => 
+      toast({ ...props, variant: "destructive" }),
+    warning: (props: ToastOptions) => 
+      toast({ ...props, variant: "warning" }),
+    info: (props: ToastOptions) => 
+      toast({ ...props, variant: "info" }),
+    primary: (props: ToastOptions) => 
+      toast({ ...props, variant: "primary" }),
+    loading: (props: ToastOptions) => 
+      toast({ ...props, variant: "loading" }),
     dismiss: (toastId?: string) => dispatch({ type: "DISMISS_TOAST", toastId }),
   }
 }
 
-export { useToast, toast }
+// Helper functions for direct import
+const toastSuccess = (props: ToastOptions) => 
+  toast({ ...props, variant: "success" });
+
+const toastError = (props: ToastOptions) => 
+  toast({ ...props, variant: "destructive" });
+
+const toastWarning = (props: ToastOptions) => 
+  toast({ ...props, variant: "warning" });
+
+const toastInfo = (props: ToastOptions) => 
+  toast({ ...props, variant: "info" });
+
+const toastPrimary = (props: ToastOptions) => 
+  toast({ ...props, variant: "primary" });
+
+const toastLoading = (props: ToastOptions) => 
+  toast({ ...props, variant: "loading" });
+
+// Documentação de como usar as notificações
+export const TOAST_DOCUMENTATION = {
+  variants: {
+    default: "Notificação padrão (branca)",
+    success: "Verde - Para operações bem-sucedidas",
+    destructive: "Vermelho - Para erros ou operações com consequências graves",
+    warning: "Âmbar - Para avisos ou alertas",
+    info: "Azul - Para informações gerais",
+    primary: "Rosa - Para destaques ou novidades",
+    loading: "Azul claro - Para operações em andamento"
+  },
+  uso: `
+    // Importação dos métodos
+    import { 
+      useToast, 
+      toastSuccess, 
+      toastError, 
+      toastWarning, 
+      toastInfo, 
+      toastPrimary, 
+      toastLoading 
+    } from "@/components/ui/use-toast";
+
+    // Usando o hook
+    const { toast, success, error } = useToast();
+
+    // Métodos diretos
+    toast({ title: "Título", description: "Descrição", variant: "success" });
+    
+    // Métodos especializados
+    toastSuccess({ title: "Sucesso", description: "Operação realizada" });
+    toastError({ title: "Erro", description: "Falha na operação" });
+    
+    // Exemplo de uso com loading e atualização
+    const loading = toastLoading({ title: "Processando" });
+    // Após a operação:
+    toastSuccess({ id: loading.id, title: "Concluído" });
+  `,
+  atualizacao: "Para atualizar um toast existente, use o id retornado pela função toast"
+};
+
+export { 
+  useToast, 
+  toast,
+  toastSuccess,
+  toastError,
+  toastWarning,
+  toastInfo,
+  toastPrimary,
+  toastLoading
+}
