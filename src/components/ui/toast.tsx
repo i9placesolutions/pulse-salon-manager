@@ -1,7 +1,7 @@
 import * as React from "react"
 import * as ToastPrimitives from "@radix-ui/react-toast"
 import { cva, type VariantProps } from "class-variance-authority"
-import { X, AlertCircle, CheckCircle, Info, AlertTriangle } from "lucide-react"
+import { X, AlertCircle, CheckCircle, Info, AlertTriangle, Loader2 } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
@@ -23,23 +23,23 @@ const ToastViewport = React.forwardRef<
 ToastViewport.displayName = ToastPrimitives.Viewport.displayName
 
 const toastVariants = cva(
-  "group pointer-events-auto relative flex w-full items-center justify-between space-x-4 overflow-hidden rounded-lg border shadow-lg transition-all data-[swipe=cancel]:translate-x-0 data-[swipe=end]:translate-x-[var(--radix-toast-swipe-end-x)] data-[swipe=move]:translate-x-[var(--radix-toast-swipe-move-x)] data-[swipe=move]:transition-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[swipe=end]:animate-out data-[state=closed]:fade-out-80 data-[state=closed]:slide-out-to-right-full data-[state=open]:slide-in-from-top-full data-[state=open]:sm:slide-in-from-bottom-full",
+  "group pointer-events-auto relative flex w-full items-center justify-between space-x-4 overflow-hidden rounded-lg border shadow-xl transition-all data-[swipe=cancel]:translate-x-0 data-[swipe=end]:translate-x-[var(--radix-toast-swipe-end-x)] data-[swipe=move]:translate-x-[var(--radix-toast-swipe-move-x)] data-[swipe=move]:transition-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[swipe=end]:animate-out data-[state=closed]:fade-out-80 data-[state=closed]:slide-out-to-right-full data-[state=open]:slide-in-from-top-full data-[state=open]:sm:slide-in-from-bottom-full",
   {
     variants: {
       variant: {
-        default: "bg-white border-gray-200 text-foreground p-6 pr-8",
+        default: "bg-white border-gray-200 text-foreground p-6 pr-8 shadow-md animate-pulse",
         destructive:
-          "group border-l-4 border-l-red-500 bg-gradient-to-r from-red-50 to-white text-red-800 p-4 pl-4 pr-8",
+          "group border-l-8 border-l-red-500 bg-gradient-to-r from-red-100 to-white text-red-800 p-4 pl-4 pr-8 shadow-red-100",
         success:
-          "group border-l-4 border-l-green-500 bg-gradient-to-r from-green-50 to-white text-green-800 p-4 pl-4 pr-8",
+          "group border-l-8 border-l-green-500 bg-gradient-to-r from-green-100 to-white text-green-800 p-4 pl-4 pr-8 shadow-green-100",
         warning:
-          "group border-l-4 border-l-amber-500 bg-gradient-to-r from-amber-50 to-white text-amber-800 p-4 pl-4 pr-8",
+          "group border-l-8 border-l-amber-500 bg-gradient-to-r from-amber-100 to-white text-amber-800 p-4 pl-4 pr-8 shadow-amber-100",
         info:
-          "group border-l-4 border-l-blue-500 bg-gradient-to-r from-blue-50 to-white text-blue-800 p-4 pl-4 pr-8",
+          "group border-l-8 border-l-blue-500 bg-gradient-to-r from-blue-100 to-white text-blue-800 p-4 pl-4 pr-8 shadow-blue-100",
         primary:
-          "group border-l-4 border-l-pink-500 bg-gradient-to-r from-pink-50 to-white text-pink-800 p-4 pl-4 pr-8",
+          "group border-l-8 border-l-pink-500 bg-gradient-to-r from-pink-100 to-white text-pink-800 p-4 pl-4 pr-8 shadow-pink-100",
         loading:
-          "group border border-blue-200 bg-blue-50 text-blue-900 p-4 pl-4 pr-8",
+          "group border-l-8 border-l-cyan-500 bg-gradient-to-r from-cyan-100 to-white text-cyan-800 p-4 pl-4 pr-8 shadow-cyan-100",
       },
     },
     defaultVariants: {
@@ -77,7 +77,7 @@ const ToastAction = React.forwardRef<
       "group-[.warning]:border-amber-300 group-[.warning]:hover:border-amber-700 group-[.warning]:hover:bg-amber-600 group-[.warning]:hover:text-white group-[.warning]:focus:ring-amber-500",
       "group-[.info]:border-blue-300 group-[.info]:hover:border-blue-700 group-[.info]:hover:bg-blue-600 group-[.info]:hover:text-white group-[.info]:focus:ring-blue-500",
       "group-[.primary]:border-pink-300 group-[.primary]:hover:border-pink-700 group-[.primary]:hover:bg-pink-600 group-[.primary]:hover:text-white group-[.primary]:focus:ring-pink-500",
-      "group-[.loading]:border-blue-300 group-[.loading]:hover:border-blue-700 group-[.loading]:hover:bg-blue-600 group-[.loading]:hover:text-white group-[.loading]:focus:ring-blue-500",
+      "group-[.loading]:border-cyan-300 group-[.loading]:hover:border-cyan-700 group-[.loading]:hover:bg-cyan-600 group-[.loading]:hover:text-white group-[.loading]:focus:ring-cyan-500",
       className
     )}
     {...props}
@@ -98,7 +98,7 @@ const ToastClose = React.forwardRef<
       "group-[.warning]:text-amber-500 group-[.warning]:hover:text-amber-700 group-[.warning]:focus:ring-amber-500",
       "group-[.info]:text-blue-500 group-[.info]:hover:text-blue-700 group-[.info]:focus:ring-blue-500",
       "group-[.primary]:text-pink-500 group-[.primary]:hover:text-pink-700 group-[.primary]:focus:ring-pink-500",
-      "group-[.loading]:text-blue-500 group-[.loading]:hover:text-blue-700 group-[.loading]:focus:ring-blue-500",
+      "group-[.loading]:text-cyan-500 group-[.loading]:hover:text-cyan-700 group-[.loading]:focus:ring-cyan-500",
       className
     )}
     toast-close=""
@@ -113,11 +113,32 @@ const ToastTitle = React.forwardRef<
   React.ElementRef<typeof ToastPrimitives.Title>,
   React.ComponentPropsWithoutRef<typeof ToastPrimitives.Title>
 >(({ className, ...props }, ref) => (
-  <ToastPrimitives.Title
-    ref={ref}
-    className={cn("text-base font-semibold", className)}
-    {...props}
-  />
+  <div className="flex items-center">
+    {props.children && (
+      <>
+        {typeof props.children === 'string' && props.children.includes("Sucesso") && (
+          <CheckCircle className="h-5 w-5 text-green-600 mr-2" />
+        )}
+        {typeof props.children === 'string' && props.children.includes("Erro") && (
+          <AlertCircle className="h-5 w-5 text-red-600 mr-2" />
+        )}
+        {typeof props.children === 'string' && props.children.includes("Atenção") && (
+          <AlertTriangle className="h-5 w-5 text-amber-600 mr-2" />
+        )}
+        {typeof props.children === 'string' && props.children.includes("Informação") && (
+          <Info className="h-5 w-5 text-blue-600 mr-2" />
+        )}
+        {typeof props.children === 'string' && props.children.includes("Processando") && (
+          <Loader2 className="h-5 w-5 text-cyan-600 mr-2 animate-spin" />
+        )}
+        <ToastPrimitives.Title
+          ref={ref}
+          className={cn("text-base font-semibold", className)}
+          {...props}
+        />
+      </>
+    )}
+  </div>
 ))
 ToastTitle.displayName = ToastPrimitives.Title.displayName
 
@@ -127,7 +148,7 @@ const ToastDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <ToastPrimitives.Description
     ref={ref}
-    className={cn("text-sm", className)}
+    className={cn("text-sm ml-7", className)}
     {...props}
   />
 ))

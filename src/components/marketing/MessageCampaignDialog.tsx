@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -11,7 +10,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "
 interface MessageCampaignData {
   title: string;
   message: string;
-  recipients: 'all' | 'vip' | 'inactive' | 'custom';
+  recipients: 'all' | 'vip' | 'inactive' | 'custom' | 'phone';
   channels: string[];
   scheduleDate?: string;
   scheduleTime?: string;
@@ -41,7 +40,7 @@ export function MessageCampaignDialog({
     onChange({ ...data, [field]: value });
   };
 
-  const handleRecipientsChange = (value: 'all' | 'vip' | 'inactive' | 'custom') => {
+  const handleRecipientsChange = (value: 'all' | 'vip' | 'inactive' | 'custom' | 'phone') => {
     onChange({ ...data, recipients: value });
   };
 

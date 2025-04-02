@@ -80,11 +80,22 @@ export default {
           "0%, 100%": { opacity: "1" },
           "50%": { opacity: "0.8" },
         },
+        "bounce-gentle": {
+          "0%, 100%": { transform: "translateY(0)" },
+          "50%": { transform: "translateY(-6px)" },
+        },
+        "shake": {
+          "0%, 100%": { transform: "translateX(0)" },
+          "10%, 30%, 50%, 70%, 90%": { transform: "translateX(-3px)" },
+          "20%, 40%, 60%, 80%": { transform: "translateX(3px)" },
+        },
       },
       animation: {
         "slide-up": "slide-up 0.3s ease-out",
         "fade-in": "fade-in 0.2s ease-out",
         "pulse-soft": "pulse-soft 2s infinite",
+        "bounce-gentle": "bounce-gentle 2s ease-in-out",
+        "shake": "shake 0.5s cubic-bezier(.36,.07,.19,.97) both",
       },
     },
   },

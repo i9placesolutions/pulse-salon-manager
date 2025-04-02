@@ -1,10 +1,9 @@
-
 import { LucideIcon } from "lucide-react";
 
 export interface MessageCampaignData {
   title: string;
   message: string;
-  recipients: 'all' | 'vip' | 'inactive' | 'custom';
+  recipients: 'all' | 'vip' | 'inactive' | 'custom' | 'phone';
   channels: string[];
   scheduleDate?: string;
   scheduleTime?: string;

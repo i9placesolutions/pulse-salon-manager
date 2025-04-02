@@ -23,12 +23,15 @@ const LoginForm = () => {
       toast({
         title: "Funcionalidade em desenvolvimento",
         description: "O backend será implementado em breve.",
+        variant: "info",
+        className: "shadow-xl"
       });
     } catch (error) {
       toast({
         variant: "destructive",
         title: "Erro ao fazer login",
         description: "Por favor, verifique suas credenciais e tente novamente.",
+        className: "shadow-xl animate-shake"
       });
     } finally {
       setIsLoading(false);
@@ -42,6 +45,8 @@ const LoginForm = () => {
       toast({
         title: "Login de teste realizado",
         description: "Você está usando uma conta de demonstração.",
+        variant: "success",
+        className: "animate-bounce-gentle border-2 shadow-xl"
       });
     }, 1000);
   };
@@ -149,6 +154,8 @@ const LoginForm = () => {
             toast({
               title: "Google Login",
               description: "Será implementado com Supabase",
+              variant: "primary",
+              className: "shadow-lg"
             });
           }}
         >
@@ -161,6 +168,8 @@ const LoginForm = () => {
             toast({
               title: "Facebook Login",
               description: "Será implementado com Supabase",
+              variant: "info",
+              className: "shadow-lg"
             });
           }}
         >

@@ -36,6 +36,7 @@ const ProfissionalDashboard = lazy(() => import("./pages/ProfissionalDashboard")
 const ProfissionalProfile = lazy(() => import("./pages/ProfissionalProfile"));
 const EstablishmentProfile = lazy(() => import("./pages/EstablishmentProfile"));
 const PDV = lazy(() => import("./pages/PDV"));
+const PublicBooking = lazy(() => import("./pages/PublicBooking"));
 
 const queryClient = new QueryClient();
 
@@ -54,6 +55,13 @@ const App = () => (
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/terms" element={<Terms />} />
               <Route path="/privacy" element={<Privacy />} />
+              
+              {/* Public booking route */}
+              <Route path="/:slug" element={
+                <Suspense fallback={<Loading />}>
+                  <PublicBooking />
+                </Suspense>
+              } />
               
               {/* Professional routes without sidebar */}
               <Route path="/profissional-dashboard" element={

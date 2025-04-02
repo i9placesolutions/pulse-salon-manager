@@ -7,7 +7,7 @@ import {
   ToastTitle,
   ToastViewport,
 } from "@/components/ui/toast"
-import { AlertCircle, CheckCircle, Info, AlertTriangle, Loader2 } from "lucide-react"
+import { AlertCircle, CheckCircle, Info, AlertTriangle, Loader2, Bell } from "lucide-react"
 
 export function Toaster() {
   const { toasts } = useToast()
@@ -23,30 +23,46 @@ export function Toaster() {
         else if (variant === "warning") Icon = AlertTriangle
         else if (variant === "info") Icon = Info
         else if (variant === "loading") Icon = Loader2
+        else if (variant === "primary") Icon = Bell
+
+        // Definir um estilo de fundo de ícone com base no variante
+        const getIconBackground = () => {
+          switch (variant) {
+            case "destructive": return "bg-red-200 p-1.5 rounded-full";
+            case "success": return "bg-green-200 p-1.5 rounded-full";
+            case "warning": return "bg-amber-200 p-1.5 rounded-full";
+            case "info": return "bg-blue-200 p-1.5 rounded-full";
+            case "primary": return "bg-pink-200 p-1.5 rounded-full";
+            case "loading": return "bg-cyan-200 p-1.5 rounded-full";
+            default: return "bg-gray-200 p-1.5 rounded-full";
+          }
+        };
 
         return (
           <Toast key={id} {...props} variant={variant}>
-            <div className="flex items-start gap-3">
-              {variant && variant !== "default" && (
-                <div className="shrink-0 pt-0.5">
-                  <Icon 
-                    className={`h-5 w-5 ${
-                      variant === "destructive" ? "text-red-600" :
-                      variant === "success" ? "text-green-600" :
-                      variant === "warning" ? "text-amber-600" :
-                      variant === "info" ? "text-blue-600" :
-                      variant === "primary" ? "text-pink-600" :
-                      variant === "loading" ? "text-blue-600 animate-spin" : ""
-                    }`} 
-                  />
+            <div className="grid gap-1">
+              {title && (
+                <div className="flex items-center gap-2">
+                  {variant && variant !== "default" && (
+                    <div className={`shrink-0 ${getIconBackground()}`}>
+                      <Icon 
+                        className={`h-5 w-5 ${
+                          variant === "destructive" ? "text-red-600" :
+                          variant === "success" ? "text-green-600" :
+                          variant === "warning" ? "text-amber-600" :
+                          variant === "info" ? "text-blue-600" :
+                          variant === "primary" ? "text-pink-600" :
+                          variant === "loading" ? "text-cyan-600 animate-spin" : ""
+                        }`} 
+                      />
+                    </div>
+                  )}
+                  <ToastTitle>{title}</ToastTitle>
                 </div>
               )}
-              <div className="grid gap-1">
-                {title && <ToastTitle>{title}</ToastTitle>}
-                {description && (
-                  <ToastDescription>{description}</ToastDescription>
-                )}
-              </div>
+              {description && (
+                <ToastDescription className="ml-9">{description}</ToastDescription>
+              )}
             </div>
             {action}
             <ToastClose />

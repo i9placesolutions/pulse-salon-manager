@@ -16,6 +16,7 @@ import {
   Shield, 
   Save,
   AlertCircle,
+  CalendarDays,
 } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -25,6 +26,7 @@ import { ConfigSeguranca } from "@/components/configuracoes/ConfigSeguranca";
 import { ConfigUsuarios } from "@/components/configuracoes/ConfigUsuarios";
 import { ConfigPagamentos } from "@/components/configuracoes/ConfigPagamentos";
 import { ConfigRelatorios } from "@/components/configuracoes/ConfigRelatorios";
+import { ConfigLinkAgendamento } from "@/components/configuracoes/ConfigLinkAgendamento";
 import { PageLayout } from "@/components/shared/PageLayout";
 import { PageHeader } from "@/components/shared/PageHeader";
 
@@ -88,7 +90,7 @@ export default function Configuracoes() {
       </Alert>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2 bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 p-2 rounded-lg border border-blue-100 shadow-sm">
+        <TabsList className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-2 bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 p-2 rounded-lg border border-blue-100 shadow-sm">
 
           <TabsTrigger 
             value="geral" 
@@ -105,35 +107,40 @@ export default function Configuracoes() {
             WhatsApp
           </TabsTrigger>
           <TabsTrigger 
+            value="agendamento" 
+            className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-purple-700 data-[state=active]:shadow-md data-[state=active]:text-white data-[state=inactive]:bg-white data-[state=inactive]:bg-opacity-60 data-[state=inactive]:text-gray-700 transition-all rounded-md"
+          >
+            <CalendarDays className="h-4 w-4 mr-2" />
+            Agendamento
+          </TabsTrigger>
+          <TabsTrigger 
             value="usuarios" 
-            className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-indigo-600 data-[state=active]:to-violet-700 data-[state=active]:shadow-md data-[state=active]:text-white data-[state=inactive]:bg-white data-[state=inactive]:bg-opacity-60 data-[state=inactive]:text-gray-700 transition-all rounded-md"
+            className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-indigo-600 data-[state=active]:to-indigo-700 data-[state=active]:shadow-md data-[state=active]:text-white data-[state=inactive]:bg-white data-[state=inactive]:bg-opacity-60 data-[state=inactive]:text-gray-700 transition-all rounded-md"
           >
             <Users className="h-4 w-4 mr-2" />
             Usuários
           </TabsTrigger>
-
           <TabsTrigger 
             value="pagamentos" 
-            className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-600 data-[state=active]:to-orange-700 data-[state=active]:shadow-md data-[state=active]:text-white data-[state=inactive]:bg-white data-[state=inactive]:bg-opacity-60 data-[state=inactive]:text-gray-700 transition-all rounded-md"
+            className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-600 data-[state=active]:to-amber-700 data-[state=active]:shadow-md data-[state=active]:text-white data-[state=inactive]:bg-white data-[state=inactive]:bg-opacity-60 data-[state=inactive]:text-gray-700 transition-all rounded-md"
           >
             <CreditCard className="h-4 w-4 mr-2" />
             Pagamentos
           </TabsTrigger>
           <TabsTrigger 
             value="relatorios" 
-            className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-600 data-[state=active]:to-teal-700 data-[state=active]:shadow-md data-[state=active]:text-white data-[state=inactive]:bg-white data-[state=inactive]:bg-opacity-60 data-[state=inactive]:text-gray-700 transition-all rounded-md"
+            className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-emerald-600 data-[state=active]:to-emerald-700 data-[state=active]:shadow-md data-[state=active]:text-white data-[state=inactive]:bg-white data-[state=inactive]:bg-opacity-60 data-[state=inactive]:text-gray-700 transition-all rounded-md"
           >
             <FileText className="h-4 w-4 mr-2" />
             Relatórios
           </TabsTrigger>
           <TabsTrigger 
             value="seguranca" 
-            className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-rose-600 data-[state=active]:to-red-700 data-[state=active]:shadow-md data-[state=active]:text-white data-[state=inactive]:bg-white data-[state=inactive]:bg-opacity-60 data-[state=inactive]:text-gray-700 transition-all rounded-md"
+            className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-red-600 data-[state=active]:to-red-700 data-[state=active]:shadow-md data-[state=active]:text-white data-[state=inactive]:bg-white data-[state=inactive]:bg-opacity-60 data-[state=inactive]:text-gray-700 transition-all rounded-md"
           >
             <Shield className="h-4 w-4 mr-2" />
             Segurança
           </TabsTrigger>
-
         </TabsList>
 
         <TabsContent value="geral" className="animate-in fade-in-50 duration-300">
@@ -162,6 +169,21 @@ export default function Configuracoes() {
             </div>
             <div className="p-6">
               <ConfigWhatsApp />
+            </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="agendamento" className="animate-in fade-in-50 duration-300">
+          <div className="bg-white rounded-lg border border-purple-100 shadow-md overflow-hidden">
+            <div className="h-1 w-full bg-gradient-to-r from-purple-400 via-purple-500 to-purple-600"></div>
+            <div className="p-2 bg-gradient-to-r from-purple-50 via-purple-100 to-purple-50 border-b border-purple-100">
+              <h2 className="text-xl font-medium px-4 py-3 text-purple-700 flex items-center">
+                <CalendarDays className="h-5 w-5 mr-2 text-purple-600" />
+                Link de Agendamento
+              </h2>
+            </div>
+            <div className="p-6">
+              <ConfigLinkAgendamento />
             </div>
           </div>
         </TabsContent>

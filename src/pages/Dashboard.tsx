@@ -51,7 +51,6 @@ import {
   Cell
 } from "recharts";
 import { Badge } from "@/components/ui/badge";
-import { ToastExample } from "@/components/ui/toast-example";
 
 // Mock data
 const metrics: DashboardMetric[] = [
@@ -144,7 +143,6 @@ const COLORS = ['#0284c7', '#8b5cf6', '#10b981', '#f59e0b', '#f43f5e'];
 export default function Dashboard() {
   const [period, setPeriod] = useState<string>("daily");
   const [periodoFilter, setPeriodoFilter] = useState<string>("30dias");
-  const [showNotifications, setShowNotifications] = useState<boolean>(false);
   const navigate = useNavigate();
   
   // Lista de períodos para filtro
@@ -180,13 +178,6 @@ export default function Dashboard() {
         </div>
         <div className="flex flex-wrap gap-2 items-center">
           <Button 
-            className="bg-pink-600 hover:bg-pink-700 text-white mr-2" 
-            onClick={() => setShowNotifications(!showNotifications)}
-          >
-            {showNotifications ? "Ocultar Notificações" : "Teste Notificações"}
-          </Button>
-          
-          <Button 
             className="bg-blue-600 hover:bg-blue-700 text-white mr-2" 
             onClick={() => navigate("/appointments")}
           >
@@ -213,21 +204,6 @@ export default function Dashboard() {
           </Select>
         </div>
       </div>
-
-      {/* Exemplo de notificações */}
-      {showNotifications && (
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle>Teste de Notificações Coloridas</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="mb-4 text-sm text-gray-600">
-              Clique nos botões abaixo para testar os diferentes tipos de notificações disponíveis no sistema.
-            </p>
-            <ToastExample />
-          </CardContent>
-        </Card>
-      )}
 
       {/* Métricas Principais */}
       <MetricsGrid metrics={metrics} />

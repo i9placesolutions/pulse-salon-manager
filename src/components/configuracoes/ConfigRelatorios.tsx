@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { 
   Card, 
@@ -14,6 +13,13 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "@/components/ui/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { 
+  BarChart, 
+  Users, 
+  ShoppingBag, 
+  TrendingUp, 
+  LineChart
+} from "lucide-react";
 
 type RelatorioAutomatico = {
   id: string;
@@ -143,53 +149,88 @@ export function ConfigRelatorios() {
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="financeiro" onValueChange={setCategoriaSelecionada}>
-            <TabsList className="grid grid-cols-5 mb-4">
-              <TabsTrigger value="financeiro">Financeiro</TabsTrigger>
-              <TabsTrigger value="operacional">Operacional</TabsTrigger>
-              <TabsTrigger value="clientes">Clientes</TabsTrigger>
-              <TabsTrigger value="estoque">Estoque</TabsTrigger>
-              <TabsTrigger value="marketing">Marketing</TabsTrigger>
+            <TabsList className="bg-gradient-to-r from-emerald-50 via-emerald-100 to-emerald-50 p-1 rounded-lg border border-emerald-100 shadow-sm">
+              <TabsTrigger 
+                value="financeiro" 
+                className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-emerald-600 data-[state=active]:to-emerald-700 data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:bg-white data-[state=inactive]:bg-opacity-60 data-[state=inactive]:text-gray-700 transition-all"
+              >
+                <BarChart className="h-4 w-4 mr-2" />
+                Financeiro
+              </TabsTrigger>
+              <TabsTrigger 
+                value="operacional" 
+                className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-blue-700 data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:bg-white data-[state=inactive]:bg-opacity-60 data-[state=inactive]:text-gray-700 transition-all"
+              >
+                <LineChart className="h-4 w-4 mr-2" />
+                Operacional
+              </TabsTrigger>
+              <TabsTrigger 
+                value="clientes" 
+                className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-indigo-600 data-[state=active]:to-indigo-700 data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:bg-white data-[state=inactive]:bg-opacity-60 data-[state=inactive]:text-gray-700 transition-all"
+              >
+                <Users className="h-4 w-4 mr-2" />
+                Clientes
+              </TabsTrigger>
+              <TabsTrigger 
+                value="estoque" 
+                className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-600 data-[state=active]:to-amber-700 data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:bg-white data-[state=inactive]:bg-opacity-60 data-[state=inactive]:text-gray-700 transition-all"
+              >
+                <ShoppingBag className="h-4 w-4 mr-2" />
+                Estoque
+              </TabsTrigger>
+              <TabsTrigger 
+                value="marketing" 
+                className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-purple-700 data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:bg-white data-[state=inactive]:bg-opacity-60 data-[state=inactive]:text-gray-700 transition-all"
+              >
+                <TrendingUp className="h-4 w-4 mr-2" />
+                Marketing
+              </TabsTrigger>
             </TabsList>
             
-            <TabsContent value={categoriaSelecionada} className="space-y-4">
-              {relatoriosFiltrados.map((relatorio) => (
-                <div key={relatorio.id} className="flex items-center justify-between border-b pb-3">
-                  <div className="space-y-0.5">
-                    <Label className="font-medium">{relatorio.titulo}</Label>
-                    <p className="text-sm text-muted-foreground">{relatorio.descricao}</p>
-                    <div className="flex items-center mt-1">
-                      <span className="text-xs px-2 py-0.5 bg-slate-100 rounded-full">
-                        {relatorio.frequencia === 'diario' ? 'Diário' : 
-                         relatorio.frequencia === 'semanal' ? 'Semanal' : 'Mensal'}
-                      </span>
+            <TabsContent value={categoriaSelecionada} className="space-y-4 mt-4 animate-in fade-in-50 duration-300">
+              <div className="bg-white rounded-lg border border-emerald-100 shadow-md overflow-hidden">
+                <div className="h-1 w-full bg-gradient-to-r from-emerald-400 via-emerald-500 to-emerald-600"></div>
+                <div className="p-4">
+                  {relatoriosFiltrados.map((relatorio) => (
+                    <div key={relatorio.id} className="flex items-center justify-between border-b border-gray-100 py-3 last:border-0">
+                      <div className="space-y-0.5">
+                        <Label className="font-medium">{relatorio.titulo}</Label>
+                        <p className="text-sm text-muted-foreground">{relatorio.descricao}</p>
+                        <div className="flex items-center mt-1">
+                          <span className="text-xs px-2 py-0.5 bg-slate-100 rounded-full">
+                            {relatorio.frequencia === 'diario' ? 'Diário' : 
+                             relatorio.frequencia === 'semanal' ? 'Semanal' : 'Mensal'}
+                          </span>
+                        </div>
+                      </div>
+                      <Switch 
+                        checked={relatorio.ativo} 
+                        onCheckedChange={() => alternarAtivacao(relatorio.id)}
+                      />
                     </div>
-                  </div>
-                  <Switch 
-                    checked={relatorio.ativo} 
-                    onCheckedChange={() => alternarAtivacao(relatorio.id)}
-                  />
+                  ))}
+                  
+                  {relatoriosFiltrados.length === 0 && (
+                    <div className="text-center py-8 text-muted-foreground">
+                      Não há relatórios disponíveis nesta categoria no momento.
+                    </div>
+                  )}
                 </div>
-              ))}
-              
-              {relatoriosFiltrados.length === 0 && (
-                <div className="text-center py-8 text-muted-foreground">
-                  Não há relatórios disponíveis nesta categoria no momento.
-                </div>
-              )}
+              </div>
             </TabsContent>
           </Tabs>
         </CardContent>
       </Card>
 
       <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Destinatários</CardTitle>
+        <Card className="border-emerald-100">
+          <CardHeader className="bg-gradient-to-r from-emerald-50 to-emerald-100 border-b border-emerald-100">
+            <CardTitle className="text-emerald-700">Destinatários</CardTitle>
             <CardDescription>
               Quem receberá os relatórios automáticos
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-6">
             <div className="space-y-4">
               {configuracao.destinatarios.map((dest, index) => (
                 <div key={index} className="flex items-center gap-2">
@@ -197,13 +238,14 @@ export function ConfigRelatorios() {
                     value={dest.email} 
                     onChange={(e) => atualizarEmailDestinatario(index, e.target.value)}
                     placeholder="email@exemplo.com.br" 
-                    className="flex-1"
+                    className="flex-1 border-emerald-200 focus:border-emerald-400"
                   />
                   {configuracao.destinatarios.length > 1 && (
                     <Button 
                       variant="ghost" 
                       size="sm" 
                       onClick={() => removerDestinatario(index)}
+                      className="text-gray-500 hover:text-red-500"
                     >
                       ✕
                     </Button>
@@ -214,6 +256,7 @@ export function ConfigRelatorios() {
                 variant="outline" 
                 size="sm" 
                 onClick={adicionarDestinatario}
+                className="border-emerald-200 text-emerald-700 hover:bg-emerald-50"
               >
                 Adicionar destinatário
               </Button>
@@ -221,14 +264,14 @@ export function ConfigRelatorios() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Formato e Horário</CardTitle>
+        <Card className="border-emerald-100">
+          <CardHeader className="bg-gradient-to-r from-emerald-50 to-emerald-100 border-b border-emerald-100">
+            <CardTitle className="text-emerald-700">Formato e Horário</CardTitle>
             <CardDescription>
               Configure como e quando os relatórios serão enviados
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-6">
             <div className="space-y-4">
               <div className="flex items-center gap-2">
                 <Switch 
@@ -253,11 +296,17 @@ export function ConfigRelatorios() {
                   type="time" 
                   value={configuracao.horarioEnvio}
                   onChange={(e) => setConfiguracao({...configuracao, horarioEnvio: e.target.value})}
+                  className="border-emerald-200 focus:border-emerald-400"
                 />
               </div>
               
               <div className="pt-4">
-                <Button onClick={salvarConfiguracoes} className="w-full">Salvar Configurações</Button>
+                <Button 
+                  onClick={salvarConfiguracoes}
+                  className="w-full bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white"
+                >
+                  Salvar Configurações
+                </Button>
               </div>
             </div>
           </CardContent>

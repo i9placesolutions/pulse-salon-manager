@@ -55,7 +55,9 @@ import {
   Save, 
   Plus,
   CheckCircle,
-  XCircle
+  XCircle,
+  Shield,
+  Lock
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -368,493 +370,588 @@ export function ConfigUsuarios() {
   return (
     <div className="space-y-6">
       <Tabs defaultValue="lista" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="lista">
-            <Users className="mr-2 h-4 w-4" />
+        <TabsList className="bg-gradient-to-r from-indigo-50 via-indigo-100 to-indigo-50 p-1 rounded-lg border border-indigo-100 shadow-sm">
+          <TabsTrigger 
+            value="lista" 
+            className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-indigo-600 data-[state=active]:to-indigo-700 data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:bg-white data-[state=inactive]:bg-opacity-60 data-[state=inactive]:text-gray-700 transition-all"
+          >
+            <Users className="h-4 w-4 mr-2" />
             Lista de Usuários
           </TabsTrigger>
-          <TabsTrigger value="funcoes">
-            <UserCog className="mr-2 h-4 w-4" />
+          <TabsTrigger 
+            value="funcoes" 
+            className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-blue-700 data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:bg-white data-[state=inactive]:bg-opacity-60 data-[state=inactive]:text-gray-700 transition-all"
+          >
+            <UserCog className="h-4 w-4 mr-2" />
             Funções de Usuários
           </TabsTrigger>
-          <TabsTrigger value="permissoes">
-            <Eye className="mr-2 h-4 w-4" />
+          <TabsTrigger 
+            value="permissoes" 
+            className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-purple-700 data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:bg-white data-[state=inactive]:bg-opacity-60 data-[state=inactive]:text-gray-700 transition-all"
+          >
+            <Shield className="h-4 w-4 mr-2" />
             Permissões
           </TabsTrigger>
-          <TabsTrigger value="configuracoes">
-            <Settings className="mr-2 h-4 w-4" />
+          <TabsTrigger 
+            value="configuracoes" 
+            className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-slate-600 data-[state=active]:to-slate-700 data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:bg-white data-[state=inactive]:bg-opacity-60 data-[state=inactive]:text-gray-700 transition-all"
+          >
+            <Settings className="h-4 w-4 mr-2" />
             Configurações
           </TabsTrigger>
         </TabsList>
         
         {/* Aba de Lista de Usuários */}
-        <TabsContent value="lista">
-          <Card>
-            <CardHeader>
-              <CardTitle>Lista de Usuários</CardTitle>
-              <CardDescription>
-                Gerencie os usuários do sistema, suas funções e permissões.
-              </CardDescription>
-              <div className="flex justify-end">
-                <Button onClick={() => setIsOpenNovoUsuario(true)}>
-                  <PlusCircle className="mr-2 h-4 w-4" />
-                  Novo Usuário
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="rounded-md border">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b bg-muted/50">
-                      <th className="p-2 text-left font-medium">Nome</th>
-                      <th className="p-2 text-left font-medium">Email</th>
-                      <th className="p-2 text-left font-medium">Cargo</th>
-                      <th className="p-2 text-left font-medium">Status</th>
-                      <th className="p-2 text-left font-medium">Profissional</th>
-                      <th className="p-2 text-right font-medium">Ações</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {usuarios.map((usuario) => (
-                      <tr key={usuario.id} className="border-b last:border-b-0">
-                        <td className="p-2">{usuario.nome}</td>
-                        <td className="p-2">{usuario.email}</td>
-                        <td className="p-2">{usuario.cargo}</td>
-                        <td className="p-2">
-                          <Badge variant={usuario.status === 'Ativo' ? 'default' : 'secondary'}>
-                            {usuario.status}
-                          </Badge>
-                        </td>
-                        <td className="p-2">
-                          <Badge variant={usuario.ehProfissional ? 'default' : 'outline'}>
-                            {usuario.ehProfissional ? 'Sim' : 'Não'}
-                          </Badge>
-                        </td>
-                        <td className="p-2 text-right">
-                          <div className="flex justify-end space-x-2">
-                            <Button 
-                              variant="ghost" 
-                              size="icon"
-                              onClick={() => handleOpenEditUsuario(usuario)}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
+        <TabsContent value="lista" className="animate-in fade-in-50 duration-300">
+          <div className="bg-white rounded-lg border border-indigo-100 shadow-md overflow-hidden">
+            <div className="h-1 w-full bg-gradient-to-r from-indigo-400 via-indigo-500 to-indigo-600"></div>
+            <div className="p-4">
+              <Card className="border-0 shadow-none">
+                <CardHeader className="px-0 pt-0">
+                  <CardTitle className="text-xl text-indigo-700 flex items-center">
+                    <Users className="h-5 w-5 mr-2 text-indigo-600" />
+                    Lista de Usuários
+                  </CardTitle>
+                  <CardDescription>
+                    Gerencie os usuários do sistema, suas funções e permissões.
+                  </CardDescription>
+                  <div className="flex justify-end">
+                    <Button onClick={() => setIsOpenNovoUsuario(true)} className="bg-indigo-600 hover:bg-indigo-700">
+                      <PlusCircle className="mr-2 h-4 w-4" />
+                      Novo Usuário
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent className="px-0">
+                  <div className="rounded-md border border-indigo-100">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="border-b bg-indigo-50">
+                          <th className="p-2 text-left font-medium text-indigo-800">Nome</th>
+                          <th className="p-2 text-left font-medium text-indigo-800">Email</th>
+                          <th className="p-2 text-left font-medium text-indigo-800">Cargo</th>
+                          <th className="p-2 text-left font-medium text-indigo-800">Status</th>
+                          <th className="p-2 text-left font-medium text-indigo-800">Profissional</th>
+                          <th className="p-2 text-right font-medium text-indigo-800">Ações</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {usuarios.map((usuario) => (
+                          <tr key={usuario.id} className="border-b last:border-b-0 hover:bg-indigo-50 transition-colors">
+                            <td className="p-2">{usuario.nome}</td>
+                            <td className="p-2">{usuario.email}</td>
+                            <td className="p-2">{usuario.cargo}</td>
+                            <td className="p-2">
+                              <Badge variant={usuario.status === 'Ativo' ? 'default' : 'secondary'} className={usuario.status === 'Ativo' ? 'bg-green-600' : 'bg-gray-400'}>
+                                {usuario.status}
+                              </Badge>
+                            </td>
+                            <td className="p-2">
+                              <Badge variant={usuario.ehProfissional ? 'default' : 'outline'} className={usuario.ehProfissional ? 'bg-indigo-600' : ''}>
+                                {usuario.ehProfissional ? 'Sim' : 'Não'}
+                              </Badge>
+                            </td>
+                            <td className="p-2 text-right">
+                              <div className="flex justify-end space-x-2">
                                 <Button 
                                   variant="ghost" 
                                   size="icon"
-                                  className="text-red-500 hover:text-red-600"
+                                  onClick={() => handleOpenEditUsuario(usuario)}
+                                  className="text-indigo-600 hover:text-indigo-800 hover:bg-indigo-100"
                                 >
-                                  <Trash2 className="h-4 w-4" />
+                                  <Edit className="h-4 w-4" />
                                 </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Excluir Usuário</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    Você tem certeza que deseja excluir este usuário? Esta ação não pode ser desfeita.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                  <AlertDialogAction 
-                                    className="bg-red-500 hover:bg-red-600"
-                                    onClick={() => setUsuarios(usuarios.filter(u => u.id !== usuario.id))}
-                                  >
-                                    Excluir
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </CardContent>
-          </Card>
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button 
+                                      variant="ghost" 
+                                      size="icon"
+                                      className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Excluir Usuário</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        Você tem certeza que deseja excluir este usuário? Esta ação não pode ser desfeita.
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                      <AlertDialogAction 
+                                        className="bg-red-500 hover:bg-red-600"
+                                        onClick={() => setUsuarios(usuarios.filter(u => u.id !== usuario.id))}
+                                      >
+                                        Excluir
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
         </TabsContent>
 
         {/* Aba de Funções de Usuários */}
-        <TabsContent value="funcoes">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <div>
-                <CardTitle>Funções de Usuários</CardTitle>
-                <CardDescription>
-                  Crie e gerencie os tipos de funções de usuários do sistema
-                </CardDescription>
-              </div>
-              <Dialog open={isOpenNovaFuncao} onOpenChange={setIsOpenNovaFuncao}>
-                <DialogTrigger asChild>
-                  <Button>
-                    <PlusCircle className="mr-2 h-4 w-4" />
-                    Nova Função
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Criar Nova Função</DialogTitle>
-                    <DialogDescription>
-                      Defina um nome e uma descrição para a nova função de usuário
-                    </DialogDescription>
-                  </DialogHeader>
-                  
-                  <div className="grid gap-4 py-4">
-                    <div className="grid gap-2">
-                      <Label htmlFor="nome-funcao">Nome da Função</Label>
-                      <Input 
-                        id="nome-funcao" 
-                        placeholder="Ex: Assistente, Estagiário, Coordenador..." 
-                        value={novaFuncaoNome}
-                        onChange={(e) => setNovaFuncaoNome(e.target.value)}
-                      />
-                    </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="descricao-funcao">Descrição</Label>
-                      <Textarea 
-                        id="descricao-funcao" 
-                        placeholder="Descreva as responsabilidades desta função..."
-                        value={novaFuncaoDescricao}
-                        onChange={(e) => setNovaFuncaoDescricao(e.target.value)}
-                      />
-                    </div>
+        <TabsContent value="funcoes" className="animate-in fade-in-50 duration-300">
+          <div className="bg-white rounded-lg border border-blue-100 shadow-md overflow-hidden">
+            <div className="h-1 w-full bg-gradient-to-r from-blue-400 via-blue-500 to-blue-600"></div>
+            <div className="p-4">
+              <Card className="border-0 shadow-none">
+                <CardHeader className="px-0 pt-0 flex flex-row items-center justify-between space-y-0 pb-2">
+                  <div>
+                    <CardTitle className="text-xl text-blue-700 flex items-center">
+                      <UserCog className="h-5 w-5 mr-2 text-blue-600" />
+                      Funções de Usuários
+                    </CardTitle>
+                    <CardDescription>
+                      Crie e gerencie os tipos de funções de usuários do sistema
+                    </CardDescription>
                   </div>
-                  
-                  <DialogFooter>
-                    <Button variant="outline" onClick={() => setIsOpenNovaFuncao(false)}>Cancelar</Button>
-                    <Button onClick={handleAddFuncao}>Criar Função</Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {funcoes.map((funcao) => (
-                  <div key={funcao.id} className="rounded-lg border p-4 shadow-sm">
-                    {funcao.editando ? (
-                      <div className="space-y-4">
+                  <Dialog open={isOpenNovaFuncao} onOpenChange={setIsOpenNovaFuncao}>
+                    <DialogTrigger asChild>
+                      <Button className="bg-blue-600 hover:bg-blue-700">
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        Nova Função
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Criar Nova Função</DialogTitle>
+                        <DialogDescription>
+                          Defina um nome e uma descrição para a nova função de usuário
+                        </DialogDescription>
+                      </DialogHeader>
+                      
+                      <div className="grid gap-4 py-4">
                         <div className="grid gap-2">
-                          <Label>Nome da Função</Label>
+                          <Label htmlFor="nome-funcao">Nome da Função</Label>
                           <Input 
-                            value={funcao.nome}
-                            onChange={(e) => handleEditFuncao(funcao.id, 'nome', e.target.value)}
+                            id="nome-funcao" 
+                            placeholder="Ex: Assistente, Estagiário, Coordenador..." 
+                            value={novaFuncaoNome}
+                            onChange={(e) => setNovaFuncaoNome(e.target.value)}
                           />
                         </div>
                         <div className="grid gap-2">
-                          <Label>Descrição</Label>
+                          <Label htmlFor="descricao-funcao">Descrição</Label>
                           <Textarea 
-                            value={funcao.descricao}
-                            onChange={(e) => handleEditFuncao(funcao.id, 'descricao', e.target.value)}
+                            id="descricao-funcao" 
+                            placeholder="Descreva as responsabilidades desta função..."
+                            value={novaFuncaoDescricao}
+                            onChange={(e) => setNovaFuncaoDescricao(e.target.value)}
                           />
                         </div>
-                        <div className="flex justify-end space-x-2">
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => toggleEditandoFuncao(funcao.id)}
-                          >
-                            Cancelar
-                          </Button>
-                          <Button 
-                            size="sm"
-                            onClick={() => handleSalvarEdicao(funcao.id)}
-                          >
-                            Salvar
-                          </Button>
-                        </div>
                       </div>
-                    ) : (
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h3 className="text-lg font-medium">{funcao.nome}</h3>
-                          <p className="text-sm text-muted-foreground">{funcao.descricao}</p>
-                        </div>
-                        <div className="flex space-x-2">
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => toggleEditandoFuncao(funcao.id)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          
-                          {/* Apenas mostrar opção de excluir para funções customizadas (id > 4) */}
-                          {funcao.id > 4 && (
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button variant="ghost" size="sm">
-                                  <Trash2 className="h-4 w-4 text-red-500" />
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Excluir Função</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    Tem certeza que deseja excluir a função "{funcao.nome}"?
-                                    Esta ação não pode ser desfeita.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                  <AlertDialogAction 
-                                    onClick={() => handleExcluirFuncao(funcao.id)}
-                                    className="bg-red-500 hover:bg-red-600"
-                                  >
-                                    Excluir
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                          )}
-                        </div>
+                      
+                      <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsOpenNovaFuncao(false)}>Cancelar</Button>
+                        <Button onClick={handleAddFuncao} className="bg-blue-600 hover:bg-blue-700">Criar Função</Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+                </CardHeader>
+                <CardContent className="px-0">
+                  <div className="space-y-4">
+                    {funcoes.map((funcao) => (
+                      <div key={funcao.id} className="rounded-lg border border-blue-50 p-4 shadow-sm hover:border-blue-200 transition-colors">
+                        {funcao.editando ? (
+                          <div className="space-y-4">
+                            <div className="grid gap-2">
+                              <Label>Nome da Função</Label>
+                              <Input 
+                                value={funcao.nome}
+                                onChange={(e) => handleEditFuncao(funcao.id, 'nome', e.target.value)}
+                                className="border-blue-200 focus:border-blue-400"
+                              />
+                            </div>
+                            <div className="grid gap-2">
+                              <Label>Descrição</Label>
+                              <Textarea 
+                                value={funcao.descricao}
+                                onChange={(e) => handleEditFuncao(funcao.id, 'descricao', e.target.value)}
+                                className="border-blue-200 focus:border-blue-400"
+                              />
+                            </div>
+                            <div className="flex justify-end space-x-2">
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => toggleEditandoFuncao(funcao.id)}
+                                className="border-blue-200 text-blue-700 hover:bg-blue-50"
+                              >
+                                Cancelar
+                              </Button>
+                              <Button 
+                                size="sm"
+                                onClick={() => handleSalvarEdicao(funcao.id)}
+                                className="bg-blue-600 hover:bg-blue-700"
+                              >
+                                Salvar
+                              </Button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <h3 className="text-lg font-medium text-blue-700">{funcao.nome}</h3>
+                              <p className="text-sm text-muted-foreground">{funcao.descricao}</p>
+                            </div>
+                            <div className="flex space-x-2">
+                              <Button 
+                                variant="ghost" 
+                                size="sm"
+                                onClick={() => toggleEditandoFuncao(funcao.id)}
+                                className="text-blue-600 hover:text-blue-800 hover:bg-blue-50"
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              
+                              {/* Apenas mostrar opção de excluir para funções customizadas (id > 4) */}
+                              {funcao.id > 4 && (
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button variant="ghost" size="sm" className="text-red-500 hover:text-red-600 hover:bg-red-50">
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Excluir Função</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        Tem certeza que deseja excluir a função "{funcao.nome}"?
+                                        Esta ação não pode ser desfeita.
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                      <AlertDialogAction 
+                                        onClick={() => handleExcluirFuncao(funcao.id)}
+                                        className="bg-red-500 hover:bg-red-600"
+                                      >
+                                        Excluir
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                              )}
+                            </div>
+                          </div>
+                        )}
                       </div>
-                    )}
+                    ))}
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
         </TabsContent>
         
         {/* Aba de Permissões */}
-        <TabsContent value="permissoes">
-          <Card>
-            <CardHeader>
-              <CardTitle>Permissões de Acesso</CardTitle>
-              <CardDescription>
-                Configure as permissões de acesso para cada tipo de perfil
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid gap-6 md:grid-cols-2">
-                {funcoes.map((perfil, index) => (
-                  <Card key={index} className="border-2 border-gray-100">
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-lg">{perfil.nome}</CardTitle>
-                      <CardDescription>{perfil.descricao}</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-4">
-                        <div className="grid md:grid-cols-2 gap-4">
-                          <div className="border p-4 rounded-md">
-                            <div className="mb-3">
-                              <Label className="text-md font-medium">Agenda</Label>
-                              <p className="text-sm text-muted-foreground">Controle de agendamentos</p>
+        <TabsContent value="permissoes" className="animate-in fade-in-50 duration-300">
+          <div className="bg-white rounded-lg border border-purple-100 shadow-md overflow-hidden">
+            <div className="h-1 w-full bg-gradient-to-r from-purple-400 via-purple-500 to-purple-600"></div>
+            <div className="p-4">
+              <Card className="border-0 shadow-none">
+                <CardHeader className="px-0 pt-0">
+                  <CardTitle className="text-xl text-purple-700 flex items-center">
+                    <Shield className="h-5 w-5 mr-2 text-purple-600" />
+                    Permissões
+                  </CardTitle>
+                  <CardDescription>
+                    Configure as permissões de acesso para cada tipo de perfil
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="px-0">
+                  <div className="space-y-6">
+                    <div className="grid gap-5">
+                      {funcoes.map((perfil, index) => (
+                        <Card key={index} className={cn(
+                          "border-0 overflow-hidden transition-all duration-200 hover:shadow-md",
+                          "bg-gradient-to-br from-white to-purple-50"
+                        )}>
+                          <div className="h-1 w-full bg-gradient-to-r from-purple-400 to-purple-600"></div>
+                          <CardHeader className="pb-2 bg-purple-50/50">
+                            <CardTitle className="text-lg flex items-center space-x-2">
+                              {index === 0 && <Shield className="h-5 w-5 text-purple-600" />}
+                              {index === 1 && <UserCog className="h-5 w-5 text-blue-600" />}
+                              {index === 2 && <UserCircle className="h-5 w-5 text-indigo-600" />}
+                              {index === 3 && <Users className="h-5 w-5 text-teal-600" />}
+                              <span>{perfil.nome}</span>
+                              {index === 0 && <Badge className="ml-2 bg-purple-600">Acesso Total</Badge>}
+                            </CardTitle>
+                            <CardDescription>{perfil.descricao}</CardDescription>
+                          </CardHeader>
+                          <CardContent className="pt-4">
+                            <div className="grid md:grid-cols-3 gap-4">
+                              <div className="bg-gradient-to-br from-purple-50 to-white rounded-lg border border-purple-100 shadow-sm overflow-hidden">
+                                <div className="bg-purple-100/60 p-3 flex items-center space-x-2">
+                                  <CalendarRange className="h-4 w-4 text-purple-600" />
+                                  <Label className="text-md font-medium text-purple-800">Agenda</Label>
+                                </div>
+                                <div className="p-3 space-y-3">
+                                  <div className="flex items-center justify-between border-b border-purple-100 pb-2">
+                                    <Label htmlFor={`agenda-ver-${index}`} className="text-sm text-purple-800">Visualizar</Label>
+                                    <Checkbox id={`agenda-ver-${index}`} defaultChecked={index <= 3} 
+                                      className="data-[state=checked]:bg-purple-600 data-[state=checked]:border-purple-600" />
+                                  </div>
+                                  <div className="flex items-center justify-between border-b border-purple-100 pb-2">
+                                    <Label htmlFor={`agenda-editar-${index}`} className="text-sm text-purple-800">Editar</Label>
+                                    <Checkbox id={`agenda-editar-${index}`} defaultChecked={index <= 2} 
+                                      className="data-[state=checked]:bg-purple-600 data-[state=checked]:border-purple-600" />
+                                  </div>
+                                  <div className="flex items-center justify-between">
+                                    <Label htmlFor={`agenda-excluir-${index}`} className="text-sm text-purple-800">Excluir</Label>
+                                    <Checkbox id={`agenda-excluir-${index}`} defaultChecked={index <= 1} 
+                                      className="data-[state=checked]:bg-purple-600 data-[state=checked]:border-purple-600" />
+                                  </div>
+                                </div>
+                              </div>
+                              
+                              <div className="bg-gradient-to-br from-indigo-50 to-white rounded-lg border border-indigo-100 shadow-sm overflow-hidden">
+                                <div className="bg-indigo-100/60 p-3 flex items-center space-x-2">
+                                  <Users className="h-4 w-4 text-indigo-600" />
+                                  <Label className="text-md font-medium text-indigo-800">Clientes</Label>
+                                </div>
+                                <div className="p-3 space-y-3">
+                                  <div className="flex items-center justify-between border-b border-indigo-100 pb-2">
+                                    <Label htmlFor={`clientes-ver-${index}`} className="text-sm text-indigo-800">Visualizar</Label>
+                                    <Checkbox id={`clientes-ver-${index}`} defaultChecked={index <= 3} 
+                                      className="data-[state=checked]:bg-indigo-600 data-[state=checked]:border-indigo-600" />
+                                  </div>
+                                  <div className="flex items-center justify-between border-b border-indigo-100 pb-2">
+                                    <Label htmlFor={`clientes-editar-${index}`} className="text-sm text-indigo-800">Editar</Label>
+                                    <Checkbox id={`clientes-editar-${index}`} defaultChecked={index <= 2} 
+                                      className="data-[state=checked]:bg-indigo-600 data-[state=checked]:border-indigo-600" />
+                                  </div>
+                                  <div className="flex items-center justify-between">
+                                    <Label htmlFor={`clientes-excluir-${index}`} className="text-sm text-indigo-800">Excluir</Label>
+                                    <Checkbox id={`clientes-excluir-${index}`} defaultChecked={index <= 1} 
+                                      className="data-[state=checked]:bg-indigo-600 data-[state=checked]:border-indigo-600" />
+                                  </div>
+                                </div>
+                              </div>
+                              
+                              <div className="bg-gradient-to-br from-green-50 to-white rounded-lg border border-green-100 shadow-sm overflow-hidden">
+                                <div className="bg-green-100/60 p-3 flex items-center space-x-2">
+                                  <Wallet className="h-4 w-4 text-green-600" />
+                                  <Label className="text-md font-medium text-green-800">Financeiro</Label>
+                                </div>
+                                <div className="p-3 space-y-3">
+                                  <div className="flex items-center justify-between border-b border-green-100 pb-2">
+                                    <Label htmlFor={`financeiro-ver-${index}`} className="text-sm text-green-800">Visualizar</Label>
+                                    <Checkbox id={`financeiro-ver-${index}`} defaultChecked={index <= 2} 
+                                      className="data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600" />
+                                  </div>
+                                  <div className="flex items-center justify-between border-b border-green-100 pb-2">
+                                    <Label htmlFor={`financeiro-editar-${index}`} className="text-sm text-green-800">Editar</Label>
+                                    <Checkbox id={`financeiro-editar-${index}`} defaultChecked={index <= 1} 
+                                      className="data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600" />
+                                  </div>
+                                  <div className="flex items-center justify-between">
+                                    <Label htmlFor={`financeiro-excluir-${index}`} className="text-sm text-green-800">Excluir</Label>
+                                    <Checkbox id={`financeiro-excluir-${index}`} defaultChecked={index === 0} 
+                                      className="data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600" />
+                                  </div>
+                                </div>
+                              </div>
+                              
+                              <div className="bg-gradient-to-br from-amber-50 to-white rounded-lg border border-amber-100 shadow-sm overflow-hidden">
+                                <div className="bg-amber-100/60 p-3 flex items-center space-x-2">
+                                  <PackageSearch className="h-4 w-4 text-amber-600" />
+                                  <Label className="text-md font-medium text-amber-800">Estoque</Label>
+                                </div>
+                                <div className="p-3 space-y-3">
+                                  <div className="flex items-center justify-between border-b border-amber-100 pb-2">
+                                    <Label htmlFor={`estoque-ver-${index}`} className="text-sm text-amber-800">Visualizar</Label>
+                                    <Checkbox id={`estoque-ver-${index}`} defaultChecked={index <= 2} 
+                                      className="data-[state=checked]:bg-amber-600 data-[state=checked]:border-amber-600" />
+                                  </div>
+                                  <div className="flex items-center justify-between border-b border-amber-100 pb-2">
+                                    <Label htmlFor={`estoque-editar-${index}`} className="text-sm text-amber-800">Editar</Label>
+                                    <Checkbox id={`estoque-editar-${index}`} defaultChecked={index <= 1} 
+                                      className="data-[state=checked]:bg-amber-600 data-[state=checked]:border-amber-600" />
+                                  </div>
+                                  <div className="flex items-center justify-between">
+                                    <Label htmlFor={`estoque-excluir-${index}`} className="text-sm text-amber-800">Excluir</Label>
+                                    <Checkbox id={`estoque-excluir-${index}`} defaultChecked={index === 0} 
+                                      className="data-[state=checked]:bg-amber-600 data-[state=checked]:border-amber-600" />
+                                  </div>
+                                </div>
+                              </div>
+                              
+                              <div className="bg-gradient-to-br from-blue-50 to-white rounded-lg border border-blue-100 shadow-sm overflow-hidden">
+                                <div className="bg-blue-100/60 p-3 flex items-center space-x-2">
+                                  <BarChart className="h-4 w-4 text-blue-600" />
+                                  <Label className="text-md font-medium text-blue-800">Relatórios</Label>
+                                </div>
+                                <div className="p-3 space-y-3">
+                                  <div className="flex items-center justify-between border-b border-blue-100 pb-2">
+                                    <Label htmlFor={`relatorios-ver-${index}`} className="text-sm text-blue-800">Visualizar</Label>
+                                    <Checkbox id={`relatorios-ver-${index}`} defaultChecked={index <= 1} 
+                                      className="data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600" />
+                                  </div>
+                                  <div className="flex items-center justify-between border-b border-blue-100 pb-2">
+                                    <Label htmlFor={`relatorios-editar-${index}`} className="text-sm text-blue-800">Exportar</Label>
+                                    <Checkbox id={`relatorios-editar-${index}`} defaultChecked={index === 0} 
+                                      className="data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600" />
+                                  </div>
+                                  <div className="flex items-center justify-between">
+                                    <Label htmlFor={`relatorios-excluir-${index}`} className="text-sm text-blue-800">Configurar</Label>
+                                    <Checkbox id={`relatorios-excluir-${index}`} defaultChecked={index === 0} 
+                                      className="data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600" />
+                                  </div>
+                                </div>
+                              </div>
+                              
+                              <div className="bg-gradient-to-br from-slate-50 to-white rounded-lg border border-slate-100 shadow-sm overflow-hidden">
+                                <div className="bg-slate-100/60 p-3 flex items-center space-x-2">
+                                  <Settings className="h-4 w-4 text-slate-600" />
+                                  <Label className="text-md font-medium text-slate-800">Configurações</Label>
+                                </div>
+                                <div className="p-3 space-y-3">
+                                  <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                                    <Label htmlFor={`config-ver-${index}`} className="text-sm text-slate-800">Visualizar</Label>
+                                    <Checkbox id={`config-ver-${index}`} defaultChecked={index <= 1} 
+                                      className="data-[state=checked]:bg-slate-600 data-[state=checked]:border-slate-600" />
+                                  </div>
+                                  <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                                    <Label htmlFor={`config-editar-${index}`} className="text-sm text-slate-800">Editar</Label>
+                                    <Checkbox id={`config-editar-${index}`} defaultChecked={index === 0} 
+                                      className="data-[state=checked]:bg-slate-600 data-[state=checked]:border-slate-600" />
+                                  </div>
+                                  <div className="flex items-center justify-between">
+                                    <Label htmlFor={`config-sistema-${index}`} className="text-sm text-slate-800">Sistema</Label>
+                                    <Checkbox id={`config-sistema-${index}`} defaultChecked={index === 0} 
+                                      className="data-[state=checked]:bg-slate-600 data-[state=checked]:border-slate-600" />
+                                  </div>
+                                </div>
+                              </div>
                             </div>
-                            <div className="grid grid-cols-3 gap-2">
-                              <div className="flex items-center space-x-2">
-                                <Checkbox id={`agenda-ver-${index}`} defaultChecked={index <= 3} />
-                                <Label htmlFor={`agenda-ver-${index}`}>Visualizar</Label>
-                              </div>
-                              <div className="flex items-center space-x-2">
-                                <Checkbox id={`agenda-editar-${index}`} defaultChecked={index <= 2} />
-                                <Label htmlFor={`agenda-editar-${index}`}>Editar</Label>
-                              </div>
-                              <div className="flex items-center space-x-2">
-                                <Checkbox id={`agenda-excluir-${index}`} defaultChecked={index <= 1} />
-                                <Label htmlFor={`agenda-excluir-${index}`}>Excluir</Label>
-                              </div>
-                            </div>
-                          </div>
-                          
-                          <div className="border p-4 rounded-md">
-                            <div className="mb-3">
-                              <Label className="text-md font-medium">Clientes</Label>
-                              <p className="text-sm text-muted-foreground">Gerenciamento de clientes</p>
-                            </div>
-                            <div className="grid grid-cols-3 gap-2">
-                              <div className="flex items-center space-x-2">
-                                <Checkbox id={`clientes-ver-${index}`} defaultChecked={index <= 3} />
-                                <Label htmlFor={`clientes-ver-${index}`}>Visualizar</Label>
-                              </div>
-                              <div className="flex items-center space-x-2">
-                                <Checkbox id={`clientes-editar-${index}`} defaultChecked={index <= 2} />
-                                <Label htmlFor={`clientes-editar-${index}`}>Editar</Label>
-                              </div>
-                              <div className="flex items-center space-x-2">
-                                <Checkbox id={`clientes-excluir-${index}`} defaultChecked={index <= 1} />
-                                <Label htmlFor={`clientes-excluir-${index}`}>Excluir</Label>
-                              </div>
-                            </div>
-                          </div>
-                          
-                          <div className="border p-4 rounded-md">
-                            <div className="mb-3">
-                              <Label className="text-md font-medium">Financeiro</Label>
-                              <p className="text-sm text-muted-foreground">Controle financeiro</p>
-                            </div>
-                            <div className="grid grid-cols-3 gap-2">
-                              <div className="flex items-center space-x-2">
-                                <Checkbox id={`financeiro-ver-${index}`} defaultChecked={index <= 2} />
-                                <Label htmlFor={`financeiro-ver-${index}`}>Visualizar</Label>
-                              </div>
-                              <div className="flex items-center space-x-2">
-                                <Checkbox id={`financeiro-editar-${index}`} defaultChecked={index <= 1} />
-                                <Label htmlFor={`financeiro-editar-${index}`}>Editar</Label>
-                              </div>
-                              <div className="flex items-center space-x-2">
-                                <Checkbox id={`financeiro-excluir-${index}`} defaultChecked={index === 0} />
-                                <Label htmlFor={`financeiro-excluir-${index}`}>Excluir</Label>
-                              </div>
-                            </div>
-                          </div>
-                          
-                          <div className="border p-4 rounded-md">
-                            <div className="mb-3">
-                              <Label className="text-md font-medium">Estoque</Label>
-                              <p className="text-sm text-muted-foreground">Controle de produtos</p>
-                            </div>
-                            <div className="grid grid-cols-3 gap-2">
-                              <div className="flex items-center space-x-2">
-                                <Checkbox id={`estoque-ver-${index}`} defaultChecked={index <= 2} />
-                                <Label htmlFor={`estoque-ver-${index}`}>Visualizar</Label>
-                              </div>
-                              <div className="flex items-center space-x-2">
-                                <Checkbox id={`estoque-editar-${index}`} defaultChecked={index <= 1} />
-                                <Label htmlFor={`estoque-editar-${index}`}>Editar</Label>
-                              </div>
-                              <div className="flex items-center space-x-2">
-                                <Checkbox id={`estoque-excluir-${index}`} defaultChecked={index === 0} />
-                                <Label htmlFor={`estoque-excluir-${index}`}>Excluir</Label>
-                              </div>
-                            </div>
-                          </div>
-                          
-                          <div className="border p-4 rounded-md">
-                            <div className="mb-3">
-                              <Label className="text-md font-medium">Relatórios</Label>
-                              <p className="text-sm text-muted-foreground">Acesso a relatórios</p>
-                            </div>
-                            <div className="grid grid-cols-3 gap-2">
-                              <div className="flex items-center space-x-2">
-                                <Checkbox id={`relatorios-ver-${index}`} defaultChecked={index <= 1} />
-                                <Label htmlFor={`relatorios-ver-${index}`}>Visualizar</Label>
-                              </div>
-                              <div className="flex items-center space-x-2">
-                                <Checkbox id={`relatorios-editar-${index}`} defaultChecked={index === 0} />
-                                <Label htmlFor={`relatorios-editar-${index}`}>Exportar</Label>
-                              </div>
-                              <div className="flex items-center space-x-2">
-                                <Checkbox id={`relatorios-excluir-${index}`} defaultChecked={index === 0} />
-                                <Label htmlFor={`relatorios-excluir-${index}`}>Configurar</Label>
-                              </div>
-                            </div>
-                          </div>
-                          
-                          <div className="border p-4 rounded-md">
-                            <div className="mb-3">
-                              <Label className="text-md font-medium">Configurações</Label>
-                              <p className="text-sm text-muted-foreground">Acesso a configurações do sistema</p>
-                            </div>
-                            <div className="grid grid-cols-3 gap-2">
-                              <div className="flex items-center space-x-2">
-                                <Checkbox id={`config-ver-${index}`} defaultChecked={index <= 1} />
-                                <Label htmlFor={`config-ver-${index}`}>Visualizar</Label>
-                              </div>
-                              <div className="flex items-center space-x-2">
-                                <Checkbox id={`config-editar-${index}`} defaultChecked={index === 0} />
-                                <Label htmlFor={`config-editar-${index}`}>Editar</Label>
-                              </div>
-                              <div className="flex items-center space-x-2">
-                                <Checkbox id={`config-sistema-${index}`} defaultChecked={index === 0} />
-                                <Label htmlFor={`config-sistema-${index}`}>Sistema</Label>
-                              </div>
-                            </div>
-                          </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                    <div className="mt-6 border border-dashed border-purple-200 rounded-lg p-4 bg-purple-50/50">
+                      <div className="flex items-start space-x-3">
+                        <div className="p-1.5 bg-purple-100 rounded-full text-purple-600">
+                          <Lock className="h-5 w-5" />
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-medium text-purple-700">Segurança do Sistema de Permissões</h4>
+                          <p className="text-sm text-purple-600 mt-1">
+                            As alterações em permissões são registradas em logs de auditoria. 
+                            Permissões específicas podem ser personalizadas nas configurações avançadas do sistema.
+                          </p>
                         </div>
                       </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
         </TabsContent>
         
         {/* Aba de Configurações */}
-        <TabsContent value="configuracoes">
-          <Card>
-            <CardHeader>
-              <CardTitle>Configurações de Usuários</CardTitle>
-              <CardDescription>
-                Defina opções gerais para o acesso de usuários
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-4">
-                <h3 className="text-lg font-medium">Página Inicial por Perfil</h3>
-                <p className="text-sm text-muted-foreground">Defina qual será a primeira página exibida após o login para cada tipo de usuário</p>
-                
-                <div className="space-y-4">
-                  {funcoes.map((perfil, index) => (
-                    <div key={index} className="flex items-center gap-4">
-                      <div className="w-32 font-medium">{perfil.nome}</div>
+        <TabsContent value="configuracoes" className="animate-in fade-in-50 duration-300">
+          <div className="bg-white rounded-lg border border-slate-100 shadow-md overflow-hidden">
+            <div className="h-1 w-full bg-gradient-to-r from-slate-400 via-slate-500 to-slate-600"></div>
+            <div className="p-4">
+              <Card className="border-0 shadow-none">
+                <CardHeader className="px-0 pt-0">
+                  <CardTitle className="text-xl text-slate-700 flex items-center">
+                    <Settings className="h-5 w-5 mr-2 text-slate-600" />
+                    Configurações
+                  </CardTitle>
+                  <CardDescription>
+                    Defina opções gerais para o acesso de usuários
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="px-0">
+                  <div className="space-y-6">
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-medium">Página Inicial por Perfil</h3>
+                      <p className="text-sm text-muted-foreground">Defina qual será a primeira página exibida após o login para cada tipo de usuário</p>
                       
-                      <div className="flex-1">
-                        <Select defaultValue={index === 0 ? 'dashboard' : 
-                                          index === 1 ? 'relatorios' : 
-                                          index === 2 ? 'agenda' : 'agenda'}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione a página inicial" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="dashboard">Dashboard</SelectItem>
-                            <SelectItem value="agenda">Agenda</SelectItem>
-                            <SelectItem value="clientes">Clientes</SelectItem>
-                            <SelectItem value="financeiro">Financeiro</SelectItem>
-                            <SelectItem value="estoque">Estoque</SelectItem>
-                            <SelectItem value="relatorios">Relatórios</SelectItem>
-                          </SelectContent>
-                        </Select>
+                      <div className="space-y-4">
+                        {funcoes.map((perfil, index) => (
+                          <div key={index} className="flex items-center gap-4">
+                            <div className="w-32 font-medium">{perfil.nome}</div>
+                            
+                            <div className="flex-1">
+                              <Select defaultValue={index === 0 ? 'dashboard' : 
+                                                index === 1 ? 'relatorios' : 
+                                                index === 2 ? 'agenda' : 'agenda'}>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Selecione a página inicial" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="dashboard">Dashboard</SelectItem>
+                                  <SelectItem value="agenda">Agenda</SelectItem>
+                                  <SelectItem value="clientes">Clientes</SelectItem>
+                                  <SelectItem value="financeiro">Financeiro</SelectItem>
+                                  <SelectItem value="estoque">Estoque</SelectItem>
+                                  <SelectItem value="relatorios">Relatórios</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     </div>
-                  ))}
-                </div>
-              </div>
-              
-              <Separator />
-              
-              <div className="space-y-4">
-                <h3 className="text-lg font-medium">Opções de Segurança</h3>
-                
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>Bloqueio Automático</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Bloquear sessão após inatividade
-                      </p>
+                    
+                    <Separator />
+                    
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-medium">Opções de Segurança</h3>
+                      
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                          <div className="space-y-0.5">
+                            <Label>Bloqueio Automático</Label>
+                            <p className="text-sm text-muted-foreground">
+                              Bloquear sessão após inatividade
+                            </p>
+                          </div>
+                          <Switch />
+                        </div>
+                        
+                        <div className="flex items-center justify-between">
+                          <div className="space-y-0.5">
+                            <Label>Tentativas de Login</Label>
+                            <p className="text-sm text-muted-foreground">
+                              Número máximo de tentativas de login
+                            </p>
+                          </div>
+                          <Select defaultValue="3">
+                            <SelectTrigger className="w-20">
+                              <SelectValue placeholder="Selecione" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="3">3</SelectItem>
+                              <SelectItem value="5">5</SelectItem>
+                              <SelectItem value="10">10</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
                     </div>
-                    <Switch />
                   </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>Tentativas de Login</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Número máximo de tentativas de login
-                      </p>
-                    </div>
-                    <Select defaultValue="3">
-                      <SelectTrigger className="w-20">
-                        <SelectValue placeholder="Selecione" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="3">3</SelectItem>
-                        <SelectItem value="5">5</SelectItem>
-                        <SelectItem value="10">10</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
         </TabsContent>
       </Tabs>
 

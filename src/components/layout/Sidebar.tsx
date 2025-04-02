@@ -20,11 +20,6 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { useState } from "react";
 
 interface MenuItem {
@@ -106,54 +101,48 @@ export const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
     const itemColors = menuItemColors[item.path];
 
     return (
-      <Tooltip key={item.path}>
-        <TooltipTrigger asChild>
-          <Link
-            to={item.path}
-            className={cn(
-              "flex items-center gap-2 px-3 py-2 rounded-lg text-neutral-soft transition-all duration-200",
-              itemColors.hover,
-              "hover:text-neutral-900 dark:hover:text-white",
-              isActive ? `${itemColors.bg} ${itemColors.color} font-medium dark:bg-opacity-20` : "",
-              !isOpen && "justify-center",
-              "group relative"
-            )}
-            onContextMenu={(e) => {
-              e.preventDefault();
-              togglePinnedItem(item.path);
-            }}
-          >
-            <div className={cn(
-              "flex items-center justify-center w-7 h-7 rounded-md transition-transform duration-200",
-              isActive ? itemColors.bg : "bg-transparent",
-              isActive && "scale-110"
-            )}>
-              <item.icon className={cn(
-                "w-4 h-4", 
-                itemColors.color,
-                "transition-all duration-200"
-              )} />
-            </div>
-            {isOpen && (
-              <span className={cn(
-                "text-sm truncate",
-                isActive ? itemColors.color : "text-neutral-600 dark:text-neutral-400"
-              )}>
-                {item.label}
-              </span>
-            )}
-            {isPinned && isOpen && (
-              <div className={cn(
-                "absolute right-2 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full",
-                itemColors.color
-              )} />
-            )}
-          </Link>
-        </TooltipTrigger>
-        <TooltipContent side="right" className={cn("ml-2", itemColors.color)}>
-          <p>{item.label}</p>
-        </TooltipContent>
-      </Tooltip>
+      <Link
+        key={item.path}
+        to={item.path}
+        className={cn(
+          "flex items-center gap-2 px-3 py-2 rounded-lg text-neutral-soft transition-all duration-200",
+          itemColors.hover,
+          "hover:text-neutral-900 dark:hover:text-white",
+          isActive ? `${itemColors.bg} ${itemColors.color} font-medium dark:bg-opacity-20` : "",
+          !isOpen && "justify-center",
+          "group relative"
+        )}
+        onContextMenu={(e) => {
+          e.preventDefault();
+          togglePinnedItem(item.path);
+        }}
+      >
+        <div className={cn(
+          "flex items-center justify-center w-7 h-7 rounded-md transition-transform duration-200",
+          isActive ? itemColors.bg : "bg-transparent",
+          isActive && "scale-110"
+        )}>
+          <item.icon className={cn(
+            "w-4 h-4", 
+            itemColors.color,
+            "transition-all duration-200"
+          )} />
+        </div>
+        {isOpen && (
+          <span className={cn(
+            "text-sm truncate",
+            isActive ? itemColors.color : "text-neutral-600 dark:text-neutral-400"
+          )}>
+            {item.label}
+          </span>
+        )}
+        {isPinned && isOpen && (
+          <div className={cn(
+            "absolute right-2 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full",
+            itemColors.color
+          )} />
+        )}
+      </Link>
     );
   };
 

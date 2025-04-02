@@ -10,7 +10,9 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
       <Sidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
       <div className={`${isSidebarOpen ? "lg:ml-64" : "lg:ml-20"} transition-[margin] duration-300`}>
         <Navbar onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)} />
-        <main className="p-4 md:p-6">{children}</main>
+        <main className="p-4 md:p-6">
+          {children}
+        </main>
       </div>
     </div>
   );
