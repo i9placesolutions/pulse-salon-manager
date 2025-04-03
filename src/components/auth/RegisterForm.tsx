@@ -84,9 +84,10 @@ const RegisterForm = () => {
       
       toast({
         title: "Conta criada com sucesso!",
-        description: "Por favor, complete seu perfil para continuar.",
+        description: "Verifique seu e-mail para confirmar sua conta e continue completando seu perfil.",
         variant: "success",
-        className: "shadow-xl"
+        className: "shadow-xl",
+        duration: 8000 // Aumentado para 8 segundos (8000ms)
       });
     } catch (error: any) {
       setIsLoading(false);

@@ -28,7 +28,12 @@ const LoginForm = () => {
         password
       });
 
-      if (error) throw error;
+      if (error) {
+        if (error.message.includes("Email not confirmed")) {
+          throw new Error("E-mail não confirmado. Por favor, verifique sua caixa de entrada e confirme seu e-mail para continuar.");
+        }
+        throw error;
+      }
 
       // Buscar dados do perfil do usuário
       const { data: profileData, error: profileError } = await supabase
@@ -76,6 +81,19 @@ const LoginForm = () => {
       
     } catch (error: any) {
       setIsLoading(false);
+      
+      // Mensagem especial para e-mail não confirmado
+      if (error.message.includes("E-mail não confirmado")) {
+        toast({
+          variant: "warning",
+          title: "E-mail não confirmado",
+          description: "Por favor, verifique sua caixa de entrada e confirme seu e-mail para continuar.",
+          className: "shadow-xl animate-shake",
+          duration: 10000 // 10 segundos para essa mensagem importante
+        });
+        return;
+      }
+      
       toast({
         variant: "destructive",
         title: "Erro ao fazer login",
