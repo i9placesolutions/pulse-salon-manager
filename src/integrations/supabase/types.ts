@@ -9,6 +9,93 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      establishment_details: {
+        Row: {
+          address_city: string | null
+          address_complement: string | null
+          address_latitude: string | null
+          address_longitude: string | null
+          address_neighborhood: string | null
+          address_number: string | null
+          address_state: string | null
+          address_street: string | null
+          address_zipcode: string | null
+          created_at: string | null
+          custom_url: string | null
+          description: string | null
+          document_number: string | null
+          document_type: string | null
+          email: string | null
+          facebook: string | null
+          id: string
+          instagram: string | null
+          logo_url: string | null
+          primary_color: string | null
+          responsible_email: string | null
+          responsible_name: string | null
+          responsible_phone: string | null
+          tiktok: string | null
+          updated_at: string | null
+          whatsapp: string | null
+        }
+        Insert: {
+          address_city?: string | null
+          address_complement?: string | null
+          address_latitude?: string | null
+          address_longitude?: string | null
+          address_neighborhood?: string | null
+          address_number?: string | null
+          address_state?: string | null
+          address_street?: string | null
+          address_zipcode?: string | null
+          created_at?: string | null
+          custom_url?: string | null
+          description?: string | null
+          document_number?: string | null
+          document_type?: string | null
+          email?: string | null
+          facebook?: string | null
+          id: string
+          instagram?: string | null
+          logo_url?: string | null
+          primary_color?: string | null
+          responsible_email?: string | null
+          responsible_name?: string | null
+          responsible_phone?: string | null
+          tiktok?: string | null
+          updated_at?: string | null
+          whatsapp?: string | null
+        }
+        Update: {
+          address_city?: string | null
+          address_complement?: string | null
+          address_latitude?: string | null
+          address_longitude?: string | null
+          address_neighborhood?: string | null
+          address_number?: string | null
+          address_state?: string | null
+          address_street?: string | null
+          address_zipcode?: string | null
+          created_at?: string | null
+          custom_url?: string | null
+          description?: string | null
+          document_number?: string | null
+          document_type?: string | null
+          email?: string | null
+          facebook?: string | null
+          id?: string
+          instagram?: string | null
+          logo_url?: string | null
+          primary_color?: string | null
+          responsible_email?: string | null
+          responsible_name?: string | null
+          responsible_phone?: string | null
+          tiktok?: string | null
+          updated_at?: string | null
+          whatsapp?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string

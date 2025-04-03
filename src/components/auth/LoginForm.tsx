@@ -39,6 +39,18 @@ const LoginForm = () => {
 
       if (profileError) throw profileError;
 
+      // Buscar dados de detalhes do estabelecimento
+      const { data: establishmentData, error: establishmentError } = await supabase
+        .from('establishment_details')
+        .select('*')
+        .eq('id', data.user.id)
+        .single();
+
+      // Não tratar como erro se não encontrar detalhes, só informações básicas são obrigatórias
+      if (establishmentError && establishmentError.code !== 'PGRST116') {
+        console.error("Erro ao buscar detalhes do estabelecimento:", establishmentError);
+      }
+
       if (profileData) {
         // Atualizar estado do contexto com os dados do perfil
         setEstablishmentName(profileData.establishment_name);

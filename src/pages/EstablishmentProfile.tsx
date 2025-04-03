@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -8,12 +7,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/components/ui/use-toast";
-import { MapPin, Phone, Mail, Instagram, Facebook, MessageSquare, Upload, Building, Building2, MapPinned, User, AlertCircle } from "lucide-react";
+import { MapPin, Phone, Mail, Instagram, Facebook, MessageSquare, Upload, Building, Building2, MapPinned, User, AlertCircle, MessageCircle } from "lucide-react";
 import { PageLayout } from "@/components/shared/PageLayout";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { useAppState } from "@/contexts/AppStateContext";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { supabase } from "@/integrations/supabase/client";
+import { v4 as uuidv4 } from 'uuid';
 
 interface EstablishmentProfile {
   name: string;
@@ -81,12 +81,14 @@ export default function EstablishmentProfile() {
   const navigate = useNavigate();
   const [profile, setProfile] = useState<EstablishmentProfile>(defaultProfile);
   const [logoPreview, setLogoPreview] = useState<string>("");
+  const [logoFile, setLogoFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const { establishmentName, setEstablishmentName, profileState, updateProfileCompletion } = useAppState();
   const [missingFields, setMissingFields] = useState<string[]>([]);
   const [userId, setUserId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Verificar usuário autenticado e buscar dados do perfil
   useEffect(() => {
@@ -98,33 +100,79 @@ export default function EstablishmentProfile() {
         setUserId(session.user.id);
         
         try {
-          const { data, error } = await supabase
+          // Buscar dados do perfil básico
+          const { data: profileData, error: profileError } = await supabase
             .from('profiles')
             .select('*')
             .eq('id', session.user.id)
             .single();
             
-          if (error) {
-            console.error("Erro ao buscar perfil:", error);
+          if (profileError) {
+            console.error("Erro ao buscar perfil:", profileError);
             toast({
               variant: "destructive",
               title: "Erro ao carregar perfil",
               description: "Não foi possível carregar os dados do seu perfil.",
             });
-          } else if (data) {
-            // Se já tiver dados salvos no perfil, preencher os campos
-            if (data.establishment_name) {
-              setProfile(prev => ({ 
-                ...prev, 
-                name: data.establishment_name 
-              }));
-            }
+          } else if (profileData) {
+            // Atualizar informações básicas do perfil
+            setProfile(prev => ({ 
+              ...prev, 
+              name: profileData.establishment_name 
+            }));
             
-            // Se houver mais dados do perfil salvos em um campo JSON, poderíamos carregá-los aqui
-            // Por exemplo: if (data.profile_data) { setProfile(JSON.parse(data.profile_data)); }
+            // Buscar detalhes do estabelecimento
+            const { data: detailsData, error: detailsError } = await supabase
+              .from('establishment_details')
+              .select('*')
+              .eq('id', session.user.id)
+              .single();
+              
+            if (detailsError && detailsError.code !== 'PGRST116') {
+              console.error("Erro ao buscar detalhes:", detailsError);
+            } else if (detailsData) {
+              // Preencher dados do formulário com os dados do banco
+              setProfile(prev => ({
+                ...prev,
+                documentType: detailsData.document_type as 'cnpj' | 'cpf' || 'cnpj',
+                documentNumber: detailsData.document_number || '',
+                address: {
+                  street: detailsData.address_street || '',
+                  number: detailsData.address_number || '',
+                  complement: detailsData.address_complement || '',
+                  neighborhood: detailsData.address_neighborhood || '',
+                  city: detailsData.address_city || '',
+                  state: detailsData.address_state || '',
+                  zipCode: detailsData.address_zipcode || '',
+                  latitude: detailsData.address_latitude || '',
+                  longitude: detailsData.address_longitude || ''
+                },
+                whatsapp: detailsData.whatsapp || '',
+                email: detailsData.email || '',
+                instagram: detailsData.instagram || '',
+                facebook: detailsData.facebook || '',
+                tiktok: detailsData.tiktok || '',
+                logo: detailsData.logo_url || '',
+                description: detailsData.description || '',
+                customUrl: detailsData.custom_url || '',
+                primaryColor: detailsData.primary_color || '#1e40af',
+                responsible: {
+                  name: detailsData.responsible_name || '',
+                  phone: detailsData.responsible_phone || '',
+                  email: detailsData.responsible_email || ''
+                }
+              }));
+              
+              // Se tiver logo, mostrar a preview
+              if (detailsData.logo_url) {
+                setLogoPreview(detailsData.logo_url);
+              }
+            }
           }
         } catch (error) {
           console.error("Erro ao processar perfil:", error);
+        } finally {
+          setIsLoading(false);
         }
       } else {
         // Usuário não está autenticado, redirecionar para login
@@ -134,9 +182,8 @@ export default function EstablishmentProfile() {
           title: "Sessão expirada",
           description: "Por favor, faça login para acessar esta página.",
         });
+        setIsLoading(false);
       }
-      
-      setIsLoading(false);
     };
 
     checkAuth();
@@ -283,11 +330,11 @@ export default function EstablishmentProfile() {
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      setLogoFile(file);
       const reader = new FileReader();
       reader.onload = (e) => {
         const result = e.target?.result as string;
         setLogoPreview(result);
-        setProfile({ ...profile, logo: result });
       };
       reader.readAsDataURL(file);
     }
@@ -306,6 +353,38 @@ export default function EstablishmentProfile() {
   const openWhatsApp = () => {
     const number = profile.whatsapp.replace(/\D/g, '');
     window.open(`https://wa.me/55${number}`, '_blank');
+  };
+
+  // Função para fazer upload da logo
+  const uploadLogo = async (userId: string): Promise<string | null> => {
+    if (!logoFile) {
+      // Se não tem novo arquivo, retorna a URL atual (pode ser vazia)
+      return profile.logo;
+    }
+    
+    try {
+      // Criar nome único para o arquivo
+      const fileExt = logoFile.name.split('.').pop();
+      const fileName = `${userId}/${uuidv4()}.${fileExt}`;
+      const filePath = `${fileName}`;
+      
+      // Fazer upload do arquivo
+      const { error: uploadError } = await supabase.storage
+        .from('establishment_logos')
+        .upload(filePath, logoFile);
+        
+      if (uploadError) throw uploadError;
+      
+      // Obter URL pública do arquivo
+      const { data } = supabase.storage
+        .from('establishment_logos')
+        .getPublicUrl(filePath);
+        
+      return data.publicUrl;
+    } catch (error) {
+      console.error("Erro ao fazer upload da logo:", error);
+      return null;
+    }
   };
 
   const handleSave = async () => {
@@ -329,11 +408,14 @@ export default function EstablishmentProfile() {
       return;
     }
     
-    setIsLoading(true);
+    setIsSaving(true);
     
     try {
-      // Salvar os dados básicos do perfil
-      const { error: updateError } = await supabase
+      // Fazer upload da logo se houver
+      const logoUrl = await uploadLogo(userId);
+      
+      // Atualizar os dados básicos do perfil
+      const { error: updateProfileError } = await supabase
         .from('profiles')
         .update({
           establishment_name: profile.name,
@@ -342,10 +424,40 @@ export default function EstablishmentProfile() {
         })
         .eq('id', userId);
 
-      if (updateError) throw updateError;
+      if (updateProfileError) throw updateProfileError;
 
-      // Poderia salvar os dados completos do perfil em um campo JSON adicional na tabela profiles
-      // Por exemplo: profile_data: JSON.stringify(profile)
+      // Atualizar os detalhes do estabelecimento
+      const { error: updateDetailsError } = await supabase
+        .from('establishment_details')
+        .update({
+          document_type: profile.documentType,
+          document_number: profile.documentNumber,
+          address_street: profile.address.street,
+          address_number: profile.address.number,
+          address_complement: profile.address.complement,
+          address_neighborhood: profile.address.neighborhood,
+          address_city: profile.address.city,
+          address_state: profile.address.state,
+          address_zipcode: profile.address.zipCode,
+          address_latitude: profile.address.latitude,
+          address_longitude: profile.address.longitude,
+          whatsapp: profile.whatsapp,
+          email: profile.email,
+          instagram: profile.instagram,
+          facebook: profile.facebook,
+          tiktok: profile.tiktok,
+          logo_url: logoUrl,
+          description: profile.description,
+          custom_url: profile.customUrl,
+          primary_color: profile.primaryColor,
+          responsible_name: profile.responsible?.name,
+          responsible_phone: profile.responsible?.phone,
+          responsible_email: profile.responsible?.email,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', userId);
+
+      if (updateDetailsError) throw updateDetailsError;
       
       // Atualizar o nome do estabelecimento no contexto global
       setEstablishmentName(profile.name);
@@ -371,7 +483,7 @@ export default function EstablishmentProfile() {
         description: error.message || "Ocorreu um erro ao salvar seu perfil. Tente novamente.",
       });
     } finally {
-      setIsLoading(false);
+      setIsSaving(false);
     }
   };
 
@@ -404,7 +516,20 @@ export default function EstablishmentProfile() {
         variant="blue"
         badge="Identificação"
         action={
-          <Button onClick={handleSave} variant="dashboard">Salvar Alterações</Button>
+          <Button 
+            onClick={handleSave} 
+            variant="dashboard" 
+            disabled={isSaving}
+          >
+            {isSaving ? (
+              <>
+                <span className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"></span>
+                Salvando...
+              </>
+            ) : (
+              "Salvar Alterações"
+            )}
+          </Button>
         }
       />
       
@@ -644,7 +769,7 @@ export default function EstablishmentProfile() {
                     <Label htmlFor="latitude" className="text-sm text-blue-600 flex items-center gap-1">
                       <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-500">
                         <circle cx="12" cy="10" r="3" />
-                        <path d="M12 21.7C17.3 17 20 13 20 10a8 8 0 1 0-16 0c0 3 2.7 6.9 8 11.7z" />
+                        <path d="M12 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
                       </svg>
                       Latitude
                     </Label>
@@ -707,9 +832,7 @@ export default function EstablishmentProfile() {
                           className="inline-flex items-center gap-1 text-xs bg-blue-100 hover:bg-blue-200 text-blue-700 py-1 px-2 rounded transition-colors"
                         >
                           <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-                            <polyline points="15 3 21 3 21 9" />
-                            <line x1="10" x2="21" y1="14" y2="3" />
+                            <path d="M18 13v6a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
                           </svg>
                           Ver no Google Maps
                         </a>
@@ -752,8 +875,7 @@ export default function EstablishmentProfile() {
                           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
                             <circle cx="9" cy="7" r="4" />
-                            <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
-                            <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                            <path d="M22 21v-2a4 4 0 0 1 0 7.75" />
                           </svg>
                         </div>
                       </div>
@@ -789,7 +911,7 @@ export default function EstablishmentProfile() {
                         className="text-sm text-blue-600 flex items-center gap-1.5"
                       >
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-500">
-                          <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                          <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2z" />
                           <polyline points="22,6 12,13 2,6" />
                         </svg>
                         E-mail
@@ -800,7 +922,7 @@ export default function EstablishmentProfile() {
                           type="email"
                           value={profile.responsible?.email || ''}
                           onChange={(e) => handleResponsibleChange('email', e.target.value)}
-                          placeholder="email@exemplo.com"
+                          placeholder="contato@seusalao.com.br"
                           className="border-blue-200 focus:border-blue-400 pl-8"
                         />
                         <div className="absolute left-2.5 top-1/2 -translate-y-1/2 text-blue-400">
