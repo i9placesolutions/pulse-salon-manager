@@ -1,21 +1,16 @@
 
 export interface Service {
-  id: number;
+  id: string | number;
   name: string;
-  description: string;
-  category: string;
-  duration: number;
+  description?: string;
   price: number;
-  status: 'active' | 'inactive';
-  commission: {
-    type: 'fixed' | 'percentage';
-    value: number;
-  };
-  professionals: number[];
-  products: {
-    productId: number;
-    quantity: number;
-  }[];
+  duration: number;
+  category: string;
+  status: "active" | "inactive";
+  professionals?: number[];
+  tags?: string[];
+  images?: string[];
+  discount?: number;
   performanceData?: {
     totalSold?: number;
     revenue?: number;
@@ -26,52 +21,16 @@ export interface Service {
   };
 }
 
-export interface ServiceCategory {
-  id: number;
-  name: string;
-  description?: string;
-  status: 'active' | 'inactive';
-}
-
-export interface ProfessionalCommission {
-  professionalId: number;
-  serviceId: number;
-  type: 'fixed' | 'percentage';
-  value: number;
-}
-
 export interface ServicePackage {
-  id: number | string;
+  id: string | number;
   name: string;
   description: string;
-  services: {
-    serviceId: number | string;
-    discount: number;
-  }[];
-  products?: {
-    productId: number;
-    quantity: number;
-  }[];
+  services: { serviceId: string | number; discount: number }[];
+  products?: { productId: number; quantity: number; }[];
   discount: number;
-  status: 'active' | 'inactive';
-  price?: number;
-  expirationDays?: number;
-}
-
-export interface PackageService {
-  id: number;
-  name: string;
+  status: "active" | "inactive";
   price: number;
-  discount?: number;
-}
-
-export interface ProfessionalGoal {
-  id: number;
-  professionalId: number;
-  month: string; // formato YYYY-MM
-  serviceTarget: number; // meta de quantidade de serviços
-  revenueTarget: number; // meta de faturamento
-  commissionsTarget: number; // meta de comissões
+  expirationDays: number;
 }
 
 export interface PerformanceData {
@@ -83,12 +42,17 @@ export interface PerformanceData {
   clientRetention?: number;
 }
 
-export interface ProfessionalPerformance {
-  id: number;
-  professionalId: number;
-  serviceId: number;
-  date: string;
-  revenue: number;
-  commission: number;
-  clientSatisfaction: number; // 0-5
-}
+export type ServiceCategory = {
+  id: string | number;
+  name: string;
+  description: string;
+  color?: string;
+  icon?: string;
+  services?: number;
+};
+
+export type ServiceTag = {
+  id: string | number;
+  name: string;
+  color?: string;
+};

@@ -30,6 +30,7 @@ export interface AccountReceivable {
   dueDate: string;
   status: "Pendente" | "Pago" | "Atrasado" | "Cancelado";
   installment?: string;
+  description?: string;
 }
 
 export interface Expense {
@@ -41,6 +42,8 @@ export interface Expense {
   status: string;
   recurring: boolean;
   costCenter?: string;
+  name?: string;
+  date?: string;
 }
 
 export interface CashFlow {
@@ -50,9 +53,10 @@ export interface CashFlow {
   category: string;
   description: string;
   value: number;
-  status: "realizado" | "previsto";
+  status?: "realizado" | "previsto";
   paymentMethod: string;
   relatedDocument?: string;
+  recurring?: boolean;
 }
 
 export interface TaxRecord {
@@ -72,6 +76,7 @@ export interface PaymentMethodConfig {
   name?: string;
   enabled: boolean;
   fee: number;
+  maxInstallments?: number;
   pixKeys?: {
     key: string;
     type: string;
@@ -89,7 +94,8 @@ export interface CommissionConfig {
   id?: number;
   name?: string;
   professionalId?: number;
-  commissionType: 'percentage' | 'fixed';
+  type?: string;
+  commissionType?: 'percentage' | 'fixed';
   defaultValue: number;
   serviceSpecific?: {
     [serviceId: string]: {
@@ -97,4 +103,22 @@ export interface CommissionConfig {
       value: number;
     };
   }[];
+  customValues?: {
+    type: string;
+    value: number;
+  }[];
+}
+
+export interface Alert {
+  id: number;
+  type: string;
+  title: string;
+  description: string;
+  date: string;
+  action?: string;
+  priority: 'high' | 'medium' | 'low';
+  related?: {
+    type: string;
+    id: number;
+  };
 }
