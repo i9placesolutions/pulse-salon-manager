@@ -172,12 +172,18 @@ export function ConfigWhatsApp() {
   
   // Função para atualizar a instância principal
   const refreshMainInstance = async () => {
+    // Evita múltiplas chamadas
+    if (isLoadingMainInstance) {
+      return;
+    }
+    
     await checkMainInstance();
     
     toast({
       title: "Sucesso",
       description: "Dados da instância principal atualizados",
-      variant: "default"
+      variant: "default",
+      id: "main-instance-updated"
     });
   };
   
@@ -287,8 +293,14 @@ export function ConfigWhatsApp() {
       toast({
         title: "Erro",
         description: "Não há token de instância disponível",
-        variant: "destructive"
+        variant: "destructive",
+        id: "whatsapp-instance-error"
       });
+      return;
+    }
+    
+    // Verifica se já está carregando para evitar múltiplas chamadas
+    if (isLoadingInstance) {
       return;
     }
     
@@ -297,10 +309,12 @@ export function ConfigWhatsApp() {
     try {
       await checkConnectedInstance(instanceToken);
       
+      // Exibe o toast de sucesso apenas uma vez com ID único
       toast({
         title: "Sucesso",
         description: "Dados da instância atualizados",
-        variant: "default"
+        variant: "default",
+        id: "whatsapp-instance-updated"
       });
     } catch (err) {
       console.error('Erro ao atualizar dados da instância:', err);
@@ -308,7 +322,8 @@ export function ConfigWhatsApp() {
       toast({
         title: "Erro",
         description: "Não foi possível atualizar os dados da instância",
-        variant: "destructive"
+        variant: "destructive",
+        id: "whatsapp-instance-update-error"
       });
     } finally {
       setIsLoadingInstance(false);
@@ -518,8 +533,17 @@ export function ConfigWhatsApp() {
                 onClick={refreshMainInstance}
                 disabled={isLoadingMainInstance}
               >
-                <RefreshCcw className="h-4 w-4 mr-1" />
-                Atualizar
+                {isLoadingMainInstance ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                    Atualizando...
+                  </>
+                ) : (
+                  <>
+                    <RefreshCcw className="h-4 w-4 mr-1" />
+                    Atualizar
+                  </>
+                )}
               </Button>
             </div>
             
@@ -587,8 +611,17 @@ export function ConfigWhatsApp() {
                 onClick={refreshConnectedInstance}
                 disabled={isLoadingInstance}
               >
-                <RefreshCcw className="h-4 w-4 mr-1" />
-                Atualizar
+                {isLoadingInstance ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                    Atualizando...
+                  </>
+                ) : (
+                  <>
+                    <RefreshCcw className="h-4 w-4 mr-1" />
+                    Atualizar
+                  </>
+                )}
               </Button>
             </div>
           </CardHeader>

@@ -39,6 +39,7 @@ const menuItems: MenuItem[] = [
   { icon: DollarSign, label: "Financeiro", path: "/financeiro", category: "principal" },
   { icon: Package, label: "Estoque", path: "/estoque", category: "principal" },
   { icon: BarChart, label: "Marketing", path: "/marketing", category: "principal" },
+  { icon: MessageSquare, label: "Mensagens", path: "/messaging", category: "principal" },
   { icon: CreditCard, label: "Mensalidade", path: "/mensalidade", category: "configuracoes" },
   { icon: Settings, label: "Configurações", path: "/configuracoes", category: "configuracoes" },
 ];
@@ -54,6 +55,7 @@ const menuItemColors = {
   "/financeiro": { color: "text-green-600", bg: "bg-green-100", hover: "hover:bg-green-100" },
   "/estoque": { color: "text-indigo-600", bg: "bg-indigo-100", hover: "hover:bg-indigo-100" },
   "/marketing": { color: "text-rose-600", bg: "bg-rose-100", hover: "hover:bg-rose-100" },
+  "/messaging": { color: "text-teal-600", bg: "bg-teal-100", hover: "hover:bg-teal-100" },
   "/mensalidade": { color: "text-orange-600", bg: "bg-orange-100", hover: "hover:bg-orange-100" },
   "/configuracoes": { color: "text-gray-600", bg: "bg-gray-100", hover: "hover:bg-gray-100" },
 };

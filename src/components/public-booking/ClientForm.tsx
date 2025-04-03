@@ -12,6 +12,7 @@ export interface ClientInfo {
   phone: string;
   notes?: string;
   acceptTerms: boolean;
+  isLoggedIn?: boolean;
 }
 
 interface ClientFormProps {
@@ -27,6 +28,7 @@ export function ClientForm({ onSubmit, onBack, initialValues = {} }: ClientFormP
     phone: initialValues.phone || "",
     notes: initialValues.notes || "",
     acceptTerms: initialValues.acceptTerms || false,
+    isLoggedIn: initialValues.isLoggedIn || false
   });
 
   const [errors, setErrors] = useState<Partial<Record<keyof ClientInfo, string>>>({});
@@ -70,10 +72,13 @@ export function ClientForm({ onSubmit, onBack, initialValues = {} }: ClientFormP
       newErrors.name = "Nome é obrigatório";
     }
 
-    if (!formData.email.trim()) {
-      newErrors.email = "Email é obrigatório";
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = "Email inválido";
+    // Email não é obrigatório se o usuário já estiver logado
+    if (!formData.isLoggedIn) {
+      if (!formData.email.trim()) {
+        newErrors.email = "Email é obrigatório";
+      } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+        newErrors.email = "Email inválido";
+      }
     }
 
     if (!formData.phone.trim()) {
@@ -97,6 +102,17 @@ export function ClientForm({ onSubmit, onBack, initialValues = {} }: ClientFormP
     }
   };
 
+  // Formatar o número de telefone
+  const formatPhoneNumber = (phone: string) => {
+    const cleaned = phone.replace(/\D/g, "");
+    if (cleaned.length === 11) {
+      return `(${cleaned.slice(0, 2)}) ${cleaned.slice(2, 7)}-${cleaned.slice(7)}`;
+    } else if (cleaned.length === 10) {
+      return `(${cleaned.slice(0, 2)}) ${cleaned.slice(2, 6)}-${cleaned.slice(6)}`;
+    }
+    return phone;
+  };
+
   return (
     <div>
       <Button
@@ -109,6 +125,14 @@ export function ClientForm({ onSubmit, onBack, initialValues = {} }: ClientFormP
         Voltar
       </Button>
 
+      {formData.isLoggedIn && (
+        <div className="mb-4 p-3 bg-green-50 border border-green-100 rounded-md">
+          <p className="text-green-700 text-sm">
+            Você está logado. Alguns dados já foram preenchidos automaticamente.
+          </p>
+        </div>
+      )}
+
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <Label htmlFor="name">Nome completo</Label>
@@ -118,6 +142,8 @@ export function ClientForm({ onSubmit, onBack, initialValues = {} }: ClientFormP
             value={formData.name}
             onChange={handleChange}
             className={errors.name ? "border-red-500" : ""}
+            disabled={formData.isLoggedIn}
+            readOnly={formData.isLoggedIn}
           />
           {errors.name && (
             <p className="text-sm text-red-500 mt-1">{errors.name}</p>
@@ -133,6 +159,7 @@ export function ClientForm({ onSubmit, onBack, initialValues = {} }: ClientFormP
             value={formData.email}
             onChange={handleChange}
             className={errors.email ? "border-red-500" : ""}
+            placeholder={formData.isLoggedIn ? "Opcional" : ""}
           />
           {errors.email && (
             <p className="text-sm text-red-500 mt-1">{errors.email}</p>
@@ -144,10 +171,12 @@ export function ClientForm({ onSubmit, onBack, initialValues = {} }: ClientFormP
           <Input
             id="phone"
             name="phone"
-            value={formData.phone}
+            value={formData.isLoggedIn ? formatPhoneNumber(formData.phone) : formData.phone}
             onChange={handleChange}
             placeholder="(00) 00000-0000"
             className={errors.phone ? "border-red-500" : ""}
+            disabled={formData.isLoggedIn}
+            readOnly={formData.isLoggedIn}
           />
           {errors.phone && (
             <p className="text-sm text-red-500 mt-1">{errors.phone}</p>

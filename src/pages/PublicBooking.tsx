@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useRouter } from "next/router";
+import { useParams, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { ServiceSelector } from "@/components/public-booking/ServiceSelector";
 import { ProfessionalSelector } from "@/components/public-booking/ProfessionalSelector";
@@ -10,6 +10,7 @@ import { PublicBookingSteps } from "@/components/public-booking/PublicBookingSte
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { LoginModal, UserData } from "@/components/public-booking/LoginModal";
 
 // Tipos
 interface Service {
@@ -195,8 +196,9 @@ const mockProfessionals: Professional[] = [
 ];
 
 export default function PublicBooking() {
-  const router = useRouter();
-  const { slug } = router.query;
+  const params = useParams();
+  const navigate = useNavigate();
+  const slug = params.slug;
   const [currentStep, setCurrentStep] = useState(1);
   const [establishment, setEstablishment] = useState<Establishment | null>(null);
   const [bookingDetails, setBookingDetails] = useState<BookingDetails>({});
@@ -204,6 +206,10 @@ export default function PublicBooking() {
   const [loading, setLoading] = useState(false);
   const [isBookingComplete, setIsBookingComplete] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // Estado para controlar o modal de login/cadastro
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [userData, setUserData] = useState<UserData | null>(null);
 
   // Carregar informações do estabelecimento com base na URL personalizada
   useEffect(() => {
@@ -256,6 +262,37 @@ export default function PublicBooking() {
 
   const handleDateTimeSelect = (date: Date, timeSlot: TimeSlot) => {
     setBookingDetails((prev) => ({ ...prev, date, timeSlot }));
+    
+    // Em vez de avançar diretamente para o próximo passo,
+    // abrir o modal de login/cadastro
+    setIsLoginModalOpen(true);
+  };
+  
+  // Nova função para lidar com o sucesso do login/cadastro
+  const handleLoginSuccess = (userData: UserData) => {
+    setUserData(userData);
+    
+    // Preencher informações do cliente automaticamente se já existirem
+    if (userData.name) {
+      const clientInfo: ClientInfo = {
+        name: userData.name,
+        email: "", // Email não é solicitado no login, então fica vazio
+        phone: userData.whatsapp.replace(/\D/g, ""), // Remover formatação
+        notes: "",
+        acceptTerms: false,
+        isLoggedIn: true
+      };
+      
+      setBookingDetails(prev => ({
+        ...prev,
+        clientInfo: {
+          ...clientInfo,
+          ...prev.clientInfo
+        }
+      }));
+    }
+    
+    // Avançar para o próximo passo
     setCurrentStep(4);
   };
 
@@ -266,19 +303,13 @@ export default function PublicBooking() {
 
   const handleConfirmBooking = async () => {
     setLoading(true);
-    setError(null);
-
     try {
-      // Simulação de envio para API
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-      
-      // Aqui você enviaria os dados para sua API
-      console.log("Booking confirmed:", bookingDetails);
-      
+      // Simulação de uma requisição de agendamento
+      await new Promise((resolve) => setTimeout(resolve, 2000));
       setIsBookingComplete(true);
-    } catch (error) {
-      setError("Ocorreu um erro ao confirmar o agendamento. Por favor, tente novamente.");
-    } finally {
+      setLoading(false);
+    } catch (err) {
+      setError("Ocorreu um erro ao confirmar seu agendamento. Tente novamente.");
       setLoading(false);
     }
   };
@@ -291,8 +322,9 @@ export default function PublicBooking() {
 
   const handleStartNewBooking = () => {
     setBookingDetails({});
-    setCurrentStep(1);
     setIsBookingComplete(false);
+    setCurrentStep(1);
+    setUserData(null);
   };
 
   if (error) {
@@ -341,7 +373,7 @@ export default function PublicBooking() {
   }
 
   return (
-    <div className="container mx-auto py-8 px-4">
+    <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-pink-600">{establishment.name}</h1>
@@ -415,6 +447,13 @@ export default function PublicBooking() {
           </CardContent>
         </Card>
       </div>
+      
+      {/* Modal de Login/Cadastro */}
+      <LoginModal 
+        isOpen={isLoginModalOpen}
+        onClose={() => setIsLoginModalOpen(false)}
+        onSuccess={handleLoginSuccess}
+      />
     </div>
   );
 } 

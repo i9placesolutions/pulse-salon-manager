@@ -1,4 +1,3 @@
-
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -35,11 +34,14 @@ export function MessageForm({ title, message, onChange }: MessageFormProps) {
         <Label htmlFor="message">Mensagem</Label>
         <Textarea 
           id="message"
-          placeholder="Digite sua mensagem..."
+          placeholder="Digite sua mensagem... Use {nome} para inserir o nome do cliente"
           className="min-h-[120px]"
           value={message}
           onChange={(e) => onChange('message', e.target.value)}
         />
+        <p className="text-xs text-muted-foreground">
+          Dica: Use {"{nome}"} para inserir o nome do cliente na mensagem
+        </p>
       </div>
 
       <div className="grid gap-2">
