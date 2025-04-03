@@ -10,7 +10,7 @@ const SERVER_URL = 'https://i9place3.uazapi.com';
 export const MAIN_INSTANCE_TOKEN = '695fb204-5af9-4cfe-9f9f-676d2ca47e69';
 
 // Função auxiliar para obter o token armazenado
-const getToken = (customToken?: string): string => {
+export const getToken = (customToken?: string): string => {
   if (customToken) return customToken;
   const storedToken = localStorage.getItem('whatsapp_instance_token');
   if (!storedToken) {

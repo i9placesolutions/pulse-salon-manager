@@ -14,6 +14,8 @@ import { MessageHistory } from "@/components/marketing/MessageHistory";
 import { Button } from "@/components/ui/button";
 import type { MessageCampaignData } from "@/types/marketing";
 import { useLocation } from 'react-router-dom';
+import { sendMarketingCampaign } from "@/lib/marketingApi";
+import { toast } from "sonner";
 
 export default function Marketing() {
   const location = useLocation();
@@ -55,7 +57,7 @@ export default function Marketing() {
     setShowMessageDialog(true);
   };
 
-  const handleSubmitMessage = () => {
+  const handleSubmitMessage = async () => {
     console.log("Submitting:", messageCampaignData);
     
     // Adicionar a mensagem ao histórico com status inicial "enviando"
@@ -67,6 +69,7 @@ export default function Marketing() {
       dataEnvio: new Date().toISOString(),
       status: "enviando",
       canal: "whatsapp",
+      midiaUrl: messageCampaignData.mediaFile?.url,
       agendamento: messageCampaignData.scheduleDate ? 
         `${messageCampaignData.scheduleDate}T${messageCampaignData.scheduleTime || '00:00:00'}` : 
         undefined
@@ -75,23 +78,39 @@ export default function Marketing() {
     setSentMessages(prev => [newMessage, ...prev]);
     setShowMessageDialog(false);
     
-    // Simular mudança de status após alguns segundos
-    setTimeout(() => {
+    try {
+      // Obter os números dos destinatários com base na seleção
+      const destinatarios = obterDestinatarios(messageCampaignData.recipients);
+      
+      // Usar a API de campanha de marketing para envio em massa
+      await sendMarketingCampaign({
+        recipients: destinatarios,
+        message: messageCampaignData.message,
+        mediaFile: messageCampaignData.mediaFile,
+        scheduleDate: messageCampaignData.scheduleDate,
+        scheduleTime: messageCampaignData.scheduleTime
+      });
+      
+      // Atualizar status para entregue após envio bem-sucedido
       setSentMessages(prev => 
         prev.map(msg => 
-          msg.id === newMessage.id ? {...msg, status: "aguardando"} : msg
+          msg.id === newMessage.id ? {...msg, status: "entregue"} : msg
         )
       );
       
-      // Depois de mais alguns segundos, mudar para entregue
-      setTimeout(() => {
-        setSentMessages(prev => 
-          prev.map(msg => 
-            msg.id === newMessage.id ? {...msg, status: "entregue"} : msg
-          )
-        );
-      }, 3000);
-    }, 2000);
+      toast.success("Mensagem enviada com sucesso!");
+    } catch (error) {
+      console.error("Erro ao enviar mensagem:", error);
+      
+      // Atualizar status para erro
+      setSentMessages(prev => 
+        prev.map(msg => 
+          msg.id === newMessage.id ? {...msg, status: "erro"} : msg
+        )
+      );
+      
+      toast.error("Falha ao enviar mensagem. Tente novamente.");
+    }
   };
 
   const handleMessageChange = (newData: MessageCampaignData) => {
@@ -204,3 +223,21 @@ export default function Marketing() {
     </div>
   );
 }
+
+// Função auxiliar para obter os números dos destinatários
+const obterDestinatarios = (tipo: string): string[] => {
+  // Aqui você implementaria a lógica para obter os números com base no tipo
+  // Por enquanto, retornamos um array simulado
+  switch (tipo) {
+    case 'all':
+      return ['5511999999001', '5511999999002', '5511999999003'];
+    case 'vip':
+      return ['5511888888001', '5511888888002'];
+    case 'inactive':
+      return ['5511777777001'];
+    case 'custom':
+    case 'phone':
+    default:
+      return ['5511999999999'];
+  }
+};

@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -6,12 +7,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/components/ui/use-toast";
-import { MapPin, Phone, Mail, Instagram, Facebook, MessageSquare, Upload, Copy, QrCode, Eye, MessageCircle, Building, Building2, MapPinned } from "lucide-react";
+import { MapPin, Phone, Mail, Instagram, Facebook, MessageSquare, Upload, Copy, QrCode, Eye, MessageCircle, Building, Building2, MapPinned, User, AlertCircle } from "lucide-react";
 import { PageLayout } from "@/components/shared/PageLayout";
 import { PageHeader } from "@/components/shared/PageHeader";
+import { useAppState } from "@/contexts/AppStateContext";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface EstablishmentProfile {
   name: string;
+  documentType: 'cnpj' | 'cpf';
+  documentNumber: string;
   address: {
     street: string;
     number: string;
@@ -20,6 +25,8 @@ interface EstablishmentProfile {
     city: string;
     state: string;
     zipCode: string;
+    latitude?: string;
+    longitude?: string;
   };
   whatsapp: string;
   email: string;
@@ -30,10 +37,17 @@ interface EstablishmentProfile {
   description: string;
   customUrl: string;
   primaryColor: string;
+  responsible?: {
+    name: string;
+    phone: string;
+    email: string;
+  };
 }
 
 const defaultProfile: EstablishmentProfile = {
   name: "Meu Salão",
+  documentType: 'cnpj',
+  documentNumber: "",
   address: {
     street: "Rua Exemplo",
     number: "123",
@@ -41,7 +55,9 @@ const defaultProfile: EstablishmentProfile = {
     neighborhood: "Centro",
     city: "São Paulo",
     state: "SP",
-    zipCode: "01001-000"
+    zipCode: "01001-000",
+    latitude: "",
+    longitude: ""
   },
   whatsapp: "(11) 99999-9999",
   email: "contato@meusalao.com.br",
@@ -51,14 +67,80 @@ const defaultProfile: EstablishmentProfile = {
   logo: "",
   description: "Bem-vindo ao nosso salão! Oferecemos serviços de alta qualidade para cuidar da sua beleza.",
   customUrl: "meu-salao",
-  primaryColor: "#1e40af"
+  primaryColor: "#1e40af",
+  responsible: {
+    name: "",
+    phone: "",
+    email: ""
+  }
 };
 
 export default function EstablishmentProfile() {
+  const navigate = useNavigate();
   const [profile, setProfile] = useState<EstablishmentProfile>(defaultProfile);
   const [logoPreview, setLogoPreview] = useState<string>("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+  const { establishmentName, setEstablishmentName, profileState, updateProfileCompletion } = useAppState();
+  const [missingFields, setMissingFields] = useState<string[]>([]);
+
+  // Atualizar o nome do estabelecimento a partir do contexto
+  useEffect(() => {
+    if (establishmentName && establishmentName !== profile.name) {
+      setProfile(prev => ({ ...prev, name: establishmentName }));
+    }
+  }, [establishmentName]);
+
+  // Verificar se o usuário está em primeiro login e não deve poder sair desta página
+  useEffect(() => {
+    if (profileState.isFirstLogin && !profileState.isProfileComplete) {
+      // Impedir que o usuário saia da página
+      window.onbeforeunload = (e) => {
+        // Esta mensagem é ignorada por muitos navegadores
+        const message = "Você precisa completar seu perfil antes de continuar.";
+        e.returnValue = message;
+        return message;
+      };
+
+      // Detectar tentativas de navegação
+      const handleBeforeNavigate = (e: BeforeUnloadEvent) => {
+        if (!profileState.isProfileComplete) {
+          const message = "Você precisa completar seu perfil antes de continuar.";
+          e.returnValue = message;
+          return message;
+        }
+      };
+
+      window.addEventListener('beforeunload', handleBeforeNavigate);
+      return () => {
+        window.removeEventListener('beforeunload', handleBeforeNavigate);
+        window.onbeforeunload = null;
+      };
+    }
+  }, [profileState.isFirstLogin, profileState.isProfileComplete]);
+
+  // Checar se o perfil está completo
+  const checkProfileCompletion = (): boolean => {
+    const requiredFields: string[] = [];
+
+    // Verificar campos obrigatórios
+    if (!profile.name || profile.name.trim().length < 3) requiredFields.push("Nome do estabelecimento");
+    if (!profile.documentNumber) requiredFields.push("Número do documento (CPF/CNPJ)");
+    if (!profile.address.street) requiredFields.push("Rua/Avenida");
+    if (!profile.address.number) requiredFields.push("Número");
+    if (!profile.address.neighborhood) requiredFields.push("Bairro");
+    if (!profile.address.city) requiredFields.push("Cidade");
+    if (!profile.address.state) requiredFields.push("Estado");
+    if (!profile.address.zipCode) requiredFields.push("CEP");
+    if (!profile.whatsapp) requiredFields.push("WhatsApp");
+    if (!profile.email) requiredFields.push("E-mail");
+    if (!profile.responsible?.name) requiredFields.push("Nome do responsável");
+    if (!profile.responsible?.phone) requiredFields.push("Telefone do responsável");
+    if (!profile.responsible?.email) requiredFields.push("E-mail do responsável");
+
+    setMissingFields(requiredFields);
+    return requiredFields.length === 0;
+  };
 
   const formatWhatsApp = (value: string) => {
     const numbers = value.replace(/\D/g, '');
@@ -75,61 +157,131 @@ export default function EstablishmentProfile() {
     return `(${numbers.slice(0, 2)}) ${numbers.slice(2, 7)}-${numbers.slice(7, 11)}`;
   };
 
+  const formatDocument = (value: string, type: 'cnpj' | 'cpf') => {
+    const numbers = value.replace(/\D/g, '');
+    
+    if (type === 'cpf') {
+      // Formatar CPF: 000.000.000-00
+      if (numbers.length <= 3) {
+        return numbers;
+      }
+      if (numbers.length <= 6) {
+        return `${numbers.slice(0, 3)}.${numbers.slice(3)}`;
+      }
+      if (numbers.length <= 9) {
+        return `${numbers.slice(0, 3)}.${numbers.slice(3, 6)}.${numbers.slice(6)}`;
+      }
+      return `${numbers.slice(0, 3)}.${numbers.slice(3, 6)}.${numbers.slice(6, 9)}-${numbers.slice(9, 11)}`;
+    } else {
+      // Formatar CNPJ: 00.000.000/0000-00
+      if (numbers.length <= 2) {
+        return numbers;
+      }
+      if (numbers.length <= 5) {
+        return `${numbers.slice(0, 2)}.${numbers.slice(2)}`;
+      }
+      if (numbers.length <= 8) {
+        return `${numbers.slice(0, 2)}.${numbers.slice(2, 5)}.${numbers.slice(5)}`;
+      }
+      if (numbers.length <= 12) {
+        return `${numbers.slice(0, 2)}.${numbers.slice(2, 5)}.${numbers.slice(5, 8)}/${numbers.slice(8)}`;
+      }
+      return `${numbers.slice(0, 2)}.${numbers.slice(2, 5)}.${numbers.slice(5, 8)}/${numbers.slice(8, 12)}-${numbers.slice(12, 14)}`;
+    }
+  };
+
+  const handleDocumentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formatted = formatDocument(e.target.value, profile.documentType);
+    setProfile({ ...profile, documentNumber: formatted });
+  };
+
   const handleWhatsAppChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const formatted = formatWhatsApp(e.target.value);
     setProfile({ ...profile, whatsapp: formatted });
   };
 
-  const handleLogoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
+  const handleResponsibleChange = (field: string, value: string) => {
+    if (!profile.responsible) {
+      setProfile({
+        ...profile,
+        responsible: {
+          name: field === 'name' ? value : '',
+          phone: field === 'phone' ? value : '',
+          email: field === 'email' ? value : ''
+        }
+      });
+      return;
+    }
+
+    setProfile({
+      ...profile,
+      responsible: {
+        ...profile.responsible,
+        [field]: value
+      }
+    });
+  };
+
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
     if (file) {
-      if (!file.type.match('image.*')) {
-        toast({
-          title: "Tipo de arquivo inválido",
-          description: "Por favor, selecione apenas imagens.",
-          variant: "destructive"
-        });
-        return;
-      }
-      
-      if (file.size > 2 * 1024 * 1024) {
-        toast({
-          title: "Arquivo muito grande",
-          description: "O tamanho máximo permitido é 2MB.",
-          variant: "destructive"
-        });
-        return;
-      }
-      
       const reader = new FileReader();
-      reader.onloadend = () => {
-        setLogoPreview(reader.result as string);
-        setProfile({ ...profile, logo: reader.result as string });
+      reader.onload = (e) => {
+        const result = e.target?.result as string;
+        setLogoPreview(result);
+        setProfile({ ...profile, logo: result });
       };
       reader.readAsDataURL(file);
     }
   };
 
-  const handleSave = () => {
-    toast({
-      title: "Perfil atualizado",
-      description: "As informações do estabelecimento foram atualizadas com sucesso!",
-    });
+  const triggerFileInput = () => {
+    fileInputRef.current?.click();
   };
 
-  const copyBookingLink = () => {
-    const link = `https://pulse-salon.com.br/${profile.customUrl}`;
-    navigator.clipboard.writeText(link);
-    toast({
-      title: "Link copiado!",
-      description: "O link de agendamento foi copiado para a área de transferência.",
-    });
+  const getFullAddress = () => {
+    const a = profile.address;
+    const complement = a.complement ? `, ${a.complement}` : '';
+    return `${a.street}, ${a.number}${complement} - ${a.neighborhood}, ${a.city}/${a.state} - CEP ${a.zipCode}`;
   };
 
   const openWhatsApp = () => {
-    window.open(`https://wa.me/${profile.whatsapp.replace(/\D/g, '')}`, '_blank');
+    const number = profile.whatsapp.replace(/\D/g, '');
+    window.open(`https://wa.me/55${number}`, '_blank');
   };
 
+  const handleSave = () => {
+    const isComplete = checkProfileCompletion();
+    
+    if (!isComplete) {
+      toast({
+        variant: "destructive",
+        title: "Perfil incompleto",
+        description: "Por favor, preencha todos os campos obrigatórios.",
+      });
+      return;
+    }
+    
+    // Atualizar o nome do estabelecimento no contexto global
+    setEstablishmentName(profile.name);
+    
+    // Marcar o perfil como completo
+    updateProfileCompletion(true);
+    
+    // Mostrar mensagem de sucesso
+    toast({
+      title: "Perfil salvo com sucesso!",
+      description: `Bem-vindo ao ${profile.name}! Você será redirecionado para o dashboard.`,
+      duration: 5000,
+    });
+    
+    // Redirecionar para o dashboard após um breve delay
+    setTimeout(() => {
+      navigate("/dashboard");
+    }, 3000);
+  };
+
+  // Função para atualizar campos de endereço
   const handleAddressChange = (field: keyof EstablishmentProfile['address'], value: string) => {
     setProfile({
       ...profile,
@@ -138,11 +290,6 @@ export default function EstablishmentProfile() {
         [field]: value
       }
     });
-  };
-
-  const getFullAddress = () => {
-    const { street, number, complement, neighborhood, city, state, zipCode } = profile.address;
-    return `${street}, ${number}${complement ? `, ${complement}` : ''} - ${neighborhood} - ${city}/${state} - CEP: ${zipCode}`;
   };
 
   return (
@@ -156,6 +303,33 @@ export default function EstablishmentProfile() {
           <Button onClick={handleSave} variant="dashboard">Salvar Alterações</Button>
         }
       />
+      
+      {/* Alerta se for primeiro login */}
+      {profileState.isFirstLogin && !profileState.isProfileComplete && (
+        <Alert variant="destructive" className="mb-4 border-red-300 bg-red-50">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Atenção!</AlertTitle>
+          <AlertDescription>
+            É necessário completar seu perfil para continuar usando o sistema. 
+            Preencha todos os campos obrigatórios e clique em "Salvar Alterações".
+          </AlertDescription>
+        </Alert>
+      )}
+      
+      {/* Mostrar campos que faltam ser preenchidos */}
+      {missingFields.length > 0 && (
+        <Alert variant="warning" className="mb-4 border-yellow-300 bg-yellow-50">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Campos obrigatórios pendentes:</AlertTitle>
+          <AlertDescription>
+            <ul className="list-disc pl-5 mt-2 space-y-1 text-sm">
+              {missingFields.map((field, index) => (
+                <li key={index}>{field}</li>
+              ))}
+            </ul>
+          </AlertDescription>
+        </Alert>
+      )}
 
       <Tabs defaultValue="info" className="space-y-4">
         <TabsList className="bg-blue-50 border border-blue-100 p-1 rounded-lg">
@@ -194,6 +368,79 @@ export default function EstablishmentProfile() {
                   placeholder="Nome do seu salão"
                   className="border-blue-200 focus:border-blue-400"
                 />
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label className="text-blue-700">Tipo de Documento</Label>
+                  <div className="bg-blue-50/80 p-3 rounded-md border border-blue-100 flex gap-6">
+                    <div className="flex items-center">
+                      <input
+                        type="radio"
+                        id="doc-cnpj"
+                        name="document-type"
+                        checked={profile.documentType === 'cnpj'}
+                        onChange={() => setProfile({ ...profile, documentType: 'cnpj', documentNumber: '' })}
+                        className="hidden peer"
+                      />
+                      <label 
+                        htmlFor="doc-cnpj" 
+                        className="cursor-pointer flex items-center gap-2 text-sm font-medium text-blue-700 peer-checked:text-blue-700 peer-checked:font-semibold"
+                      >
+                        <div className="w-4 h-4 rounded-full border-2 border-blue-400 flex items-center justify-center peer-checked:border-blue-600">
+                          <div className={`w-2 h-2 rounded-full ${profile.documentType === 'cnpj' ? 'bg-blue-600' : 'bg-transparent'}`}></div>
+                        </div>
+                        CNPJ
+                      </label>
+                    </div>
+                    <div className="flex items-center">
+                      <input
+                        type="radio"
+                        id="doc-cpf"
+                        name="document-type"
+                        checked={profile.documentType === 'cpf'}
+                        onChange={() => setProfile({ ...profile, documentType: 'cpf', documentNumber: '' })}
+                        className="hidden peer"
+                      />
+                      <label 
+                        htmlFor="doc-cpf" 
+                        className="cursor-pointer flex items-center gap-2 text-sm font-medium text-blue-700 peer-checked:text-blue-700 peer-checked:font-semibold"
+                      >
+                        <div className="w-4 h-4 rounded-full border-2 border-blue-400 flex items-center justify-center">
+                          <div className={`w-2 h-2 rounded-full ${profile.documentType === 'cpf' ? 'bg-blue-600' : 'bg-transparent'}`}></div>
+                        </div>
+                        CPF
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="document-number" className="text-blue-700">
+                    {profile.documentType === 'cnpj' ? 'CNPJ' : 'CPF'}
+                  </Label>
+                  <div className="relative">
+                    <Input
+                      id="document-number"
+                      value={profile.documentNumber}
+                      onChange={handleDocumentChange}
+                      placeholder={profile.documentType === 'cnpj' ? '00.000.000/0000-00' : '000.000.000-00'}
+                      className="border-blue-200 focus:border-blue-400 pl-10"
+                      maxLength={profile.documentType === 'cnpj' ? 18 : 14}
+                    />
+                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-blue-500">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
+                        <path d="M16 2v5" />
+                        <path d="M8 2v5" />
+                        <path d="M3 10h18" />
+                      </svg>
+                    </div>
+                  </div>
+                  <p className="text-xs text-blue-600 mt-1">
+                    Formato: {profile.documentType === 'cnpj' ? '00.000.000/0000-00' : '000.000.000-00'}
+                  </p>
+                </div>
               </div>
 
               <div className="space-y-3 mt-4">
@@ -288,12 +535,182 @@ export default function EstablishmentProfile() {
                   </div>
                 </div>
 
-                <div className="mt-2 p-3 bg-blue-50 rounded-md border border-blue-100">
-                  <div className="flex items-center">
-                    <MapPinned className="h-4 w-4 text-blue-600 mr-2" />
-                    <span className="text-sm text-blue-700 font-medium">Endereço Completo:</span>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
+                  <div>
+                    <Label htmlFor="latitude" className="text-sm text-blue-600 flex items-center gap-1">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-500">
+                        <circle cx="12" cy="10" r="3" />
+                        <path d="M12 21.7C17.3 17 20 13 20 10a8 8 0 1 0-16 0c0 3 2.7 6.9 8 11.7z" />
+                      </svg>
+                      Latitude
+                    </Label>
+                    <div className="relative mt-1">
+                      <Input
+                        id="latitude"
+                        value={profile.address.latitude || ''}
+                        onChange={(e) => handleAddressChange('latitude', e.target.value)}
+                        placeholder="Ex: -23.5505"
+                        className="border-blue-200 focus:border-blue-400 pl-7"
+                      />
+                      <div className="absolute left-2.5 top-1/2 -translate-y-1/2 text-blue-400 text-xs font-mono">
+                        Lat:
+                      </div>
+                    </div>
                   </div>
-                  <p className="text-sm mt-1 pl-6 text-blue-600">{getFullAddress()}</p>
+                  <div>
+                    <Label htmlFor="longitude" className="text-sm text-blue-600 flex items-center gap-1">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-500">
+                        <path d="M12 2a10 10 0 1 0 10 10" />
+                        <path d="M12 12H2" />
+                        <path d="m2 9 3 3-3 3" />
+                      </svg>
+                      Longitude
+                    </Label>
+                    <div className="relative mt-1">
+                      <Input
+                        id="longitude"
+                        value={profile.address.longitude || ''}
+                        onChange={(e) => handleAddressChange('longitude', e.target.value)}
+                        placeholder="Ex: -46.6333"
+                        className="border-blue-200 focus:border-blue-400 pl-8"
+                      />
+                      <div className="absolute left-2.5 top-1/2 -translate-y-1/2 text-blue-400 text-xs font-mono">
+                        Long:
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="flex items-center mt-2">
+                  <div className="flex-grow border-t border-blue-100"></div>
+                  <div className="px-2 text-xs text-blue-400">Localização no Mapa</div>
+                  <div className="flex-grow border-t border-blue-100"></div>
+                </div>
+
+                <div className="mt-2 p-3 bg-blue-50 rounded-md border border-blue-100 flex items-start gap-3">
+                  <div className="mt-0.5">
+                    <MapPinned className="h-4 w-4 text-blue-600" />
+                  </div>
+                  <div>
+                    <span className="text-sm text-blue-700 font-medium">Endereço Completo:</span>
+                    <p className="text-sm mt-1 text-blue-600">{getFullAddress()}</p>
+                    {profile.address.latitude && profile.address.longitude && (
+                      <div className="mt-2">
+                        <a
+                          href={`https://www.google.com/maps/search/?api=1&query=${profile.address.latitude},${profile.address.longitude}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-xs bg-blue-100 hover:bg-blue-200 text-blue-700 py-1 px-2 rounded transition-colors"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                            <polyline points="15 3 21 3 21 9" />
+                            <line x1="10" x2="21" y1="14" y2="3" />
+                          </svg>
+                          Ver no Google Maps
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-6">
+                <div className="bg-gradient-to-r from-blue-50 to-blue-100 rounded-t-md border border-b-0 border-blue-200 px-4 py-3 flex items-center justify-between">
+                  <h3 className="text-blue-700 font-medium flex items-center gap-2">
+                    <User className="h-4 w-4" />
+                    Contato do Responsável
+                  </h3>
+                  <span className="text-xs px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full">Principal</span>
+                </div>
+                <div className="border border-blue-200 rounded-b-md p-4 bg-white">
+                  <div className="grid gap-5 md:grid-cols-3">
+                    <div className="space-y-2">
+                      <Label 
+                        htmlFor="responsible-name" 
+                        className="text-sm text-blue-600 flex items-center gap-1.5"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-500">
+                          <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+                          <circle cx="12" cy="7" r="4" />
+                        </svg>
+                        Nome Completo
+                      </Label>
+                      <div className="relative">
+                        <Input
+                          id="responsible-name"
+                          value={profile.responsible?.name || ''}
+                          onChange={(e) => handleResponsibleChange('name', e.target.value)}
+                          placeholder="Nome do responsável"
+                          className="border-blue-200 focus:border-blue-400 pl-8"
+                        />
+                        <div className="absolute left-2.5 top-1/2 -translate-y-1/2 text-blue-400">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                            <circle cx="9" cy="7" r="4" />
+                            <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                          </svg>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label 
+                        htmlFor="responsible-phone" 
+                        className="text-sm text-blue-600 flex items-center gap-1.5"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-500">
+                          <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+                        </svg>
+                        Telefone
+                      </Label>
+                      <div className="relative">
+                        <Input
+                          id="responsible-phone"
+                          value={profile.responsible?.phone || ''}
+                          onChange={(e) => handleResponsibleChange('phone', e.target.value)}
+                          placeholder="(00) 00000-0000"
+                          className="border-blue-200 focus:border-blue-400 pl-8"
+                        />
+                        <div className="absolute left-2.5 top-1/2 -translate-y-1/2 text-blue-400">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M15.05 5A5 5 0 0 1 19 8.95M15.05 1A9 9 0 0 1 23 8.94m-1 7.98v3a1 1 0 0 1-.88 1 10.97 10.97 0 0 1-5.5-1.5 10.74 10.74 0 0 1-4.13-4.13A11 11 0 0 1 10 11V8a1 1 0 0 1 1-1h2.5" />
+                          </svg>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label 
+                        htmlFor="responsible-email" 
+                        className="text-sm text-blue-600 flex items-center gap-1.5"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-500">
+                          <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                          <polyline points="22,6 12,13 2,6" />
+                        </svg>
+                        E-mail
+                      </Label>
+                      <div className="relative">
+                        <Input
+                          id="responsible-email"
+                          type="email"
+                          value={profile.responsible?.email || ''}
+                          onChange={(e) => handleResponsibleChange('email', e.target.value)}
+                          placeholder="email@exemplo.com"
+                          className="border-blue-200 focus:border-blue-400 pl-8"
+                        />
+                        <div className="absolute left-2.5 top-1/2 -translate-y-1/2 text-blue-400">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <rect x="2" y="4" width="20" height="16" rx="2" />
+                            <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+                          </svg>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-xs text-blue-500 mt-4 italic">
+                    Esta pessoa será contatada para assuntos administrativos e financeiros.
+                  </div>
                 </div>
               </div>
 
@@ -363,7 +780,7 @@ export default function EstablishmentProfile() {
                     className={`h-40 w-40 rounded-lg border-2 ${
                       logoPreview ? 'border-blue-200' : 'border-dashed border-blue-300'
                     } flex items-center justify-center overflow-hidden relative group cursor-pointer`}
-                    onClick={() => fileInputRef.current?.click()}
+                    onClick={triggerFileInput}
                   >
                     {logoPreview ? (
                       <>
@@ -412,27 +829,11 @@ export default function EstablishmentProfile() {
                         </li>
                       </ul>
                     </div>
-                    <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
+                    <Button variant="outline" size="sm" onClick={triggerFileInput}>
                       <Upload className="h-3.5 w-3.5 mr-2" />
                       Selecionar arquivo
                     </Button>
                   </div>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="primary-color" className="text-blue-700">Cor Principal</Label>
-                <div className="flex items-center gap-2">
-                  <Input
-                    id="primary-color"
-                    type="color"
-                    value={profile.primaryColor}
-                    onChange={(e) => setProfile({ ...profile, primaryColor: e.target.value })}
-                    className="w-20 h-10 p-1 border-blue-200"
-                  />
-                  <span className="text-sm text-blue-600">
-                    {profile.primaryColor}
-                  </span>
                 </div>
               </div>
             </CardContent>

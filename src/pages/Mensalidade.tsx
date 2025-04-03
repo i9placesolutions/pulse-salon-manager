@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { TabsContent, Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Check, CreditCard, Users, Calendar, MessageSquare, Download, Bell, Receipt, PackageOpen } from "lucide-react";
+import { Check, CreditCard, Users, Calendar, MessageSquare, Download, Bell, Receipt, PackageOpen, AlertCircle } from "lucide-react";
 import { PaymentMethodForm } from "@/components/mensalidade/PaymentMethodForm";
 import { SubscriptionConfirmDialog } from "@/components/mensalidade/SubscriptionConfirmDialog";
 import { CurrentPlanDetails } from "@/components/mensalidade/CurrentPlanDetails";
@@ -16,81 +17,78 @@ import { formatCurrency } from "@/utils/currency";
 import { SubscriptionPlan, SubscriptionStatus, PaymentMethod, Invoice } from "@/types/subscription";
 import { PageLayout } from "@/components/shared/PageLayout";
 import { PageHeader } from "@/components/shared/PageHeader";
+import { useAppState } from "@/contexts/AppStateContext";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const plans: SubscriptionPlan[] = [
   {
     id: "basic",
     name: "Básico",
+    description: "Ideal para iniciantes",
     price: 99.90,
-    icon: "🟢",
-    description: "Ideal para profissionais autônomos",
     features: [
-      "1 usuário",
-      "100 agendamentos/mês",
-      "Suporte via e-mail",
-      "Backup diário",
-      "Segurança avançada",
-      "Atualizações automáticas"
+      "Até 2 profissionais",
+      "Agendamento online",
+      "Gestão de clientes",
+      "Controle financeiro básico",
+      "Até 100 agendamentos/mês"
     ],
-    maxUsers: 1,
-    maxAppointments: 100,
-    supportType: "email"
+    highlight: false,
+    icon: "✂️"
   },
   {
     id: "intermediate",
-    name: "Intermediário",
+    name: "Profissional",
+    description: "Para salões em crescimento",
     price: 149.90,
-    icon: "🔵",
-    description: "Perfeito para pequenos salões",
     features: [
-      "3 usuários",
-      "300 agendamentos/mês",
-      "Suporte via chat e WhatsApp",
-      "Backup diário",
-      "Segurança avançada",
-      "Atualizações automáticas"
+      "Até 5 profissionais",
+      "Agendamento online",
+      "Gestão de clientes",
+      "Controle financeiro completo",
+      "Marketing básico",
+      "Relatórios essenciais",
+      "Até 300 agendamentos/mês"
     ],
-    maxUsers: 3,
-    maxAppointments: 300,
-    supportType: "chat",
-    highlight: true
+    highlight: true,
+    icon: "💇"
   },
   {
     id: "advanced",
-    name: "Avançado",
+    name: "Empresarial",
+    description: "Para negócios estabelecidos",
     price: 249.90,
-    icon: "🟣",
-    description: "Para salões em crescimento",
     features: [
-      "Usuários ilimitados",
-      "Agendamentos ilimitados",
-      "Integração com WhatsApp API",
-      "Backup diário",
-      "Segurança avançada",
-      "Atualizações automáticas"
+      "Até 10 profissionais",
+      "Agendamento online e app",
+      "Gestão avançada de clientes",
+      "Controle financeiro completo",
+      "Marketing avançado",
+      "Relatórios completos",
+      "Integração com outras plataformas",
+      "Agendamentos ilimitados"
     ],
-    maxUsers: Infinity,
-    maxAppointments: "unlimited",
-    supportType: "priority"
+    highlight: false,
+    icon: "💅"
   },
   {
     id: "premium",
     name: "Premium",
+    description: "Solução completa para redes",
     price: 399.90,
-    icon: "🔥",
-    description: "Solução completa para grandes salões",
     features: [
-      "Todos os recursos do Avançado",
-      "Automação total",
-      "Relatórios premium",
-      "Suporte VIP 24/7",
-      "Backup diário",
-      "Segurança avançada",
-      "Atualizações automáticas"
+      "Profissionais ilimitados",
+      "Gestão de múltiplas unidades",
+      "Agendamento online e app personalizado",
+      "Gestão avançada de clientes",
+      "Controle financeiro avançado",
+      "Marketing automatizado",
+      "Relatórios personalizados",
+      "API para integrações",
+      "Suporte prioritário"
     ],
-    maxUsers: Infinity,
-    maxAppointments: "unlimited",
-    supportType: "vip"
+    highlight: false,
+    icon: "👑"
   }
 ];
 
@@ -155,6 +153,33 @@ export default function Mensalidade() {
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [notificationPrefs, setNotificationPrefs] = useState(mockNotificationPreferences);
+  const navigate = useNavigate();
+  const { profileState, updateSubscriptionStatus } = useAppState();
+  
+  const isTrialExpired = () => {
+    if (!profileState.trialEndsAt) return false;
+    
+    const today = new Date();
+    return today > profileState.trialEndsAt;
+  };
+  
+  const getTrialDaysLeft = () => {
+    if (!profileState.trialEndsAt) return 0;
+    
+    const today = new Date();
+    const trialEnd = new Date(profileState.trialEndsAt);
+    
+    if (today > trialEnd) return 0;
+    
+    const diffTime = trialEnd.getTime() - today.getTime();
+    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  };
+  
+  useEffect(() => {
+    if (isTrialExpired() && !profileState.subscriptionActive) {
+      setSelectedTab("plans");
+    }
+  }, [profileState.trialEndsAt, profileState.subscriptionActive]);
 
   const handlePlanSelect = (plan: SubscriptionPlan) => {
     setSelectedPlan(plan);
@@ -171,15 +196,25 @@ export default function Mensalidade() {
 
   const handleSubscriptionConfirm = () => {
     setConfirmDialogOpen(false);
+    
+    updateSubscriptionStatus(true);
+    
     toast({
       title: "Assinatura confirmada",
       description: "Sua assinatura foi confirmada com sucesso!",
     });
+    
+    setTimeout(() => {
+      navigate("/dashboard");
+    }, 2000);
   };
 
   const handleCancelSubscription = (reason: string) => {
     console.log("Cancelamento - motivo:", reason);
     setCancelDialogOpen(false);
+    
+    updateSubscriptionStatus(false);
+    
     toast({
       title: "Assinatura cancelada",
       description: "Sua assinatura foi cancelada com sucesso.",
@@ -217,18 +252,41 @@ export default function Mensalidade() {
         badge="Assinatura"
         action={
           <SubscriptionStatusWidget
-            status={mockSubscription.status}
-            trialDaysLeft={3}
+            status={profileState.subscriptionActive ? "active" : (isTrialExpired() ? "expired" : "trial")}
+            trialDaysLeft={getTrialDaysLeft()}
             onAction={() => setSelectedTab("plans")}
           />
         }
       />
+      
+      {isTrialExpired() && !profileState.subscriptionActive && (
+        <Alert variant="destructive" className="mb-4 border-red-300 bg-red-50">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Seu período de teste expirou!</AlertTitle>
+          <AlertDescription>
+            Para continuar utilizando o sistema, escolha um plano abaixo.
+            Você não poderá acessar outras funcionalidades até adquirir uma assinatura.
+          </AlertDescription>
+        </Alert>
+      )}
+      
+      {!isTrialExpired() && getTrialDaysLeft() <= 3 && getTrialDaysLeft() > 0 && !profileState.subscriptionActive && (
+        <Alert variant="warning" className="mb-4 border-amber-300 bg-amber-50">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Seu período de teste está acabando!</AlertTitle>
+          <AlertDescription>
+            Restam apenas {getTrialDaysLeft()} dias de teste. 
+            Para evitar interrupções, escolha um plano antes do término do período.
+          </AlertDescription>
+        </Alert>
+      )}
 
       <Tabs value={selectedTab} onValueChange={setSelectedTab} className="space-y-4">
         <TabsList className="flex w-full h-10 bg-gradient-to-r from-blue-50 via-indigo-50 to-blue-50 border border-blue-200 rounded-xl overflow-hidden">
           <TabsTrigger 
             value="plans" 
             className="flex-1 flex items-center justify-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-indigo-600 data-[state=active]:text-white data-[state=inactive]:text-gray-600 transition-all duration-200 rounded-lg"
+            disabled={isTrialExpired() && !profileState.subscriptionActive}
           >
             <PackageOpen className="h-4 w-4" />
             <span className="font-medium">Planos</span>
@@ -236,13 +294,15 @@ export default function Mensalidade() {
           <TabsTrigger 
             value="subscription" 
             className="flex-1 flex items-center justify-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-emerald-600 data-[state=active]:to-teal-600 data-[state=active]:text-white data-[state=inactive]:text-gray-600 transition-all duration-200 rounded-lg"
+            disabled={isTrialExpired() && !profileState.subscriptionActive}
           >
             <CreditCard className="h-4 w-4" />
             <span className="font-medium">Minha Assinatura</span>
           </TabsTrigger>
           <TabsTrigger 
             value="invoices" 
-            className="flex-1 flex items-center justify-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-600 data-[state=active]:to-yellow-600 data-[state=active]:text-white data-[state=inactive]:text-gray-600 transition-all duration-200 rounded-lg"
+            className="flex-1 flex items-center justify-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-600 data-[state=active]:to-orange-600 data-[state=active]:text-white data-[state=inactive]:text-gray-600 transition-all duration-200 rounded-lg"
+            disabled={isTrialExpired() && !profileState.subscriptionActive}
           >
             <Receipt className="h-4 w-4" />
             <span className="font-medium">Faturas</span>
@@ -250,26 +310,23 @@ export default function Mensalidade() {
           <TabsTrigger 
             value="notifications" 
             className="flex-1 flex items-center justify-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-fuchsia-600 data-[state=active]:text-white data-[state=inactive]:text-gray-600 transition-all duration-200 rounded-lg"
+            disabled={isTrialExpired() && !profileState.subscriptionActive}
           >
             <Bell className="h-4 w-4" />
             <span className="font-medium">Notificações</span>
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="plans" className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <TabsContent value="plans">
+          <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
             {plans.map((plan) => (
               <Card key={plan.id} className={`relative overflow-hidden border-blue-100 ${plan.highlight ? 'border-blue-500 shadow-md' : ''} hover:shadow-lg transition-all duration-300`}>
-                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-400 via-indigo-500 to-purple-500"></div>
                 {plan.highlight && (
-                  <div className="absolute -top-2 -right-2">
-                    <Badge className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold shadow-sm">Mais Popular</Badge>
-                  </div>
+                  <span className="absolute top-0 right-0 bg-gradient-to-r from-blue-500 to-indigo-600 text-white text-xs font-bold py-1 px-3 rounded-bl-lg">
+                    RECOMENDADO
+                  </span>
                 )}
-                <CardHeader className={`${plan.id === 'basic' ? 'bg-gradient-to-br from-blue-50 to-indigo-50' : 
-                                         plan.id === 'intermediate' ? 'bg-gradient-to-br from-indigo-50 to-purple-50' :
-                                         plan.id === 'advanced' ? 'bg-gradient-to-br from-purple-50 to-fuchsia-50' :
-                                         'bg-gradient-to-br from-amber-50 to-orange-50'}`}>
+                <CardHeader>
                   <div className="flex items-center justify-between">
                     <div className="space-y-1">
                       <CardTitle className={`text-xl ${

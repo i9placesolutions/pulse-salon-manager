@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
-import { Mail, Lock, User, Loader2, Eye, EyeOff, UserPlus } from "lucide-react";
+import { Mail, Lock, User, Loader2, Eye, EyeOff, UserPlus, Check } from "lucide-react";
+import { useAppState } from "@/contexts/AppStateContext";
 
 const RegisterForm = () => {
   const [fullName, setFullName] = useState("");
@@ -15,6 +16,8 @@ const RegisterForm = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const { setEstablishmentName, setProfileState } = useAppState();
 
   const validateEmail = (email: string) => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -43,132 +46,178 @@ const RegisterForm = () => {
 
     setIsLoading(true);
     try {
-      // To be implemented with Supabase
-      console.log("Register attempt", { fullName, email, password });
-      toast({
-        title: "Funcionalidade em desenvolvimento",
-        description: "O cadastro será implementado em breve.",
-      });
+      // Atualizando estado do contexto
+      const establishmentNameFromFullName = fullName.split(' ')[0] + ' Salão';
+      setEstablishmentName(establishmentNameFromFullName);
+      
+      // Definir como primeiro login
+      setProfileState((prev) => ({
+        ...prev,
+        isFirstLogin: true,
+        isProfileComplete: false
+      }));
+      
+      // Simulando um delay para processamento do backend
+      setTimeout(() => {
+        setIsLoading(false);
+        
+        // Redireciona para a página de perfil do estabelecimento
+        navigate("/establishment-profile");
+        
+        toast({
+          title: "Conta criada com sucesso!",
+          description: "Por favor, complete seu perfil para continuar.",
+        });
+      }, 1500);
     } catch (error) {
+      setIsLoading(false);
       toast({
         variant: "destructive",
         title: "Erro ao criar conta",
         description: "Por favor, tente novamente mais tarde.",
       });
-    } finally {
-      setIsLoading(false);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="w-full space-y-6 animate-fade-in">
+    <form onSubmit={handleSubmit} className="w-full space-y-5 animate-fade-in">
       <div className="space-y-4">
-        <div className="relative group">
-          <User className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-pink-500 transition-colors duration-200" size={20} />
-          <Input
-            type="text"
-            placeholder="Nome completo"
-            value={fullName}
-            onChange={(e) => setFullName(e.target.value)}
-            className={`pl-10 border-gray-200 focus:border-pink-500 focus:ring-pink-200 transition-all duration-300 ${
-              fullName && fullName.length < 3 ? "border-red-300 focus:border-red-500 focus:ring-red-200" : ""
-            }`}
-            required
-          />
-          {fullName && fullName.length < 3 && (
-            <p className="mt-1 text-xs text-red-500">
-              Nome deve ter pelo menos 3 caracteres
-            </p>
-          )}
+        <div className="space-y-1">
+          <label htmlFor="fullName" className="text-sm font-medium text-gray-700 flex items-center gap-1.5">
+            <User className="h-3.5 w-3.5 text-indigo-500" />
+            Nome completo
+          </label>
+          <div className="relative">
+            <Input
+              id="fullName"
+              type="text"
+              placeholder="Digite seu nome completo"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              className={`border-gray-200 focus:border-indigo-500 focus:ring-indigo-100 transition-all duration-300 ${
+                fullName && fullName.length < 3 ? "border-red-300 focus:border-red-500 focus:ring-red-100" : ""
+              }`}
+              required
+            />
+            {fullName && fullName.length < 3 && (
+              <p className="mt-1 text-xs text-red-500">
+                Nome deve ter pelo menos 3 caracteres
+              </p>
+            )}
+          </div>
         </div>
 
-        <div className="relative group">
-          <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-pink-500 transition-colors duration-200" size={20} />
-          <Input
-            type="email"
-            placeholder="Seu email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className={`pl-10 border-gray-200 focus:border-pink-500 focus:ring-pink-200 transition-all duration-300 ${
-              email && !validateEmail(email) ? "border-red-300 focus:border-red-500 focus:ring-red-200" : ""
-            }`}
-            required
-          />
-          {email && !validateEmail(email) && (
-            <p className="mt-1 text-xs text-red-500">
-              Digite um email válido
-            </p>
-          )}
+        <div className="space-y-1">
+          <label htmlFor="email" className="text-sm font-medium text-gray-700 flex items-center gap-1.5">
+            <Mail className="h-3.5 w-3.5 text-indigo-500" />
+            Email
+          </label>
+          <div className="relative">
+            <Input
+              id="email"
+              type="email"
+              placeholder="seu.email@exemplo.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className={`border-gray-200 focus:border-indigo-500 focus:ring-indigo-100 transition-all duration-300 ${
+                email && !validateEmail(email) ? "border-red-300 focus:border-red-500 focus:ring-red-100" : ""
+              }`}
+              required
+            />
+            {email && !validateEmail(email) && (
+              <p className="mt-1 text-xs text-red-500">
+                Digite um email válido
+              </p>
+            )}
+          </div>
         </div>
 
-        <div className="relative group">
-          <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-pink-500 transition-colors duration-200" size={20} />
-          <Input
-            type={showPassword ? "text" : "password"}
-            placeholder="Sua senha"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className={`pl-10 border-gray-200 focus:border-pink-500 focus:ring-pink-200 transition-all duration-300 ${
-              password && password.length < 6 ? "border-red-300 focus:border-red-500 focus:ring-red-200" : ""
+        <div className="space-y-1">
+          <label htmlFor="password" className="text-sm font-medium text-gray-700 flex items-center gap-1.5">
+            <Lock className="h-3.5 w-3.5 text-indigo-500" />
+            Senha
+          </label>
+          <div className="relative">
+            <Input
+              id="password"
+              type={showPassword ? "text" : "password"}
+              placeholder="••••••••"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className={`border-gray-200 focus:border-indigo-500 focus:ring-indigo-100 transition-all duration-300 ${
+                password && password.length < 6 ? "border-red-300 focus:border-red-500 focus:ring-red-100" : ""
+              }`}
+              required
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-indigo-500 transition-colors duration-200"
+            >
+              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
+            {password && password.length < 6 && (
+              <p className="mt-1 text-xs text-red-500">
+                Senha deve ter pelo menos 6 caracteres
+              </p>
+            )}
+          </div>
+        </div>
+
+        <div className="space-y-1">
+          <label htmlFor="confirmPassword" className="text-sm font-medium text-gray-700 flex items-center gap-1.5">
+            <Lock className="h-3.5 w-3.5 text-indigo-500" />
+            Confirme sua senha
+          </label>
+          <div className="relative">
+            <Input
+              id="confirmPassword"
+              type={showConfirmPassword ? "text" : "password"}
+              placeholder="••••••••"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              className={`border-gray-200 focus:border-indigo-500 focus:ring-indigo-100 transition-all duration-300 ${
+                confirmPassword && confirmPassword !== password ? "border-red-300 focus:border-red-500 focus:ring-red-100" : ""
+              }`}
+              required
+            />
+            <button
+              type="button"
+              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-indigo-500 transition-colors duration-200"
+            >
+              {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
+            {confirmPassword && confirmPassword !== password && (
+              <p className="mt-1 text-xs text-red-500">
+                As senhas não conferem
+              </p>
+            )}
+          </div>
+        </div>
+
+        <div className="flex items-start gap-2 mt-2">
+          <div 
+            className={`w-4 h-4 mt-0.5 rounded flex items-center justify-center cursor-pointer transition-all duration-200 border ${
+              acceptTerms 
+                ? 'bg-indigo-600 border-indigo-600' 
+                : 'bg-white border-gray-300 hover:border-indigo-500'
             }`}
-            required
-          />
-          <button
-            type="button"
-            onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-pink-500 transition-colors duration-200"
+            onClick={() => setAcceptTerms(!acceptTerms)}
           >
-            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-          </button>
-          {password && password.length < 6 && (
-            <p className="mt-1 text-xs text-red-500">
-              Senha deve ter pelo menos 6 caracteres
-            </p>
-          )}
-        </div>
-
-        <div className="relative group">
-          <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-pink-500 transition-colors duration-200" size={20} />
-          <Input
-            type={showConfirmPassword ? "text" : "password"}
-            placeholder="Confirme sua senha"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            className={`pl-10 border-gray-200 focus:border-pink-500 focus:ring-pink-200 transition-all duration-300 ${
-              confirmPassword && confirmPassword !== password ? "border-red-300 focus:border-red-500 focus:ring-red-200" : ""
-            }`}
-            required
-          />
-          <button
-            type="button"
-            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-pink-500 transition-colors duration-200"
+            {acceptTerms && <Check className="h-3 w-3 text-white" />}
+          </div>
+          <label 
+            htmlFor="terms" 
+            className="text-sm text-gray-600 cursor-pointer select-none"
+            onClick={() => setAcceptTerms(!acceptTerms)}
           >
-            {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-          </button>
-          {confirmPassword && confirmPassword !== password && (
-            <p className="mt-1 text-xs text-red-500">
-              As senhas não conferem
-            </p>
-          )}
-        </div>
-
-        <div className="flex items-start gap-2">
-          <input
-            type="checkbox"
-            id="terms"
-            className="mt-1 rounded border-gray-300 text-pink-500 focus:ring-pink-300"
-            checked={acceptTerms}
-            onChange={(e) => setAcceptTerms(e.target.checked)}
-            required
-          />
-          <label htmlFor="terms" className="text-sm text-neutral-soft">
             Li e aceito os{" "}
-            <Link to="/terms" className="text-pink-600 hover:text-pink-700 transition-colors duration-200 hover:underline" target="_blank">
+            <Link to="/terms" className="text-indigo-600 hover:text-indigo-700 transition-colors duration-200 hover:underline" target="_blank">
               termos de uso
             </Link>{" "}
             e a{" "}
-            <Link to="/privacy" className="text-pink-600 hover:text-pink-700 transition-colors duration-200 hover:underline" target="_blank">
+            <Link to="/privacy" className="text-indigo-600 hover:text-indigo-700 transition-colors duration-200 hover:underline" target="_blank">
               política de privacidade
             </Link>
           </label>
@@ -177,7 +226,7 @@ const RegisterForm = () => {
 
       <Button
         type="submit"
-        className="w-full bg-gradient-to-r from-pink-500 to-pink-600 hover:from-pink-600 hover:to-pink-700 text-white font-medium py-2.5 rounded-lg transition-all duration-300 transform hover:translate-y-[-1px] hover:shadow-lg flex items-center justify-center"
+        className="w-full mt-2 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white font-medium py-2.5 rounded-lg transition-all duration-300 flex items-center justify-center"
         disabled={isLoading || !isFormValid()}
       >
         {isLoading ? (

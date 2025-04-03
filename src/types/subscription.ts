@@ -1,4 +1,3 @@
-
 export type SubscriptionPlan = {
   id: string;
   name: string;
@@ -6,10 +5,10 @@ export type SubscriptionPlan = {
   icon: string;
   description: string;
   features: string[];
-  maxUsers: number;
-  maxAppointments: number | 'unlimited';
-  supportType: string;
   highlight?: boolean;
+  maxUsers?: number;
+  maxAppointments?: number | 'unlimited';
+  supportType?: string;
 };
 
 export type SubscriptionStatus = 'trial' | 'active' | 'expired' | 'cancelled';

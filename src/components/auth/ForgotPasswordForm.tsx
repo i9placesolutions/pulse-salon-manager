@@ -33,34 +33,52 @@ const ForgotPasswordForm = () => {
 
   return (
     <form onSubmit={handleSubmit} className="w-full space-y-6 animate-fade-in">
-      <div className="space-y-4">
-        <div className="relative group">
-          <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-pink-500 transition-colors duration-200" size={20} />
+      <div className="space-y-3">
+        <label htmlFor="email" className="text-sm font-medium text-gray-700 flex items-center gap-1.5">
+          <Mail className="h-3.5 w-3.5 text-indigo-500" />
+          Email cadastrado
+        </label>
+        <div className="relative">
           <Input
+            id="email"
             type="email"
-            placeholder="Seu email"
+            placeholder="seu.email@exemplo.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="pl-10 border-gray-200 focus:border-pink-500 focus:ring-pink-200 transition-all duration-300"
+            className="border-gray-200 focus:border-indigo-500 focus:ring-indigo-100 transition-all duration-300"
             required
           />
         </div>
+        <p className="text-xs text-gray-500">
+          Enviaremos um link para redefinir sua senha no email informado, caso esteja cadastrado em nosso sistema.
+        </p>
       </div>
 
       <Button
         type="submit"
-        className="w-full bg-gradient-to-r from-pink-500 to-pink-600 hover:from-pink-600 hover:to-pink-700 text-white font-medium py-2.5 rounded-lg transition-all duration-300 transform hover:translate-y-[-1px] hover:shadow-lg flex items-center justify-center gap-2"
+        className="w-full bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white font-medium py-2.5 rounded-lg transition-all duration-300 flex items-center justify-center gap-2"
         disabled={isLoading}
       >
         {isLoading ? (
           <Loader2 className="h-5 w-5 animate-spin" />
         ) : (
           <>
-            Enviar instruções
-            <ArrowRight className="h-4 w-4 ml-1" />
+            Receber instruções
+            <ArrowRight className="h-4 w-4" />
           </>
         )}
       </Button>
+      
+      <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 text-sm text-blue-800">
+        <p className="flex items-start">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-500 mr-2 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span>
+            Se você não receber um e-mail em alguns minutos, verifique sua pasta de spam ou entre em contato com o suporte.
+          </span>
+        </p>
+      </div>
     </form>
   );
 };

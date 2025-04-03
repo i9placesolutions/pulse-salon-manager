@@ -7,6 +7,11 @@ export interface MessageCampaignData {
   channels: string[];
   scheduleDate?: string;
   scheduleTime?: string;
+  mediaFile?: {
+    url: string;
+    type: string;
+    name?: string;
+  };
 }
 
 export interface MarketingMetric {
