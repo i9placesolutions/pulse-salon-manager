@@ -34,7 +34,7 @@ export function BlockedDatesList({ blockedDates, onRemove }: BlockedDatesListPro
               >
                 <div className="flex-1">
                   <p className="font-medium">
-                    {formatDate(date.startDate || date.start)} - {formatDate(date.endDate || date.end)}
+                    {formatDate(date.start || date.startDate || '')} - {formatDate(date.end || date.endDate || '')}
                   </p>
                   <p className="text-sm text-muted-foreground">{date.reason}</p>
                 </div>

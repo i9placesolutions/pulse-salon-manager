@@ -1,4 +1,3 @@
-
 import { LucideIcon } from "lucide-react";
 
 export interface DashboardMetric {
@@ -55,7 +54,7 @@ export interface TopProduct {
 }
 
 export interface CashFlowEntry {
-  id?: string;
+  id?: string | number;
   type: 'income' | 'expense' | 'entrada' | 'saida';
   category: string;
   amount: number;
@@ -102,3 +101,5 @@ export interface ClientsMetrics {
   retention: number;
   averageValue: number;
 }
+
+export type ExportFormat = 'excel' | 'pdf' | 'csv' | 'summary' | 'analytics';

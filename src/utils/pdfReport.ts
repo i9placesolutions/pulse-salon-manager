@@ -1,4 +1,3 @@
-
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { CashFlowEntry } from '@/types/dashboard';
@@ -9,7 +8,7 @@ const convertCashFlowType = (type: string): 'income' | 'expense' => {
   return 'expense';
 };
 
-export type ReportType = 'financial' | 'inventory' | 'appointments' | 'clients' | 'professionals';
+export type ReportType = 'financial' | 'inventory' | 'appointments' | 'clients' | 'professionals' | 'cashflow' | 'expense' | 'revenue' | 'full';
 
 interface ReportData {
   income: number;

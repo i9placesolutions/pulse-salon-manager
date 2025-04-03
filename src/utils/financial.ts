@@ -1,265 +1,171 @@
-
 import { Expense, AccountReceivable, CashFlow } from "@/types/financial";
 import { Payment } from "@/types/financial";
 import { CashFlowEntry, FinancialSummary } from "@/types/dashboard";
-import { format, parseISO, isAfter, isBefore, subMonths, startOfMonth, endOfMonth } from "date-fns";
-import { ptBR } from "date-fns/locale";
 import { RevenueData } from "@/types/financial";
-import { formatCurrency } from "./currency";
+import { formatCurrency } from "@/utils/currency";
 import { Professional } from "@/types/financial";
+import { sub, parse, format, isAfter, isBefore, addMonths, startOfMonth, endOfMonth } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
-/**
- * Calcula o total de receitas com base nos dados fornecidos
- */
-export const calculateTotalRevenue = (payments: Payment[] = []): number => {
-  return payments.reduce((total, payment) => {
-    if (payment.status === 'Pago') {
-      return total + payment.value;
+// Implementações adicionadas para funções ausentes
+export const calculateAverageTicket = (payments = [], period?: string) => {
+  if (!payments || payments.length === 0) return 0;
+  const total = payments.reduce((sum, payment) => sum + payment.value, 0);
+  return total / payments.length;
+};
+
+export const calculateTotalCommissions = (professionals = [], period?: string) => {
+  if (!professionals || professionals.length === 0) return 0;
+  return professionals.reduce((sum, professional) => sum + professional.commission, 0);
+};
+
+export const filterCashFlowData = (data = [], filter = {}) => {
+  if (!data || data.length === 0) return [];
+  
+  // Implementação básica de filtro por período
+  if (filter.period) {
+    const today = new Date();
+    let startDate;
+    
+    switch (filter.period) {
+      case 'day':
+        startDate = new Date(today);
+        startDate.setHours(0, 0, 0, 0);
+        break;
+      case 'week':
+        startDate = new Date(today.setDate(today.getDate() - 7));
+        break;
+      case 'month':
+        startDate = new Date(today.setDate(1));
+        break;
+      case 'year':
+        startDate = new Date(today.setMonth(0, 1));
+        break;
+      default:
+        startDate = new Date(0); // início do tempo Unix
     }
-    return total;
-  }, 0);
-};
-
-/**
- * Calcula o total de despesas com base nos dados fornecidos
- */
-export const calculateTotalExpenses = (expenses: Expense[] = []): number => {
-  return expenses.reduce((total, expense) => {
-    if (expense.status === 'Pago') {
-      return total + expense.value;
-    }
-    return total;
-  }, 0);
-};
-
-/**
- * Calcula o balanço de caixa com base nos dados fornecidos
- */
-export const calculateCashFlowBalance = (
-  payments: Payment[] = [], 
-  expenses: Expense[] = []
-): number => {
-  const totalRevenue = calculateTotalRevenue(payments);
-  const totalExpenses = calculateTotalExpenses(expenses);
-  return totalRevenue - totalExpenses;
-};
-
-/**
- * Obtém contas a receber em atraso
- */
-export const getOverdueAccounts = (
-  accountsReceivable: AccountReceivable[] = []
-): AccountReceivable[] => {
-  const today = new Date();
-  return accountsReceivable.filter(account => {
-    if (account.status === 'Pago' || account.status === 'Cancelado') {
-      return false;
-    }
-    const dueDate = new Date(account.dueDate);
-    return isAfter(today, dueDate);
-  });
-};
-
-/**
- * Conta o número de contas a receber em atraso
- */
-export const countOverdueAccounts = (
-  accountsReceivable: AccountReceivable[] = []
-): number => {
-  return getOverdueAccounts(accountsReceivable).length;
-};
-
-/**
- * Formata uma data no formato DD/MM/YYYY
- */
-export const formatDate = (dateStr: string): string => {
-  try {
-    const date = parseISO(dateStr);
-    return format(date, 'dd/MM/yyyy', { locale: ptBR });
-  } catch (error) {
-    return dateStr; // Retorna a string original se não conseguir formatar
+    
+    return data.filter(item => {
+      const itemDate = new Date(item.date);
+      return itemDate >= startDate;
+    });
   }
+  
+  return data;
 };
 
-/**
- * Prepara dados para exportação de relatórios financeiros
- */
-export const prepareFinancialReportData = (
-  revenues: any[] = [],
-  expenses: Expense[] = [],
-  cashFlow: CashFlow[] = [],
-  period: string = 'month'
-): any => {
-  // Dados básicos
-  const reportData = {
-    title: `Relatório Financeiro - ${period === 'month' ? 'Mensal' : 'Anual'}`,
-    date: format(new Date(), 'dd/MM/yyyy'),
-    summary: {
-      totalRevenue: 0,
-      totalExpenses: 0,
-      balance: 0
-    },
-    revenues: [],
-    expenses: [],
-    cashFlow: []
-  };
-
-  // Processar receitas
-  const processedRevenues = revenues.map(rev => ({
-    date: formatDate(rev.date),
-    client: rev.client || rev.clientName || 'N/A',
-    description: rev.description || rev.service || 'N/A',
-    value: rev.value,
-    paymentMethod: rev.method || rev.paymentMethod || 'N/A',
-    status: rev.status
-  }));
-
-  // Processar despesas
-  const processedExpenses = expenses.map(exp => ({
-    date: formatDate(exp.date || exp.dueDate),
-    description: exp.name || exp.description,
-    category: exp.category,
-    value: exp.value,
-    status: exp.status,
-    recurring: exp.recurring || exp.isRecurring
-  }));
-
-  // Processar fluxo de caixa
-  const processedCashFlow = cashFlow.map(flow => {
-    const isIncome = flow.type === 'entrada' || flow.type === 'income';
-    return {
-      date: formatDate(flow.date),
-      type: isIncome ? 'Entrada' : 'Saída',
-      category: flow.category,
-      description: flow.description,
-      value: flow.value,
-      status: flow.status || 'realizado',
-      document: flow.relatedDocument || 'N/A'
-    };
-  });
-
-  // Calcular o sumário
-  let totalRevenue = 0;
-  let totalExpenses = 0;
-
-  cashFlow.forEach(flow => {
-    if (flow.type === 'entrada' || flow.type === 'income') {
-      totalRevenue += flow.value;
-    } else if (flow.type === 'saida' || flow.type === 'expense') {
-      totalExpenses += flow.value;
-    }
-  });
-
-  reportData.summary.totalRevenue = totalRevenue;
-  reportData.summary.totalExpenses = totalExpenses;
-  reportData.summary.balance = totalRevenue - totalExpenses;
-
-  return {
-    ...reportData,
-    revenues: processedRevenues,
-    expenses: processedExpenses,
-    cashFlow: processedCashFlow
-  };
+// Função para formatar a data
+export const formatDate = (date: Date | string): string => {
+  if (typeof date === 'string') {
+    date = new Date(date);
+  }
+  return format(date, 'dd/MM/yyyy', { locale: ptBR });
 };
 
-/**
- * Formata uma lista de tarefas financeiras para exibição
- */
-export const formatFinancialTasks = (
-  expenses: Expense[] = [],
-  accountsReceivable: AccountReceivable[] = []
-): any[] => {
+// Função para formatar a data para o formato YYYY-MM
+export const formatDateToYYYYMM = (date: Date): string => {
+  return format(date, 'yyyy-MM');
+};
+
+// Função para obter o primeiro dia do mês
+export const getFirstDayOfMonth = (date: Date): Date => {
+  return startOfMonth(date);
+};
+
+// Função para obter o último dia do mês
+export const getLastDayOfMonth = (date: Date): Date => {
+  return endOfMonth(date);
+};
+
+// Função para adicionar meses a uma data
+export const addMonthsToDate = (date: Date, months: number): Date => {
+  return addMonths(date, months);
+};
+
+// Função para verificar se uma data está dentro de um intervalo
+export const isDateWithinRange = (date: Date, startDate: Date, endDate: Date): boolean => {
+  return isAfter(date, startDate) && isBefore(date, endDate);
+};
+
+// Função para calcular o total de receita
+export const calculateTotalRevenue = (payments = []) => {
+  return payments.reduce((total, payment) => total + payment.value, 0);
+};
+
+// Função para calcular o total de despesas
+export const calculateTotalExpenses = (expenses = []) => {
+  return expenses.reduce((total, expense) => total + expense.value, 0);
+};
+
+// Função para calcular o balanço do fluxo de caixa
+export const calculateCashFlowBalance = (cashFlow = []) => {
+  return cashFlow.reduce((balance, entry) => {
+    // Convert entrada/saida to income/expense if needed
+    const type = entry.type === 'entrada' ? 'income' : 
+                entry.type === 'saida' ? 'expense' : entry.type;
+    
+    return type === 'income' ? balance + entry.value : balance - entry.value;
+  }, 0);
+};
+
+// Função para contar contas vencidas
+export const countOverdueAccounts = (accounts = []) => {
   const today = new Date();
-  const nextWeek = new Date(today);
-  nextWeek.setDate(nextWeek.getDate() + 7);
+  return accounts.filter(account => {
+    const dueDate = new Date(account.dueDate);
+    return dueDate < today && account.status !== 'Pago';
+  }).length;
+};
 
-  // Processar despesas
-  const expenseTasks = expenses
-    .filter(expense => expense.status !== 'Pago' && expense.status !== 'Cancelado')
-    .map(expense => {
-      const dueDate = new Date(expense.dueDate);
-      const isOverdue = isAfter(today, dueDate);
-      const isDueSoon = isBefore(dueDate, nextWeek) && !isOverdue;
-
-      return {
-        id: `expense-${expense.id}`,
-        title: expense.name || expense.description,
-        type: 'expense',
-        dueDate: expense.date || expense.dueDate,
-        formattedDate: formatDate(expense.date || expense.dueDate),
-        value: expense.value,
-        status: isOverdue ? 'Vencido' : expense.status,
-        priority: isOverdue ? 'high' : isDueSoon ? 'medium' : 'normal',
-        item: expense
-      };
-    });
-
-  // Processar contas a receber
-  const receivableTasks = accountsReceivable
-    .filter(account => account.status !== 'Pago' && account.status !== 'Cancelado')
-    .map(account => {
-      const dueDate = new Date(account.dueDate);
-      const isOverdue = isAfter(today, dueDate);
-      const isDueSoon = isBefore(dueDate, nextWeek) && !isOverdue;
-
-      return {
-        id: `receivable-${account.id}`,
-        title: `${account.client} - ${account.description}`,
-        type: 'receivable',
-        dueDate: account.dueDate,
-        formattedDate: formatDate(account.dueDate),
-        value: account.value,
-        status: account.status,
-        priority: isOverdue ? 'medium' : isDueSoon ? 'low' : 'normal',
-        item: account
-      };
-    });
-
-  // Combinar e ordenar por data de vencimento
-  return [...expenseTasks, ...receivableTasks].sort((a, b) => {
-    const dateA = new Date(a.dueDate);
-    const dateB = new Date(b.dueDate);
-    return dateA.getTime() - dateB.getTime();
+// Função para obter contas vencidas
+export const getOverdueAccounts = (accounts = []) => {
+  const today = new Date();
+  return accounts.filter(account => {
+    const dueDate = new Date(account.dueDate);
+    return dueDate < today && account.status !== 'Pago';
   });
 };
 
-/**
- * Converte CashFlow para CashFlowEntry para uso em gráficos e relatórios
- */
-export const convertCashFlowToEntries = (cashflows: CashFlow[]): CashFlowEntry[] => {
-  return cashflows.map(cf => ({
-    id: cf.id,
-    type: cf.type === 'entrada' ? 'income' : 'expense',
-    category: cf.category,
-    amount: cf.value,
-    date: cf.date,
-    description: cf.description,
-    paymentMethod: cf.paymentMethod,
-    recurring: cf.recurring,
-    status: cf.status
-  }));
+// Função para simular dados de receita mensal
+export const generateMonthlyRevenueData = (start: Date, months: number): RevenueData[] => {
+  const data: RevenueData[] = [];
+  for (let i = 0; i < months; i++) {
+    const date = addMonths(start, i);
+    const revenue = Math.floor(Math.random() * 2000) + 1000; // Simula receita entre 1000 e 3000
+    const expenses = Math.floor(revenue * (0.3 + Math.random() * 0.2)); // Simula despesas como uma porcentagem da receita
+    data.push({
+      date: format(date, 'MM/yy', { locale: ptBR }),
+      revenue: revenue,
+      expenses: expenses,
+    });
+  }
+  return data;
 };
 
-/**
- * Calcula o resumo financeiro baseado em entradas do fluxo de caixa
- */
-export const calculateFinancialSummary = (entries: CashFlowEntry[]): FinancialSummary => {
-  let totalIncome = 0;
-  let totalExpenses = 0;
+// Preparar dados para relatórios financeiros
+export const prepareFinancialReportData = (cashFlowData: CashFlowEntry[] = [], period = '30days'): FinancialSummary => {
+  // Implementação básica
+  let income = 0;
+  let expense = 0;
   
-  entries.forEach(entry => {
-    if (entry.type === 'income' || entry.type === 'entrada') {
-      totalIncome += entry.amount;
+  cashFlowData.forEach(entry => {
+    // Convert entrada/saida to income/expense if needed
+    const type = entry.type === 'entrada' ? 'income' : 
+                entry.type === 'saida' ? 'expense' : entry.type;
+                
+    if (type === 'income') {
+      income += entry.amount;
     } else {
-      totalExpenses += entry.amount;
+      expense += entry.amount;
     }
   });
   
   return {
-    totalIncome,
-    totalExpenses,
-    balance: totalIncome - totalExpenses,
-    income: totalIncome,
-    expense: totalExpenses
+    totalIncome: income,
+    totalExpenses: expense,
+    balance: income - expense,
+    incomeChange: 0,
+    expensesChange: 0,
+    balanceChange: 0,
   };
 };

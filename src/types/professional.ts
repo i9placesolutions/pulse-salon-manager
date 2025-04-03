@@ -1,6 +1,6 @@
 
 export interface Professional {
-  id: number;
+  id: number | string;
   name: string;
   email: string;
   phone: string;
@@ -28,7 +28,7 @@ export interface Professional {
   services?: number[];
   finishedServices?: number;
   
-  // Campos adicionais que são referenciados no código
+  // Campos adicionados para compatibilidade
   experienceLevel?: string;
   hiringDate?: string;
   paymentModel?: string;
@@ -36,7 +36,7 @@ export interface Professional {
   commissionRate?: number;
   totalCommission?: number;
   averageMonthlyRevenue?: number;
-  workingDays?: number;
+  workingDays?: string[] | number;
   monthRanking?: {
     position?: number;
     total?: number;
@@ -117,6 +117,11 @@ export interface ProfessionalPayment {
   value: number;
   description: string;
   status: string;
+  referenceMonth?: string;
+  paymentDate?: string;
+  type?: string;
+  notes?: string;
+  professionalId?: number;
 }
 
 export interface ProfessionalSpecialty {

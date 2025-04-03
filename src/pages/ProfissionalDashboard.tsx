@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { WorkingHoursForm } from "@/components/profissionais/WorkingHoursForm";
 import { DashboardHeader } from "@/components/profissionais/dashboard/DashboardHeader";
@@ -9,15 +10,17 @@ import { Professional, ProfessionalCommission, ProfessionalAppointment } from "@
 
 // Mock data para teste
 const mockProfessional: Professional = {
-  id: "1",
+  id: 1,
   name: "João Silva",
   email: "joao@example.com",
   phone: "(11) 99999-9999",
-  specialty: "Cabelereiro",
+  specialty: ["Cabelereiro"],
   specialties: [{ id: "1", name: "Cabelereiro", color: "#1e40af", isActive: true }],
   hiringDate: "2024-01-01",
   experienceLevel: "expert",
   status: "active",
+  since: "2024-01-01", 
+  level: "expert",
   totalAppointments: 150,
   totalCommission: 5000,
   averageMonthlyRevenue: 8000,
