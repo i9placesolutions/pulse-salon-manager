@@ -1,104 +1,52 @@
 
 export interface Client {
-  id: string;
+  id: number;
   name: string;
-  email: string;
-  phone: string;
-  birthDate: string;
-  firstVisit: string;
-  cpf?: string;
+  email?: string;
+  phone?: string;
+  birthdate?: string;
   address?: string;
-  photo?: string;
-  status: 'active' | 'vip' | 'inactive';
-  points: number;
-  cashback: number;
-  totalSpent: number;
-  visitsCount: number;
-  lastVisit: string;
-  observations?: string;
+  city?: string;
+  state?: string;
+  postalCode?: string;
+  gender?: string;
+  status: "active" | "inactive";
+  note?: string;
+  lastVisit?: string;
+  loyalty?: {
+    points?: number;
+    cashback?: number;
+    level?: string;
+  };
+  services?: ClientService[];
   tags?: string[];
-  benefits?: { type: string; value: number }[];
 }
 
 export interface ClientService {
-  id: string | number;
-  clientId?: number | string;
-  name?: string;
+  id: number;
+  clientId: number;
   date: string;
   professional: string;
   service: string;
-  price: number;
   value: number;
+  price: number; // Campo obrigatório
+  paymentMethod: string;
   status: string;
-  cashbackGenerated?: number;
-  pointsGenerated?: number;
-  paymentMethod?: string;
+  cashbackGenerated: number;
+  pointsGenerated: number;
 }
 
-export interface ClientPreference {
-  id: number;
-  clientId: number | string;
-  category: string;
-  description: string;
-}
-
-export interface ClientCoupon {
-  id: number;
-  clientId: number | string;
-  code: string;
-  discount: number;
-  discountType: 'percentage' | 'fixed';
-  date: string;
-  service: string;
-  description: string;
-  expirationDate: string;
-  isUsed: boolean;
-}
-
-export interface ClientCampaign {
+export interface ClientTag {
   id: number;
   name: string;
-  description: string;
-  startDate: string;
-  endDate: string;
-  targetClients: string;
-  discount: number;
-  discountType: string;
-  clientId: number | string;
+  color: string;
+  description?: string;
 }
 
-export interface ClientFilters {
-  status: string[];
-  tags?: string[];
-  dateRange: string | null;
-  spendingRange: [number | null, number | null];
-  lastVisitRange: [Date | null, Date | null];
-  minVisits?: number;
-  hasCashback?: boolean;
-  hasWhatsApp?: boolean;
-  hasBirthday?: boolean;
-  usedCoupons?: boolean;
-  joinedCampaigns?: boolean;
-}
-
-export interface ClientExportOptions {
-  includeContact: boolean;
-  includeAddress: boolean;
-  includeServices: boolean;
-  includeSpending: boolean;
-  includePreferences: boolean;
-  includeBirthday: boolean;
-  includeTags: boolean;
-  includeVisitHistory: boolean;
-  includeCashbackHistory: boolean;
-  includeAverageTicket: boolean;
-  includeCharts: boolean;
-  groupBy: 'none' | 'status' | 'lastVisit' | 'totalSpent';
-  sortBy: 'name' | 'lastVisit' | 'totalSpent' | 'visitsCount';
-  timeRange: string;
-  exportFormat: string;
-  includeAnalytics: boolean;
-  format: 'excel' | 'pdf' | 'csv' | 'summary' | 'analytics';
-  dateFrom?: Date;
-  dateTo?: Date;
+export interface ClientNote {
+  id: number;
+  clientId: number;
+  content: string;
+  date: string;
+  author: string;
 }

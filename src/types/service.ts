@@ -19,6 +19,10 @@ export interface Service {
     popularTimes?: string[];
     clientRetention?: number;
   };
+  
+  // Campos adicionados para resolver erros
+  commission?: number;
+  products?: any[];
 }
 
 export interface ServicePackage {
@@ -56,3 +60,29 @@ export type ServiceTag = {
   name: string;
   color?: string;
 };
+
+// Interfaces adicionadas para resolver erros
+export interface ProfessionalGoal {
+  id: number | string;
+  name: string;
+  target: number;
+  current: number;
+  period: string;
+  type: string;
+}
+
+export interface ProfessionalPerformance {
+  id?: number | string;
+  name?: string;
+  metrics?: any[];
+  goals?: ProfessionalGoal[];
+  avgSatisfaction?: number;
+  count?: number;
+}
+
+export interface PackageService {
+  serviceId: string | number;
+  discount: number;
+  name?: string;
+  price?: number;
+}

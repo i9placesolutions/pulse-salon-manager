@@ -28,7 +28,7 @@ export interface AccountReceivable {
   client: string;
   value: number;
   dueDate: string;
-  status: "Pendente" | "Pago" | "Atrasado" | "Cancelado";
+  status: "Pendente" | "Pago" | "Atrasado" | "Cancelado" | "Em Aberto";
   installment?: string;
   description?: string;
 }
@@ -40,7 +40,7 @@ export interface Expense {
   dueDate: string;
   category: string;
   status: string;
-  recurring: boolean;
+  recurring: boolean;  // Corrigido de isRecurring para recurring
   costCenter?: string;
   name?: string;
   date?: string;
@@ -106,6 +106,7 @@ export interface CommissionConfig {
   customValues?: {
     type: string;
     value: number;
+    professionalId?: number;  // Adicionando o campo ausente
   }[];
 }
 
@@ -121,4 +122,8 @@ export interface Alert {
     type: string;
     id: number;
   };
+  // Campos adicionados para resolver erros
+  severity?: string;
+  message?: string;
+  value?: number;
 }

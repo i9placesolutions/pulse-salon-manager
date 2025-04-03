@@ -42,15 +42,12 @@ interface CostControlPanelProps {
 export function CostControlPanel({ expenses }: CostControlPanelProps) {
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   
-  // Filtrar despesas com base na categoria selecionada
   const filteredExpenses = useMemo(() => {
     if (!categoryFilter) return expenses;
     return expenses.filter(expense => expense.category === categoryFilter);
   }, [expenses, categoryFilter]);
 
-  // Processar dados para o gráfico
   const pieData = useMemo(() => {
-    // Agrupar por costCenter ou criar uma categoria "Outros" se não existir
     const costCenters = filteredExpenses.reduce((acc, expense) => {
       const center = expense.costCenter || "Outros";
       if (!acc[center]) {
@@ -60,14 +57,12 @@ export function CostControlPanel({ expenses }: CostControlPanelProps) {
       return acc;
     }, {} as Record<string, number>);
 
-    // Converter para o formato do gráfico
     return Object.entries(costCenters).map(([name, value]) => ({
       name,
       value
     }));
   }, [filteredExpenses]);
 
-  // Calcular totais
   const totalFixo = useMemo(() => {
     return expenses
       .filter(expense => expense.category === "Fixo")
@@ -82,14 +77,13 @@ export function CostControlPanel({ expenses }: CostControlPanelProps) {
 
   const totalGeral = totalFixo + totalVariavel;
 
-  // Recorrentes vs. Não Recorrentes
   const recorrentesData = useMemo(() => {
     const recorrentes = filteredExpenses
-      .filter(e => e.isRecurring)
+      .filter(e => e.recurring)
       .reduce((sum, e) => sum + e.value, 0);
     
     const naoRecorrentes = filteredExpenses
-      .filter(e => !e.isRecurring)
+      .filter(e => !e.recurring)
       .reduce((sum, e) => sum + e.value, 0);
     
     return [

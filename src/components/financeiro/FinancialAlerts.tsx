@@ -51,15 +51,17 @@ export function FinancialAlerts({ expenses, receivables }: FinancialAlertsProps)
         }
         
         return {
-          id: `expense-${expense.id}`,
-          type: "expense" as const,
+          id: Number(`expense-${expense.id}`),
+          type: "expense",
           title: expense.description,
-          message,
+          description: message, // Convertendo message para description
+          message, // Mantendo message para compatibilidade
           value: expense.value,
           date: expense.dueDate,
-          severity,
+          severity, // Mantendo severity para compatibilidade
+          priority: severity === "critical" ? "high" : severity === "high" ? "medium" : "low" as 'high' | 'medium' | 'low',
           item: expense
-        };
+        } as Alert;
       });
       
     const overdueReceivables = receivables
@@ -94,15 +96,17 @@ export function FinancialAlerts({ expenses, receivables }: FinancialAlertsProps)
         }
         
         return {
-          id: `receivable-${receivable.id}`,
-          type: "receivable" as const,
-          title: `${receivable.client} - ${receivable.description}`,
-          message,
+          id: Number(`receivable-${receivable.id}`),
+          type: "receivable",
+          title: `${receivable.client} - ${receivable.description || ''}`,
+          description: message, // Convertendo message para description
+          message, // Mantendo message para compatibilidade
           value: receivable.value,
           date: receivable.dueDate,
-          severity,
+          severity, // Mantendo severity para compatibilidade
+          priority: severity === "high" ? "high" : severity === "medium" ? "medium" : "low" as 'high' | 'medium' | 'low',
           item: receivable
-        };
+        } as Alert;
       });
       
     const allAlerts = [...upcomingExpenses, ...overdueReceivables]

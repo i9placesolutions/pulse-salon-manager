@@ -6,7 +6,7 @@ import { MetricsCards } from "@/components/profissionais/dashboard/MetricsCards"
 import { DashboardTabs } from "@/components/profissionais/dashboard/DashboardTabs";
 import { ProfessionalHeader } from "@/components/profissionais/dashboard/ProfessionalHeader";
 import { PageLayout } from "@/components/shared/PageLayout";
-import { Professional, ProfessionalCommission, ProfessionalAppointment } from "@/types/professional";
+import { Professional, ProfessionalCommission, ProfessionalAppointment, ProfessionalPerformance } from "@/types/professional";
 
 // Mock data para teste
 const mockProfessional: Professional = {
@@ -15,7 +15,7 @@ const mockProfessional: Professional = {
   email: "joao@example.com",
   phone: "(11) 99999-9999",
   specialty: ["Cabelereiro"],
-  specialties: [{ id: "1", name: "Cabelereiro", color: "#1e40af", isActive: true }],
+  specialty: [{ id: "1", name: "Cabelereiro", color: "#1e40af", isActive: true }],
   hiringDate: "2024-01-01",
   experienceLevel: "expert",
   status: "active",
@@ -28,7 +28,7 @@ const mockProfessional: Professional = {
   commissionRate: 50
 };
 
-const mockPerformance = {
+const mockPerformance: ProfessionalPerformance = {
   totalAppointments: 45,
   topServices: [
     { serviceName: "Corte", count: 20 },
@@ -70,17 +70,17 @@ const mockCommissions: ProfessionalCommission[] = [
 const mockAppointments: ProfessionalAppointment[] = [
   {
     id: 1,
-    date: "2024-03-07",
+    date: "2024-03-10",
     clientName: "João Silva",
     serviceName: "Corte + Barba",
     value: 80,
     commission: 40,
-    notes: "Cliente prefere corte mais curto",
-    status: "confirmed"
+    status: "confirmed",
+    notes: "Cliente prefere corte mais curto"
   },
   {
     id: 2,
-    date: "2024-03-07",
+    date: "2024-03-09",
     clientName: "Maria Santos",
     serviceName: "Coloração",
     value: 150,

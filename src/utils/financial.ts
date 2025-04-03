@@ -1,212 +1,86 @@
+import { CashFlow, Expense, AccountReceivable, Payment } from '@/types/financial';
 
-import { Expense, AccountReceivable, CashFlow } from '@/types/financial';
-import { format, isAfter, isBefore, parse, subDays } from 'date-fns';
-
-export interface FilterOptions {
-  period?: string;
-  category?: string;
-  paymentMethod?: string;
-  status?: string;
-}
-
-export const calculateTotalRevenue = (cashFlow: CashFlow[], options: FilterOptions = {}): number => {
+// Função para calcular o total de receitas
+export const calculateTotalRevenue = (cashFlow: CashFlow[]) => {
   return cashFlow
-    .filter(entry => {
-      // Convertemos para garantir que os tipos sejam comparáveis
-      const entryType = typeof entry.type === 'string' ?
-        (entry.type === 'entrada' || entry.type === 'income') ? 'income' : 'expense' : entry.type;
-      
-      if (entryType !== 'income' && entryType !== 'entrada') return false;
-      
-      // Filtrar por período, se especificado
-      if (options.period) {
-        const today = new Date();
-        const entryDate = new Date(entry.date);
-        
-        switch (options.period) {
-          case 'today':
-            if (!isSameDay(entryDate, today)) return false;
-            break;
-          case 'week':
-            if (isAfter(subDays(today, 7), entryDate)) return false;
-            break;
-          case 'month':
-            if (entryDate.getMonth() !== today.getMonth() || entryDate.getFullYear() !== today.getFullYear()) return false;
-            break;
-          case 'year':
-            if (entryDate.getFullYear() !== today.getFullYear()) return false;
-            break;
-        }
-      }
-      
-      // Filtrar por categoria, se especificada
-      if (options.category && entry.category !== options.category) return false;
-      
-      // Filtrar por método de pagamento, se especificado
-      if (options.paymentMethod && entry.paymentMethod !== options.paymentMethod) return false;
-      
-      // Filtrar por status, se especificado
-      if (options.status && entry.status !== options.status) return false;
-      
-      return true;
-    })
-    .reduce((total, entry) => total + entry.value, 0);
+    .filter(item => item.type === "entrada" || item.type === "income") // Usando OR para aceitar ambos os tipos
+    .reduce((sum, item) => sum + item.value, 0);
 };
 
-export const calculateTotalExpenses = (expenses: Expense[], options: FilterOptions = {}): number => {
-  return expenses
-    .filter(expense => {
-      // Filtrar por período, se especificado
-      if (options.period) {
-        const today = new Date();
-        const expenseDate = expense.date ? new Date(expense.date) : new Date(expense.dueDate);
-        
-        switch (options.period) {
-          case 'today':
-            if (!isSameDay(expenseDate, today)) return false;
-            break;
-          case 'week':
-            if (isAfter(subDays(today, 7), expenseDate)) return false;
-            break;
-          case 'month':
-            if (expenseDate.getMonth() !== today.getMonth() || expenseDate.getFullYear() !== today.getFullYear()) return false;
-            break;
-          case 'year':
-            if (expenseDate.getFullYear() !== today.getFullYear()) return false;
-            break;
-        }
-      }
-      
-      // Filtrar por categoria, se especificada
-      if (options.category && expense.category !== options.category) return false;
-      
-      return true;
-    })
-    .reduce((total, expense) => total + expense.value, 0);
+// Função para calcular o total de despesas
+export const calculateTotalExpenses = (cashFlow: CashFlow[]) => {
+  return cashFlow
+    .filter(item => item.type === "saida" || item.type === "expense") // Usando OR para aceitar ambos os tipos
+    .reduce((sum, item) => sum + item.value, 0);
 };
 
-export const calculateCashFlowBalance = (cashFlow: CashFlow[]): number => {
-  let income = 0;
-  let expenses = 0;
-  
-  cashFlow.forEach(entry => {
-    // Convertemos para garantir que os tipos sejam comparáveis
-    const entryType = typeof entry.type === 'string' ?
-      (entry.type === 'entrada' || entry.type === 'income') ? 'income' : 'expense' : entry.type;
-    
-    if (entryType === 'income' || entryType === 'entrada') {
-      income += entry.value;
-    } else if (entryType === 'expense' || entryType === 'saida') {
-      expenses += entry.value;
-    }
-  });
-  
-  return income - expenses;
+// Função para calcular o saldo do fluxo de caixa
+export const calculateCashFlowBalance = (cashFlow: CashFlow[]) => {
+  const revenue = calculateTotalRevenue(cashFlow);
+  const expenses = calculateTotalExpenses(cashFlow);
+  return revenue - expenses;
 };
 
-export const getOverdueAccounts = (accounts: AccountReceivable[]): AccountReceivable[] => {
+// Função para obter contas a receber vencidas
+export const getOverdueAccounts = (accounts: AccountReceivable[]) => {
   const today = new Date();
-  
-  return accounts.filter(account => {
-    const dueDate = new Date(account.dueDate);
-    return account.status !== "Pago" && isAfter(today, dueDate);
+  return accounts.filter(acc => {
+    const dueDate = new Date(acc.dueDate);
+    return dueDate < today && acc.status === "Pendente";
   });
 };
 
-export const countOverdueAccounts = (accounts: AccountReceivable[]): number => {
+// Função para contar contas a receber vencidas
+export const countOverdueAccounts = (accounts: AccountReceivable[]) => {
   return getOverdueAccounts(accounts).length;
 };
 
-export const isSameDay = (date1: Date, date2: Date): boolean => {
-  return date1.getDate() === date2.getDate() && 
-         date1.getMonth() === date2.getMonth() && 
-         date1.getFullYear() === date2.getFullYear();
-};
-
-export const filterCashFlowData = (data: CashFlow[], filter: string): CashFlow[] => {
-  switch (filter) {
-    case 'income':
-      return data.filter(item => 
-        item.type === 'income' || item.type === 'entrada'
-      );
-    case 'expense':
-      return data.filter(item =>
-        item.type === 'expense' || item.type === 'saida'
-      );
-    default:
-      return data;
-  }
-};
-
-export const calculateAverageTicket = (payments: any[], period?: string): number => {
-  if (!payments || payments.length === 0) return 0;
-  
-  const filteredPayments = period ? filterByPeriod(payments, period, 'date') : payments;
-  
-  if (filteredPayments.length === 0) return 0;
-  
-  const totalValue = filteredPayments.reduce((acc, payment) => acc + payment.value, 0);
-  return totalValue / filteredPayments.length;
-};
-
-export const calculateTotalCommissions = (professionals: any[], period?: string): number => {
-  if (!professionals || professionals.length === 0) return 0;
-  
-  return professionals.reduce((acc, professional) => acc + professional.commission, 0);
-};
-
-export const filterByPeriod = (items: any[], period: string, dateField: string): any[] => {
-  const today = new Date();
-  
-  return items.filter(item => {
-    const itemDate = new Date(item[dateField]);
-    
-    switch (period) {
-      case 'today':
-        return isSameDay(itemDate, today);
-      case 'week':
-        return isAfter(itemDate, subDays(today, 7));
-      case 'month':
-        return itemDate.getMonth() === today.getMonth() && itemDate.getFullYear() === today.getFullYear();
-      case 'year':
-        return itemDate.getFullYear() === today.getFullYear();
-      default:
-        return true;
-    }
-  });
-};
-
-export const prepareFinancialReportData = (data: any, type: string, format: string): any => {
-  // Implementação básica para preparar dados do relatório financeiro
-  return {
-    type,
-    format,
-    data
-  };
-};
-
-export type CashFlowEntry = {
-  id?: string | number;
-  type: 'income' | 'expense' | 'entrada' | 'saida';
-  category: string;
-  amount: number;
+// Função para formatar dados para relatório financeiro
+export type FinancialReportData = {
   date: string;
-  description?: string;
-  paymentMethod?: string;
-  recurring?: boolean;
-  status?: 'realizado' | 'previsto';
+  description: string;
+  type: string;
+  value: number;
+  status: string;
+  category: string;
 };
 
-export interface FinancialSummary {
-  totalIncome: number;
-  totalExpenses: number;
-  balance: number;
-  income?: number;
-  expense?: number;
-  previousPeriodIncome?: number;
-  previousPeriodExpenses?: number;
-  previousPeriodBalance?: number;
-  incomeChange?: number;
-  expensesChange?: number;
-  balanceChange?: number;
-}
+export const prepareFinancialReportData = (
+  cashFlow: CashFlow[],
+  startDate?: Date,
+  endDate?: Date
+): FinancialReportData[] => {
+  let filteredData = [...cashFlow];
+
+  // Filtrar por data se especificado
+  if (startDate && endDate) {
+    filteredData = filteredData.filter(item => {
+      const itemDate = new Date(item.date);
+      return itemDate >= startDate && itemDate <= endDate;
+    });
+  }
+
+  // Formatar os dados para o relatório
+  return filteredData.map(item => ({
+    date: item.date,
+    description: item.description,
+    type: item.type === "entrada" || item.type === "income" ? "Receita" : "Despesa", // Corrigido para usar OR
+    value: item.value,
+    status: item.status || "N/A",
+    category: item.category
+  }));
+};
+
+// Função para converter payment em formato de fluxo de caixa
+export const paymentsToFlowData = (payments: Payment[]): CashFlow[] => {
+  return payments.map(payment => ({
+    id: payment.id,
+    date: payment.date,
+    type: "entrada", // Pagamentos são sempre entrada
+    category: "Serviço",
+    description: `${payment.client} - ${payment.service}`,
+    value: payment.value,
+    status: payment.status === "Pago" ? "realizado" : "previsto",
+    paymentMethod: payment.method
+  }));
+};
