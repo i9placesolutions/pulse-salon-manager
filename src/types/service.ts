@@ -15,6 +15,14 @@ export interface Service {
     productId: number;
     quantity: number;
   }[];
+  performanceData?: {
+    totalSold?: number;
+    revenue?: number;
+    growth?: number;
+    averageRating?: number;
+    popularTimes?: string[];
+    clientRetention?: number;
+  };
 }
 
 export interface ServiceCategory {
@@ -32,16 +40,28 @@ export interface ProfessionalCommission {
 }
 
 export interface ServicePackage {
-  id: number;
+  id: number | string;
   name: string;
   description: string;
-  services: number[];
+  services: {
+    serviceId: number | string;
+    discount: number;
+  }[];
   products?: {
     productId: number;
     quantity: number;
   }[];
   discount: number;
   status: 'active' | 'inactive';
+  price?: number;
+  expirationDays?: number;
+}
+
+export interface PackageService {
+  id: number;
+  name: string;
+  price: number;
+  discount?: number;
 }
 
 export interface ProfessionalGoal {

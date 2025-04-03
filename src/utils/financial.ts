@@ -220,4 +220,83 @@ export function getOverdueAccounts(
 // Para manter retrocompatibilidade
 export function countOverdueAccounts(accounts: AccountReceivable[]): number {
   return accounts.filter(account => account.status === "Atrasado").length;
-} 
+}
+
+// Adicionando função de conversão de tipos entre os sistemas diferentes
+export const convertCashFlowType = (type: string): 'income' | 'expense' => {
+  if (type === 'entrada') return 'income';
+  return 'expense';
+};
+
+export const reverseConvertCashFlowType = (type: 'income' | 'expense'): 'entrada' | 'saida' => {
+  if (type === 'income') return 'entrada';
+  return 'saida';
+};
+
+// Corrigir os problemas de tipagem nas funções existentes
+export const calculateBalance = (entries: CashFlowEntry[]): FinancialSummary => {
+  let totalIncome = 0;
+  let totalExpenses = 0;
+
+  entries.forEach((entry) => {
+    // Converter tipo se necessário
+    const type = typeof entry.type === 'string' ? 
+      convertCashFlowType(entry.type) : entry.type;
+      
+    if (type === 'income') {
+      totalIncome += entry.amount;
+    } else {
+      totalExpenses += entry.amount;
+    }
+  });
+
+  return {
+    totalIncome,
+    totalExpenses,
+    balance: totalIncome - totalExpenses,
+  };
+};
+
+export const groupEntriesByCategory = (entries: CashFlowEntry[]): { [key: string]: number } => {
+  const result: { [key: string]: number } = {};
+
+  entries.forEach((entry) => {
+    // Converter tipo se necessário
+    const type = typeof entry.type === 'string' ? 
+      convertCashFlowType(entry.type) : entry.type;
+    
+    const categoryKey = `${type}-${entry.category}`;
+    if (!result[categoryKey]) {
+      result[categoryKey] = 0;
+    }
+    result[categoryKey] += entry.amount;
+  });
+
+  return result;
+};
+
+export const getTopCategories = (entries: CashFlowEntry[], type: 'income' | 'expense'): { category: string; amount: number }[] => {
+  const typeEntries = entries.filter((entry) => {
+    // Converter tipo se necessário
+    const entryType = typeof entry.type === 'string' ? 
+      convertCashFlowType(entry.type) : entry.type;
+    return entryType === type;
+  });
+  
+  return typeEntries
+    .reduce((acc, entry) => {
+      const categoryKey = `${entry.type}-${entry.category}`;
+      if (!acc[categoryKey]) {
+        acc[categoryKey] = { category: entry.category, amount: 0 };
+      }
+      acc[categoryKey].amount += entry.amount;
+      return acc;
+    }, {})
+    .map(entry => entry.value)
+    .sort((a, b) => b - a)
+    .slice(0, 5)
+    .map(category => ({
+      category: category.category,
+      amount: category.amount
+    }));
+};

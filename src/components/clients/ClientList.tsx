@@ -1,564 +1,815 @@
-import { useState } from "react";
-import { Client } from "@/types/client";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { 
-  MessageSquare, 
-  Crown, 
-  Scissors, 
-  Calendar,
-  Phone,
-  User,
-  Clock,
-  Heart,
-  MapPin,
-  Star,
-  Cake,
-  Gift,
-  CreditCard,
-  Wallet,
-  ChevronDown,
-  ChevronUp,
-  FileText,
-  Tag,
-  MoreHorizontal,
-  Check,
-  X,
-  AlertCircle,
-  Bookmark,
-  Info,
-  ExternalLink,
-  Repeat
-} from "lucide-react";
-import { BirthdayMessageDialog } from "./BirthdayMessageDialog";
+import { useState, useEffect, useCallback } from "react";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { 
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  CardFooter,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableFooter,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Pencil,
+  Plus,
+  Search,
+  Download,
+  Send,
+  Eye,
+  MoreHorizontal,
+  Trash2,
+  UserPlus,
+  Filter,
+  Copy,
+  File,
+  FileText,
+  Columns,
+  ArrowDown,
+  ArrowUp,
+  ChevronsUpDown,
+} from "lucide-react";
+import { Client, ClientExportOptions } from "@/types/client";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-  DropdownMenuTrigger
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { useToast } from "@/components/ui/use-toast";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Separator } from "@/components/ui/separator";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { Calendar } from "@/components/ui/calendar"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
 import { cn } from "@/lib/utils";
-import { ClientService } from "@/types/client";
 
 interface ClientListProps {
   clients: Client[];
-  onViewProfile: (client: Client) => void;
-  showBirthdayInfo?: boolean;
-  services?: ClientService[];
+  onEditClient?: (client: Client) => void;
+  onDeleteClient?: (clientId: string) => void;
+  onCreateClient?: () => void;
 }
 
-export function ClientList({ 
-  clients, 
-  onViewProfile, 
-  showBirthdayInfo = false,
-  services = []
-}: ClientListProps) {
-  const [selectedBirthdayClient, setSelectedBirthdayClient] = useState<Client | null>(null);
-  const [isBirthdayMessageOpen, setIsBirthdayMessageOpen] = useState(false);
-  const [expandedClient, setExpandedClient] = useState<number | null>(null);
-  
-  const handleWhatsApp = (phone: string) => {
-    window.open(`https://wa.me/${phone.replace(/\D/g, '')}`, '_blank');
-  };
+interface ClientTotals {
+  total: number;
+  active: number;
+  vip: number;
+  inactive: number;
+  percentageActive: number;
+  percentageVip: number;
+  percentageInactive: number;
+}
 
-  // Função para extrair o serviço preferido do cliente
-  const getPreferredService = (client: Client) => {
-    // Se o cliente tiver tags, use a primeira como serviço preferido
-    if (client.tags && client.tags.length > 0) {
-      return client.tags[0];
-    }
+export function ClientList() {
+  const [clients, setClients] = useState<Client[]>([
+    {
+      id: "1",
+      name: "João Silva",
+      email: "joao.silva@example.com",
+      phone: "5511999999999",
+      birthDate: "1985-05-20",
+      firstVisit: "2022-08-15",
+      cpf: "123.456.789-00",
+      address: "Rua das Flores, 123",
+      photo: "/placeholder-client.jpg",
+      status: "active",
+      points: 120,
+      cashback: 50.00,
+      totalSpent: 1500.00,
+      visitsCount: 10,
+      lastVisit: "2023-11-05",
+      observations: "Cliente fiel e sempre pontual.",
+      tags: ["fiel", "pontual"],
+      benefits: [{ type: "desconto", value: 10 }],
+    },
+    {
+      id: "2",
+      name: "Maria Oliveira",
+      email: "maria.oliveira@example.com",
+      phone: "5521988888888",
+      birthDate: "1990-12-10",
+      firstVisit: "2023-01-20",
+      cpf: "456.789.123-11",
+      address: "Avenida Central, 456",
+      photo: "/placeholder-client.jpg",
+      status: "vip",
+      points: 250,
+      cashback: 120.00,
+      totalSpent: 3200.00,
+      visitsCount: 22,
+      lastVisit: "2023-11-12",
+      observations: "Cliente VIP, sempre experimenta novos serviços.",
+      tags: ["vip", "experimentador"],
+      benefits: [{ type: "produto_gratis", value: 1 }],
+    },
+    {
+      id: "3",
+      name: "Carlos Souza",
+      email: "carlos.souza@example.com",
+      phone: "5531977777777",
+      birthDate: "1978-03-25",
+      firstVisit: "2022-11-01",
+      cpf: "789.123.456-22",
+      address: "Travessa da Paz, 789",
+      photo: "/placeholder-client.jpg",
+      status: "inactive",
+      points: 30,
+      cashback: 15.00,
+      totalSpent: 450.00,
+      visitsCount: 3,
+      lastVisit: "2023-02-10",
+      observations: "Cliente inativo, não visita há muito tempo.",
+      tags: ["inativo"],
+      benefits: [{ type: "desconto_reativacao", value: 15 }],
+    },
+    {
+      id: "4",
+      name: "Ana Pereira",
+      email: "ana.pereira@example.com",
+      phone: "5541966666666",
+      birthDate: "1995-07-14",
+      firstVisit: "2023-05-05",
+      cpf: "234.567.890-33",
+      address: "Largo do Sol, 101",
+      photo: "/placeholder-client.jpg",
+      status: "active",
+      points: 80,
+      cashback: 35.00,
+      totalSpent: 900.00,
+      visitsCount: 7,
+      lastVisit: "2023-11-18",
+      observations: "Cliente regular, gosta de serviços de manicure.",
+      tags: ["regular", "manicure"],
+      benefits: [{ type: "desconto_fidelidade", value: 5 }],
+    },
+    {
+      id: "5",
+      name: "Ricardo Alves",
+      email: "ricardo.alves@example.com",
+      phone: "5551955555555",
+      birthDate: "1982-09-30",
+      firstVisit: "2022-09-10",
+      cpf: "567.890.123-44",
+      address: "Praça da Estrela, 222",
+      photo: "/placeholder-client.jpg",
+      status: "vip",
+      points: 300,
+      cashback: 150.00,
+      totalSpent: 4000.00,
+      visitsCount: 28,
+      lastVisit: "2023-11-25",
+      observations: "Cliente VIP, sempre indica novos clientes.",
+      tags: ["vip", "indicador"],
+      benefits: [{ type: "servico_gratis", value: 1 }],
+    },
+  ]);
+  const [search, setSearch] = useState("");
+  const [selectedClients, setSelectedClients] = useState<string[]>([]);
+  const [selectAll, setSelectAll] = useState(false);
+  const [deleteConfirmationOpen, setDeleteConfirmationOpen] = useState(false);
+  const [clientToDelete, setClientToDelete] = useState<string | null>(null);
+  const [messageOpen, setMessageOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [selectedClient, setSelectedClient] = useState<Client | undefined>(undefined);
+  const [clientTotals, setClientTotals] = useState<ClientTotals>({
+    total: 0,
+    active: 0,
+    vip: 0,
+    inactive: 0,
+    percentageActive: 0,
+    percentageVip: 0,
+    percentageInactive: 0,
+  });
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportFormat, setExportFormat] = useState("pdf");
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [filterStatus, setFilterStatus] = useState<string[]>([]);
+  const [filterBirthdate, setFilterBirthdate] = useState<Date | undefined>(undefined);
+  const [sorting, setSorting] = useState<{ column: string; direction: "asc" | "desc" } | null>(null);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    calculateTotals();
+  }, [clients]);
+
+  const calculateTotals = () => {
+    const total = clients.length;
+    const active = clients.filter(client => client.status === 'active').length;
+    const vip = clients.filter(client => client.status === 'vip').length;
+    const inactive = clients.filter(client => client.status === 'inactive').length;
     
-    // Simulando que cliente tem serviço preferido
-    const defaultServices = [
-      "Corte Masculino",
-      "Corte Feminino",
-      "Barba",
-      "Coloração",
-      "Manicure",
-      "Pedicure"
-    ];
+    setClientTotals({
+      total,
+      active, 
+      vip,
+      inactive,
+      percentageActive: total > 0 ? Math.round((active / total) * 100) : 0,
+      percentageVip: total > 0 ? Math.round((vip / total) * 100) : 0,
+      percentageInactive: total > 0 ? Math.round((inactive / total) * 100) : 0
+    });
+  };
+
+  const filteredClients = clients.filter((client) => {
+    const searchTerm = search.toLowerCase();
+    const nameMatch = client.name.toLowerCase().includes(searchTerm);
+    const emailMatch = client.email.toLowerCase().includes(searchTerm);
+    const phoneMatch = client.phone.includes(searchTerm);
+
+    let statusMatch = true;
+    if (filterStatus.length > 0) {
+      statusMatch = filterStatus.includes(client.status);
+    }
+
+    let birthdateMatch = true;
+    if (filterBirthdate) {
+      const birthdate = new Date(client.birthDate);
+      birthdateMatch =
+        birthdate.getDate() === filterBirthdate.getDate() &&
+        birthdate.getMonth() === filterBirthdate.getMonth() &&
+        birthdate.getFullYear() === filterBirthdate.getFullYear();
+    }
+
+    return nameMatch || emailMatch || phoneMatch && statusMatch && birthdateMatch;
+  });
+
+  const sortedClients = useCallback(
+    (clients: Client[]) => {
+      if (!sorting) return clients;
+
+      const { column, direction } = sorting;
+      return [...clients].sort((a, b) => {
+        const aValue = a[column as keyof Client];
+        const bValue = b[column as keyof Client];
+
+        if (aValue === undefined || bValue === undefined) {
+          return 0;
+        }
+
+        let comparison = 0;
+
+        if (typeof aValue === "string" && typeof bValue === "string") {
+          comparison = aValue.localeCompare(bValue);
+        } else if (typeof aValue === "number" && typeof bValue === "number") {
+          comparison = aValue - bValue;
+        } else if (aValue instanceof Date && bValue instanceof Date) {
+          comparison = aValue.getTime() - bValue.getTime();
+        } else {
+          comparison = String(aValue).localeCompare(String(bValue));
+        }
+
+        return direction === "asc" ? comparison : -comparison;
+      });
+    },
+    [sorting]
+  );
+
+  const toggleSelectClient = (clientId: string) => {
+    setSelectedClients((prevSelected) => {
+      if (prevSelected.includes(clientId)) {
+        return prevSelected.filter((id) => id !== clientId);
+      } else {
+        return [...prevSelected, clientId];
+      }
+    });
+  };
+
+  const toggleSelectAll = () => {
+    setSelectAll((prevSelectAll) => {
+      const newSelectAll = !prevSelectAll;
+      setSelectAll(newSelectAll);
+
+      if (newSelectAll) {
+        setSelectedClients(clients.map((client) => client.id));
+      } else {
+        setSelectedClients([]);
+      }
+
+      return newSelectAll;
+    });
+  };
+
+  const handleDeleteClient = (clientId: string) => {
+    setClientToDelete(clientId);
+    setDeleteConfirmationOpen(true);
+  };
+
+  const confirmDeleteClient = () => {
+    if (clientToDelete) {
+      setClients((prevClients) =>
+        prevClients.filter((client) => client.id !== clientToDelete)
+      );
+      setDeleteConfirmationOpen(false);
+      setClientToDelete(null);
+      toast({
+        title: "Cliente excluído",
+        description: "O cliente foi removido da sua lista.",
+      });
+    }
+  };
+
+  const handleExport = async (format: string) => {
+    setIsExporting(true);
+    setExportFormat(format);
     
-    // Usa o ID do cliente para selecionar um serviço da lista
-    // Em uma implementação real, isso viria do backend
-    return defaultServices[Number(client.id) % defaultServices.length];
-  };
+    const options: ClientExportOptions = {
+      includeContact: true,
+      includeAddress: true,
+      includeServices: true,
+      includeSpending: true,
+      includePreferences: true,
+      includeBirthday: true,
+      includeTags: true,
+      includeVisitHistory: true,
+      includeCashbackHistory: true,
+      includeAverageTicket: true,
+      includeCharts: format !== 'excel',
+      groupBy: 'none',
+      sortBy: 'name',
+      timeRange: '365',
+      exportFormat: format,
+      includeAnalytics: true
+    };
+    
+    const selectedIds = selectedClients.length > 0 
+      ? selectedClients 
+      : clients.map(client => client.id);
 
-  // Função para extrair a data da última visita formatada
-  const getFormattedLastVisit = (client: Client) => {
-    if (!client.lastVisit) return "Primeira visita";
-    const date = new Date(client.lastVisit);
-    return new Intl.DateTimeFormat('pt-BR').format(date);
-  };
-
-  // Função para obter o dia do aniversário e idade
-  const getBirthdayInfo = (client: Client) => {
     try {
-      if (!client.birthDate) return { day: 0, age: 0 };
-      
-      const birthDate = new Date(client.birthDate);
-      const day = birthDate.getDate();
-      const birthYear = birthDate.getFullYear();
-      const currentYear = new Date().getFullYear();
-      const age = currentYear - birthYear;
-      
-      return { day, age };
+      console.log("Exporting clients", { format, options, selectedIds });
+      toast({
+        title: "Exportando clientes",
+        description: `O arquivo será gerado em formato ${format.toUpperCase()}.`,
+      });
     } catch (error) {
-      console.error("Erro ao obter informações de aniversário:", error);
-      return { day: 0, age: 0 };
+      toast({
+        variant: "destructive",
+        title: "Erro ao exportar",
+        description: "Houve um problema ao gerar o arquivo.",
+      });
+    } finally {
+      setIsExporting(false);
     }
   };
 
-  // Verificar se é aniversário hoje - método mais seguro
-  const isBirthdayToday = (client: Client) => {
+  const handleCopyClientData = async () => {
+    if (selectedClients.length === 0) {
+      toast({
+        variant: "destructive",
+        title: "Nenhum cliente selecionado",
+        description: "Selecione ao menos um cliente para copiar os dados.",
+      });
+      return;
+    }
+
+    const copiedData = clients
+      .filter((client) => selectedClients.includes(client.id))
+      .map((client) => {
+        return `Nome: ${client.name}\nEmail: ${client.email}\nTelefone: ${client.phone}`;
+      })
+      .join("\n\n");
+
     try {
-      if (!client || !client.birthDate) return false;
-      
-      const birthDate = new Date(client.birthDate);
-      if (isNaN(birthDate.getTime())) return false; // Verifica se a data é válida
-      
-      const today = new Date();
-      return birthDate.getDate() === today.getDate() && 
-             birthDate.getMonth() === today.getMonth();
+      await navigator.clipboard.writeText(copiedData);
+      toast({
+        title: "Dados copiados",
+        description: "As informações dos clientes foram copiadas para a área de transferência.",
+      });
     } catch (error) {
-      console.error("Erro ao verificar aniversário:", error);
-      return false;
+      toast({
+        variant: "destructive",
+        title: "Erro ao copiar",
+        description: "Não foi possível copiar os dados para a área de transferência.",
+      });
     }
   };
 
-  const handleBirthdayMessage = (client: Client) => {
-    setSelectedBirthdayClient(client);
-    setIsBirthdayMessageOpen(true);
+  const handleSendMessage = (clientId: string) => {
+    const clientIdNum = parseInt(clientId);
+    const client = clients.find(c => c.id === clientIdNum.toString());
+    setSelectedClient(client);
+    setMessageOpen(true);
   };
 
-  const toggleExpandClient = (clientId: number) => {
-    setExpandedClient(prev => prev === clientId ? null : clientId);
-  };
-
-  // Obter os serviços de um cliente específico
-  const getClientServices = (clientId: number) => {
-    return services.filter(service => service.clientId === clientId);
-  };
-
-  // Obter o status do cliente
-  const getClientStatusBadge = (status: string) => {
-    switch(status) {
-      case 'vip':
-        return (
-          <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">
-            <Crown className="h-3 w-3 mr-1 text-yellow-600" />
-            VIP
-          </Badge>
-        );
-      case 'inactive':
-        return (
-          <Badge variant="outline" className="text-gray-500 border-gray-300">
-            <AlertCircle className="h-3 w-3 mr-1" />
-            Inativo
-          </Badge>
-        );
-      case 'active':
-        return (
-          <Badge className="bg-green-100 text-green-800 hover:bg-green-100">
-            <Check className="h-3 w-3 mr-1 text-green-600" />
-            Ativo
-          </Badge>
-        );
-      default:
-        return null;
-    }
-  };
-
-  // Formatar valor monetário
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', { 
-      style: 'currency', 
-      currency: 'BRL' 
-    }).format(value);
+  const handleOpenClientProfile = (clientId: string) => {
+    const clientIdNum = parseInt(clientId);
+    const client = clients.find(c => c.id === clientIdNum.toString());
+    setSelectedClient(client);
+    setProfileOpen(true);
   };
 
   return (
-    <div className="space-y-4">
-      {clients && clients.length > 0 ? clients.map((client) => {
-        if (!client) return null;
-        
-        try {
-          const birthdayInfo = getBirthdayInfo(client);
-          const isTodayBirthday = isBirthdayToday(client);
-          const clientServices = services && Array.isArray(services) ? getClientServices(Number(client.id)) : [];
-          const isExpanded = expandedClient === Number(client.id);
-          
-          return (
-            <Card 
-              key={client.id} 
-              className={cn(
-                "overflow-hidden border-l-4 hover:shadow-md transition-all duration-300",
-                isTodayBirthday ? 'bg-primary/5' : '',
-                isExpanded ? 'shadow-md' : ''
-              )}
-              style={{ 
-                borderLeftColor: isTodayBirthday ? '#EC4899' : 
-                                client.status === 'vip' ? '#F59E0B' : 
-                                client.status === 'inactive' ? '#9CA3AF' : '#84cc16' 
-              }}
-            >
-              <CardContent className="p-0">
-                <div className="p-4">
-                  <div className="flex flex-col md:flex-row md:items-start gap-4">
-                    <div className="flex items-center gap-4">
-                      {client.photo ? (
-                        <img
-                          src={client.photo}
-                          alt={client.name}
-                          className="w-16 h-16 rounded-full object-cover border-2 border-primary/20"
-                        />
-                      ) : (
-                        <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary/30 to-primary/10 flex items-center justify-center">
-                          {showBirthdayInfo ? (
-                            <div className="flex flex-col items-center">
-                              <span className="text-2xl font-bold text-primary">{birthdayInfo.day}</span>
-                              <span className="text-xs text-primary/70">Dia</span>
-                            </div>
-                          ) : (
-                            <span className="text-xl font-semibold text-primary">
-                              {client.name.charAt(0)}
-                            </span>
-                          )}
-                        </div>
-                      )}
-                      
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <h3 className="font-medium text-lg">{client.name}</h3>
-                          {getClientStatusBadge(client.status)}
-                          {isTodayBirthday && (
-                            <Badge className="bg-[#db2777]/10 text-[#db2777] hover:bg-[#db2777]/10 animate-pulse">
-                              <Cake className="h-3 w-3 mr-1 text-[#db2777]" />
-                              Aniversário
-                            </Badge>
-                          )}
-                          {client.cashback > 0 && (
-                            <Badge className="bg-green-100 text-green-800">
-                              <Wallet className="h-3 w-3 mr-1 text-green-600" />
-                              {formatCurrency(client.cashback)}
-                            </Badge>
-                          )}
-                        </div>
-                        
-                        <div className="flex flex-col gap-1">
-                          <div className="flex items-center gap-2">
-                            <Phone className="h-3.5 w-3.5 text-gray-500" />
-                            <span className="text-sm text-gray-600">{client.phone}</span>
-                          </div>
-                          
-                          {showBirthdayInfo ? (
-                            <div className="flex items-center text-xs">
-                              <Cake className="h-3.5 w-3.5 text-[#db2777]" />
-                              <span className="ml-1 text-[#db2777]">
-                                Aniversariante do dia!
-                              </span>
-                            </div>
-                          ) : (
-                            <div className="flex items-center gap-2">
-                              <Scissors className="h-3.5 w-3.5 text-gray-500" />
-                              <span className="text-sm text-gray-600">
-                                Serviço frequente: {getPreferredService(client)}
-                              </span>
-                            </div>
-                          )}
-                          
-                          <div className="flex items-center gap-2">
-                            <Calendar className="h-3.5 w-3.5 text-gray-500" />
-                            <span className="text-sm text-gray-600">
-                              Última visita: {getFormattedLastVisit(client)}
-                            </span>
-                          </div>
-
-                          {client.totalSpent !== undefined && (
-                            <div className="flex items-center gap-2">
-                              <CreditCard className="h-3.5 w-3.5 text-primary" />
-                              <span className="text-sm text-gray-600">
-                                Total gasto: <span className="font-medium">{formatCurrency(client.totalSpent)}</span>
-                              </span>
-                            </div>
-                          )}
-
-                          {client.tags && client.tags.length > 0 && (
-                            <div className="flex items-center gap-2 mt-1 flex-wrap">
-                              <Tag className="h-3.5 w-3.5 text-primary/70" />
-                              <div className="flex flex-wrap gap-1">
-                                {client.tags.map((tag, index) => (
-                                  <Badge 
-                                    key={`${client.id}-${tag}`} 
-                                    variant="outline" 
-                                    className="px-1.5 py-0 text-xs border-primary/20 text-primary/80"
-                                  >
-                                    {tag}
-                                  </Badge>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="flex flex-col sm:flex-row items-center gap-2 ml-auto mt-4 md:mt-0">
-                      {showBirthdayInfo && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="rounded-full bg-[#db2777]/10 text-[#db2777] border-[#db2777]/20 hover:bg-[#db2777]/20 w-full sm:w-auto"
-                          onClick={() => handleBirthdayMessage(client)}
-                        >
-                          <Gift className="h-4 w-4 mr-2" />
-                          Enviar Oferta
-                        </Button>
-                      )}
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="rounded-full border-primary/30 text-primary hover:bg-primary/10 hover:text-primary-dark w-full sm:w-auto"
-                        onClick={() => handleWhatsApp(client.phone)}
-                      >
-                        <MessageSquare className="h-4 w-4 mr-2" />
-                        WhatsApp
-                      </Button>
-                      <Button 
-                        variant="default" 
-                        size="sm"
-                        className="rounded-full bg-primary hover:bg-primary-dark w-full sm:w-auto"
-                        onClick={() => onViewProfile(client)}
-                      >
-                        <User className="h-4 w-4 mr-2" />
-                        Ver Perfil
-                      </Button>
-                      
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => toggleExpandClient(Number(client.id))}
-                        className="rounded-full border border-primary/30 text-primary hover:bg-primary/10 hover:text-primary-dark"
-                        aria-label={isExpanded ? "Recolher detalhes" : "Expandir detalhes"}
-                      >
-                        {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                      </Button>
-                    </div>
-                  </div>
-                  
-                  {/* Seção expandida com serviços e mais informações */}
-                  {isExpanded && (
-                    <div className="mt-4 animate-in slide-in-from-top-2 duration-150">
-                      <div className="border-t pt-4 space-y-4">
-                        {/* Linha de estatísticas */}
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                          <div className="bg-gray-50 p-3 rounded-md">
-                            <div className="flex items-center gap-2">
-                              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                                <Calendar className="h-4 w-4 text-primary" />
-                              </div>
-                              <div>
-                                <p className="text-xs text-gray-500">Visitas</p>
-                                <p className="font-semibold">{client.visitsCount || 0}</p>
-                              </div>
-                            </div>
-                          </div>
-                          
-                          <div className="bg-gray-50 p-3 rounded-md">
-                            <div className="flex items-center gap-2">
-                              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                                <CreditCard className="h-4 w-4 text-primary" />
-                              </div>
-                              <div>
-                                <p className="text-xs text-gray-500">Total Gasto</p>
-                                <p className="font-semibold">{formatCurrency(client.totalSpent || 0)}</p>
-                              </div>
-                            </div>
-                          </div>
-                          
-                          <div className="bg-gray-50 p-3 rounded-md">
-                            <div className="flex items-center gap-2">
-                              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                                <Wallet className="h-4 w-4 text-primary" />
-                              </div>
-                              <div>
-                                <p className="text-xs text-gray-500">Cashback</p>
-                                <p className="font-semibold">{formatCurrency(client.cashback || 0)}</p>
-                              </div>
-                            </div>
-                          </div>
-                          
-                          <div className="bg-gray-50 p-3 rounded-md">
-                            <div className="flex items-center gap-2">
-                              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                                <Star className="h-4 w-4 text-primary" />
-                              </div>
-                              <div>
-                                <p className="text-xs text-gray-500">Pontos</p>
-                                <p className="font-semibold">{client.points || 0}</p>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                        
-                        {/* Últimos serviços */}
-                        {clientServices.length > 0 ? (
-                          <div className="space-y-2">
-                            <h4 className="text-sm font-medium flex items-center">
-                              <Scissors className="h-4 w-4 mr-1.5 text-primary" />
-                              Últimos Serviços
-                            </h4>
-                            <div className="grid gap-2">
-                              {clientServices.slice(0, 3).map((service) => (
-                                <div 
-                                  key={service.id}
-                                  className={cn(
-                                    "p-3 rounded-md flex justify-between items-center text-sm",
-                                    service.status === "completed" ? "bg-green-50" :
-                                    service.status === "scheduled" ? "bg-blue-50" :
-                                    service.status === "canceled" ? "bg-red-50" : "bg-gray-50"
-                                  )}
-                                >
-                                  <div className="flex-1">
-                                    <div className="flex items-center gap-1">
-                                      <span className="font-medium">{service.service}</span>
-                                      {service.status === "completed" && (
-                                        <Badge variant="outline" className="ml-2 bg-green-100 text-green-800 border-none text-xs">
-                                          <Check className="h-3 w-3 mr-0.5" />
-                                          Concluído
-                                        </Badge>
-                                      )}
-                                      {service.status === "scheduled" && (
-                                        <Badge variant="outline" className="ml-2 bg-blue-100 text-blue-800 border-none text-xs">
-                                          <Calendar className="h-3 w-3 mr-0.5" />
-                                          Agendado
-                                        </Badge>
-                                      )}
-                                      {service.status === "canceled" && (
-                                        <Badge variant="outline" className="ml-2 bg-red-100 text-red-800 border-none text-xs">
-                                          <X className="h-3 w-3 mr-0.5" />
-                                          Cancelado
-                                        </Badge>
-                                      )}
-                                    </div>
-                                    <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
-                                      <span>{new Date(service.date).toLocaleDateString('pt-BR')}</span>
-                                      <span>•</span>
-                                      <span>{service.professional}</span>
-                                      <span>•</span>
-                                      <span>{formatCurrency(service.value)}</span>
-                                    </div>
-                                  </div>
-                                  
-                                  <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                      <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full">
-                                        <MoreHorizontal className="h-4 w-4" />
-                                      </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end">
-                                      <DropdownMenuLabel>Opções</DropdownMenuLabel>
-                                      <DropdownMenuSeparator />
-                                      <DropdownMenuItem className="cursor-pointer">
-                                        <FileText className="h-4 w-4 mr-2" />
-                                        Ver detalhes
-                                      </DropdownMenuItem>
-                                      {service.status === "completed" && (
-                                        <DropdownMenuItem className="cursor-pointer">
-                                          <Repeat className="h-4 w-4 mr-2" />
-                                          Repetir serviço
-                                        </DropdownMenuItem>
-                                      )}
-                                    </DropdownMenuContent>
-                                  </DropdownMenu>
-                                </div>
-                              ))}
-                            </div>
-                            {clientServices.length > 3 && (
-                              <Button variant="link" className="p-0 h-auto text-primary hover:text-primary-dark" onClick={() => onViewProfile(client)}>
-                                Ver todos os serviços
-                                <ExternalLink className="h-3.5 w-3.5 ml-1" />
-                              </Button>
-                            )}
-                          </div>
-                        ) : (
-                          <div className="bg-gray-50 p-3 rounded-md text-sm text-center text-gray-500">
-                            Nenhum serviço registrado para este cliente
-                          </div>
-                        )}
-                        
-                        {/* Observações do cliente, se houver */}
-                        {client.observations && (
-                          <div className="bg-yellow-50 p-3 rounded-md">
-                            <div className="flex gap-2">
-                              <Info className="h-4 w-4 text-yellow-600 shrink-0 mt-0.5" />
-                              <div>
-                                <p className="text-xs font-medium text-yellow-700 mb-1">Observações</p>
-                                <p className="text-sm text-yellow-800">{client.observations}</p>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-              
-              <CardFooter className="p-0 bg-gradient-to-r from-primary/5 to-primary/0 border-t border-primary/10">
-                <div className="w-full px-4 py-2 flex justify-between items-center">
-                  <div className="flex items-center">
-                    <span className="text-xs text-gray-500">ID: {client.id}</span>
-                  </div>
+    <>
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle>Lista de Clientes</CardTitle>
+          <CardDescription>
+            Gerencie seus clientes e veja informações importantes.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4 grid-cols-1 md:grid-cols-4">
+            <div className="col-span-3">
+              <Input
+                type="search"
+                placeholder="Buscar cliente..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
+            <div className="flex justify-end space-x-2">
+              <Button variant="outline" onClick={() => setIsFilterOpen(!isFilterOpen)}>
+                <Filter className="mr-2 h-4 w-4" />
+                Filtrar
+              </Button>
+              <Button>
+                <UserPlus className="mr-2 h-4 w-4" />
+                Adicionar
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+        <ScrollArea>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[50px]">
+                  <Checkbox
+                    checked={selectAll}
+                    onCheckedChange={toggleSelectAll}
+                  />
+                </TableHead>
+                <TableHead>
                   <Button
                     variant="ghost"
-                    size="sm"
-                    className="h-7 text-xs text-primary hover:bg-primary/10"
-                    onClick={() => toggleExpandClient(Number(client.id))}
+                    onClick={() =>
+                      setSorting({
+                        column: "name",
+                        direction:
+                          sorting?.column === "name" && sorting.direction === "asc"
+                            ? "desc"
+                            : "asc",
+                      })
+                    }
                   >
-                    {isExpanded ? (
-                      <>
-                        <ChevronUp className="h-3.5 w-3.5 mr-1" />
-                        Menos detalhes
-                      </>
+                    Nome
+                    {sorting?.column === "name" ? (
+                      sorting.direction === "asc" ? (
+                        <ArrowDown className="ml-2 h-4 w-4" />
+                      ) : (
+                        <ArrowUp className="ml-2 h-4 w-4" />
+                      )
                     ) : (
-                      <>
-                        <ChevronDown className="h-3.5 w-3.5 mr-1" />
-                        Mais detalhes
-                      </>
+                      <ChevronsUpDown className="ml-2 h-4 w-4 opacity-50" />
                     )}
                   </Button>
-                </div>
-              </CardFooter>
-            </Card>
-          );
-        } catch (error) {
-          console.error(`Erro ao renderizar cliente ${client.id}:`, error);
-          return null;
-        }
-      }) : (
-        <div className="text-center py-12 border rounded-md border-dashed border-gray-300">
-          <User className="h-10 w-10 text-gray-300 mx-auto mb-3" />
-          <p className="text-muted-foreground">Nenhum cliente encontrado</p>
-          <p className="text-sm text-muted-foreground mt-1">Tente ajustar seus filtros de busca</p>
-        </div>
+                </TableHead>
+                <TableHead>
+                  <Button
+                    variant="ghost"
+                    onClick={() =>
+                      setSorting({
+                        column: "email",
+                        direction:
+                          sorting?.column === "email" && sorting.direction === "asc"
+                            ? "desc"
+                            : "asc",
+                      })
+                    }
+                  >
+                    Email
+                    {sorting?.column === "email" ? (
+                      sorting.direction === "asc" ? (
+                        <ArrowDown className="ml-2 h-4 w-4" />
+                      ) : (
+                        <ArrowUp className="ml-2 h-4 w-4" />
+                      )
+                    ) : (
+                      <ChevronsUpDown className="ml-2 h-4 w-4 opacity-50" />
+                    )}
+                  </Button>
+                </TableHead>
+                <TableHead>Telefone</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Ações</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {sortedClients(filteredClients).map((client) => (
+                <TableRow key={client.id}>
+                  <TableCell className="font-medium">
+                    <Checkbox
+                      checked={selectedClients.includes(client.id)}
+                      onCheckedChange={() => toggleSelectClient(client.id)}
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center space-x-2">
+                      <Avatar>
+                        <AvatarImage src={client.photo} />
+                        <AvatarFallback>{client.name.charAt(0)}</AvatarFallback>
+                      </Avatar>
+                      <span>{client.name}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <a
+                      href={`mailto:${client.email}`}
+                      className="underline underline-offset-2 hover:text-primary"
+                    >
+                      {client.email}
+                    </a>
+                  </TableCell>
+                  <TableCell>{client.phone}</TableCell>
+                  <TableCell>
+                    <Badge
+                      variant={
+                        client.status === "active"
+                          ? "default"
+                          : client.status === "vip"
+                          ? "secondary"
+                          : "outline"
+                      }
+                    >
+                      {client.status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="h-8 w-8 p-0">
+                          <span className="sr-only">Abrir menu</span>
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                        <DropdownMenuItem onClick={() => handleOpenClientProfile(client.id)}>
+                          <Eye className="mr-2 h-4 w-4" />
+                          Ver Perfil
+                        </DropdownMenuItem>
+                        <DropdownMenuItem>
+                          <Pencil className="mr-2 h-4 w-4" />
+                          Editar
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleSendMessage(client.id)}>
+                          <Send className="mr-2 h-4 w-4" />
+                          Enviar Mensagem
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          className="text-destructive focus:bg-destructive/20"
+                          onClick={() => handleDeleteClient(client.id)}
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Excluir
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </ScrollArea>
+        <CardFooter className="flex items-center justify-between">
+          <div>
+            <p>
+              Total: {clientTotals.total} | Ativos: {clientTotals.active} (
+              {clientTotals.percentageActive}%) | VIP: {clientTotals.vip} (
+              {clientTotals.percentageVip}%) | Inativos: {clientTotals.inactive} (
+              {clientTotals.percentageInactive}%)
+            </p>
+          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" disabled={clients.length === 0}>
+                <Download className="mr-2 h-4 w-4" />
+                Exportar
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>Exportar Clientes</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => handleExport("pdf")} disabled={isExporting}>
+                <FileText className="mr-2 h-4 w-4" />
+                PDF
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleExport("excel")} disabled={isExporting}>
+                <File className="mr-2 h-4 w-4" />
+                Excel
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleCopyClientData}>
+                <Copy className="mr-2 h-4 w-4" />
+                Copiar Dados
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </CardFooter>
+      </Card>
+
+      <AlertDialog open={deleteConfirmationOpen} onOpenChange={setDeleteConfirmationOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Tem certeza?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação irá excluir o cliente permanentemente. Tem certeza que
+              deseja continuar?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDeleteClient}>Excluir</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {selectedClient && (
+        <AlertDialog open={messageOpen} onOpenChange={setMessageOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Enviar mensagem para {selectedClient.name}</AlertDialogTitle>
+              <AlertDialogDescription>
+                Digite a mensagem que você deseja enviar para o cliente.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogContent className="grid gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="message">Mensagem</Label>
+                <Textarea
+                  id="message"
+                  placeholder="Digite sua mensagem aqui."
+                  className="h-24"
+                />
+              </div>
+            </AlertDialogContent>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogAction>Enviar</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       )}
 
-      {selectedBirthdayClient && (
-        <BirthdayMessageDialog
-          isOpen={isBirthdayMessageOpen}
-          onClose={() => setIsBirthdayMessageOpen(false)}
-          client={selectedBirthdayClient}
-        />
+      {selectedClient && (
+        <AlertDialog open={profileOpen} onOpenChange={setProfileOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Perfil de {selectedClient.name}</AlertDialogTitle>
+              <AlertDialogDescription>
+                Veja as informações do cliente.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogContent className="grid gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="name">Nome</Label>
+                <Input id="name" value={selectedClient.name} disabled />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="email">Email</Label>
+                <Input id="email" value={selectedClient.email} disabled />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="phone">Telefone</Label>
+                <Input id="phone" value={selectedClient.phone} disabled />
+              </div>
+            </AlertDialogContent>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Fechar</AlertDialogCancel>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       )}
-    </div>
+
+      <AlertDialog open={isFilterOpen} onOpenChange={setIsFilterOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Filtrar Clientes</AlertDialogTitle>
+            <AlertDialogDescription>
+              Selecione os filtros que você deseja aplicar.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogContent className="grid gap-4">
+            <div className="grid gap-2">
+              <Label>Status</Label>
+              <div className="flex flex-wrap gap-2">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="active"
+                    checked={filterStatus.includes("active")}
+                    onCheckedChange={(checked) =>
+                      setFilterStatus((prev) =>
+                        checked
+                          ? [...prev, "active"]
+                          : prev.filter((s) => s !== "active")
+                      )
+                    }
+                  />
+                  <Label htmlFor="active">Ativo</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="vip"
+                    checked={filterStatus.includes("vip")}
+                    onCheckedChange={(checked) =>
+                      setFilterStatus((prev) =>
+                        checked
+                          ? [...prev, "vip"]
+                          : prev.filter((s) => s !== "vip")
+                      )
+                    }
+                  />
+                  <Label htmlFor="vip">VIP</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="inactive"
+                    checked={filterStatus.includes("inactive")}
+                    onCheckedChange={(checked) =>
+                      setFilterStatus((prev) =>
+                        checked
+                          ? [...prev, "inactive"]
+                          : prev.filter((s) => s !== "inactive")
+                      )
+                    }
+                  />
+                  <Label htmlFor="inactive">Inativo</Label>
+                </div>
+              </div>
+            </div>
+            <div className="grid gap-2">
+              <Label>Data de Nascimento</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant={"outline"}
+                    className={cn(
+                      "w-[240px] justify-start text-left font-normal",
+                      !filterBirthdate && "text-muted-foreground"
+                    )}
+                  >
+                    {filterBirthdate ? (
+                      format(filterBirthdate, "PPP", {locale: ptBR})
+                    ) : (
+                      <span>Selecionar data</span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="center" side="bottom">
+                  <Calendar
+                    mode="single"
+                    selected={filterBirthdate}
+                    onSelect={setFilterBirthdate}
+                    disabled={(date) =>
+                      date > new Date()
+                    }
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+          </AlertDialogContent>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => {
+              setFilterStatus([]);
+              setFilterBirthdate(undefined);
+            }}>Limpar</AlertDialogCancel>
+            <AlertDialogAction onClick={() => setIsFilterOpen(false)}>Filtrar</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
