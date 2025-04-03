@@ -21,7 +21,10 @@ export interface Service {
   };
   
   // Campos adicionados para resolver erros
-  commission?: number;
+  commission?: number | {
+    type: string;
+    value: number;
+  };
   products?: any[];
 }
 
@@ -29,7 +32,7 @@ export interface ServicePackage {
   id: string | number;
   name: string;
   description: string;
-  services: { serviceId: string | number; discount: number }[];
+  services: PackageService[];
   products?: { productId: number; quantity: number; }[];
   discount: number;
   status: "active" | "inactive";
@@ -69,6 +72,9 @@ export interface ProfessionalGoal {
   current: number;
   period: string;
   type: string;
+  serviceTarget?: number;
+  revenueTarget?: number;
+  commissionsTarget?: number;
 }
 
 export interface ProfessionalPerformance {
@@ -78,6 +84,12 @@ export interface ProfessionalPerformance {
   goals?: ProfessionalGoal[];
   avgSatisfaction?: number;
   count?: number;
+  revenue?: number;
+  commission?: number;
+  clientSatisfaction?: number;
+  date?: string;
+  professionalId?: number;
+  serviceId?: number;
 }
 
 export interface PackageService {
@@ -85,4 +97,5 @@ export interface PackageService {
   discount: number;
   name?: string;
   price?: number;
+  id?: string | number; // Adicionado para resolver erros de compatibilidade
 }

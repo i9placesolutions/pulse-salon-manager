@@ -5,7 +5,9 @@ export interface Professional {
   email?: string;
   phone?: string;
   specialty: string[] | string;
+  specialties?: ProfessionalSpecialty[]; // Adicionado para compatibilidade
   photo?: string;
+  avatar?: string; // Adicionado para compatibilidade
   status: "active" | "inactive" | "vacation";
   commission?: number;
   hiringDate?: string;
@@ -30,9 +32,7 @@ export interface Professional {
   }[];
   
   // Campos adicionados para resolver erros de tipo
-  specialties?: ProfessionalSpecialty[];
   totalAppointments?: number;
-  avatar?: string;
   workingHours?: WorkingHours;
   blockedDates?: BlockedDate[];
   since?: string;
@@ -123,8 +123,10 @@ export interface ProfessionalSpecialty {
   isActive?: boolean;
 }
 
-// Interface adicionada para resolver erros de módulo não encontrado
+// Interface adicionada para resolver erros
 export interface ProfessionalPerformance {
+  id?: number | string;
+  name?: string;
   totalAppointments?: number;
   topServices?: {
     serviceName: string;
@@ -140,4 +142,27 @@ export interface ProfessionalPerformance {
   scheduleOccupancy?: number;
   quoteConversionRate?: number;
   additionalSalesRate?: number;
+  metrics?: any[];
+  goals?: ProfessionalGoal[];
+  avgSatisfaction?: number;
+  count?: number;
+  revenue?: number;
+  commission?: number;
+  clientSatisfaction?: number;
+  date?: string;
+  professionalId?: number;
+  serviceId?: number;
+}
+
+export interface ProfessionalGoal {
+  id: number | string;
+  name: string;
+  target: number;
+  current: number;
+  period: string;
+  type: string;
+  month?: string;
+  serviceTarget?: number;
+  revenueTarget?: number;
+  commissionsTarget?: number;
 }

@@ -106,7 +106,7 @@ export interface CommissionConfig {
   customValues?: {
     type: string;
     value: number;
-    professionalId?: number;  // Adicionando o campo ausente
+    professionalId?: number;
   }[];
 }
 
