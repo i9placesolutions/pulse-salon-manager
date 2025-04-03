@@ -94,14 +94,14 @@ const professionals: Professional[] = [
 ];
 
 const accountsReceivable: AccountReceivable[] = [
-  { id: 1, client: "Roberto Almeida", value: 300, dueDate: "2024-03-15", status: "Pendente", installment: "2/3" },
+  { id: 1, client: "Roberto Almeida", value: 300, dueDate: "2024-03-15", status: "Em Aberto", installment: "2/3" },
   { id: 2, client: "Sandra Pereira", value: 450, dueDate: "2024-03-10", status: "Atrasado", installment: "1/2" },
 ];
 
 const expenses: Expense[] = [
-  { id: 1, name: "Aluguel", value: 2500, date: "2024-03-05", category: "Fixo", status: "Pago", recurring: true },
-  { id: 2, name: "Produtos", value: 1200, date: "2024-03-10", category: "Variável", status: "Pendente", recurring: false },
-  { id: 3, name: "Água/Luz", value: 800, date: "2024-03-15", category: "Fixo", status: "Pendente", recurring: true },
+  { id: 1, name: "Aluguel", value: 2500, date: "2024-03-05", category: "Fixo", status: "Pago", isRecurring: true },
+  { id: 2, name: "Produtos", value: 1200, date: "2024-03-10", category: "Variável", status: "Pendente", isRecurring: false },
+  { id: 3, name: "Água/Luz", value: 800, date: "2024-03-15", category: "Fixo", status: "Pendente", isRecurring: true },
 ];
 
 const cashFlowData: CashFlow[] = [
@@ -153,9 +153,11 @@ const taxRecords: TaxRecord[] = [
 
 const paymentMethodsConfig: PaymentMethodConfig[] = [
   {
-    type: "pix",
+    type: "Pix",
     enabled: true,
-    fee: 0.99,
+    fees: {
+      percentage: 0.99,
+    },
     pixKeys: [
       {
         key: "exemplo@email.com",
@@ -164,23 +166,29 @@ const paymentMethodsConfig: PaymentMethodConfig[] = [
     ],
   },
   {
-    type: "credit",
+    type: "Cartão",
     enabled: true,
-    fee: 2.99,
+    fees: {
+      percentage: 2.99,
+    },
     cardBrands: [
       {
         name: "Mastercard",
         enabled: true,
         maxInstallments: 12,
         minValue: 10,
-        fee: 2.99,
+        fees: {
+          percentage: 2.99,
+        },
       },
       {
         name: "Visa",
         enabled: true,
         maxInstallments: 12,
         minValue: 10,
-        fee: 2.99,
+        fees: {
+          percentage: 2.99,
+        },
       },
     ],
   },
@@ -553,7 +561,7 @@ const Financeiro = () => {
         data: e.date,
         categoria: e.category,
         status: e.status,
-        recorrente: e.recurring
+        recorrente: e.isRecurring
       }))
     } : {};
 

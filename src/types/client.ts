@@ -1,34 +1,32 @@
-
 export interface Client {
-  id: number | string;
+  id: string;
   name: string;
-  email?: string;
-  phone?: string;
-  birthdate?: string;  // Mantenho birthdate como está na interface
-  birthDate?: string;  // Adicionando para compatibilidade com código existente
+  email: string;
+  phone: string;
+  birthDate: string;
+  firstVisit?: string;
+  cpf?: string;
   address?: string;
-  city?: string;
-  state?: string;
-  postalCode?: string;
-  gender?: string;
-  status: "active" | "inactive" | "vip"; // Adicionando "vip" como status possível
-  note?: string;
+  photo?: string;
+  status: 'active' | 'vip' | 'inactive';
+  points: number;
+  cashback: number;
+  totalSpent: number;
+  visitsCount: number;
   lastVisit?: string;
-  photo?: string; // Adicionando para compatibilidade
-  cpf?: string; // Adicionando para compatibilidade
-  firstVisit?: string; // Adicionando para compatibilidade
-  observations?: string; // Adicionando para compatibilidade
-  totalSpent?: number; // Adicionando para compatibilidade
-  visitsCount?: number; // Adicionando para compatibilidade
-  points?: number; // Adicionando para compatibilidade
-  cashback?: number; // Adicionando para compatibilidade
-  loyalty?: {
-    points?: number;
-    cashback?: number;
-    level?: string;
-  };
-  services?: ClientService[];
+  observations?: string;
   tags?: string[];
+  benefits?: Array<{
+    type: string;
+    value: number;
+  }>;
+}
+
+export interface ClientPreference {
+  id: number;
+  clientId: number;
+  category: string;
+  description: string;
 }
 
 export interface ClientService {
@@ -38,36 +36,50 @@ export interface ClientService {
   professional: string;
   service: string;
   value: number;
-  price: number; // Campo obrigatório
   paymentMethod: string;
-  status: string;
-  cashbackGenerated: number;
-  pointsGenerated: number;
-  commission?: number;
-  notes?: string;
+  observations?: string;
+  status?: 'scheduled' | 'completed' | 'canceled';
+  cashbackGenerated?: number;
+  pointsGenerated?: number;
 }
 
-export interface ClientTag {
-  id: number;
-  name: string;
-  color: string;
-  description?: string;
+export interface ClientExportOptions {
+  includeContact: boolean;
+  includeAddress: boolean;
+  includeServices: boolean;
+  includeSpending: boolean;
+  includePreferences: boolean;
+  includeBirthday: boolean;
+  format: 'pdf' | 'excel';
+  includeTags: boolean;
+  includeVisitHistory: boolean;
+  includeCashbackHistory: boolean;
+  includeAverageTicket: boolean;
+  includeCharts: boolean;
+  groupBy: string;
+  sortBy: string;
+  timeRange: string;
+  exportFormat: string;
+  includeAnalytics: boolean;
+  dateFrom?: Date;
+  dateTo?: Date;
 }
 
-export interface ClientNote {
-  id: number;
-  clientId: number;
-  content: string;
-  date: string;
-  author: string;
-}
-
-// Adicionando interfaces que faltam, referenciadas em vários componentes
-export interface ClientPreference {
-  id: number;
-  clientId: number;
-  category: string;
-  description: string;
+export interface ClientFilters {
+  status: string[];
+  minVisits?: number;
+  hasCashback?: boolean;
+  usedCoupons?: boolean;
+  joinedCampaigns?: boolean;
+  tags?: string[];
+  dateRange?: {
+    from: string;
+    to: string;
+  } | null;
+  lastVisitRange?: [Date | null, Date | null];
+  spendingRange?: [number | null, number | null];
+  hasWhatsApp?: boolean;
+  hasBirthday?: boolean;
 }
 
 export interface ClientCoupon {
@@ -75,42 +87,12 @@ export interface ClientCoupon {
   clientId: number;
   code: string;
   discount: number;
-  discountType: string;
-  date: string;
-  expirationDate: string;
-  isUsed: boolean;
+  discountType: 'percentage' | 'fixed';
   service?: string;
   description?: string;
-}
-
-export interface ClientFilters {
-  status: string[];
-  tags?: string[];
-  dateRange: Date[] | null;
-  spendingRange: [number | null, number | null];
-  lastVisitRange: [Date | null, Date | null];
-  minVisits?: number;
-  hasCashback: boolean;
-  hasWhatsApp: boolean;
-  hasBirthday: boolean;
-  usedCoupons: boolean;
-  joinedCampaigns: boolean;
-}
-
-export interface ClientExportOptions {
-  format: "excel" | "pdf";
-  timeRange: "last30" | "last90" | "last180" | "last365" | "all" | "custom";
-  dateFrom?: Date;
-  dateTo?: Date;
-  exportFormat: "summary" | "detailed" | "analytics";
-  includeContact: boolean;
-  includeServices: boolean;
-  includeSpending: boolean;
-  includeTags: boolean;
-  includeBirthday: boolean;
-  includePreferences: boolean;
-  includeVisitHistory: boolean;
-  includeAnalytics: boolean;
+  date?: string;
+  expirationDate: string;
+  isUsed: boolean;
 }
 
 export interface ClientCampaign {
@@ -119,8 +101,8 @@ export interface ClientCampaign {
   description: string;
   startDate: string;
   endDate: string;
-  targetClients: string;
+  targetClients: 'all' | 'vip' | 'new' | 'inactive';
   discount: number;
-  discountType: string;
-  clientId: number;
+  discountType: 'percentage' | 'fixed';
+  clientId?: number;
 }

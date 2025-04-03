@@ -1,205 +1,233 @@
-
-import { useState, useEffect } from "react";
-import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
+import { useState, useEffect, useMemo } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Alert, Expense, AccountReceivable } from "@/types/financial";
-import { formatCurrency } from "@/utils/currency";
-import { AlertTriangle, AlertCircle, ChevronRight, Bell, BellOff } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { format, differenceInDays, isPast, isFuture, parseISO, isValid } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { Clock, AlertTriangle, XCircle, AlertCircle, ChevronDown, ChevronUp, CheckCircle2 } from "lucide-react";
+import { AccountReceivable, Expense } from "@/types/financial";
+import { formatCurrency } from "@/utils/currency";
+import { cn } from "@/lib/utils";
 
 interface FinancialAlertsProps {
   expenses: Expense[];
-  receivables: AccountReceivable[];
+  accountsReceivable: AccountReceivable[];
+  onActionClick?: (item: Expense | AccountReceivable, action: string) => void;
 }
 
-export function FinancialAlerts({ expenses, receivables }: FinancialAlertsProps) {
+interface Alert {
+  id: string;
+  type: 'expense' | 'receivable';
+  title: string;
+  message: string;
+  value: number;
+  date: string;
+  severity: 'high' | 'medium' | 'low';
+  item: Expense | AccountReceivable;
+}
+
+export function FinancialAlerts({ 
+  expenses, 
+  accountsReceivable,
+  onActionClick 
+}: FinancialAlertsProps) {
+  const [expanded, setExpanded] = useState(true);
   const [alerts, setAlerts] = useState<Alert[]>([]);
-  const [showAll, setShowAll] = useState(false);
-  const [isMuted, setIsMuted] = useState(false);
 
-  useEffect(() => {
-    const today = new Date();
-    const upcomingExpenses = expenses
-      .filter(expense => {
-        if (expense.status === 'Pago' || expense.status === 'Cancelado') return false;
-        const dueDate = new Date(expense.dueDate);
-        const daysUntilDue = Math.floor(
-          (dueDate.getTime() - today.getTime()) / (1000 * 3600 * 24)
-        );
-        return daysUntilDue <= 5 && daysUntilDue >= -1;
-      })
-      .map(expense => {
-        const dueDate = new Date(expense.dueDate);
-        const daysUntilDue = Math.floor(
-          (dueDate.getTime() - today.getTime()) / (1000 * 3600 * 24)
-        );
-        
-        let severity = "warning";
-        let message = "";
-        
-        if (daysUntilDue === 0) {
-          severity = "critical";
-          message = "Vence hoje";
-        } else if (daysUntilDue < 0) {
-          severity = "critical";
-          message = "Atrasada";
-        } else if (daysUntilDue === 1) {
-          severity = "high";
-          message = "Vence amanhã";
-        } else {
-          message = `Vence em ${daysUntilDue} dias`;
-        }
-        
-        return {
-          id: Number(`expense-${expense.id}`),
-          type: "expense",
-          title: expense.description,
-          description: message, // Convertendo message para description
-          message, // Mantendo message para compatibilidade
-          value: expense.value,
-          date: expense.dueDate,
-          severity, // Mantendo severity para compatibilidade
-          priority: severity === "critical" ? "high" : severity === "high" ? "medium" : "low" as 'high' | 'medium' | 'low',
-          item: expense
-        } as Alert;
-      });
-      
-    const overdueReceivables = receivables
-      .filter(receivable => {
-        if (receivable.status === 'Pago' || receivable.status === 'Cancelado') return false;
-        const dueDate = new Date(receivable.dueDate);
-        const daysUntilDue = Math.floor(
-          (dueDate.getTime() - today.getTime()) / (1000 * 3600 * 24)
-        );
-        return daysUntilDue <= 5;
-      })
-      .map(receivable => {
-        const dueDate = new Date(receivable.dueDate);
-        const daysUntilDue = Math.floor(
-          (dueDate.getTime() - today.getTime()) / (1000 * 3600 * 24)
-        );
-        
-        let severity = "info";
-        let message = "";
-        
-        if (daysUntilDue === 0) {
-          severity = "medium";
-          message = "Vence hoje";
-        } else if (daysUntilDue < 0) {
-          severity = "high";
-          message = `Atrasado há ${Math.abs(daysUntilDue)} dias`;
-        } else if (daysUntilDue === 1) {
-          severity = "low";
-          message = "Vence amanhã";
-        } else {
-          message = `Vence em ${daysUntilDue} dias`;
-        }
-        
-        return {
-          id: Number(`receivable-${receivable.id}`),
-          type: "receivable",
-          title: `${receivable.client} - ${receivable.description || ''}`,
-          description: message, // Convertendo message para description
-          message, // Mantendo message para compatibilidade
-          value: receivable.value,
-          date: receivable.dueDate,
-          severity, // Mantendo severity para compatibilidade
-          priority: severity === "high" ? "high" : severity === "medium" ? "medium" : "low" as 'high' | 'medium' | 'low',
-          item: receivable
-        } as Alert;
-      });
-      
-    const allAlerts = [...upcomingExpenses, ...overdueReceivables]
-      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-      
-    setAlerts(allAlerts);
-  }, [expenses, receivables]);
-
-  const displayedAlerts = showAll ? alerts : alerts.slice(0, 3);
-  
-  const getSeverityBadge = (severity: string) => {
-    switch (severity) {
-      case "critical":
-        return <Badge variant="destructive">Crítico</Badge>;
-      case "high":
-        return <Badge variant="destructive" className="bg-red-400">Alta</Badge>;
-      case "medium":
-        return <Badge variant="outline" className="border-yellow-400 text-yellow-600">Média</Badge>;
-      case "warning":
-        return <Badge variant="outline" className="border-amber-400 text-amber-600">Aviso</Badge>;
-      case "low":
-        return <Badge variant="outline" className="border-blue-400 text-blue-600">Baixa</Badge>;
-      default:
-        return <Badge variant="outline">Informação</Badge>;
+  // Função para processar datas em diferentes formatos - Memoizada para reutilização
+  const parseDate = useMemo(() => (dateStr: string): Date | null => {
+    if (!dateStr) return null;
+    
+    // Formatos possíveis: dd/MM/yyyy ou yyyy-MM-dd
+    let date;
+    if (dateStr.includes('/')) {
+      const parts = dateStr.split('/');
+      if (parts.length === 3) {
+        date = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+      }
+    } else {
+      date = parseISO(dateStr);
     }
-  };
+    
+    return isValid(date) ? date : null;
+  }, []);
+
+  // Usar useMemo para processar alertas só quando as dependências mudarem
+  useEffect(() => {
+    // Processar contas a pagar vencidas ou próximas de vencer
+    const processedAlerts = useMemo(() => {
+      // Processar contas a pagar vencidas ou próximas de vencer
+      const expenseAlerts = expenses
+        .filter(expense => expense.status !== 'Pago')
+        .map(expense => {
+          const dueDate = parseDate(expense.date);
+          if (!dueDate) return null;
+          
+          const daysToExpire = differenceInDays(dueDate, new Date());
+          let severity: 'high' | 'medium' | 'low' = 'low';
+          let message = '';
+          
+          if (isPast(dueDate)) {
+            severity = 'high';
+            message = `Conta vencida há ${Math.abs(daysToExpire)} dias`;
+          } else if (daysToExpire <= 3) {
+            severity = 'medium';
+            message = daysToExpire === 0 
+              ? 'Vence hoje' 
+              : `Vence em ${daysToExpire} ${daysToExpire === 1 ? 'dia' : 'dias'}`;
+          } else if (daysToExpire <= 7) {
+            severity = 'low';
+            message = `Vence em ${daysToExpire} dias`;
+          } else {
+            return null; // Ignora contas que vencem em mais de 7 dias
+          }
+          
+          return {
+            id: `expense-${expense.id}`,
+            type: 'expense' as const,
+            title: expense.name,
+            message,
+            value: expense.value,
+            date: expense.date,
+            severity,
+            item: expense
+          };
+        })
+        .filter(Boolean) as Alert[];
+      
+      // Processar contas a receber vencidas
+      const receivableAlerts = accountsReceivable
+        .filter(acc => acc.status !== 'Pago')
+        .map(account => {
+          const dueDate = parseDate(account.dueDate);
+          if (!dueDate) return null;
+          
+          const daysOverdue = differenceInDays(new Date(), dueDate);
+          let severity: 'high' | 'medium' | 'low' = 'low';
+          let message = '';
+          
+          if (isPast(dueDate)) {
+            severity = daysOverdue > 30 ? 'high' : 'medium';
+            message = `Pagamento atrasado há ${daysOverdue} dias`;
+          } else {
+            return null; // Ignora contas que ainda não venceram
+          }
+          
+          return {
+            id: `receivable-${account.id}`,
+            type: 'receivable' as const,
+            title: `Cliente ${account.client}: Parcela ${account.installment}`,
+            message,
+            value: account.value,
+            date: account.dueDate,
+            severity,
+            item: account
+          };
+        })
+        .filter(Boolean) as Alert[];
+      
+      // Combinar e ordenar alertas
+      return [...expenseAlerts, ...receivableAlerts].sort((a, b) => {
+        // Primeiro ordenar por severidade (high -> medium -> low)
+        const severityOrder = { high: 0, medium: 1, low: 2 };
+        const severityDiff = severityOrder[a.severity as keyof typeof severityOrder] - 
+                            severityOrder[b.severity as keyof typeof severityOrder];
+        
+        if (severityDiff !== 0) return severityDiff;
+        
+        // Se mesma severidade, ordenar por data (mais próximo primeiro)
+        const dateA = parseDate(a.date) || new Date();
+        const dateB = parseDate(b.date) || new Date();
+        return dateA.getTime() - dateB.getTime();
+      });
+    }, [expenses, accountsReceivable, parseDate]);
+    
+    setAlerts(processedAlerts);
+  }, [expenses, accountsReceivable, parseDate]);
+
+  if (alerts.length === 0) return null;
 
   return (
-    <Card>
-      <CardHeader className="pb-2 flex flex-row items-center justify-between">
-        <CardTitle className="text-lg font-medium">Alertas Financeiros</CardTitle>
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          onClick={() => setIsMuted(!isMuted)}
-          className="h-8 w-8"
-        >
-          {isMuted ? <BellOff className="h-4 w-4" /> : <Bell className="h-4 w-4" />}
-        </Button>
-      </CardHeader>
-      <CardContent>
-        {alerts.length === 0 ? (
-          <div className="py-8 text-center text-muted-foreground">
-            <AlertCircle className="mx-auto h-12 w-12 opacity-20 mb-3" />
-            <p>Nenhum alerta financeiro no momento.</p>
+    <Card className="border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/20">
+      <CardHeader className="pb-2">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="h-5 w-5 text-amber-500" />
+            <CardTitle>Alertas Financeiros</CardTitle>
+            <Badge variant="outline" className="ml-2">
+              {alerts.length}
+            </Badge>
           </div>
-        ) : (
-          <div className="space-y-4">
-            {displayedAlerts.map((alert) => (
-              <div
-                key={alert.id}
-                className="flex justify-between items-center border-b pb-3 last:border-0"
-              >
-                <div className="flex items-start gap-3">
-                  {alert.type === "expense" ? (
-                    <AlertTriangle className={`h-5 w-5 mt-0.5 ${
-                      alert.severity === "critical" || alert.severity === "high" 
-                        ? "text-destructive" 
-                        : "text-amber-500"
-                    }`} />
-                  ) : (
-                    <AlertCircle className="h-5 w-5 mt-0.5 text-blue-500" />
-                  )}
-                  <div>
-                    <p className="font-medium">{alert.title}</p>
-                    <div className="flex flex-wrap gap-2 items-center mt-1">
-                      {getSeverityBadge(alert.severity)}
-                      <span className="text-sm text-muted-foreground">{alert.message}</span>
-                    </div>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <span className="font-medium">
-                    {formatCurrency(alert.value)}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </CardContent>
-      {alerts.length > 3 && (
-        <CardFooter className="pt-0">
-          <Button
-            variant="ghost"
-            className="w-full flex justify-center"
-            onClick={() => setShowAll(!showAll)}
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="h-8 w-8 p-0"
+            onClick={() => setExpanded(!expanded)}
           >
-            {showAll ? "Mostrar menos" : `Mostrar mais ${alerts.length - 3} alertas`}
-            <ChevronRight className={`h-4 w-4 transition-transform ${showAll ? "rotate-90" : ""}`} />
+            {expanded ? (
+              <ChevronUp className="h-4 w-4" />
+            ) : (
+              <ChevronDown className="h-4 w-4" />
+            )}
           </Button>
-        </CardFooter>
+        </div>
+      </CardHeader>
+      
+      {expanded && (
+        <CardContent className="space-y-2 pt-1">
+          {alerts.map(alert => (
+            <Alert 
+              key={alert.id}
+              variant={
+                alert.severity === 'high' 
+                  ? 'destructive' 
+                  : alert.severity === 'medium' 
+                    ? 'default' 
+                    : 'default'
+              }
+            >
+              <div className="flex items-start justify-between">
+                <div>
+                  {alert.severity === 'high' ? (
+                    <XCircle className="h-4 w-4" />
+                  ) : alert.severity === 'medium' ? (
+                    <AlertCircle className="h-4 w-4" />
+                  ) : (
+                    <Clock className="h-4 w-4" />
+                  )}
+                  <AlertTitle>{alert.title}</AlertTitle>
+                  <AlertDescription className="mt-1 flex flex-col">
+                    <span>{alert.message}</span>
+                    <span className="font-medium">{formatCurrency(alert.value)}</span>
+                  </AlertDescription>
+                </div>
+                
+                {onActionClick && (
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className={cn(
+                      alert.type === 'expense' 
+                        ? "bg-red-100 hover:bg-red-200 text-red-700" 
+                        : "bg-blue-100 hover:bg-blue-200 text-blue-700"
+                    )}
+                    onClick={() => onActionClick?.(alert.item, alert.type === 'expense' ? "pagar" : "cobrar")}
+                  >
+                    {alert.type === 'expense' ? "PAGUEI" : "RECEBIDO"}
+                  </Button>
+                )}
+              </div>
+            </Alert>
+          ))}
+          
+          {alerts.length > 3 && (
+            <Button variant="ghost" className="w-full text-sm" onClick={() => setExpanded(!expanded)}>
+              {expanded ? "Mostrar menos" : `Ver todos os ${alerts.length} alertas`}
+            </Button>
+          )}
+        </CardContent>
       )}
     </Card>
   );
-}
+} 

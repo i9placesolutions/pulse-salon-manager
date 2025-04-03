@@ -1,202 +1,117 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { WorkingHours, DaySchedule, BlockedDate } from "@/types/professional";
 import { WeeklySchedule } from "./working-hours/WeeklySchedule";
-import { DaySchedule, WorkingHours, BlockedDate, Professional } from "@/types/professional";
 import { BlockedDateForm } from "./working-hours/BlockedDateForm";
 import { BlockedDatesList } from "./working-hours/BlockedDatesList";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
-import { Calendar } from "@/components/ui/calendar";
 
 interface WorkingHoursFormProps {
-  professional?: Professional;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  workingHours?: WorkingHours;
+  blockedDates?: BlockedDate[];
   onSave: (workingHours: WorkingHours, blockedDates: BlockedDate[]) => void;
 }
 
-export function WorkingHoursForm({ open, onOpenChange, onSave }: WorkingHoursFormProps) {
-  const [workingHours, setWorkingHours] = useState<WorkingHours>({
-    monday: { isWorking: true, startTime: "09:00", endTime: "18:00", breakStart: "12:00", breakEnd: "13:00" },
-    tuesday: { isWorking: true, startTime: "09:00", endTime: "18:00", breakStart: "12:00", breakEnd: "13:00" },
-    wednesday: { isWorking: true, startTime: "09:00", endTime: "18:00", breakStart: "12:00", breakEnd: "13:00" },
-    thursday: { isWorking: true, startTime: "09:00", endTime: "18:00", breakStart: "12:00", breakEnd: "13:00" },
-    friday: { isWorking: true, startTime: "09:00", endTime: "18:00", breakStart: "12:00", breakEnd: "13:00" },
-    saturday: { isWorking: true, startTime: "09:00", endTime: "12:00" },
-    sunday: { isWorking: false, startTime: "", endTime: "" },
-  });
+export const WorkingHoursForm = ({
+  open,
+  onOpenChange,
+  workingHours: initialWorkingHours,
+  blockedDates: initialBlockedDates = [],
+  onSave,
+}: WorkingHoursFormProps) => {
+  const [workingHours, setWorkingHours] = useState<WorkingHours>(
+    initialWorkingHours || {
+      monday: { isWorking: true, startTime: "09:00", endTime: "18:00" },
+      tuesday: { isWorking: true, startTime: "09:00", endTime: "18:00" },
+      wednesday: { isWorking: true, startTime: "09:00", endTime: "18:00" },
+      thursday: { isWorking: true, startTime: "09:00", endTime: "18:00" },
+      friday: { isWorking: true, startTime: "09:00", endTime: "18:00" },
+      saturday: { isWorking: true, startTime: "09:00", endTime: "13:00" },
+      sunday: { isWorking: false },
+    }
+  );
 
-  const [blockedDates, setBlockedDates] = useState<BlockedDate[]>([]);
-  const [selectedDateRange, setSelectedDateRange] = useState<{
-    from: Date | undefined;
-    to: Date | undefined;
-  }>({
-    from: undefined,
-    to: undefined,
-  });
+  const [blockedDates, setBlockedDates] = useState<BlockedDate[]>(
+    initialBlockedDates
+  );
+
   const [newBlockedDate, setNewBlockedDate] = useState({
     startDate: "",
     endDate: "",
     reason: "",
   });
-  
-  const { toast } = useToast();
-  
-  const handleSave = () => {
-    // Validar os dados antes de salvar
-    for (const day in workingHours) {
-      const schedule = workingHours[day as keyof WorkingHours];
-      if (schedule.isWorking) {
-        if (!schedule.startTime || !schedule.endTime) {
-          toast({
-            title: "Horários inválidos",
-            description: `Defina os horários de início e fim para ${day}.`,
-            variant: "destructive",
-          });
-          return;
-        }
-      }
-    }
-    
-    // Salvar as alterações
-    onSave(workingHours, blockedDates);
-  };
-  
-  const handleDayScheduleChange = (day: string, field: string, value: string | boolean) => {
-    setWorkingHours((prevHours) => ({
-      ...prevHours,
+
+  const handleDayScheduleChange = (
+    day: keyof WorkingHours,
+    field: keyof DaySchedule,
+    value: string | boolean
+  ) => {
+    setWorkingHours((prev) => ({
+      ...prev,
       [day]: {
-        ...prevHours[day as keyof WorkingHours],
+        ...prev[day],
         [field]: value,
       },
     }));
   };
-  
+
   const handleAddBlockedDate = () => {
-    // Validar as datas
-    if (!newBlockedDate.startDate || !newBlockedDate.endDate) {
-      toast({
-        title: "Datas inválidas",
-        description: "Selecione as datas de início e fim.",
-        variant: "destructive",
-      });
-      return;
+    if (newBlockedDate.startDate && newBlockedDate.endDate && newBlockedDate.reason) {
+      setBlockedDates([
+        ...blockedDates,
+        {
+          id: Date.now(),
+          ...newBlockedDate,
+        },
+      ]);
+      setNewBlockedDate({ startDate: "", endDate: "", reason: "" });
     }
-    
-    // Adicionar nova data bloqueada
-    const newId = blockedDates.length > 0 ? Math.max(...blockedDates.map(d => d.id || 0)) + 1 : 1;
-    const newDate: BlockedDate = {
-      id: newId,
-      start: newBlockedDate.startDate,
-      end: newBlockedDate.endDate,
-      reason: newBlockedDate.reason,
-      startDate: newBlockedDate.startDate,
-      endDate: newBlockedDate.endDate,
-    };
-    
-    setBlockedDates([...blockedDates, newDate]);
-    
-    // Limpar o formulário
-    setNewBlockedDate({
-      startDate: "",
-      endDate: "",
-      reason: "",
-    });
-    setSelectedDateRange({ from: undefined, to: undefined });
-    
-    toast({
-      title: "Data bloqueada adicionada",
-      description: "A data foi adicionada à lista de datas bloqueadas.",
-    });
-  };
-  
-  const handleRemoveBlockedDate = (id: number) => {
-    setBlockedDates(blockedDates.filter(date => date.id !== id));
-    toast({
-      title: "Data bloqueada removida",
-      description: "A data foi removida da lista de datas bloqueadas.",
-    });
   };
 
-  const handleDateSelect = (range: any) => {
-    if (!range || (!range.from && !range.to)) return;
-    
-    setSelectedDateRange(range);
-    
-    if (range.from) {
-      setNewBlockedDate(prev => ({
-        ...prev,
-        startDate: format(range.from, "yyyy-MM-dd")
-      }));
-    }
-    
-    if (range.to) {
-      setNewBlockedDate(prev => ({
-        ...prev,
-        endDate: format(range.to, "yyyy-MM-dd")
-      }));
-    }
+  const handleRemoveBlockedDate = (id: number) => {
+    setBlockedDates(blockedDates.filter((date) => date.id !== id));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSave(workingHours, blockedDates);
+    onOpenChange(false);
   };
 
   return (
-    <div className="space-y-6">
-      <div className="grid gap-6">
-        <div className="space-y-4">
-          <h3 className="text-lg font-medium">Horários de Trabalho</h3>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[800px] max-h-[80vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Configurar Horários de Trabalho</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-6">
           <WeeklySchedule
             workingHours={workingHours}
             onDayScheduleChange={handleDayScheduleChange}
           />
-        </div>
-        
-        <div className="space-y-4">
-          <h3 className="text-lg font-medium">Datas Bloqueadas</h3>
+
+          <BlockedDateForm
+            values={newBlockedDate}
+            onChange={setNewBlockedDate}
+            onAdd={handleAddBlockedDate}
+          />
+
           <BlockedDatesList
             blockedDates={blockedDates}
             onRemove={handleRemoveBlockedDate}
           />
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <h4 className="text-sm font-medium mb-2">Selecione o Período</h4>
-              <Calendar
-                initialFocus
-                mode="range"
-                selected={selectedDateRange}
-                onSelect={handleDateSelect}
-                numberOfMonths={1}
-                locale={ptBR}
-                disabled={(date) => date < new Date()}
-                className="bg-white border rounded-md shadow-sm"
-              />
-            </div>
-            
-            <div className="space-y-4">
-              <h4 className="text-sm font-medium mb-2">Detalhes do Bloqueio</h4>
-              <div className="space-y-2">
-                <BlockedDateForm
-                  startDate={newBlockedDate.startDate}
-                  endDate={newBlockedDate.endDate}
-                  reason={newBlockedDate.reason}
-                  onChange={setNewBlockedDate}
-                  onAdd={handleAddBlockedDate}
-                />
-              </div>
-            </div>
+
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              Cancelar
+            </Button>
+            <Button type="submit">Salvar</Button>
           </div>
-        </div>
-      </div>
-      
-      <div className="flex justify-end gap-2">
-        <Button variant="outline" onClick={() => onOpenChange(false)}>
-          Cancelar
-        </Button>
-        <Button onClick={handleSave}>
-          Salvar Horários
-        </Button>
-      </div>
-    </div>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
-}
+};

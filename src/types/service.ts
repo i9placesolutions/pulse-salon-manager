@@ -1,101 +1,64 @@
-
 export interface Service {
-  id: string | number;
+  id: number;
   name: string;
-  description?: string;
-  price: number;
-  duration: number;
+  description: string;
   category: string;
-  status: "active" | "inactive";
-  professionals?: number[];
-  tags?: string[];
-  images?: string[];
-  discount?: number;
-  performanceData?: {
-    totalSold?: number;
-    revenue?: number;
-    growth?: number;
-    averageRating?: number;
-    popularTimes?: string[];
-    clientRetention?: number;
-  };
-  
-  // Campos adicionados para resolver erros
-  commission?: number | {
-    type: string;
+  duration: number;
+  price: number;
+  status: 'active' | 'inactive';
+  commission: {
+    type: 'fixed' | 'percentage';
     value: number;
   };
-  products?: any[];
+  professionals: number[];
+  products: {
+    productId: number;
+    quantity: number;
+  }[];
+}
+
+export interface ServiceCategory {
+  id: number;
+  name: string;
+  description?: string;
+  status: 'active' | 'inactive';
+}
+
+export interface ProfessionalCommission {
+  professionalId: number;
+  serviceId: number;
+  type: 'fixed' | 'percentage';
+  value: number;
 }
 
 export interface ServicePackage {
-  id: string | number;
+  id: number;
   name: string;
   description: string;
-  services: PackageService[];
-  products?: { productId: number; quantity: number; }[];
+  services: number[];
+  products?: {
+    productId: number;
+    quantity: number;
+  }[];
   discount: number;
-  status: "active" | "inactive";
-  price: number;
-  expirationDays: number;
+  status: 'active' | 'inactive';
 }
 
-export interface PerformanceData {
-  totalSold?: number;
-  revenue?: number;
-  growth?: number;
-  averageRating?: number;
-  popularTimes?: string[];
-  clientRetention?: number;
-}
-
-export type ServiceCategory = {
-  id: string | number;
-  name: string;
-  description: string;
-  color?: string;
-  icon?: string;
-  services?: number;
-};
-
-export type ServiceTag = {
-  id: string | number;
-  name: string;
-  color?: string;
-};
-
-// Interfaces adicionadas para resolver erros
 export interface ProfessionalGoal {
-  id: number | string;
-  name: string;
-  target: number;
-  current: number;
-  period: string;
-  type: string;
-  serviceTarget?: number;
-  revenueTarget?: number;
-  commissionsTarget?: number;
+  id: number;
+  professionalId: number;
+  month: string; // formato YYYY-MM
+  serviceTarget: number; // meta de quantidade de serviços
+  revenueTarget: number; // meta de faturamento
+  commissionsTarget: number; // meta de comissões
 }
 
 export interface ProfessionalPerformance {
-  id?: number | string;
-  name?: string;
-  metrics?: any[];
-  goals?: ProfessionalGoal[];
-  avgSatisfaction?: number;
-  count?: number;
-  revenue?: number;
-  commission?: number;
-  clientSatisfaction?: number;
-  date?: string;
-  professionalId?: number;
-  serviceId?: number;
-}
-
-export interface PackageService {
-  serviceId: string | number;
-  discount: number;
-  name?: string;
-  price?: number;
-  id?: string | number; // Adicionado para resolver erros de compatibilidade
+  id: number;
+  professionalId: number;
+  serviceId: number;
+  date: string;
+  revenue: number;
+  commission: number;
+  clientSatisfaction: number; // 0-5
 }

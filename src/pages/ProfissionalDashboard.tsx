@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { WorkingHoursForm } from "@/components/profissionais/WorkingHoursForm";
 import { DashboardHeader } from "@/components/profissionais/dashboard/DashboardHeader";
@@ -6,21 +5,19 @@ import { MetricsCards } from "@/components/profissionais/dashboard/MetricsCards"
 import { DashboardTabs } from "@/components/profissionais/dashboard/DashboardTabs";
 import { ProfessionalHeader } from "@/components/profissionais/dashboard/ProfessionalHeader";
 import { PageLayout } from "@/components/shared/PageLayout";
-import { Professional, ProfessionalCommission, ProfessionalAppointment, ProfessionalPerformance } from "@/types/professional";
+import { Professional, ProfessionalCommission, ProfessionalAppointment } from "@/types/professional";
 
 // Mock data para teste
 const mockProfessional: Professional = {
-  id: 1,
+  id: "1",
   name: "João Silva",
   email: "joao@example.com",
   phone: "(11) 99999-9999",
-  specialty: ["Cabelereiro"],
-  specialty: [{ id: "1", name: "Cabelereiro", color: "#1e40af", isActive: true }],
+  specialty: "Cabelereiro",
+  specialties: [{ id: "1", name: "Cabelereiro", color: "#1e40af", isActive: true }],
   hiringDate: "2024-01-01",
   experienceLevel: "expert",
   status: "active",
-  since: "2024-01-01", 
-  level: "expert",
   totalAppointments: 150,
   totalCommission: 5000,
   averageMonthlyRevenue: 8000,
@@ -28,7 +25,7 @@ const mockProfessional: Professional = {
   commissionRate: 50
 };
 
-const mockPerformance: ProfessionalPerformance = {
+const mockPerformance = {
   totalAppointments: 45,
   topServices: [
     { serviceName: "Corte", count: 20 },
@@ -70,17 +67,17 @@ const mockCommissions: ProfessionalCommission[] = [
 const mockAppointments: ProfessionalAppointment[] = [
   {
     id: 1,
-    date: "2024-03-10",
+    date: "2024-03-07",
     clientName: "João Silva",
     serviceName: "Corte + Barba",
     value: 80,
     commission: 40,
-    status: "confirmed",
-    notes: "Cliente prefere corte mais curto"
+    notes: "Cliente prefere corte mais curto",
+    status: "confirmed"
   },
   {
     id: 2,
-    date: "2024-03-09",
+    date: "2024-03-07",
     clientName: "Maria Santos",
     serviceName: "Coloração",
     value: 150,
