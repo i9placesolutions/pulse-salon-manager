@@ -1,3 +1,4 @@
+
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { CashFlowEntry } from '@/types/dashboard';
@@ -7,6 +8,8 @@ const convertCashFlowType = (type: string): 'income' | 'expense' => {
   if (type === 'entrada') return 'income';
   return 'expense';
 };
+
+export type ReportType = 'financial' | 'inventory' | 'appointments' | 'clients' | 'professionals';
 
 interface ReportData {
   income: number;
@@ -52,14 +55,14 @@ export const generateFlowReport = async (entries: CashFlowEntry[], period: strin
   const incomeEntries = entries.filter(entry => {
     // Converter o tipo se necessário
     const type = typeof entry.type === 'string' ? 
-      convertCashFlowType(entry.type) : entry.type;
+      (entry.type === 'entrada' || entry.type === 'income') ? 'income' : 'expense' : entry.type;
     return type === 'income';
   });
   
   const expenseEntries = entries.filter(entry => {
     // Converter o tipo se necessário
     const type = typeof entry.type === 'string' ? 
-      convertCashFlowType(entry.type) : entry.type;
+      (entry.type === 'entrada' || entry.type === 'income') ? 'income' : 'expense' : entry.type;
     return type === 'expense';
   });
 
@@ -75,6 +78,19 @@ export const generateFlowReport = async (entries: CashFlowEntry[], period: strin
   return URL.createObjectURL(pdfBlob);
 };
 
+export const saveFinancialReport = async (data: any, type: string) => {
+  const doc = new jsPDF();
+  // Implementação básica
+  doc.text(`Financial Report - ${type}`, 20, 20);
+  const blob = doc.output('blob');
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `financial-report-${type}.pdf`;
+  link.click();
+  return url;
+};
+
 export const generateSummaryData = (entries: CashFlowEntry[]): { income: number; expense: number; balance: number } => {
   let income = 0;
   let expense = 0;
@@ -82,7 +98,7 @@ export const generateSummaryData = (entries: CashFlowEntry[]): { income: number;
   entries.forEach(entry => {
     // Converter o tipo se necessário
     const type = typeof entry.type === 'string' ? 
-      convertCashFlowType(entry.type) : entry.type;
+      (entry.type === 'entrada' || entry.type === 'income') ? 'income' : 'expense' : entry.type;
       
     if (type === 'income') {
       income += entry.amount;

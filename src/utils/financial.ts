@@ -1,302 +1,265 @@
-import { 
-  Payment, 
-  Expense, 
-  CashFlow, 
-  RevenueData, 
-  AccountReceivable, 
-  Professional 
-} from "@/types/financial";
-import { formatDate } from "date-fns";
+
+import { Expense, AccountReceivable, CashFlow } from "@/types/financial";
+import { Payment } from "@/types/financial";
+import { CashFlowEntry, FinancialSummary } from "@/types/dashboard";
+import { format, parseISO, isAfter, isBefore, subMonths, startOfMonth, endOfMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { RevenueData } from "@/types/financial";
+import { formatCurrency } from "./currency";
+import { Professional } from "@/types/financial";
 
 /**
- * Calcula o total de receitas para um período específico
- * @param payments Lista de pagamentos
- * @param startDate Data inicial (opcional)
- * @param endDate Data final (opcional)
- * @returns Total de receitas
+ * Calcula o total de receitas com base nos dados fornecidos
  */
-export function calculateTotalRevenue(
-  payments: Payment[], 
-  startDate?: Date, 
-  endDate?: Date
-): number {
-  return payments
-    .filter(payment => {
-      // Se não houver filtro de data, retorna todos
-      if (!startDate && !endDate) return true;
-      
-      const paymentDate = new Date(payment.date);
-      
-      // Filtra por data
-      if (startDate && endDate) {
-        return paymentDate >= startDate && paymentDate <= endDate;
-      } else if (startDate) {
-        return paymentDate >= startDate;
-      } else if (endDate) {
-        return paymentDate <= endDate;
-      }
-      
-      return true;
-    })
-    .filter(payment => payment.status !== "Cancelado")
-    .reduce((acc, payment) => acc + payment.value, 0);
-}
-
-/**
- * Calcula o total de despesas para um período específico
- * @param expenses Lista de despesas
- * @param startDate Data inicial (opcional)
- * @param endDate Data final (opcional)
- * @returns Total de despesas
- */
-export function calculateTotalExpenses(
-  expenses: Expense[],
-  startDate?: Date,
-  endDate?: Date
-): number {
-  return expenses
-    .filter(expense => {
-      // Se não houver filtro de data, retorna todos
-      if (!startDate && !endDate) return true;
-      
-      const expenseDate = new Date(expense.date);
-      
-      // Filtra por data
-      if (startDate && endDate) {
-        return expenseDate >= startDate && expenseDate <= endDate;
-      } else if (startDate) {
-        return expenseDate >= startDate;
-      } else if (endDate) {
-        return expenseDate <= endDate;
-      }
-      
-      return true;
-    })
-    .filter(expense => expense.status !== "Pendente")
-    .reduce((acc, expense) => acc + expense.value, 0);
-}
-
-/**
- * Calcula o ticket médio dos pagamentos
- * @param payments Lista de pagamentos
- * @returns Ticket médio
- */
-export function calculateAverageTicket(payments: Payment[]): number {
-  const validPayments = payments.filter(payment => payment.status === "Pago");
-  
-  if (validPayments.length === 0) return 0;
-  
-  const total = validPayments.reduce((acc, payment) => acc + payment.value, 0);
-  return total / validPayments.length;
-}
-
-/**
- * Calcula o total de comissões a pagar
- * @param professionals Lista de profissionais
- * @returns Total de comissões a pagar
- */
-export function calculateTotalCommissions(professionals: Professional[]): number {
-  return professionals
-    .filter(pro => pro.status === "A Pagar")
-    .reduce((acc, pro) => acc + pro.commission, 0);
-}
-
-/**
- * Formata dados para exportação de relatório financeiro
- * @param cashFlowData Dados do fluxo de caixa
- * @returns Dados formatados para relatório
- */
-export function prepareFinancialReportData(
-  cashFlowData: CashFlow[]
-): Record<string, any>[] {
-  return cashFlowData.map(flow => ({
-    Data: flow.date,
-    Tipo: flow.type === "entrada" ? "Entrada" : "Saída",
-    Categoria: flow.category,
-    Descrição: flow.description,
-    Valor: flow.value,
-    Status: flow.status === "realizado" ? "Realizado" : "Previsto",
-    "Método de Pagamento": flow.paymentMethod || "",
-    "Documento Relacionado": flow.relatedDocument || ""
-  }));
-}
-
-/**
- * Calcula o saldo do fluxo de caixa
- * @param cashFlowData Dados do fluxo de caixa
- * @returns Objeto contendo total de entradas, saídas e saldo
- */
-export function calculateCashFlowBalance(cashFlowData: CashFlow[]): {
-  totalIncome: number;
-  totalExpenses: number;
-  balance: number;
-} {
-  const totalIncome = cashFlowData
-    .filter(flow => flow.type === "entrada" && flow.status === "realizado")
-    .reduce((acc, flow) => acc + flow.value, 0);
-  
-  const totalExpenses = cashFlowData
-    .filter(flow => flow.type === "saida" && flow.status === "realizado")
-    .reduce((acc, flow) => acc + flow.value, 0);
-  
-  return {
-    totalIncome,
-    totalExpenses,
-    balance: totalIncome - totalExpenses
-  };
-}
-
-/**
- * Filtra dados do fluxo de caixa por tipo e data
- * @param cashFlowData Dados do fluxo de caixa
- * @param type Tipo de transação (opcional: 'entrada', 'saida' ou 'all')
- * @param date Data para filtrar (opcional)
- * @returns Dados filtrados
- */
-export function filterCashFlowData(
-  cashFlowData: CashFlow[],
-  type: 'entrada' | 'saida' | 'all' = 'all',
-  date?: string
-): CashFlow[] {
-  return cashFlowData.filter(flow => {
-    // Filtra por tipo
-    const typeMatches = type === 'all' || flow.type === type;
-    
-    // Filtra por data
-    const dateMatches = !date || flow.date === date;
-    
-    return typeMatches && dateMatches;
-  });
-}
-
-/**
- * Verifica se há contas atrasadas e retorna alertas formatados
- * @param accounts Lista de contas a receber
- * @param expenses Lista de despesas
- * @returns Lista de alertas financeiros
- */
-export function getOverdueAccounts(
-  accounts: AccountReceivable[], 
-  expenses?: Expense[]
-): Array<{
-  type: string;
-  description: string;
-  amount: number;
-  dueDate: string;
-  status: string;
-}> {
-  const alerts = [];
-  
-  // Alertas de contas a receber
-  const overdueAccounts = accounts.filter(account => account.status === "Atrasado");
-  for (const account of overdueAccounts) {
-    alerts.push({
-      type: "Conta a Receber",
-      description: `Cliente: ${account.client}`,
-      amount: account.value,
-      dueDate: account.dueDate,
-      status: account.status
-    });
-  }
-  
-  // Alertas de despesas vencidas (se fornecido)
-  if (expenses) {
-    const overdueExpenses = expenses.filter(expense => expense.status === "Vencido");
-    for (const expense of overdueExpenses) {
-      alerts.push({
-        type: "Despesa",
-        description: expense.name,
-        amount: expense.value,
-        dueDate: expense.date,
-        status: expense.status
-      });
+export const calculateTotalRevenue = (payments: Payment[] = []): number => {
+  return payments.reduce((total, payment) => {
+    if (payment.status === 'Pago') {
+      return total + payment.value;
     }
+    return total;
+  }, 0);
+};
+
+/**
+ * Calcula o total de despesas com base nos dados fornecidos
+ */
+export const calculateTotalExpenses = (expenses: Expense[] = []): number => {
+  return expenses.reduce((total, expense) => {
+    if (expense.status === 'Pago') {
+      return total + expense.value;
+    }
+    return total;
+  }, 0);
+};
+
+/**
+ * Calcula o balanço de caixa com base nos dados fornecidos
+ */
+export const calculateCashFlowBalance = (
+  payments: Payment[] = [], 
+  expenses: Expense[] = []
+): number => {
+  const totalRevenue = calculateTotalRevenue(payments);
+  const totalExpenses = calculateTotalExpenses(expenses);
+  return totalRevenue - totalExpenses;
+};
+
+/**
+ * Obtém contas a receber em atraso
+ */
+export const getOverdueAccounts = (
+  accountsReceivable: AccountReceivable[] = []
+): AccountReceivable[] => {
+  const today = new Date();
+  return accountsReceivable.filter(account => {
+    if (account.status === 'Pago' || account.status === 'Cancelado') {
+      return false;
+    }
+    const dueDate = new Date(account.dueDate);
+    return isAfter(today, dueDate);
+  });
+};
+
+/**
+ * Conta o número de contas a receber em atraso
+ */
+export const countOverdueAccounts = (
+  accountsReceivable: AccountReceivable[] = []
+): number => {
+  return getOverdueAccounts(accountsReceivable).length;
+};
+
+/**
+ * Formata uma data no formato DD/MM/YYYY
+ */
+export const formatDate = (dateStr: string): string => {
+  try {
+    const date = parseISO(dateStr);
+    return format(date, 'dd/MM/yyyy', { locale: ptBR });
+  } catch (error) {
+    return dateStr; // Retorna a string original se não conseguir formatar
   }
-  
-  return alerts;
-}
-
-// Para manter retrocompatibilidade
-export function countOverdueAccounts(accounts: AccountReceivable[]): number {
-  return accounts.filter(account => account.status === "Atrasado").length;
-}
-
-// Adicionando função de conversão de tipos entre os sistemas diferentes
-export const convertCashFlowType = (type: string): 'income' | 'expense' => {
-  if (type === 'entrada') return 'income';
-  return 'expense';
 };
 
-export const reverseConvertCashFlowType = (type: 'income' | 'expense'): 'entrada' | 'saida' => {
-  if (type === 'income') return 'entrada';
-  return 'saida';
-};
+/**
+ * Prepara dados para exportação de relatórios financeiros
+ */
+export const prepareFinancialReportData = (
+  revenues: any[] = [],
+  expenses: Expense[] = [],
+  cashFlow: CashFlow[] = [],
+  period: string = 'month'
+): any => {
+  // Dados básicos
+  const reportData = {
+    title: `Relatório Financeiro - ${period === 'month' ? 'Mensal' : 'Anual'}`,
+    date: format(new Date(), 'dd/MM/yyyy'),
+    summary: {
+      totalRevenue: 0,
+      totalExpenses: 0,
+      balance: 0
+    },
+    revenues: [],
+    expenses: [],
+    cashFlow: []
+  };
 
-// Corrigir os problemas de tipagem nas funções existentes
-export const calculateBalance = (entries: CashFlowEntry[]): FinancialSummary => {
-  let totalIncome = 0;
+  // Processar receitas
+  const processedRevenues = revenues.map(rev => ({
+    date: formatDate(rev.date),
+    client: rev.client || rev.clientName || 'N/A',
+    description: rev.description || rev.service || 'N/A',
+    value: rev.value,
+    paymentMethod: rev.method || rev.paymentMethod || 'N/A',
+    status: rev.status
+  }));
+
+  // Processar despesas
+  const processedExpenses = expenses.map(exp => ({
+    date: formatDate(exp.date || exp.dueDate),
+    description: exp.name || exp.description,
+    category: exp.category,
+    value: exp.value,
+    status: exp.status,
+    recurring: exp.recurring || exp.isRecurring
+  }));
+
+  // Processar fluxo de caixa
+  const processedCashFlow = cashFlow.map(flow => {
+    const isIncome = flow.type === 'entrada' || flow.type === 'income';
+    return {
+      date: formatDate(flow.date),
+      type: isIncome ? 'Entrada' : 'Saída',
+      category: flow.category,
+      description: flow.description,
+      value: flow.value,
+      status: flow.status || 'realizado',
+      document: flow.relatedDocument || 'N/A'
+    };
+  });
+
+  // Calcular o sumário
+  let totalRevenue = 0;
   let totalExpenses = 0;
 
-  entries.forEach((entry) => {
-    // Converter tipo se necessário
-    const type = typeof entry.type === 'string' ? 
-      convertCashFlowType(entry.type) : entry.type;
-      
-    if (type === 'income') {
+  cashFlow.forEach(flow => {
+    if (flow.type === 'entrada' || flow.type === 'income') {
+      totalRevenue += flow.value;
+    } else if (flow.type === 'saida' || flow.type === 'expense') {
+      totalExpenses += flow.value;
+    }
+  });
+
+  reportData.summary.totalRevenue = totalRevenue;
+  reportData.summary.totalExpenses = totalExpenses;
+  reportData.summary.balance = totalRevenue - totalExpenses;
+
+  return {
+    ...reportData,
+    revenues: processedRevenues,
+    expenses: processedExpenses,
+    cashFlow: processedCashFlow
+  };
+};
+
+/**
+ * Formata uma lista de tarefas financeiras para exibição
+ */
+export const formatFinancialTasks = (
+  expenses: Expense[] = [],
+  accountsReceivable: AccountReceivable[] = []
+): any[] => {
+  const today = new Date();
+  const nextWeek = new Date(today);
+  nextWeek.setDate(nextWeek.getDate() + 7);
+
+  // Processar despesas
+  const expenseTasks = expenses
+    .filter(expense => expense.status !== 'Pago' && expense.status !== 'Cancelado')
+    .map(expense => {
+      const dueDate = new Date(expense.dueDate);
+      const isOverdue = isAfter(today, dueDate);
+      const isDueSoon = isBefore(dueDate, nextWeek) && !isOverdue;
+
+      return {
+        id: `expense-${expense.id}`,
+        title: expense.name || expense.description,
+        type: 'expense',
+        dueDate: expense.date || expense.dueDate,
+        formattedDate: formatDate(expense.date || expense.dueDate),
+        value: expense.value,
+        status: isOverdue ? 'Vencido' : expense.status,
+        priority: isOverdue ? 'high' : isDueSoon ? 'medium' : 'normal',
+        item: expense
+      };
+    });
+
+  // Processar contas a receber
+  const receivableTasks = accountsReceivable
+    .filter(account => account.status !== 'Pago' && account.status !== 'Cancelado')
+    .map(account => {
+      const dueDate = new Date(account.dueDate);
+      const isOverdue = isAfter(today, dueDate);
+      const isDueSoon = isBefore(dueDate, nextWeek) && !isOverdue;
+
+      return {
+        id: `receivable-${account.id}`,
+        title: `${account.client} - ${account.description}`,
+        type: 'receivable',
+        dueDate: account.dueDate,
+        formattedDate: formatDate(account.dueDate),
+        value: account.value,
+        status: account.status,
+        priority: isOverdue ? 'medium' : isDueSoon ? 'low' : 'normal',
+        item: account
+      };
+    });
+
+  // Combinar e ordenar por data de vencimento
+  return [...expenseTasks, ...receivableTasks].sort((a, b) => {
+    const dateA = new Date(a.dueDate);
+    const dateB = new Date(b.dueDate);
+    return dateA.getTime() - dateB.getTime();
+  });
+};
+
+/**
+ * Converte CashFlow para CashFlowEntry para uso em gráficos e relatórios
+ */
+export const convertCashFlowToEntries = (cashflows: CashFlow[]): CashFlowEntry[] => {
+  return cashflows.map(cf => ({
+    id: cf.id,
+    type: cf.type === 'entrada' ? 'income' : 'expense',
+    category: cf.category,
+    amount: cf.value,
+    date: cf.date,
+    description: cf.description,
+    paymentMethod: cf.paymentMethod,
+    recurring: cf.recurring,
+    status: cf.status
+  }));
+};
+
+/**
+ * Calcula o resumo financeiro baseado em entradas do fluxo de caixa
+ */
+export const calculateFinancialSummary = (entries: CashFlowEntry[]): FinancialSummary => {
+  let totalIncome = 0;
+  let totalExpenses = 0;
+  
+  entries.forEach(entry => {
+    if (entry.type === 'income' || entry.type === 'entrada') {
       totalIncome += entry.amount;
     } else {
       totalExpenses += entry.amount;
     }
   });
-
+  
   return {
     totalIncome,
     totalExpenses,
     balance: totalIncome - totalExpenses,
+    income: totalIncome,
+    expense: totalExpenses
   };
-};
-
-export const groupEntriesByCategory = (entries: CashFlowEntry[]): { [key: string]: number } => {
-  const result: { [key: string]: number } = {};
-
-  entries.forEach((entry) => {
-    // Converter tipo se necessário
-    const type = typeof entry.type === 'string' ? 
-      convertCashFlowType(entry.type) : entry.type;
-    
-    const categoryKey = `${type}-${entry.category}`;
-    if (!result[categoryKey]) {
-      result[categoryKey] = 0;
-    }
-    result[categoryKey] += entry.amount;
-  });
-
-  return result;
-};
-
-export const getTopCategories = (entries: CashFlowEntry[], type: 'income' | 'expense'): { category: string; amount: number }[] => {
-  const typeEntries = entries.filter((entry) => {
-    // Converter tipo se necessário
-    const entryType = typeof entry.type === 'string' ? 
-      convertCashFlowType(entry.type) : entry.type;
-    return entryType === type;
-  });
-  
-  return typeEntries
-    .reduce((acc, entry) => {
-      const categoryKey = `${entry.type}-${entry.category}`;
-      if (!acc[categoryKey]) {
-        acc[categoryKey] = { category: entry.category, amount: 0 };
-      }
-      acc[categoryKey].amount += entry.amount;
-      return acc;
-    }, {})
-    .map(entry => entry.value)
-    .sort((a, b) => b - a)
-    .slice(0, 5)
-    .map(category => ({
-      category: category.category,
-      amount: category.amount
-    }));
 };

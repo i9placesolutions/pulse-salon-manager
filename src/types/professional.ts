@@ -5,6 +5,7 @@ export interface Professional {
   email: string;
   phone: string;
   specialty: string[];
+  specialties?: { id: string; name: string; color: string; isActive: boolean }[];
   avatar?: string;
   bio?: string;
   status: 'active' | 'inactive';
@@ -26,6 +27,24 @@ export interface Professional {
   totalAppointments?: number;
   services?: number[];
   finishedServices?: number;
+  
+  // Campos adicionais que são referenciados no código
+  experienceLevel?: string;
+  hiringDate?: string;
+  paymentModel?: string;
+  fixedSalary?: number;
+  commissionRate?: number;
+  totalCommission?: number;
+  averageMonthlyRevenue?: number;
+  workingDays?: number;
+  monthRanking?: {
+    position?: number;
+    total?: number;
+  };
+  averageAppointmentDuration?: number;
+  clientAttendanceRate?: number;
+  history?: any[];
+  lastAppointmentDate?: string;
 }
 
 export interface WorkingHours {
@@ -43,6 +62,8 @@ export interface BlockedDate {
   start: string;
   end: string;
   reason?: string;
+  startDate?: string; // Para compatibilidade com componentes existentes
+  endDate?: string; // Para compatibilidade com componentes existentes
 }
 
 export interface CommissionConfig {
@@ -66,4 +87,49 @@ export interface ProfessionalPerformance {
   scheduleOccupancy: number;
   quoteConversionRate: number;
   additionalSalesRate: number;
+}
+
+// Tipos adicionais necessários para componentes
+export interface ProfessionalAppointment {
+  id: number;
+  date: string;
+  time?: string;
+  clientName: string;
+  serviceName: string;
+  value: number;
+  commission: number;
+  notes?: string;
+  status: string;
+}
+
+export interface ProfessionalCommission {
+  id: number;
+  paymentDate: string;
+  value: number;
+  referenceType?: string;
+  referenceName?: string;
+  status: string;
+}
+
+export interface ProfessionalPayment {
+  id: number;
+  date: string;
+  value: number;
+  description: string;
+  status: string;
+}
+
+export interface ProfessionalSpecialty {
+  id: string;
+  name: string;
+  color: string;
+  isActive: boolean;
+}
+
+export interface DaySchedule {
+  isWorking: boolean;
+  startTime: string;
+  endTime: string;
+  breakStart?: string;
+  breakEnd?: string;
 }

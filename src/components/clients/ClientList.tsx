@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from "react";
 import {
   Card,
@@ -360,7 +361,8 @@ export function ClientList() {
       sortBy: 'name',
       timeRange: '365',
       exportFormat: format,
-      includeAnalytics: true
+      includeAnalytics: true,
+      format: format as 'excel' | 'pdf' | 'csv' | 'summary' | 'analytics'
     };
     
     const selectedIds = selectedClients.length > 0 

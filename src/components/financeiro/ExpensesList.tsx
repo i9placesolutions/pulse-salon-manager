@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -32,7 +33,7 @@ export function ExpensesList({ expenses, onUpdateExpense, onNewEntry }: Expenses
 
   // Filtrar despesas
   const filteredExpenses = expenses.filter(expense => {
-    const matchesSearch = expense.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = (expense.name || expense.description).toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = categoryFilter === 'all' || expense.category === categoryFilter;
     const matchesStatus = statusFilter === 'all' || expense.status === statusFilter;
     
@@ -65,7 +66,7 @@ export function ExpensesList({ expenses, onUpdateExpense, onNewEntry }: Expenses
     
     toast({
       title: "Despesa atualizada",
-      description: `${expense.name} foi marcada como paga.`,
+      description: `${expense.name || expense.description} foi marcada como paga.`,
     });
   };
 
@@ -120,7 +121,7 @@ export function ExpensesList({ expenses, onUpdateExpense, onNewEntry }: Expenses
                 <SelectItem value="all">Todos</SelectItem>
                 <SelectItem value="Pendente">Pendentes</SelectItem>
                 <SelectItem value="Pago">Pagas</SelectItem>
-                <SelectItem value="Vencido">Vencidas</SelectItem>
+                <SelectItem value="Atrasado">Vencidas</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -136,15 +137,15 @@ export function ExpensesList({ expenses, onUpdateExpense, onNewEntry }: Expenses
               >
                 <div className="flex-1 space-y-1 mb-2 md:mb-0">
                   <div className="flex items-center gap-2">
-                    <h3 className="font-medium">{expense.name}</h3>
-                    {expense.isRecurring && (
+                    <h3 className="font-medium">{expense.name || expense.description}</h3>
+                    {(expense.recurring || expense.isRecurring) && (
                       <Repeat className="h-4 w-4 text-muted-foreground" />
                     )}
                   </div>
                   <div className="flex flex-wrap gap-2 text-sm">
                     <Badge variant="outline">{expense.category}</Badge>
                     <span className="text-muted-foreground">
-                      Vencimento: {expense.date}
+                      Vencimento: {expense.date || expense.dueDate}
                     </span>
                   </div>
                 </div>
@@ -157,13 +158,13 @@ export function ExpensesList({ expenses, onUpdateExpense, onNewEntry }: Expenses
                     <Badge
                       className={`
                         ${expense.status === "Pago" ? "bg-green-100 text-green-800 hover:bg-green-100" : 
-                          expense.status === "Vencido" ? "bg-red-100 text-red-800 hover:bg-red-100" : 
+                          (expense.status === "Atrasado" || expense.status === "Vencido") ? "bg-red-100 text-red-800 hover:bg-red-100" : 
                           "bg-yellow-100 text-yellow-800 hover:bg-yellow-100"}
                       `}
                     >
                       {expense.status === "Pago" ? (
                         <CheckCircle2 className="mr-1 h-3 w-3" />
-                      ) : expense.status === "Vencido" ? (
+                      ) : (expense.status === "Atrasado" || expense.status === "Vencido") ? (
                         <AlertCircle className="mr-1 h-3 w-3" />
                       ) : (
                         <Clock className="mr-1 h-3 w-3" />

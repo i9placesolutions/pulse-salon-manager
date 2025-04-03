@@ -1,229 +1,311 @@
-
-import { useState, useEffect } from "react";
-import { Sheet, SheetContent } from "@/components/ui/sheet";
-import { ServicePackage } from "@/types/service";
+import React, { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { PackageHeader } from "./packages/PackageHeader";
-import { PackageFormFields } from "./packages/PackageFormFields";
-import { PackageTabContent } from "./packages/PackageTabContent";
-import { PackageFormFooter } from "./packages/PackageFormFooter";
-import { useMockServiceData } from "./packages/useMockServiceData";
+import { ServicePackage, PackageService } from "@/types/service";
 
 interface ServicePackageFormProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onSubmit: (servicePackage: Partial<ServicePackage>) => void;
-  servicePackage?: ServicePackage;
+  onSave: (packageData: ServicePackage) => void;
+  onCancel: () => void;
+  initialPackage?: ServicePackage;
 }
 
-interface PackageService {
-  id: number;
-  name: string;
-  price: number;
-}
-
-interface PackageProduct {
-  id: string;
-  name: string;
-  price: number;
-  quantity: number;
-}
-
-export function ServicePackageForm({
-  open,
-  onOpenChange,
-  onSubmit,
-  servicePackage,
-}: ServicePackageFormProps) {
+export function ServicePackageForm({ onSave, onCancel, initialPackage }: ServicePackageFormProps) {
+  const [selectedService, setSelectedService] = useState<PackageService | null>(null);
+  const [serviceData, setServiceData] = useState<Partial<ServicePackage>>(
+    initialPackage || {
+      name: "",
+      description: "",
+      services: [],
+      discount: 0,
+      status: "active",
+      price: 0,
+      expirationDays: 30,
+    }
+  );
+  const [availableServices, setAvailableServices] = useState<PackageService[]>([]);
+  const [serviceDiscount, setServiceDiscount] = useState(0);
   const { toast } = useToast();
-  const { mockAvailableServices, mockAvailableProducts } = useMockServiceData();
-  
-  const [formData, setFormData] = useState<Partial<ServicePackage>>({
-    name: "",
-    description: "",
-    services: [],
-    products: [],
-    discount: 10,
-    status: "active",
-  });
-
-  const [selectedServices, setSelectedServices] = useState<PackageService[]>([]);
-  const [selectedProducts, setSelectedProducts] = useState<PackageProduct[]>([]);
-  const [activeTab, setActiveTab] = useState<string>("services");
 
   useEffect(() => {
-    if (servicePackage) {
-      setFormData(servicePackage);
-      
-      // Carrega serviços (em uma aplicação real, você buscaria os dados dos serviços)
-      const serviceDetails = servicePackage.services?.map(serviceId => {
-        const service = mockAvailableServices.find(s => s.id === serviceId);
-        return service ? {
-          id: service.id,
-          name: service.name,
-          price: service.price
-        } : null;
-      }).filter(Boolean) as PackageService[];
-      
-      setSelectedServices(serviceDetails || []);
-      
-      // Carrega produtos (em uma aplicação real, você buscaria os dados dos produtos)
-      const productDetails = servicePackage.products?.map(product => {
-        // Ensure product.productId is treated as a string
-        const productStringId = String(product.productId);
-        const productInfo = mockAvailableProducts.find(p => p.id === productStringId);
-        return productInfo ? {
-          id: productInfo.id,
-          name: productInfo.name,
-          price: productInfo.price,
-          quantity: product.quantity
-        } : null;
-      }).filter(Boolean) as PackageProduct[];
-      
-      setSelectedProducts(productDetails || []);
-    } else {
-      setFormData({
-        name: "",
-        description: "",
-        services: [],
-        products: [],
-        discount: 10,
-        status: "active",
+    // Simular a obtenção de serviços do backend
+    setAvailableServices([
+      { id: 1, name: "Corte de Cabelo", price: 60 },
+      { id: 2, name: "Barba", price: 40 },
+      { id: 3, name: "Coloração", price: 120 },
+      { id: 4, name: "Hidratação", price: 90 },
+      { id: 5, name: "Penteado", price: 80 },
+    ]);
+  }, []);
+
+  const handleAddService = () => {
+    if (!selectedService) {
+      toast({
+        title: "Selecione um serviço",
+        description: "É necessário selecionar um serviço para adicionar ao pacote.",
+        variant: "destructive",
       });
-      setSelectedServices([]);
-      setSelectedProducts([]);
+      return;
     }
-  }, [servicePackage, open, mockAvailableServices, mockAvailableProducts]);
-  
-  const handleAddService = (serviceId: number) => {
-    const service = mockAvailableServices.find(s => s.id === serviceId);
-    if (service) {
-      const newService = {
-        id: service.id,
-        name: service.name,
-        price: service.price,
-      };
-      
-      setSelectedServices([...selectedServices, newService]);
-      setFormData(prev => ({
-        ...prev,
-        services: [...(prev.services || []), service.id],
-      }));
+
+    // Verificar se o serviço já está no pacote
+    const isServiceAlreadyAdded = serviceData.services?.some(s => {
+      if (typeof s === 'object' && 'serviceId' in s) {
+        return s.serviceId === selectedService.id;
+      }
+      return false;
+    });
+
+    if (isServiceAlreadyAdded) {
+      toast({
+        title: "Serviço já adicionado",
+        description: "Este serviço já faz parte do pacote.",
+        variant: "destructive",
+      });
+      return;
     }
-  };
-  
-  const handleRemoveService = (serviceId: number) => {
-    setSelectedServices(selectedServices.filter(s => s.id !== serviceId));
-    setFormData(prev => ({
+
+    // Adicionar serviço ao pacote
+    setServiceData((prev) => ({
       ...prev,
-      services: (prev.services || []).filter(id => id !== serviceId),
+      services: [
+        ...(prev.services || []),
+        {
+          serviceId: selectedService.id,
+          discount: serviceDiscount,
+        },
+      ],
+    }));
+
+    setSelectedService(null);
+    setServiceDiscount(0);
+  };
+
+  const handleRemoveService = (serviceIndex: number) => {
+    const updatedServices = serviceData.services?.filter((_, index) => index !== serviceIndex);
+    setServiceData((prev) => ({
+      ...prev,
+      services: updatedServices,
     }));
   };
-  
-  const handleAddProduct = (productId: string, quantity: number) => {
-    const product = mockAvailableProducts.find(p => p.id === productId);
-    if (product) {
-      const newProduct: PackageProduct = {
-        id: product.id,
-        name: product.name,
-        price: product.price,
-        quantity: quantity,
-      };
-      
-      setSelectedProducts([...selectedProducts, newProduct]);
-      setFormData(prev => ({
-        ...prev,
-        products: [...(prev.products || []), { 
-          productId: Number(product.id), // Convert to number for ServicePackage structure
-          quantity: quantity 
-        }],
-      }));
-    }
+
+  const getDiscountedPrice = (originalPrice: number, discount: number) => {
+    return originalPrice - (originalPrice * discount) / 100;
   };
-  
-  const handleRemoveProduct = (productId: string) => {
-    setSelectedProducts(selectedProducts.filter(p => p.id !== productId));
-    setFormData(prev => ({
-      ...prev,
-      products: (prev.products || []).filter(item => String(item.productId) !== productId),
-    }));
+
+  const getServiceName = (serviceId: number | string) => {
+    const service = availableServices.find((s) => s.id === serviceId);
+    return service ? service.name : "Serviço não encontrado";
+  };
+
+  const getServicePrice = (serviceId: number | string) => {
+    const service = availableServices.find((s) => s.id === serviceId);
+    return service ? service.price : 0;
   };
 
   const calculateTotalPrice = () => {
-    const servicesTotal = selectedServices.reduce((sum, service) => sum + service.price, 0);
-    const productsTotal = selectedProducts.reduce((sum, product) => sum + (product.price * product.quantity), 0);
-    return servicesTotal + productsTotal;
-  };
+    let total = 0;
 
-  const calculateDiscountedPrice = () => {
-    const total = calculateTotalPrice();
-    const discount = (formData.discount || 0) / 100;
-    return total * (1 - discount);
+    serviceData.services?.forEach((serviceItem) => {
+      if (typeof serviceItem === 'object' && 'serviceId' in serviceItem) {
+        const servicePrice = getServicePrice(serviceItem.serviceId);
+        const discountedPrice = getDiscountedPrice(servicePrice, serviceItem.discount);
+        total += discountedPrice;
+      }
+    });
+
+    // Aplicar desconto adicional do pacote
+    if (serviceData.discount) {
+      total = getDiscountedPrice(total, serviceData.discount);
+    }
+
+    return total;
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!formData.name) {
+
+    if (!serviceData.name) {
       toast({
-        title: "Erro de validação",
-        description: "Por favor, preencha o nome do pacote.",
+        title: "Nome obrigatório",
+        description: "Por favor, insira um nome para o pacote.",
         variant: "destructive",
       });
       return;
     }
-    
-    if (selectedServices.length === 0) {
+
+    if (!serviceData.services || serviceData.services.length === 0) {
       toast({
-        title: "Erro de validação",
-        description: "Adicione pelo menos um serviço ao pacote.",
+        title: "Adicione serviços",
+        description: "O pacote deve conter pelo menos um serviço.",
         variant: "destructive",
       });
       return;
     }
-    
-    onSubmit(formData);
-    onOpenChange(false);
+
+    const totalPrice = calculateTotalPrice();
+
+    onSave({
+      ...serviceData,
+      price: totalPrice,
+    } as ServicePackage);
   };
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="p-0 w-full max-w-full sm:max-w-2xl border-l flex flex-col h-[100dvh] bg-white">
-        <PackageHeader isEditing={!!servicePackage} />
-        
-        {/* Conteúdo rolável */}
-        <div className="flex-1 overflow-y-auto bg-white p-6">
-          <form className="space-y-6">
-            <PackageFormFields 
-              formData={formData} 
-              setFormData={setFormData} 
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Informações do Pacote</CardTitle>
+          <CardDescription>
+            Preencha os detalhes do pacote de serviços.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid w-full gap-2">
+            <Label htmlFor="name">Nome do Pacote</Label>
+            <Input
+              id="name"
+              value={serviceData.name || ""}
+              onChange={(e) =>
+                setServiceData({ ...serviceData, name: e.target.value })
+              }
+              required
             />
-
-            <PackageTabContent 
-              activeTab={activeTab}
-              setActiveTab={setActiveTab}
-              selectedServices={selectedServices}
-              selectedProducts={selectedProducts}
-              availableServices={mockAvailableServices}
-              availableProducts={mockAvailableProducts}
-              handleAddService={handleAddService}
-              handleRemoveService={handleRemoveService}
-              handleAddProduct={handleAddProduct}
-              handleRemoveProduct={handleRemoveProduct}
-              calculateTotalPrice={calculateTotalPrice}
-              calculateDiscountedPrice={calculateDiscountedPrice}
-              discount={formData.discount || 0}
+          </div>
+          <div className="grid w-full gap-2">
+            <Label htmlFor="description">Descrição</Label>
+            <Input
+              id="description"
+              value={serviceData.description || ""}
+              onChange={(e) =>
+                setServiceData({ ...serviceData, description: e.target.value })
+              }
             />
-          </form>
-        </div>
-        
-        <PackageFormFooter 
-          onCancel={() => onOpenChange(false)}
-          onSubmit={handleSubmit}
-          isSubmitDisabled={selectedServices.length === 0 || (formData.discount || 0) > 100}
-          isEditing={!!servicePackage}
-        />
-      </SheetContent>
-    </Sheet>
+          </div>
+          <div className="grid w-full gap-2">
+            <Label htmlFor="discount">Desconto (%)</Label>
+            <Input
+              type="number"
+              id="discount"
+              value={serviceData.discount || 0}
+              onChange={(e) =>
+                setServiceData({
+                  ...serviceData,
+                  discount: parseFloat(e.target.value),
+                })
+              }
+            />
+          </div>
+          <div className="grid w-full gap-2">
+            <Label htmlFor="expirationDays">Validade (dias)</Label>
+            <Input
+              type="number"
+              id="expirationDays"
+              value={serviceData.expirationDays || 30}
+              onChange={(e) =>
+                setServiceData({
+                  ...serviceData,
+                  expirationDays: parseInt(e.target.value),
+                })
+              }
+            />
+          </div>
+        </CardContent>
+      </Card>
+      <div className="space-y-4">
+        <Card>
+          <CardHeader>
+            <CardTitle>Serviços do Pacote</CardTitle>
+            <CardDescription>
+              Adicione serviços ao pacote e defina descontos individuais.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center space-x-4">
+              <Select
+                onValueChange={(value) => {
+                  const selected = availableServices.find(
+                    (s) => s.id === Number(value)
+                  );
+                  setSelectedService(selected || null);
+                }}
+              >
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Selecionar Serviço" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableServices.map((service) => (
+                    <SelectItem key={service.id} value={service.id.toString()}>
+                      {service.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Input
+                type="number"
+                placeholder="Desconto (%)"
+                value={serviceDiscount}
+                onChange={(e) => setServiceDiscount(Number(e.target.value))}
+                className="w-24"
+              />
+              <Button type="button" onClick={handleAddService}>
+                Adicionar
+              </Button>
+            </div>
+            {serviceData.services && serviceData.services.length > 0 ? (
+              <ul className="list-none space-y-2">
+                {serviceData.services.map((serviceItem, index) => {
+                  if (typeof serviceItem === 'object' && 'serviceId' in serviceItem) {
+                    return (
+                      <li
+                        key={index}
+                        className="flex items-center justify-between border p-2 rounded-md"
+                      >
+                        <span>
+                          {getServiceName(serviceItem.serviceId)} - Desconto:{" "}
+                          {serviceItem.discount}%
+                        </span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleRemoveService(index)}
+                        >
+                          Remover
+                        </Button>
+                      </li>
+                    );
+                  }
+                  return null;
+                })}
+              </ul>
+            ) : (
+              <p className="text-muted-foreground">Nenhum serviço adicionado.</p>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+      <div className="flex justify-end space-x-2">
+        <Button type="button" variant="outline" onClick={onCancel}>
+          Cancelar
+        </Button>
+        <Button type="submit">Salvar Pacote</Button>
+      </div>
+    </form>
   );
 }

@@ -1,3 +1,4 @@
+
 export interface Service {
   id: number;
   name: string;
@@ -71,6 +72,15 @@ export interface ProfessionalGoal {
   serviceTarget: number; // meta de quantidade de serviços
   revenueTarget: number; // meta de faturamento
   commissionsTarget: number; // meta de comissões
+}
+
+export interface PerformanceData {
+  totalSold?: number;
+  revenue?: number;
+  growth?: number;
+  averageRating?: number;
+  popularTimes?: string[];
+  clientRetention?: number;
 }
 
 export interface ProfessionalPerformance {

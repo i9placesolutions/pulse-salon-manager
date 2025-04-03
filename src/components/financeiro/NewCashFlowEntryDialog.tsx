@@ -39,8 +39,8 @@ export function NewCashFlowEntryDialog({ onNewEntry, type }: NewCashFlowEntryDia
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
   const [paymentMethod, setPaymentMethod] = useState("");
   const [relatedDocument, setRelatedDocument] = useState("");
-  const [status, setStatus] = useState<"realizado" | "previsto">("realizado");
   const [isRecurring, setIsRecurring] = useState(false);
+  const [statusState, setStatusState] = useState<"realizado" | "previsto">("realizado");
 
   // Opções de categoria baseadas no tipo (entrada ou saída)
   const categoryOptions = type === "entrada"
@@ -79,10 +79,10 @@ export function NewCashFlowEntryDialog({ onNewEntry, type }: NewCashFlowEntryDia
       category,
       description,
       value: numericValue,
-      status,
       paymentMethod: paymentMethod || undefined,
       relatedDocument: relatedDocument || undefined,
-      isRecurring: type === "saida" ? isRecurring : undefined,
+      recurring: type === "saida" ? isRecurring : undefined,
+      status: statusState
     };
     
     onNewEntry(newEntry);
@@ -99,7 +99,7 @@ export function NewCashFlowEntryDialog({ onNewEntry, type }: NewCashFlowEntryDia
     setDate(new Date().toISOString().split("T")[0]);
     setPaymentMethod("");
     setRelatedDocument("");
-    setStatus("realizado");
+    setStatusState("realizado");
     setIsRecurring(false);
     
     // Fecha o diálogo
@@ -212,8 +212,8 @@ export function NewCashFlowEntryDialog({ onNewEntry, type }: NewCashFlowEntryDia
                 Status
               </Label>
               <Select
-                value={status}
-                onValueChange={(value) => setStatus(value as "realizado" | "previsto")}
+                value={statusState}
+                onValueChange={(value) => setStatusState(value as "realizado" | "previsto")}
                 required
               >
                 <SelectTrigger className="col-span-3" id="status">
@@ -266,4 +266,4 @@ export function NewCashFlowEntryDialog({ onNewEntry, type }: NewCashFlowEntryDia
       </DialogContent>
     </Dialog>
   );
-} 
+}

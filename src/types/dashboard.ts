@@ -56,19 +56,22 @@ export interface TopProduct {
 
 export interface CashFlowEntry {
   id?: string;
-  type: 'income' | 'expense';
+  type: 'income' | 'expense' | 'entrada' | 'saida';
   category: string;
   amount: number;
   date: string;
   description?: string;
   paymentMethod?: string;
   recurring?: boolean;
+  status?: 'realizado' | 'previsto';
 }
 
 export interface FinancialSummary {
   totalIncome: number;
   totalExpenses: number;
   balance: number;
+  income?: number;
+  expense?: number;
   previousPeriodIncome?: number;
   previousPeriodExpenses?: number;
   previousPeriodBalance?: number;
