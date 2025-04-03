@@ -39,26 +39,28 @@ const LoginForm = () => {
 
       if (profileError) throw profileError;
 
-      // Atualizar estado do contexto com os dados do perfil
-      setEstablishmentName(profileData.establishment_name);
-      setProfileState({
-        isProfileComplete: profileData.is_profile_complete,
-        isFirstLogin: false,
-        trialEndsAt: profileData.trial_ends_at ? new Date(profileData.trial_ends_at) : null,
-        subscriptionActive: profileData.subscription_active
-      });
+      if (profileData) {
+        // Atualizar estado do contexto com os dados do perfil
+        setEstablishmentName(profileData.establishment_name);
+        setProfileState({
+          isProfileComplete: profileData.is_profile_complete,
+          isFirstLogin: false,
+          trialEndsAt: profileData.trial_ends_at ? new Date(profileData.trial_ends_at) : null,
+          subscriptionActive: profileData.subscription_active
+        });
 
-      // Salvar no localStorage
-      localStorage.setItem('profileComplete', profileData.is_profile_complete.toString());
-      localStorage.setItem('firstLogin', 'false');
-      localStorage.setItem('establishmentName', profileData.establishment_name);
-      if (profileData.trial_ends_at) {
-        localStorage.setItem('trialEndsAt', profileData.trial_ends_at);
+        // Salvar no localStorage
+        localStorage.setItem('profileComplete', profileData.is_profile_complete.toString());
+        localStorage.setItem('firstLogin', 'false');
+        localStorage.setItem('establishmentName', profileData.establishment_name);
+        if (profileData.trial_ends_at) {
+          localStorage.setItem('trialEndsAt', profileData.trial_ends_at);
+        }
+        localStorage.setItem('subscriptionActive', profileData.subscription_active.toString());
+
+        // Redirecionar com base no estado do perfil
+        redirectAfterLogin(profileData);
       }
-      localStorage.setItem('subscriptionActive', profileData.subscription_active.toString());
-
-      // Redirecionar com base no estado do perfil
-      redirectAfterLogin(profileData);
       
     } catch (error: any) {
       setIsLoading(false);

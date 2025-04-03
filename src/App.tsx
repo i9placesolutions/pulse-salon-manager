@@ -80,6 +80,49 @@ const AuthProvider = ({ children }: { children: ReactNode }) => {
       // Quando o usuário fizer login, buscar os dados do perfil
       if (event === 'SIGNED_IN' && currentSession) {
         setTimeout(async () => {
+          try {
+            const { data: profileData, error } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('id', currentSession.user.id)
+              .single();
+
+            if (profileData && !error) {
+              setEstablishmentName(profileData.establishment_name);
+              setProfileState({
+                isProfileComplete: profileData.is_profile_complete,
+                isFirstLogin: false,
+                trialEndsAt: profileData.trial_ends_at ? new Date(profileData.trial_ends_at) : null,
+                subscriptionActive: profileData.subscription_active
+              });
+
+              // Salvar no localStorage
+              localStorage.setItem('profileComplete', profileData.is_profile_complete.toString());
+              localStorage.setItem('firstLogin', 'false');
+              localStorage.setItem('establishmentName', profileData.establishment_name);
+              if (profileData.trial_ends_at) {
+                localStorage.setItem('trialEndsAt', profileData.trial_ends_at);
+              }
+              localStorage.setItem('subscriptionActive', profileData.subscription_active.toString());
+            }
+          } catch (err) {
+            console.error("Erro ao carregar perfil:", err);
+          }
+        }, 0);
+      }
+    });
+
+    // Verificar sessão atual
+    async function getInitialSession() {
+      setIsLoading(true);
+      try {
+        const { data: { session: currentSession } } = await supabase.auth.getSession();
+        
+        setSession(currentSession);
+        setUser(currentSession?.user ?? null);
+        
+        if (currentSession?.user) {
+          // Buscar dados do perfil
           const { data: profileData, error } = await supabase
             .from('profiles')
             .select('*')
@@ -94,7 +137,7 @@ const AuthProvider = ({ children }: { children: ReactNode }) => {
               trialEndsAt: profileData.trial_ends_at ? new Date(profileData.trial_ends_at) : null,
               subscriptionActive: profileData.subscription_active
             });
-
+            
             // Salvar no localStorage
             localStorage.setItem('profileComplete', profileData.is_profile_complete.toString());
             localStorage.setItem('firstLogin', 'false');
@@ -104,47 +147,15 @@ const AuthProvider = ({ children }: { children: ReactNode }) => {
             }
             localStorage.setItem('subscriptionActive', profileData.subscription_active.toString());
           }
-        }, 0);
-      }
-    });
-
-    // Verificar sessão atual
-    supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
-      setSession(currentSession);
-      setUser(currentSession?.user ?? null);
-      
-      if (currentSession?.user) {
-        // Buscar dados do perfil
-        supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', currentSession.user.id)
-          .single()
-          .then(({ data: profileData, error }) => {
-            if (profileData && !error) {
-              setEstablishmentName(profileData.establishment_name);
-              setProfileState({
-                isProfileComplete: profileData.is_profile_complete,
-                isFirstLogin: false,
-                trialEndsAt: profileData.trial_ends_at ? new Date(profileData.trial_ends_at) : null,
-                subscriptionActive: profileData.subscription_active
-              });
-              
-              // Salvar no localStorage
-              localStorage.setItem('profileComplete', profileData.is_profile_complete.toString());
-              localStorage.setItem('firstLogin', 'false');
-              localStorage.setItem('establishmentName', profileData.establishment_name);
-              if (profileData.trial_ends_at) {
-                localStorage.setItem('trialEndsAt', profileData.trial_ends_at);
-              }
-              localStorage.setItem('subscriptionActive', profileData.subscription_active.toString());
-            }
-            setIsLoading(false);
-          });
-      } else {
+        }
+      } catch (err) {
+        console.error("Erro ao verificar sessão:", err);
+      } finally {
         setIsLoading(false);
       }
-    });
+    }
+    
+    getInitialSession();
 
     return () => {
       subscription.unsubscribe();

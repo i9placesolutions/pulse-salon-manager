@@ -1,3 +1,4 @@
+
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -7,11 +8,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/components/ui/use-toast";
-import { MapPin, Phone, Mail, Instagram, Facebook, MessageSquare, Upload, Copy, QrCode, Eye, MessageCircle, Building, Building2, MapPinned, User, AlertCircle } from "lucide-react";
+import { MapPin, Phone, Mail, Instagram, Facebook, MessageSquare, Upload, Building, Building2, MapPinned, User, AlertCircle } from "lucide-react";
 import { PageLayout } from "@/components/shared/PageLayout";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { useAppState } from "@/contexts/AppStateContext";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { supabase } from "@/integrations/supabase/client";
 
 interface EstablishmentProfile {
   name: string;
@@ -45,28 +47,28 @@ interface EstablishmentProfile {
 }
 
 const defaultProfile: EstablishmentProfile = {
-  name: "Meu Salão",
+  name: "",
   documentType: 'cnpj',
   documentNumber: "",
   address: {
-    street: "Rua Exemplo",
-    number: "123",
-    complement: "Sala 101",
-    neighborhood: "Centro",
-    city: "São Paulo",
-    state: "SP",
-    zipCode: "01001-000",
+    street: "",
+    number: "",
+    complement: "",
+    neighborhood: "",
+    city: "",
+    state: "",
+    zipCode: "",
     latitude: "",
     longitude: ""
   },
-  whatsapp: "(11) 99999-9999",
-  email: "contato@meusalao.com.br",
-  instagram: "meusalao",
-  facebook: "meusalao",
-  tiktok: "meusalao",
+  whatsapp: "",
+  email: "",
+  instagram: "",
+  facebook: "",
+  tiktok: "",
   logo: "",
-  description: "Bem-vindo ao nosso salão! Oferecemos serviços de alta qualidade para cuidar da sua beleza.",
-  customUrl: "meu-salao",
+  description: "",
+  customUrl: "",
   primaryColor: "#1e40af",
   responsible: {
     name: "",
@@ -83,6 +85,62 @@ export default function EstablishmentProfile() {
   const { toast } = useToast();
   const { establishmentName, setEstablishmentName, profileState, updateProfileCompletion } = useAppState();
   const [missingFields, setMissingFields] = useState<string[]>([]);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Verificar usuário autenticado e buscar dados do perfil
+  useEffect(() => {
+    const checkAuth = async () => {
+      setIsLoading(true);
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session?.user) {
+        setUserId(session.user.id);
+        
+        try {
+          const { data, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', session.user.id)
+            .single();
+            
+          if (error) {
+            console.error("Erro ao buscar perfil:", error);
+            toast({
+              variant: "destructive",
+              title: "Erro ao carregar perfil",
+              description: "Não foi possível carregar os dados do seu perfil.",
+            });
+          } else if (data) {
+            // Se já tiver dados salvos no perfil, preencher os campos
+            if (data.establishment_name) {
+              setProfile(prev => ({ 
+                ...prev, 
+                name: data.establishment_name 
+              }));
+            }
+            
+            // Se houver mais dados do perfil salvos em um campo JSON, poderíamos carregá-los aqui
+            // Por exemplo: if (data.profile_data) { setProfile(JSON.parse(data.profile_data)); }
+          }
+        } catch (error) {
+          console.error("Erro ao processar perfil:", error);
+        }
+      } else {
+        // Usuário não está autenticado, redirecionar para login
+        navigate("/");
+        toast({
+          variant: "destructive",
+          title: "Sessão expirada",
+          description: "Por favor, faça login para acessar esta página.",
+        });
+      }
+      
+      setIsLoading(false);
+    };
+
+    checkAuth();
+  }, [navigate, toast]);
 
   // Atualizar o nome do estabelecimento a partir do contexto
   useEffect(() => {
@@ -250,7 +308,16 @@ export default function EstablishmentProfile() {
     window.open(`https://wa.me/55${number}`, '_blank');
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
+    if (!userId) {
+      toast({
+        variant: "destructive",
+        title: "Erro de autenticação",
+        description: "Você precisa estar logado para salvar seu perfil.",
+      });
+      return;
+    }
+    
     const isComplete = checkProfileCompletion();
     
     if (!isComplete) {
@@ -262,23 +329,50 @@ export default function EstablishmentProfile() {
       return;
     }
     
-    // Atualizar o nome do estabelecimento no contexto global
-    setEstablishmentName(profile.name);
+    setIsLoading(true);
     
-    // Marcar o perfil como completo
-    updateProfileCompletion(true);
-    
-    // Mostrar mensagem de sucesso
-    toast({
-      title: "Perfil salvo com sucesso!",
-      description: `Bem-vindo ao ${profile.name}! Você será redirecionado para o dashboard.`,
-      duration: 5000,
-    });
-    
-    // Redirecionar para o dashboard após um breve delay
-    setTimeout(() => {
-      navigate("/dashboard");
-    }, 3000);
+    try {
+      // Salvar os dados básicos do perfil
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({
+          establishment_name: profile.name,
+          is_profile_complete: true,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', userId);
+
+      if (updateError) throw updateError;
+
+      // Poderia salvar os dados completos do perfil em um campo JSON adicional na tabela profiles
+      // Por exemplo: profile_data: JSON.stringify(profile)
+      
+      // Atualizar o nome do estabelecimento no contexto global
+      setEstablishmentName(profile.name);
+      
+      // Marcar o perfil como completo
+      updateProfileCompletion(true);
+      
+      // Mostrar mensagem de sucesso
+      toast({
+        title: "Perfil salvo com sucesso!",
+        description: `Bem-vindo ao ${profile.name}! Você será redirecionado para o dashboard.`,
+        duration: 5000,
+      });
+      
+      // Redirecionar para o dashboard após um breve delay
+      setTimeout(() => {
+        navigate("/dashboard");
+      }, 3000);
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao salvar perfil",
+        description: error.message || "Ocorreu um erro ao salvar seu perfil. Tente novamente.",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Função para atualizar campos de endereço
@@ -291,6 +385,16 @@ export default function EstablishmentProfile() {
       }
     });
   };
+
+  if (isLoading) {
+    return (
+      <PageLayout variant="blue">
+        <div className="flex items-center justify-center h-96">
+          <div className="h-12 w-12 animate-spin rounded-full border-4 border-solid border-blue-600 border-t-transparent"></div>
+        </div>
+      </PageLayout>
+    );
+  }
 
   return (
     <PageLayout variant="blue">
