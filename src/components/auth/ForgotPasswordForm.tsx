@@ -1,8 +1,10 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
 import { Mail, Loader2, ArrowRight } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 const ForgotPasswordForm = () => {
   const [email, setEmail] = useState("");
@@ -14,17 +16,24 @@ const ForgotPasswordForm = () => {
     setIsLoading(true);
 
     try {
-      // To be implemented with Supabase
-      console.log("Password recovery attempt", { email });
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: window.location.origin + '/reset-password',
+      });
+
+      if (error) throw error;
+      
       toast({
         title: "E-mail enviado",
         description: "Verifique sua caixa de entrada para redefinir sua senha.",
+        variant: "success",
+        className: "shadow-xl"
       });
-    } catch (error) {
+    } catch (error: any) {
       toast({
         variant: "destructive",
         title: "Erro ao enviar e-mail",
-        description: "Por favor, verifique o endereço e tente novamente.",
+        description: error.message || "Por favor, verifique o endereço e tente novamente.",
+        className: "shadow-xl"
       });
     } finally {
       setIsLoading(false);

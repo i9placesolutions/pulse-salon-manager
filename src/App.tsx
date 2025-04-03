@@ -1,9 +1,10 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
-import { lazy, Suspense, ReactNode } from "react";
+import { lazy, Suspense, ReactNode, useEffect, useState } from "react";
 import AppLayout from "./components/layout/AppLayout";
 import Index from "./pages/Index";
 import Register from "./pages/Register";
@@ -13,6 +14,8 @@ import Privacy from "./pages/Privacy";
 import NotFound from "./pages/NotFound";
 import { SpecialtiesProvider } from "./contexts/SpecialtiesContext";
 import { AppStateProvider, useAppState } from "./contexts/AppStateContext";
+import { supabase } from "@/integrations/supabase/client";
+import { User, Session } from '@supabase/supabase-js';
 
 // Componente de carregamento
 const Loading = () => (
@@ -46,6 +49,115 @@ interface ProtectedRouteProps {
   requireActiveSubscription?: boolean;
 }
 
+// Contexto para autenticação
+const AuthProvider = ({ children }: { children: ReactNode }) => {
+  const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const { setProfileState, setEstablishmentName } = useAppState();
+
+  useEffect(() => {
+    // Configurar listener de mudança de autenticação
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, currentSession) => {
+      setSession(currentSession);
+      setUser(currentSession?.user ?? null);
+      
+      // Se ocorrer logout, limpar os dados de perfil
+      if (event === 'SIGNED_OUT') {
+        setProfileState({
+          isProfileComplete: false,
+          isFirstLogin: true,
+          trialEndsAt: null,
+          subscriptionActive: false
+        });
+        localStorage.removeItem('profileComplete');
+        localStorage.removeItem('firstLogin');
+        localStorage.removeItem('trialEndsAt');
+        localStorage.removeItem('subscriptionActive');
+        localStorage.removeItem('establishmentName');
+      }
+
+      // Quando o usuário fizer login, buscar os dados do perfil
+      if (event === 'SIGNED_IN' && currentSession) {
+        setTimeout(async () => {
+          const { data: profileData, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', currentSession.user.id)
+            .single();
+
+          if (profileData && !error) {
+            setEstablishmentName(profileData.establishment_name);
+            setProfileState({
+              isProfileComplete: profileData.is_profile_complete,
+              isFirstLogin: false,
+              trialEndsAt: profileData.trial_ends_at ? new Date(profileData.trial_ends_at) : null,
+              subscriptionActive: profileData.subscription_active
+            });
+
+            // Salvar no localStorage
+            localStorage.setItem('profileComplete', profileData.is_profile_complete.toString());
+            localStorage.setItem('firstLogin', 'false');
+            localStorage.setItem('establishmentName', profileData.establishment_name);
+            if (profileData.trial_ends_at) {
+              localStorage.setItem('trialEndsAt', profileData.trial_ends_at);
+            }
+            localStorage.setItem('subscriptionActive', profileData.subscription_active.toString());
+          }
+        }, 0);
+      }
+    });
+
+    // Verificar sessão atual
+    supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
+      setSession(currentSession);
+      setUser(currentSession?.user ?? null);
+      
+      if (currentSession?.user) {
+        // Buscar dados do perfil
+        supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', currentSession.user.id)
+          .single()
+          .then(({ data: profileData, error }) => {
+            if (profileData && !error) {
+              setEstablishmentName(profileData.establishment_name);
+              setProfileState({
+                isProfileComplete: profileData.is_profile_complete,
+                isFirstLogin: false,
+                trialEndsAt: profileData.trial_ends_at ? new Date(profileData.trial_ends_at) : null,
+                subscriptionActive: profileData.subscription_active
+              });
+              
+              // Salvar no localStorage
+              localStorage.setItem('profileComplete', profileData.is_profile_complete.toString());
+              localStorage.setItem('firstLogin', 'false');
+              localStorage.setItem('establishmentName', profileData.establishment_name);
+              if (profileData.trial_ends_at) {
+                localStorage.setItem('trialEndsAt', profileData.trial_ends_at);
+              }
+              localStorage.setItem('subscriptionActive', profileData.subscription_active.toString());
+            }
+            setIsLoading(false);
+          });
+      } else {
+        setIsLoading(false);
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  if (isLoading) {
+    return <Loading />;
+  }
+
+  return <>{children}</>;
+};
+
 // Componente para proteção de rotas
 const ProtectedRoute = ({ 
   children, 
@@ -54,6 +166,33 @@ const ProtectedRoute = ({
 }: ProtectedRouteProps) => {
   const { profileState } = useAppState();
   const location = useLocation();
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    // Verificar se o usuário está autenticado
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      setIsLoading(false);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  if (isLoading) {
+    return <Loading />;
+  }
+
+  // Verificar se o usuário está autenticado
+  if (!user) {
+    return <Navigate to="/" state={{ from: location }} replace />;
+  }
 
   // Se o perfil não estiver completo e a rota exigir perfil completo
   if (requireCompleteProfile && !profileState.isProfileComplete) {
@@ -79,14 +218,61 @@ const ProtectedRoute = ({
   return <>{children}</>;
 };
 
+// Rota pública - redirecionar para o dashboard se o usuário já estiver logado
+const PublicRoute = ({ children }: { children: ReactNode }) => {
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const { profileState } = useAppState();
+  
+  useEffect(() => {
+    // Verificar se o usuário está autenticado
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      setIsLoading(false);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  if (isLoading) {
+    return <Loading />;
+  }
+
+  // Se o usuário estiver autenticado, redirecionar com base no estado do perfil
+  if (user) {
+    // Se o perfil não estiver completo, redirecionar para perfil
+    if (!profileState.isProfileComplete) {
+      return <Navigate to="/establishment-profile" replace />;
+    }
+
+    // Se a assinatura estiver expirada e não estiver mais no período de teste
+    const today = new Date();
+    if (!profileState.subscriptionActive && profileState.trialEndsAt && today > profileState.trialEndsAt) {
+      return <Navigate to="/mensalidade" replace />;
+    }
+
+    // Caso contrário, redirecionar para o dashboard
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  // Se não estiver autenticado, mostrar a página pública
+  return <>{children}</>;
+};
+
 // Aplicação principal
 const AppRoutes = () => (
   <BrowserRouter>
     <Routes>
       {/* Auth routes */}
-      <Route path="/" element={<Index />} />
-      <Route path="/register" element={<Register />} />
-      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/" element={<PublicRoute><Index /></PublicRoute>} />
+      <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
+      <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
       <Route path="/terms" element={<Terms />} />
       <Route path="/privacy" element={<Privacy />} />
       
@@ -256,9 +442,11 @@ const App = () => (
     <AppStateProvider>
       <TooltipProvider>
         <SpecialtiesProvider>
-          <Toaster />
-          <Sonner />
-          <AppRoutes />
+          <AuthProvider>
+            <Toaster />
+            <Sonner />
+            <AppRoutes />
+          </AuthProvider>
         </SpecialtiesProvider>
       </TooltipProvider>
     </AppStateProvider>

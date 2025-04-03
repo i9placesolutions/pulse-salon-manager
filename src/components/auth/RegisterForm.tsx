@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -5,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
 import { Mail, Lock, User, Loader2, Eye, EyeOff, UserPlus, Check } from "lucide-react";
 import { useAppState } from "@/contexts/AppStateContext";
+import { supabase } from "@/integrations/supabase/client";
 
 const RegisterForm = () => {
   const [fullName, setFullName] = useState("");
@@ -46,8 +48,23 @@ const RegisterForm = () => {
 
     setIsLoading(true);
     try {
-      // Atualizando estado do contexto
+      // Criar estabelecimento a partir do nome fornecido
       const establishmentNameFromFullName = fullName.split(' ')[0] + ' Salão';
+      
+      // Criar usuário no Supabase
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            establishment_name: establishmentNameFromFullName,
+          }
+        }
+      });
+
+      if (error) throw error;
+      
+      // Atualizar estado do contexto
       setEstablishmentName(establishmentNameFromFullName);
       
       // Definir como primeiro login
@@ -57,24 +74,27 @@ const RegisterForm = () => {
         isProfileComplete: false
       }));
       
-      // Simulando um delay para processamento do backend
-      setTimeout(() => {
-        setIsLoading(false);
-        
-        // Redireciona para a página de perfil do estabelecimento
-        navigate("/establishment-profile");
-        
-        toast({
-          title: "Conta criada com sucesso!",
-          description: "Por favor, complete seu perfil para continuar.",
-        });
-      }, 1500);
-    } catch (error) {
+      // Salvar no localStorage
+      localStorage.setItem('firstLogin', 'true');
+      localStorage.setItem('profileComplete', 'false');
+      localStorage.setItem('establishmentName', establishmentNameFromFullName);
+      
+      // Redirecionar para a página de perfil do estabelecimento
+      navigate("/establishment-profile");
+      
+      toast({
+        title: "Conta criada com sucesso!",
+        description: "Por favor, complete seu perfil para continuar.",
+        variant: "success",
+        className: "shadow-xl"
+      });
+    } catch (error: any) {
       setIsLoading(false);
       toast({
         variant: "destructive",
         title: "Erro ao criar conta",
-        description: "Por favor, tente novamente mais tarde.",
+        description: error.message || "Por favor, tente novamente mais tarde.",
+        className: "shadow-xl"
       });
     }
   };

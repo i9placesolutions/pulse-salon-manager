@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -5,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
 import { Mail, Lock, Loader2, LogIn, Check } from "lucide-react";
 import { useAppState } from "@/contexts/AppStateContext";
+import { supabase } from "@/integrations/supabase/client";
 
 const LoginForm = () => {
   const [email, setEmail] = useState("");
@@ -13,38 +15,72 @@ const LoginForm = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { profileState, establishmentName } = useAppState();
+  const { profileState, setProfileState, establishmentName, setEstablishmentName } = useAppState();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
-      // Simular login (a ser implementado com backend real)
-      setTimeout(() => {
-        // Verificar para onde redirecionar com base no estado do perfil/assinatura
-        redirectAfterLogin();
-      }, 1500);
-    } catch (error) {
+      // Fazer login com Supabase
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+
+      if (error) throw error;
+
+      // Buscar dados do perfil do usuário
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', data.user.id)
+        .single();
+
+      if (profileError) throw profileError;
+
+      // Atualizar estado do contexto com os dados do perfil
+      setEstablishmentName(profileData.establishment_name);
+      setProfileState({
+        isProfileComplete: profileData.is_profile_complete,
+        isFirstLogin: false,
+        trialEndsAt: profileData.trial_ends_at ? new Date(profileData.trial_ends_at) : null,
+        subscriptionActive: profileData.subscription_active
+      });
+
+      // Salvar no localStorage
+      localStorage.setItem('profileComplete', profileData.is_profile_complete.toString());
+      localStorage.setItem('firstLogin', 'false');
+      localStorage.setItem('establishmentName', profileData.establishment_name);
+      if (profileData.trial_ends_at) {
+        localStorage.setItem('trialEndsAt', profileData.trial_ends_at);
+      }
+      localStorage.setItem('subscriptionActive', profileData.subscription_active.toString());
+
+      // Redirecionar com base no estado do perfil
+      redirectAfterLogin(profileData);
+      
+    } catch (error: any) {
       setIsLoading(false);
       toast({
         variant: "destructive",
         title: "Erro ao fazer login",
-        description: "Por favor, verifique suas credenciais e tente novamente.",
+        description: error.message || "Por favor, verifique suas credenciais e tente novamente.",
         className: "shadow-xl animate-shake"
       });
     }
   };
 
   // Função para redirecionar com base no estado do perfil e da assinatura
-  const redirectAfterLogin = () => {
+  const redirectAfterLogin = (profileData: any) => {
     // Se o perfil estiver completo
-    if (profileState.isProfileComplete) {
+    if (profileData.is_profile_complete) {
       // Verificar se a assinatura está ativa ou se ainda está no período de teste
       const today = new Date();
+      const trialEndsAt = profileData.trial_ends_at ? new Date(profileData.trial_ends_at) : null;
       
       // Se o período de teste acabou e não tem assinatura ativa
-      if (!profileState.subscriptionActive && profileState.trialEndsAt && today > profileState.trialEndsAt) {
+      if (!profileData.subscription_active && trialEndsAt && today > trialEndsAt) {
         navigate("/mensalidade");
         toast({
           title: "Período de teste encerrado",
@@ -57,11 +93,11 @@ const LoginForm = () => {
         navigate("/dashboard");
         
         // Se estiver no período de teste, mostrar mensagem com dias restantes
-        if (!profileState.subscriptionActive && profileState.trialEndsAt && today <= profileState.trialEndsAt) {
-          const daysLeft = Math.ceil((profileState.trialEndsAt.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+        if (!profileData.subscription_active && trialEndsAt && today <= trialEndsAt) {
+          const daysLeft = Math.ceil((trialEndsAt.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
           
           toast({
-            title: `Bem-vindo ao ${establishmentName}`,
+            title: `Bem-vindo ao ${profileData.establishment_name}`,
             description: `Você está no período de teste. Restam ${daysLeft} dias.`,
             variant: "info",
             className: "shadow-xl"
@@ -69,7 +105,7 @@ const LoginForm = () => {
         } else {
           // Usuário com assinatura ativa
           toast({
-            title: `Bem-vindo ao ${establishmentName}`,
+            title: `Bem-vindo ao ${profileData.establishment_name}`,
             description: "Login realizado com sucesso!",
             variant: "success",
             className: "shadow-xl"
@@ -88,19 +124,6 @@ const LoginForm = () => {
     }
     
     setIsLoading(false);
-  };
-
-  const handleTestLogin = () => {
-    setIsLoading(true);
-    // Usar a mesma lógica de redirecionamento
-    setTimeout(() => {
-      redirectAfterLogin();
-    }, 1000);
-  };
-
-  const handleQuickFill = () => {
-    setEmail("teste@pulse.com");
-    setPassword("123456");
   };
 
   return (
@@ -181,33 +204,6 @@ const LoginForm = () => {
               <LogIn className="h-4 w-4 mr-2" /> Entrar
             </>
           )}
-        </Button>
-      </div>
-
-      <div className="relative">
-        <div className="absolute inset-0 flex items-center">
-          <span className="w-full border-t border-gray-200" />
-        </div>
-        <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-white px-2 text-gray-500">Acesso rápido</span>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-3">
-        <Button
-          type="button"
-          variant="outline"
-          className="bg-blue-50/50 hover:bg-blue-50 text-blue-700 border border-blue-200 hover:border-blue-300 font-medium rounded-lg transition-all duration-200 text-sm"
-          onClick={handleQuickFill}
-        >
-          Preencher Demo
-        </Button>
-        <Button
-          type="button"
-          className="bg-indigo-50/50 hover:bg-indigo-50 text-indigo-700 border border-indigo-200 hover:border-indigo-300 font-medium rounded-lg transition-all duration-200 text-sm"
-          onClick={handleTestLogin}
-        >
-          Acessar Demo
         </Button>
       </div>
     </form>
