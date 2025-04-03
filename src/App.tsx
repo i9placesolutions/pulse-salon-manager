@@ -9,7 +9,6 @@ import Dashboard from './pages/Dashboard';
 import Clientes from './pages/Clientes';
 import Servicos from './pages/Servicos';
 import Profissionais from './pages/Profissionais';
-import Agenda from './pages/Agenda';
 import Financeiro from './pages/Financeiro';
 import Configuracoes from './pages/Configuracoes';
 import ProfissionalDashboard from './pages/ProfissionalDashboard';
@@ -55,11 +54,6 @@ function App() {
           <Route path="/profissionais" element={
             <AuthRedirect>
               <Profissionais />
-            </AuthRedirect>
-          } />
-          <Route path="/agenda" element={
-            <AuthRedirect>
-              <Agenda />
             </AuthRedirect>
           } />
           <Route path="/financeiro" element={
