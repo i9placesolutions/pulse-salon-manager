@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -8,10 +7,9 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/components/ui/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { ExclamationTriangleIcon, EyeIcon, EyeOffIcon } from "@radix-ui/react-icons";
+import { ExclamationTriangleIcon } from "@radix-ui/react-icons";
+import { Eye, EyeOff, LogIn, UserPlus, Lock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { User, Session } from '@supabase/supabase-js';
-import { LogIn, UserPlus, Lock } from 'lucide-react';
 
 export default function Auth() {
   const [email, setEmail] = useState("");
@@ -58,14 +56,12 @@ export default function Auth() {
       if (error) throw error;
 
       if (data?.user) {
-        // Obter perfil do usuário
         const { data: profileData } = await supabase
           .from('profiles')
           .select('*')
           .eq('id', data.user.id)
           .single();
 
-        // Verificar o tipo de usuário e redirecionar
         if (profileData?.user_type === 'professional') {
           navigate('/profissional-dashboard');
         } else {
@@ -124,7 +120,6 @@ export default function Auth() {
         description: "Verifique seu e-mail para confirmar o cadastro.",
       });
       
-      // Mudar para a aba de login
       setTab("login");
     } catch (error: any) {
       console.error("Erro ao criar conta:", error);
@@ -249,9 +244,9 @@ export default function Auth() {
                         onClick={() => setPasswordVisible(!passwordVisible)}
                       >
                         {passwordVisible ? (
-                          <EyeOffIcon className="h-4 w-4" />
+                          <EyeOff className="h-4 w-4" />
                         ) : (
-                          <EyeIcon className="h-4 w-4" />
+                          <Eye className="h-4 w-4" />
                         )}
                       </Button>
                     </div>
@@ -312,9 +307,9 @@ export default function Auth() {
                         onClick={() => setPasswordVisible(!passwordVisible)}
                       >
                         {passwordVisible ? (
-                          <EyeOffIcon className="h-4 w-4" />
+                          <EyeOff className="h-4 w-4" />
                         ) : (
-                          <EyeIcon className="h-4 w-4" />
+                          <Eye className="h-4 w-4" />
                         )}
                       </Button>
                     </div>
