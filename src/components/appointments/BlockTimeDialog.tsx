@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Calendar, Clock, AlertCircle, X, Ban, CheckCircle2, Calendar as CalendarIcon, User } from "lucide-react";
+import { Calendar, Clock, AlertCircle, X, Ban, CheckCircle2, Calendar as CalendarIcon, User, Plus, Trash2 } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -19,8 +19,11 @@ import {
 } from "@/components/ui/sheet";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Card } from "@/components/ui/card";
 
-export interface BlockTimeFormData {
+export interface BlockTimeData {
+  id?: number;
   startDate: string;
   endDate: string;
   startTime: string;
@@ -33,18 +36,22 @@ export interface BlockTimeFormData {
 interface BlockTimeDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onConfirm: (blockData: BlockTimeFormData) => void;
+  onConfirm: (blockData: BlockTimeData) => void;
   professionals?: { id: number; name: string }[];
+  existingBlocks?: BlockTimeData[];
+  onDeleteBlock?: (id: number) => void;
 }
 
 export const BlockTimeDialog = ({ 
   open, 
   onOpenChange, 
   onConfirm,
-  professionals = [] 
+  professionals = [],
+  existingBlocks = [],
+  onDeleteBlock
 }: BlockTimeDialogProps) => {
   const { toast } = useToast();
-  const [formData, setFormData] = useState<BlockTimeFormData>({
+  const [formData, setFormData] = useState<BlockTimeData>({
     startDate: format(new Date(), "yyyy-MM-dd"),
     endDate: format(new Date(), "yyyy-MM-dd"),
     startTime: "09:00",
@@ -53,6 +60,10 @@ export const BlockTimeDialog = ({
     professionalId: null,
     blockFullDay: false
   });
+  
+  // Adicionei bloqueios temporários para salvar múltiplos bloqueios
+  const [temporaryBlocks, setTemporaryBlocks] = useState<BlockTimeData[]>([]);
+  
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   // Validação dos campos
@@ -95,6 +106,7 @@ export const BlockTimeDialog = ({
         startTime: false,
         endTime: false
       });
+      setTemporaryBlocks([]);
       setIsSubmitting(false);
     }
   }, [open]);
@@ -122,7 +134,7 @@ export const BlockTimeDialog = ({
     }
   };
   
-  const handleFieldChange = (field: keyof typeof formData, value: any) => {
+  const handleFieldChange = (field: keyof BlockTimeData, value: any) => {
     // Atualiza o estado do formulário
     setFormData(prev => ({ ...prev, [field]: value }));
     
@@ -177,8 +189,76 @@ export const BlockTimeDialog = ({
            !formErrors.endTime;
   };
 
+  const addTemporaryBlock = () => {
+    // Validação básica antes de adicionar
+    if (!isFormValid()) {
+      // Marcar todos os campos como tocados para mostrar erros
+      setTouched({
+        startDate: true,
+        endDate: true,
+        startTime: true,
+        endTime: true
+      });
+      return;
+    }
+    
+    // Adicionar o bloco atual à lista temporária
+    const newBlock: BlockTimeData = {
+      ...formData,
+      id: Date.now() // ID temporário
+    };
+    
+    setTemporaryBlocks(prev => [...prev, newBlock]);
+    
+    // Resetar o formulário para um novo bloqueio
+    setFormData({
+      startDate: format(new Date(), "yyyy-MM-dd"),
+      endDate: format(new Date(), "yyyy-MM-dd"),
+      startTime: "09:00",
+      endTime: "18:00",
+      reason: "",
+      professionalId: null,
+      blockFullDay: false
+    });
+    
+    setTouched({
+      startDate: false,
+      endDate: false,
+      startTime: false,
+      endTime: false
+    });
+    
+    toast({
+      title: "Horário adicionado",
+      description: "O bloqueio foi adicionado à lista. Você pode adicionar mais ou salvar.",
+    });
+  };
+  
+  const removeTemporaryBlock = (id: number) => {
+    setTemporaryBlocks(prev => prev.filter(block => block.id !== id));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Se temos bloqueios temporários, vamos salvar todos eles
+    if (temporaryBlocks.length > 0) {
+      setIsSubmitting(true);
+      
+      // Simulando uma chamada API para cada bloco
+      await Promise.all(temporaryBlocks.map(block => 
+        new Promise(resolve => setTimeout(() => {
+          onConfirm(block);
+          resolve(null);
+        }, 300))
+      ));
+      
+      setIsSubmitting(false);
+      onOpenChange(false);
+      return;
+    }
+    
+    // Se não temos bloqueios temporários, validamos o formulário atual
     setIsSubmitting(true);
     
     // Validar todos os campos
@@ -221,6 +301,13 @@ export const BlockTimeDialog = ({
     setIsSubmitting(false);
     onOpenChange(false);
   };
+  
+  // Formatar o nome do profissional de acordo com o ID
+  const getProfessionalName = (id: number | null | undefined) => {
+    if (!id) return "Bloqueio Geral";
+    const professional = professionals.find(p => p.id === id);
+    return professional ? professional.name : "Profissional Desconhecido";
+  };
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -239,14 +326,14 @@ export const BlockTimeDialog = ({
               </SheetClose>
             </div>
             <SheetDescription className="text-blue-100">
-              Selecione o período em que o não aceitará agendamentos.
+              Selecione o período em que não aceitará agendamentos.
             </SheetDescription>
           </SheetHeader>
         </div>
         
         {/* Conteúdo rolável */}
-        <div className="flex-1 overflow-y-auto bg-white p-6">
-          <form onSubmit={handleSubmit} className="space-y-6">
+        <ScrollArea className="flex-1 overflow-y-auto bg-white p-6">
+          <form onSubmit={(e) => e.preventDefault()} className="space-y-6">
             {/* Tipo de bloqueio: Geral ou Profissional específico */}
             <div className="space-y-4">
               <div className="space-y-2">
@@ -424,9 +511,103 @@ export const BlockTimeDialog = ({
                   onChange={(e) => setFormData(prev => ({ ...prev, reason: e.target.value }))}
                 />
               </div>
+              
+              {/* Botão para adicionar mais um bloqueio */}
+              <Button
+                type="button"
+                variant="outline"
+                onClick={addTemporaryBlock}
+                disabled={!isFormValid()}
+                className="w-full mt-4 gap-2"
+              >
+                <Plus className="h-4 w-4" />
+                Adicionar este bloqueio à lista
+              </Button>
             </div>
+            
+            {/* Lista de bloqueios temporários */}
+            {temporaryBlocks.length > 0 && (
+              <div className="space-y-4 mt-6">
+                <h3 className="text-lg font-medium border-b pb-2">Bloqueios a serem salvos</h3>
+                <div className="space-y-3">
+                  {temporaryBlocks.map((block) => (
+                    <Card key={block.id} className="p-3">
+                      <div className="flex justify-between items-start">
+                        <div className="space-y-1">
+                          <div className="font-medium">{getProfessionalName(block.professionalId)}</div>
+                          <div className="text-sm text-muted-foreground">
+                            {format(new Date(block.startDate), "dd/MM/yyyy")}
+                            {block.startDate !== block.endDate && ` até ${format(new Date(block.endDate), "dd/MM/yyyy")}`}
+                          </div>
+                          {block.blockFullDay ? (
+                            <div className="text-xs bg-blue-100 text-blue-800 rounded-full px-2 py-0.5 inline-block">
+                              Dia inteiro
+                            </div>
+                          ) : (
+                            <div className="text-sm">
+                              {block.startTime} - {block.endTime}
+                            </div>
+                          )}
+                          {block.reason && <div className="text-sm italic">"{block.reason}"</div>}
+                        </div>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="h-8 w-8 p-0 text-destructive"
+                          onClick={() => block.id && removeTemporaryBlock(block.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {/* Lista de bloqueios existentes */}
+            {existingBlocks && existingBlocks.length > 0 && (
+              <div className="space-y-4 mt-6">
+                <h3 className="text-lg font-medium border-b pb-2">Bloqueios Existentes</h3>
+                <div className="space-y-3">
+                  {existingBlocks.map((block) => (
+                    <Card key={block.id} className="p-3 bg-gray-50">
+                      <div className="flex justify-between items-start">
+                        <div className="space-y-1">
+                          <div className="font-medium">{getProfessionalName(block.professionalId)}</div>
+                          <div className="text-sm text-muted-foreground">
+                            {format(new Date(block.startDate), "dd/MM/yyyy")}
+                            {block.startDate !== block.endDate && ` até ${format(new Date(block.endDate), "dd/MM/yyyy")}`}
+                          </div>
+                          {block.blockFullDay ? (
+                            <div className="text-xs bg-blue-100 text-blue-800 rounded-full px-2 py-0.5 inline-block">
+                              Dia inteiro
+                            </div>
+                          ) : (
+                            <div className="text-sm">
+                              {block.startTime} - {block.endTime}
+                            </div>
+                          )}
+                          {block.reason && <div className="text-sm italic">"{block.reason}"</div>}
+                        </div>
+                        {onDeleteBlock && block.id && (
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="h-8 w-8 p-0 text-destructive"
+                            onClick={() => onDeleteBlock(block.id!)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            )}
           </form>
-        </div>
+        </ScrollArea>
         
         {/* Rodapé fixo */}
         <div className="sticky bottom-0 mt-auto p-6 border-t bg-white shadow-sm">
@@ -445,7 +626,7 @@ export const BlockTimeDialog = ({
               type="submit" 
               className="gap-2"
               onClick={handleSubmit}
-              disabled={!isFormValid() || isSubmitting}
+              disabled={temporaryBlocks.length === 0 && !isFormValid() || isSubmitting}
             >
               {isSubmitting ? (
                 <>
@@ -455,7 +636,7 @@ export const BlockTimeDialog = ({
               ) : (
                 <>
                   <Ban className="h-4 w-4" />
-                  Confirmar Bloqueio
+                  Confirmar Bloqueio{temporaryBlocks.length > 0 ? "s" : ""}
                 </>
               )}
             </Button>
