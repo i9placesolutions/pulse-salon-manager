@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, forwardRef, useImperativeHandle, useEffect } from "react";
 import { 
   Card, 
   CardContent, 
@@ -41,7 +41,7 @@ type ConfiguracaoRelatorios = {
   horarioEnvio: string;
 };
 
-export function ConfigRelatorios() {
+export const ConfigRelatorios = forwardRef((props, ref) => {
   // Estado para todos os relatórios disponíveis no sistema
   const [relatoriosAutomaticos, setRelatoriosAutomaticos] = useState<RelatorioAutomatico[]>([
     // Relatórios Financeiros
@@ -137,6 +137,15 @@ export function ConfigRelatorios() {
       description: "As configurações de relatórios automáticos foram salvas com sucesso."
     });
   };
+  
+  // Expor o método getFormData para o componente pai
+  useImperativeHandle(ref, () => ({
+    getFormData: () => ({
+      configuracao,
+      destinatarios: configuracao.destinatarios,
+      relatorios: relatoriosAutomaticos.filter(r => r.ativo)
+    })
+  }));
   
   return (
     <div className="space-y-6">
@@ -314,4 +323,4 @@ export function ConfigRelatorios() {
       </div>
     </div>
   );
-}
+});

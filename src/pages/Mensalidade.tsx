@@ -156,6 +156,7 @@ export default function Mensalidade() {
   const [notificationPrefs, setNotificationPrefs] = useState(mockNotificationPreferences);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [asaasCustomerId, setAsaasCustomerId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { 
     profileState, 
@@ -221,9 +222,18 @@ export default function Mensalidade() {
           externalReference: `user_${profileState.isFirstLogin ? "trial" : "paid"}`,
         };
         
-        const customerResponse = await createCustomer(customerData);
-        customerId = customerResponse.id;
-        setAsaasCustomerId(customerId);
+        try {
+          const customerResponse = await createCustomer(customerData);
+          if (customerResponse.success && customerResponse.data) {
+            customerId = customerResponse.data.id;
+            setAsaasCustomerId(customerId);
+          } else {
+            throw new Error("Erro ao criar cliente no Asaas");
+          }
+        } catch (error) {
+          console.error("Erro ao criar cliente:", error);
+          throw new Error("Não foi possível criar o cliente para assinatura");
+        }
       }
 
       // Mapeia o método de pagamento para o formato do Asaas
@@ -284,10 +294,10 @@ export default function Mensalidade() {
       });
       
       // Se for boleto ou PIX, abre o link do documento ou código PIX
-      if (data.method === 'boleto' && subscriptionResponse.invoiceUrl) {
-        window.open(subscriptionResponse.invoiceUrl, '_blank');
-      } else if (data.method === 'pix' && subscriptionResponse.invoiceUrl) {
-        window.open(subscriptionResponse.invoiceUrl, '_blank');
+      if (data.method === 'boleto' && subscriptionResponse.data?.invoiceUrl) {
+        window.open(subscriptionResponse.data.invoiceUrl, '_blank');
+      } else if (data.method === 'pix' && subscriptionResponse.data?.invoiceUrl) {
+        window.open(subscriptionResponse.data.invoiceUrl, '_blank');
       }
       
       // Redireciona para o dashboard após sucesso
@@ -403,7 +413,6 @@ export default function Mensalidade() {
           <TabsTrigger 
             value="plans" 
             className="flex-1 flex items-center justify-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-indigo-600 data-[state=active]:text-white data-[state=inactive]:text-gray-600 transition-all duration-200 rounded-lg"
-            disabled={isTrialExpired() && !profileState.subscriptionActive}
           >
             <PackageOpen className="h-4 w-4" />
             <span className="font-medium">Planos</span>
@@ -505,7 +514,6 @@ export default function Mensalidade() {
                       plan.id === 'advanced' ? 'bg-gradient-to-r from-purple-600 to-fuchsia-600 hover:from-purple-700 hover:to-fuchsia-700 text-white border-0' : 
                       'bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white border-0'
                     }`}
-                    variant={plan.highlight ? "dashboard" : "dashboard-outline"}
                     onClick={() => handlePlanSelect(plan)}
                   >
                     Assinar Plano {plan.name}

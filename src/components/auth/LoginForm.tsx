@@ -17,7 +17,7 @@ const LoginForm = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { profileState, setProfileState, establishmentName, setEstablishmentName } = useAppState();
+  const { setProfileState, setEstablishmentName } = useAppState();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,6 +37,10 @@ const LoginForm = () => {
         throw error;
       }
 
+      // Verificar se é o primeiro login após confirmação do email
+      const isEmailJustConfirmed = data.user.email_confirmed_at && 
+        (new Date().getTime() - new Date(data.user.email_confirmed_at).getTime() < 3600000); // 1 hora
+
       // Buscar dados do perfil do usuário
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
@@ -46,31 +50,34 @@ const LoginForm = () => {
 
       if (profileError) throw profileError;
 
-      // Buscar dados de detalhes do estabelecimento
-      const { data: establishmentData, error: establishmentError } = await supabase
-        .from('establishment_details')
-        .select('*')
-        .eq('id', data.user.id)
-        .single();
-
-      // Não tratar como erro se não encontrar detalhes, só informações básicas são obrigatórias
-      if (establishmentError && establishmentError.code !== 'PGRST116') {
-        console.error("Erro ao buscar detalhes do estabelecimento:", establishmentError);
-      }
-
       if (profileData) {
         // Atualizar estado do contexto com os dados do perfil
         setEstablishmentName(profileData.establishment_name);
-        setProfileState({
-          isProfileComplete: profileData.is_profile_complete,
-          isFirstLogin: false,
-          trialEndsAt: profileData.trial_ends_at ? new Date(profileData.trial_ends_at) : null,
-          subscriptionActive: profileData.subscription_active
-        });
-
-        // Salvar no localStorage
-        localStorage.setItem('profileComplete', profileData.is_profile_complete.toString());
-        localStorage.setItem('firstLogin', 'false');
+        
+        // Se o email acabou de ser confirmado, definir como perfil incompleto
+        // para forçar o redirecionamento para a página de configurações
+        if (isEmailJustConfirmed) {
+          setProfileState({
+            isProfileComplete: false,
+            isFirstLogin: true,
+            trialEndsAt: profileData.trial_ends_at ? new Date(profileData.trial_ends_at) : null,
+            subscriptionActive: profileData.subscription_active
+          });
+          
+          localStorage.setItem('profileComplete', 'false');
+          localStorage.setItem('firstLogin', 'true');
+        } else {
+          setProfileState({
+            isProfileComplete: profileData.is_profile_complete,
+            isFirstLogin: false,
+            trialEndsAt: profileData.trial_ends_at ? new Date(profileData.trial_ends_at) : null,
+            subscriptionActive: profileData.subscription_active
+          });
+          
+          localStorage.setItem('profileComplete', profileData.is_profile_complete.toString());
+          localStorage.setItem('firstLogin', 'false');
+        }
+        
         localStorage.setItem('establishmentName', profileData.establishment_name);
         if (profileData.trial_ends_at) {
           localStorage.setItem('trialEndsAt', profileData.trial_ends_at);
@@ -78,7 +85,7 @@ const LoginForm = () => {
         localStorage.setItem('subscriptionActive', profileData.subscription_active.toString());
 
         // Redirecionar com base no estado do perfil
-        redirectAfterLogin(profileData);
+        redirectAfterLogin(profileData, isEmailJustConfirmed);
       }
       
     } catch (error: any) {
@@ -106,7 +113,20 @@ const LoginForm = () => {
   };
 
   // Função para redirecionar com base no estado do perfil e da assinatura
-  const redirectAfterLogin = (profileData: any) => {
+  const redirectAfterLogin = (profileData: any, isEmailJustConfirmed = false) => {
+    // Se o email acabou de ser confirmado, redirecionar para a página de configurações
+    if (isEmailJustConfirmed) {
+      navigate("/configuracoes");
+      toast({
+        title: "Email confirmado com sucesso!",
+        description: "Por favor, complete seu perfil para continuar.",
+        variant: "success",
+        className: "shadow-xl"
+      });
+      setIsLoading(false);
+      return;
+    }
+    
     // Se o perfil estiver completo
     if (profileData.is_profile_complete) {
       // Verificar se a assinatura está ativa ou se ainda está no período de teste
@@ -150,8 +170,8 @@ const LoginForm = () => {
         }
       }
     } else {
-      // Perfil incompleto, redirecionar para a página de perfil
-      navigate("/establishment-profile");
+      // Perfil incompleto, redirecionar para a página de configurações
+      navigate("/configuracoes");
       toast({
         title: "Complete seu perfil",
         description: "É necessário completar seu perfil para continuar.",
@@ -252,43 +272,44 @@ Se não foi você, entre em contato com o suporte imediatamente. 🔒`;
             />
           </div>
         </div>
-      </div>
 
-      <div className="flex items-center gap-2">
-        <div 
-          className={`w-4 h-4 rounded flex items-center justify-center cursor-pointer transition-all duration-200 border ${
-            rememberMe 
-              ? 'bg-indigo-600 border-indigo-600' 
-              : 'bg-white border-gray-300 hover:border-indigo-500'
-          }`}
-          onClick={() => setRememberMe(!rememberMe)}
-        >
-          {rememberMe && <Check className="h-3 w-3 text-white" />}
+        <div className="flex items-center justify-between mt-1">
+          <div className="flex items-center gap-2">
+            <div 
+              className={`w-4 h-4 rounded flex items-center justify-center cursor-pointer transition-all duration-200 border ${
+                rememberMe 
+                  ? 'bg-indigo-600 border-indigo-600' 
+                  : 'bg-white border-gray-300 hover:border-indigo-500'
+              }`}
+              onClick={() => setRememberMe(!rememberMe)}
+            >
+              {rememberMe && <Check className="h-3 w-3 text-white" />}
+            </div>
+            <label 
+              htmlFor="remember" 
+              className="text-sm text-gray-600 cursor-pointer select-none"
+              onClick={() => setRememberMe(!rememberMe)}
+            >
+              Lembrar-me
+            </label>
+          </div>
         </div>
-        <label 
-          htmlFor="remember" 
-          className="text-sm text-gray-600 cursor-pointer select-none"
-          onClick={() => setRememberMe(!rememberMe)}
-        >
-          Lembrar-me
-        </label>
       </div>
 
-      <div className="pt-2">
-        <Button
-          type="submit"
-          className="w-full bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white font-medium py-2.5 rounded-lg transition-all duration-300 flex items-center justify-center"
-          disabled={isLoading}
-        >
-          {isLoading ? (
-            <Loader2 className="h-5 w-5 animate-spin" />
-          ) : (
-            <>
-              <LogIn className="h-4 w-4 mr-2" /> Entrar
-            </>
-          )}
-        </Button>
-      </div>
+      <Button
+        type="submit"
+        className="w-full bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white font-medium py-2.5 rounded-lg transition-all duration-300 flex items-center justify-center gap-2"
+        disabled={isLoading}
+      >
+        {isLoading ? (
+          <Loader2 className="h-5 w-5 animate-spin" />
+        ) : (
+          <>
+            Entrar
+            <LogIn className="h-4 w-4" />
+          </>
+        )}
+      </Button>
     </form>
   );
 };

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, forwardRef, useImperativeHandle } from "react";
 import { Button } from "@/components/ui/button";
 import { 
   Card, 
@@ -25,7 +25,9 @@ import {
   FileText, 
   KeyRound, 
   ShieldAlert, 
-  FileBarChart 
+  FileBarChart,
+  Download,
+  Trash2
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -36,7 +38,55 @@ type HistoricoAcesso = {
   ip: string;
 };
 
-export function ConfigSeguranca() {
+// Interface para configurações de segurança
+interface ConfiguracoesSeguranca {
+  autenticacao: {
+    doisFatores: boolean;
+    senhasFortes: boolean;
+    bloqueioTentativas: boolean;
+    expiracaoSenha: boolean;
+    tempoExpiracaoSenha: string;
+    tempoInatividade: string;
+  };
+  privacidade: {
+    anonimizacaoDados: boolean;
+    termoConsentimento: boolean;
+    exclusaoAutomatica: boolean;
+    mascaramentoCartao: boolean;
+    periodoExclusao: string;
+  };
+  auditoria: {
+    registroAcessoDadosSensiveis: boolean;
+    alertaAcoesCriticas: boolean;
+    periodoRetencao: string;
+  };
+}
+
+export const ConfigSeguranca = forwardRef((props, ref) => {
+  // Estado para armazenar todas as configurações
+  const [configuracoes, setConfiguracoes] = useState<ConfiguracoesSeguranca>({
+    autenticacao: {
+      doisFatores: false,
+      senhasFortes: true,
+      bloqueioTentativas: true,
+      expiracaoSenha: false,
+      tempoExpiracaoSenha: '60',
+      tempoInatividade: '30'
+    },
+    privacidade: {
+      anonimizacaoDados: true,
+      termoConsentimento: true,
+      exclusaoAutomatica: false,
+      mascaramentoCartao: true,
+      periodoExclusao: '5'
+    },
+    auditoria: {
+      registroAcessoDadosSensiveis: true,
+      alertaAcoesCriticas: true,
+      periodoRetencao: '30'
+    }
+  });
+
   const [mostrarSenha, setMostrarSenha] = useState(false);
   const [limiteHistorico, setLimiteHistorico] = useState("30");
   const [historicoAcessos, setHistoricoAcessos] = useState<HistoricoAcesso[]>([
@@ -47,20 +97,112 @@ export function ConfigSeguranca() {
     { usuario: "Rafael Mendes", data: "08/03/2025 10:10", acao: "Alteração de configurações", ip: "179.125.87.34" },
   ]);
 
+  // Expor o método getFormData para o componente pai
+  useImperativeHandle(ref, () => ({
+    getFormData: () => ({
+      autenticacao: configuracoes.autenticacao,
+      privacidade: configuracoes.privacidade,
+      auditoria: configuracoes.auditoria,
+      historicoAcessos
+    })
+  }));
+
+  // Efeito para carregar configurações salvas (simulação)
+  useEffect(() => {
+    // Aqui seria feita uma chamada API para obter as configurações salvas
+    // Por enquanto, vamos simular com as configurações padrão
+    const configuracoesLocalStorage = localStorage.getItem('configuracoes-seguranca');
+    if (configuracoesLocalStorage) {
+      try {
+        const configsSalvas = JSON.parse(configuracoesLocalStorage);
+        setConfiguracoes(configsSalvas);
+        setLimiteHistorico(configsSalvas.auditoria.periodoRetencao);
+      } catch (error) {
+        console.error('Erro ao carregar configurações:', error);
+      }
+    }
+  }, []);
+
+  // Handler para atualizar as configurações de autenticação
+  const handleAutenticacaoChange = (campo: keyof ConfiguracoesSeguranca['autenticacao'], valor: any) => {
+    setConfiguracoes(prev => ({
+      ...prev,
+      autenticacao: {
+        ...prev.autenticacao,
+        [campo]: valor
+      }
+    }));
+  };
+
+  // Handler para atualizar as configurações de privacidade
+  const handlePrivacidadeChange = (campo: keyof ConfiguracoesSeguranca['privacidade'], valor: any) => {
+    setConfiguracoes(prev => ({
+      ...prev,
+      privacidade: {
+        ...prev.privacidade,
+        [campo]: valor
+      }
+    }));
+  };
+
+  // Handler para atualizar as configurações de auditoria
+  const handleAuditoriaChange = (campo: keyof ConfiguracoesSeguranca['auditoria'], valor: any) => {
+    setConfiguracoes(prev => ({
+      ...prev,
+      auditoria: {
+        ...prev.auditoria,
+        [campo]: valor
+      }
+    }));
+  };
+
   const salvarConfiguracoes = () => {
+    // Aqui seria feita uma chamada API para salvar as configurações
+    // Por enquanto, vamos simular com localStorage
+    const configsAtualizadas = {
+      ...configuracoes,
+      auditoria: {
+        ...configuracoes.auditoria,
+        periodoRetencao: limiteHistorico
+      }
+    };
+    
+    localStorage.setItem('configuracoes-seguranca', JSON.stringify(configsAtualizadas));
+    
     toast({
       title: "Configurações salvas",
       description: "As configurações de segurança foram atualizadas com sucesso."
     });
   };
 
-
-
   const limparHistorico = () => {
     setHistoricoAcessos([]);
     toast({
       title: "Histórico limpo",
       description: "O histórico de acessos foi limpo com sucesso."
+    });
+  };
+
+  const exportarHistorico = () => {
+    // Criar um objeto Blob com os dados do histórico
+    const dataStr = JSON.stringify(historicoAcessos, null, 2);
+    const blob = new Blob([dataStr], { type: 'application/json' });
+    
+    // Criar um link para download
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `historico-acessos-${new Date().toISOString().split('T')[0]}.json`;
+    
+    // Simular um clique e liberar o URL
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    toast({
+      title: "Histórico exportado",
+      description: "O histórico de acessos foi exportado com sucesso."
     });
   };
 
@@ -114,7 +256,11 @@ export function ConfigSeguranca() {
                           Exigir verificação em dois fatores para todos os usuários
                         </p>
                       </div>
-                      <Switch id="two-factor" />
+                      <Switch 
+                        id="two-factor" 
+                        checked={configuracoes.autenticacao.doisFatores}
+                        onCheckedChange={(checked) => handleAutenticacaoChange('doisFatores', checked)}
+                      />
                     </div>
                     
                     <Separator />
@@ -126,7 +272,11 @@ export function ConfigSeguranca() {
                           Exigir senhas com pelo menos 8 caracteres, incluindo letras, números e símbolos
                         </p>
                       </div>
-                      <Switch id="strong-password" defaultChecked />
+                      <Switch 
+                        id="strong-password" 
+                        checked={configuracoes.autenticacao.senhasFortes}
+                        onCheckedChange={(checked) => handleAutenticacaoChange('senhasFortes', checked)}
+                      />
                     </div>
                     
                     <Separator />
@@ -138,7 +288,11 @@ export function ConfigSeguranca() {
                           Bloquear acesso após 5 tentativas falhas de login
                         </p>
                       </div>
-                      <Switch id="login-attempt" defaultChecked />
+                      <Switch 
+                        id="login-attempt" 
+                        checked={configuracoes.autenticacao.bloqueioTentativas}
+                        onCheckedChange={(checked) => handleAutenticacaoChange('bloqueioTentativas', checked)}
+                      />
                     </div>
                     
                     <Separator />
@@ -147,10 +301,59 @@ export function ConfigSeguranca() {
                       <div className="space-y-0.5">
                         <Label className="font-medium">Expiração de Senha</Label>
                         <p className="text-sm text-muted-foreground">
-                          Solicitar troca de senha a cada 60 dias
+                          Solicitar troca de senha a cada {configuracoes.autenticacao.tempoExpiracaoSenha} dias
                         </p>
                       </div>
-                      <Switch id="password-expiry" />
+                      <div className="flex items-center gap-2">
+                        {configuracoes.autenticacao.expiracaoSenha && (
+                          <Select
+                            value={configuracoes.autenticacao.tempoExpiracaoSenha}
+                            onValueChange={(value) => handleAutenticacaoChange('tempoExpiracaoSenha', value)}
+                          >
+                            <SelectTrigger className="w-24 border-red-200 focus:border-red-400">
+                              <SelectValue placeholder="Dias" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="30">30 dias</SelectItem>
+                              <SelectItem value="60">60 dias</SelectItem>
+                              <SelectItem value="90">90 dias</SelectItem>
+                              <SelectItem value="180">180 dias</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        )}
+                        <Switch 
+                          id="password-expiry" 
+                          checked={configuracoes.autenticacao.expiracaoSenha}
+                          onCheckedChange={(checked) => handleAutenticacaoChange('expiracaoSenha', checked)}
+                        />
+                      </div>
+                    </div>
+                    
+                    <Separator />
+                    
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label className="font-medium">Bloqueio por Inatividade</Label>
+                        <p className="text-sm text-muted-foreground">
+                          Bloquear sessão após período de inatividade
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Select
+                          value={configuracoes.autenticacao.tempoInatividade}
+                          onValueChange={(value) => handleAutenticacaoChange('tempoInatividade', value)}
+                        >
+                          <SelectTrigger className="w-24 border-red-200 focus:border-red-400">
+                            <SelectValue placeholder="Minutos" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="15">15 min</SelectItem>
+                            <SelectItem value="30">30 min</SelectItem>
+                            <SelectItem value="60">60 min</SelectItem>
+                            <SelectItem value="120">120 min</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
                   </div>
                 </CardContent>
@@ -182,7 +385,11 @@ export function ConfigSeguranca() {
                           Anonimizar dados pessoais em relatórios e exportações
                         </p>
                       </div>
-                      <Switch id="anonymize-data" defaultChecked />
+                      <Switch 
+                        id="anonymize-data" 
+                        checked={configuracoes.privacidade.anonimizacaoDados}
+                        onCheckedChange={(checked) => handlePrivacidadeChange('anonimizacaoDados', checked)}
+                      />
                     </div>
 
                     <Separator />
@@ -194,7 +401,11 @@ export function ConfigSeguranca() {
                           Exigir aceitação do termo de uso de dados ao cadastrar novos clientes
                         </p>
                       </div>
-                      <Switch id="consent-term" defaultChecked />
+                      <Switch 
+                        id="consent-term" 
+                        checked={configuracoes.privacidade.termoConsentimento}
+                        onCheckedChange={(checked) => handlePrivacidadeChange('termoConsentimento', checked)}
+                      />
                     </div>
 
                     <Separator />
@@ -203,10 +414,32 @@ export function ConfigSeguranca() {
                       <div className="space-y-0.5">
                         <Label className="font-medium">Exclusão Automática</Label>
                         <p className="text-sm text-muted-foreground">
-                          Excluir dados de clientes inativos após 5 anos
+                          Excluir dados de clientes inativos após {configuracoes.privacidade.periodoExclusao} anos
                         </p>
                       </div>
-                      <Switch id="auto-delete" />
+                      <div className="flex items-center gap-2">
+                        {configuracoes.privacidade.exclusaoAutomatica && (
+                          <Select
+                            value={configuracoes.privacidade.periodoExclusao}
+                            onValueChange={(value) => handlePrivacidadeChange('periodoExclusao', value)}
+                          >
+                            <SelectTrigger className="w-24 border-purple-200 focus:border-purple-400">
+                              <SelectValue placeholder="Anos" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="2">2 anos</SelectItem>
+                              <SelectItem value="3">3 anos</SelectItem>
+                              <SelectItem value="5">5 anos</SelectItem>
+                              <SelectItem value="7">7 anos</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        )}
+                        <Switch 
+                          id="auto-delete" 
+                          checked={configuracoes.privacidade.exclusaoAutomatica}
+                          onCheckedChange={(checked) => handlePrivacidadeChange('exclusaoAutomatica', checked)}
+                        />
+                      </div>
                     </div>
 
                     <Separator />
@@ -218,7 +451,11 @@ export function ConfigSeguranca() {
                           Exibir apenas os últimos 4 dígitos de cartões de crédito
                         </p>
                       </div>
-                      <Switch id="card-masking" defaultChecked />
+                      <Switch 
+                        id="card-masking" 
+                        checked={configuracoes.privacidade.mascaramentoCartao}
+                        onCheckedChange={(checked) => handlePrivacidadeChange('mascaramentoCartao', checked)}
+                      />
                     </div>
                   </div>
                 </CardContent>
@@ -250,7 +487,11 @@ export function ConfigSeguranca() {
                           Registrar quem acessou informações de pagamentos e dados pessoais
                         </p>
                       </div>
-                      <Switch id="sensitive-data-log" defaultChecked />
+                      <Switch 
+                        id="sensitive-data-log" 
+                        checked={configuracoes.auditoria.registroAcessoDadosSensiveis}
+                        onCheckedChange={(checked) => handleAuditoriaChange('registroAcessoDadosSensiveis', checked)}
+                      />
                     </div>
 
                     <Separator />
@@ -262,10 +503,14 @@ export function ConfigSeguranca() {
                           Notificar administradores sobre exclusões e alterações massivas
                         </p>
                       </div>
-                      <Switch id="critical-action-alert" defaultChecked />
+                      <Switch 
+                        id="critical-action-alert" 
+                        checked={configuracoes.auditoria.alertaAcoesCriticas}
+                        onCheckedChange={(checked) => handleAuditoriaChange('alertaAcoesCriticas', checked)}
+                      />
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4 mt-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
                       <div className="space-y-2">
                         <Label htmlFor="history-limit">Período de Retenção</Label>
                         <Select
@@ -284,8 +529,23 @@ export function ConfigSeguranca() {
                         </Select>
                       </div>
                       <div className="flex items-end">
-                        <Button variant="outline" onClick={limparHistorico} className="w-full border-amber-200 text-amber-700 hover:bg-amber-50">
-                          Limpar Histórico
+                        <Button 
+                          variant="outline" 
+                          onClick={exportarHistorico} 
+                          className="w-full border-amber-200 text-amber-700 hover:bg-amber-50"
+                        >
+                          <Download className="h-4 w-4 mr-2" /> 
+                          Exportar Logs
+                        </Button>
+                      </div>
+                      <div className="flex items-end">
+                        <Button 
+                          variant="outline" 
+                          onClick={limparHistorico} 
+                          className="w-full border-red-200 text-red-700 hover:bg-red-50"
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Limpar Logs
                         </Button>
                       </div>
                     </div>
@@ -331,4 +591,4 @@ export function ConfigSeguranca() {
       </Button>
     </div>
   );
-}
+});

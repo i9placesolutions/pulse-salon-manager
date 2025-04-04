@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, forwardRef, useImperativeHandle } from "react";
 import { Button } from "@/components/ui/button";
 import { 
   Card, 
@@ -60,8 +60,9 @@ import {
   Lock
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { toast } from "@/components/ui/use-toast";
 
-export function ConfigUsuarios() {
+export const ConfigUsuarios = forwardRef((props, ref) => {
   // Estados para o modal de nova função
   const [isOpenNovaFuncao, setIsOpenNovaFuncao] = useState(false);
   const [novaFuncaoNome, setNovaFuncaoNome] = useState('');
@@ -77,7 +78,7 @@ export function ConfigUsuarios() {
   const [novoUsuarioConfirmarSenha, setNovoUsuarioConfirmarSenha] = useState('');
   const [erroSenha, setErroSenha] = useState('');
   // Novos estados para profissionais
-  const [novoUsuarioEhProfissional, setNovoUsuarioEhProfissional] = useState(false);
+  const [novoUsuarioEhProfissional, setNovoUsuarioEhProfissional] = useState(true);
   const [novoUsuarioTelefone, setNovoUsuarioTelefone] = useState('');
   const [novoUsuarioEspecialidades, setNovoUsuarioEspecialidades] = useState<string[]>([]);
   const [novoUsuarioNivelExperiencia, setNovoUsuarioNivelExperiencia] = useState('beginner');
@@ -109,6 +110,111 @@ export function ConfigUsuarios() {
     { id: 3, nome: 'Profissional', descricao: 'Acesso a agenda e clientes', editando: false },
     { id: 4, nome: 'Recepcionista', descricao: 'Acesso a agenda e atendimento', editando: false }
   ]);
+
+  // Tipo para permissões
+  type Permissao = {
+    visualizar: boolean;
+    editar: boolean;
+    excluir: boolean;
+  };
+
+  type PermissoesFuncao = {
+    dashboard: Permissao;
+    agenda: Permissao;
+    clientes: Permissao;
+    financeiro: Permissao;
+    estoque: Permissao;
+    relatorios: Permissao;
+    configuracoes: Permissao;
+    profissionais: Permissao;
+    servicos: Permissao;
+    produtos: Permissao;
+    perfil: Permissao;
+  };
+
+  // Estado para gerenciar permissões por função
+  const [permissoesPorFuncao, setPermissoesPorFuncao] = useState<Record<number, PermissoesFuncao>>({
+    1: { // Administrador
+      dashboard: { visualizar: true, editar: true, excluir: true },
+      agenda: { visualizar: true, editar: true, excluir: true },
+      clientes: { visualizar: true, editar: true, excluir: true },
+      financeiro: { visualizar: true, editar: true, excluir: true },
+      estoque: { visualizar: true, editar: true, excluir: true },
+      relatorios: { visualizar: true, editar: true, excluir: true },
+      configuracoes: { visualizar: true, editar: true, excluir: true },
+      profissionais: { visualizar: true, editar: true, excluir: true },
+      servicos: { visualizar: true, editar: true, excluir: true },
+      produtos: { visualizar: true, editar: true, excluir: true },
+      perfil: { visualizar: true, editar: true, excluir: true }
+    },
+    2: { // Gerente
+      dashboard: { visualizar: true, editar: true, excluir: false },
+      agenda: { visualizar: true, editar: true, excluir: true },
+      clientes: { visualizar: true, editar: true, excluir: true },
+      financeiro: { visualizar: true, editar: true, excluir: false },
+      estoque: { visualizar: true, editar: true, excluir: false },
+      relatorios: { visualizar: true, editar: false, excluir: false },
+      configuracoes: { visualizar: true, editar: false, excluir: false },
+      profissionais: { visualizar: true, editar: true, excluir: false },
+      servicos: { visualizar: true, editar: true, excluir: false },
+      produtos: { visualizar: true, editar: true, excluir: false },
+      perfil: { visualizar: true, editar: true, excluir: false }
+    },
+    3: { // Profissional
+      dashboard: { visualizar: true, editar: false, excluir: false },
+      agenda: { visualizar: true, editar: true, excluir: false },
+      clientes: { visualizar: true, editar: true, excluir: false },
+      financeiro: { visualizar: true, editar: false, excluir: false },
+      estoque: { visualizar: true, editar: false, excluir: false },
+      relatorios: { visualizar: false, editar: false, excluir: false },
+      configuracoes: { visualizar: false, editar: false, excluir: false },
+      profissionais: { visualizar: false, editar: false, excluir: false },
+      servicos: { visualizar: true, editar: false, excluir: false },
+      produtos: { visualizar: true, editar: false, excluir: false },
+      perfil: { visualizar: true, editar: true, excluir: false }
+    },
+    4: { // Recepcionista
+      dashboard: { visualizar: true, editar: false, excluir: false },
+      agenda: { visualizar: true, editar: true, excluir: false },
+      clientes: { visualizar: true, editar: false, excluir: false },
+      financeiro: { visualizar: false, editar: false, excluir: false },
+      estoque: { visualizar: false, editar: false, excluir: false },
+      relatorios: { visualizar: false, editar: false, excluir: false },
+      configuracoes: { visualizar: false, editar: false, excluir: false },
+      profissionais: { visualizar: true, editar: false, excluir: false },
+      servicos: { visualizar: true, editar: false, excluir: false },
+      produtos: { visualizar: true, editar: false, excluir: false },
+      perfil: { visualizar: true, editar: true, excluir: false }
+    }
+  });
+
+  // Função para atualizar permissão específica
+  const atualizarPermissao = (
+    funcaoId: number, 
+    modulo: keyof PermissoesFuncao, 
+    tipo: keyof Permissao, 
+    valor: boolean
+  ) => {
+    setPermissoesPorFuncao(prev => ({
+      ...prev,
+      [funcaoId]: {
+        ...prev[funcaoId],
+        [modulo]: {
+          ...prev[funcaoId][modulo],
+          [tipo]: valor
+        }
+      }
+    }));
+  };
+
+  // Função para salvar permissões
+  const salvarPermissoes = () => {
+    // Simulação de salvamento no backend
+    toast({
+      title: "Permissões salvas",
+      description: "As permissões foram atualizadas com sucesso."
+    });
+  };
 
   // Estados para o modal de especialidade
   const [isOpenNovaEspecialidade, setIsOpenNovaEspecialidade] = useState(false);
@@ -170,6 +276,11 @@ export function ConfigUsuarios() {
     setNovaFuncaoNome('');
     setNovaFuncaoDescricao('');
     setIsOpenNovaFuncao(false);
+    
+    toast({
+      title: "Função adicionada",
+      description: `A função ${novaFuncaoNome} foi adicionada com sucesso.`,
+    });
   };
 
   const toggleEditandoFuncao = (id: number) => {
@@ -192,10 +303,26 @@ export function ConfigUsuarios() {
 
   const handleSalvarEdicao = (id: number) => {
     toggleEditandoFuncao(id);
+    
+    const funcaoEditada = funcoes.find(f => f.id === id);
+    if (funcaoEditada) {
+      toast({
+        title: "Função atualizada",
+        description: `A função ${funcaoEditada.nome} foi atualizada com sucesso.`,
+      });
+    }
   };
 
   const handleExcluirFuncao = (id: number) => {
+    const funcaoExcluida = funcoes.find(f => f.id === id);
     setFuncoes(funcoes.filter(f => f.id !== id));
+    
+    if (funcaoExcluida) {
+      toast({
+        title: "Função excluída",
+        description: `A função ${funcaoExcluida.nome} foi excluída com sucesso.`,
+      });
+    }
   };
 
   // Função para adicionar nova especialidade
@@ -239,26 +366,79 @@ export function ConfigUsuarios() {
   // Função para salvar as edições do usuário
   const handleSaveEditUsuario = () => {
     // Validação básica dos campos
-    if (editUsuarioNome.trim() === '' || editUsuarioEmail.trim() === '') {
-      return;
+    let temErro = false;
+    
+    // Validar campos obrigatórios
+    if (editUsuarioNome.trim() === '') {
+      toast({
+        title: "Campo obrigatório",
+        description: "O nome do usuário é obrigatório.",
+        variant: "destructive"
+      });
+      temErro = true;
     }
     
-    // Validação de senhas
-    if (editUsuarioSenha && editUsuarioSenha !== editUsuarioConfirmarSenha) {
-      setEditErroSenha('As senhas não coincidem');
-      return;
+    if (editUsuarioEmail.trim() === '') {
+      toast({
+        title: "Campo obrigatório",
+        description: "O email do usuário é obrigatório.",
+        variant: "destructive"
+      });
+      temErro = true;
+    } else if (!/^\S+@\S+\.\S+$/.test(editUsuarioEmail)) {
+      toast({
+        title: "Email inválido",
+        description: "Digite um email válido.",
+        variant: "destructive"
+      });
+      temErro = true;
+    }
+    
+    // Validação de senhas (apenas se estiver alterando a senha)
+    if (editUsuarioSenha) {
+      if (editUsuarioSenha.length < 6) {
+        toast({
+          title: "Senha muito curta",
+          description: "A senha deve ter pelo menos 6 caracteres.",
+          variant: "destructive"
+        });
+        temErro = true;
+      } else if (editUsuarioSenha !== editUsuarioConfirmarSenha) {
+        setEditErroSenha('As senhas não coincidem');
+        toast({
+          title: "Senhas diferentes",
+          description: "As senhas não coincidem.",
+          variant: "destructive"
+        });
+        temErro = true;
+      } else {
+        setEditErroSenha('');
+      }
     }
     
     // Validar campos de profissional se aplicável
     if (editUsuarioEhProfissional) {
       if (editUsuarioTelefone.trim() === '') {
-        // Mostrar erro
-        return;
+        toast({
+          title: "Campo obrigatório",
+          description: "O telefone é obrigatório para profissionais.",
+          variant: "destructive"
+        });
+        temErro = true;
       }
+      
       if (editUsuarioEspecialidades.length === 0) {
-        // Mostrar erro
-        return;
+        toast({
+          title: "Seleção obrigatória",
+          description: "Selecione pelo menos uma especialidade para o profissional.",
+          variant: "destructive"
+        });
+        temErro = true;
       }
+    }
+    
+    if (temErro) {
+      return;
     }
     
     // Atualizar usuário
@@ -303,31 +483,95 @@ export function ConfigUsuarios() {
     setEditUsuarioEspecialidades([]);
     setEditUsuarioNivelExperiencia('beginner');
     setEditUsuarioDataContratacao('');
+    
+    // Notificar o usuário
+    toast({
+      title: "Usuário atualizado",
+      description: `O usuário ${editUsuarioNome} foi atualizado com sucesso.`,
+    });
   };
 
   // Função para adicionar novo usuário
   const handleAddUsuario = () => {
     // Validação básica dos campos
-    if (novoUsuarioNome.trim() === '' || novoUsuarioEmail.trim() === '') {
-      return;
+    let temErro = false;
+    
+    // Validar campos obrigatórios
+    if (novoUsuarioNome.trim() === '') {
+      toast({
+        title: "Campo obrigatório",
+        description: "O nome do usuário é obrigatório.",
+        variant: "destructive"
+      });
+      temErro = true;
+    }
+    
+    if (novoUsuarioEmail.trim() === '') {
+      toast({
+        title: "Campo obrigatório",
+        description: "O email do usuário é obrigatório.",
+        variant: "destructive"
+      });
+      temErro = true;
+    } else if (!/^\S+@\S+\.\S+$/.test(novoUsuarioEmail)) {
+      toast({
+        title: "Email inválido",
+        description: "Digite um email válido.",
+        variant: "destructive"
+      });
+      temErro = true;
     }
     
     // Validação de senhas
-    if (novoUsuarioSenha !== novoUsuarioConfirmarSenha) {
+    if (novoUsuarioSenha === '') {
+      toast({
+        title: "Campo obrigatório",
+        description: "A senha é obrigatória.",
+        variant: "destructive"
+      });
+      temErro = true;
+    } else if (novoUsuarioSenha.length < 6) {
+      toast({
+        title: "Senha muito curta",
+        description: "A senha deve ter pelo menos 6 caracteres.",
+        variant: "destructive"
+      });
+      temErro = true;
+    } else if (novoUsuarioSenha !== novoUsuarioConfirmarSenha) {
       setErroSenha('As senhas não coincidem');
-      return;
+      toast({
+        title: "Senhas diferentes",
+        description: "As senhas não coincidem.",
+        variant: "destructive"
+      });
+      temErro = true;
+    } else {
+      setErroSenha('');
     }
     
     // Validar campos de profissional se aplicável
     if (novoUsuarioEhProfissional) {
       if (novoUsuarioTelefone.trim() === '') {
-        // Mostrar erro
-        return;
+        toast({
+          title: "Campo obrigatório",
+          description: "O telefone é obrigatório para profissionais.",
+          variant: "destructive"
+        });
+        temErro = true;
       }
+      
       if (novoUsuarioEspecialidades.length === 0) {
-        // Mostrar erro
-        return;
+        toast({
+          title: "Seleção obrigatória",
+          description: "Selecione pelo menos uma especialidade para o profissional.",
+          variant: "destructive"
+        });
+        temErro = true;
       }
+    }
+    
+    if (temErro) {
+      return;
     }
     
     // Criar novo usuário
@@ -353,6 +597,8 @@ export function ConfigUsuarios() {
     // Adicionar à lista e resetar o formulário
     setUsuarios([...usuarios, novoUsuario]);
     setIsOpenNovoUsuario(false);
+    
+    // Resetar todos os campos do formulário
     setNovoUsuarioNome('');
     setNovoUsuarioEmail('');
     setNovoUsuarioCargo('Profissional');
@@ -360,11 +606,17 @@ export function ConfigUsuarios() {
     setNovoUsuarioSenha('');
     setNovoUsuarioConfirmarSenha('');
     setErroSenha('');
-    setNovoUsuarioEhProfissional(false);
+    setNovoUsuarioEhProfissional(true);
     setNovoUsuarioTelefone('');
     setNovoUsuarioEspecialidades([]);
     setNovoUsuarioNivelExperiencia('beginner');
     setNovoUsuarioDataContratacao(new Date().toISOString().split('T')[0]);
+    
+    // Notificar o usuário
+    toast({
+      title: "Usuário adicionado",
+      description: `O usuário ${novoUsuarioNome} foi adicionado com sucesso.`,
+    });
   };
 
   return (
@@ -674,6 +926,23 @@ export function ConfigUsuarios() {
                 </CardHeader>
                 <CardContent className="px-0">
                   <div className="space-y-6">
+                    <div className="p-4 bg-purple-50 border border-purple-100 rounded-lg mb-6">
+                      <div className="flex items-start gap-3">
+                        <div className="mt-1 bg-purple-100 p-1.5 rounded-full text-purple-600">
+                          <Shield className="h-5 w-5" />
+                        </div>
+                        <div>
+                          <h3 className="text-purple-800 font-medium mb-1">Configuração de Permissões</h3>
+                          <p className="text-sm text-purple-700">
+                            Configure as permissões de acesso de cada função para todas as telas do sistema. 
+                            As permissões são divididas em três níveis: <span className="font-medium">Visualizar</span> (acesso à tela), 
+                            <span className="font-medium"> Editar</span> (modificar dados) e 
+                            <span className="font-medium"> Excluir/Configurar</span> (permissões avançadas).
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    
                     <div className="grid gap-5">
                       {funcoes.map((perfil, index) => (
                         <Card key={index} className={cn(
@@ -694,6 +963,42 @@ export function ConfigUsuarios() {
                           </CardHeader>
                           <CardContent className="pt-4">
                             <div className="grid md:grid-cols-3 gap-4">
+                              <div className="bg-gradient-to-br from-blue-50 to-white rounded-lg border border-blue-100 shadow-sm overflow-hidden">
+                                <div className="bg-blue-100/60 p-3 flex items-center space-x-2">
+                                  <Home className="h-4 w-4 text-blue-600" />
+                                  <Label className="text-md font-medium text-blue-800">Dashboard</Label>
+                                </div>
+                                <div className="p-3 space-y-3">
+                                  <div className="flex items-center justify-between border-b border-blue-100 pb-2">
+                                    <Label htmlFor={`dashboard-ver-${index}`} className="text-sm text-blue-800">Visualizar</Label>
+                                    <Checkbox 
+                                      id={`dashboard-ver-${index}`} 
+                                      checked={permissoesPorFuncao[perfil.id]?.dashboard.visualizar}
+                                      onCheckedChange={(checked) => atualizarPermissao(perfil.id, 'dashboard', 'visualizar', checked === true)}
+                                      className="data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600" 
+                                    />
+                                  </div>
+                                  <div className="flex items-center justify-between border-b border-blue-100 pb-2">
+                                    <Label htmlFor={`dashboard-editar-${index}`} className="text-sm text-blue-800">Editar</Label>
+                                    <Checkbox 
+                                      id={`dashboard-editar-${index}`} 
+                                      checked={permissoesPorFuncao[perfil.id]?.dashboard.editar}
+                                      onCheckedChange={(checked) => atualizarPermissao(perfil.id, 'dashboard', 'editar', checked === true)}
+                                      className="data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600" 
+                                    />
+                                  </div>
+                                  <div className="flex items-center justify-between">
+                                    <Label htmlFor={`dashboard-excluir-${index}`} className="text-sm text-blue-800">Configurar</Label>
+                                    <Checkbox 
+                                      id={`dashboard-excluir-${index}`} 
+                                      checked={permissoesPorFuncao[perfil.id]?.dashboard.excluir}
+                                      onCheckedChange={(checked) => atualizarPermissao(perfil.id, 'dashboard', 'excluir', checked === true)}
+                                      className="data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600" 
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+                              
                               <div className="bg-gradient-to-br from-purple-50 to-white rounded-lg border border-purple-100 shadow-sm overflow-hidden">
                                 <div className="bg-purple-100/60 p-3 flex items-center space-x-2">
                                   <CalendarRange className="h-4 w-4 text-purple-600" />
@@ -702,18 +1007,30 @@ export function ConfigUsuarios() {
                                 <div className="p-3 space-y-3">
                                   <div className="flex items-center justify-between border-b border-purple-100 pb-2">
                                     <Label htmlFor={`agenda-ver-${index}`} className="text-sm text-purple-800">Visualizar</Label>
-                                    <Checkbox id={`agenda-ver-${index}`} defaultChecked={index <= 3} 
-                                      className="data-[state=checked]:bg-purple-600 data-[state=checked]:border-purple-600" />
+                                    <Checkbox 
+                                      id={`agenda-ver-${index}`} 
+                                      checked={permissoesPorFuncao[perfil.id]?.agenda.visualizar} 
+                                      onCheckedChange={(checked) => atualizarPermissao(perfil.id, 'agenda', 'visualizar', checked === true)}
+                                      className="data-[state=checked]:bg-purple-600 data-[state=checked]:border-purple-600" 
+                                    />
                                   </div>
                                   <div className="flex items-center justify-between border-b border-purple-100 pb-2">
                                     <Label htmlFor={`agenda-editar-${index}`} className="text-sm text-purple-800">Editar</Label>
-                                    <Checkbox id={`agenda-editar-${index}`} defaultChecked={index <= 2} 
-                                      className="data-[state=checked]:bg-purple-600 data-[state=checked]:border-purple-600" />
+                                    <Checkbox 
+                                      id={`agenda-editar-${index}`} 
+                                      checked={permissoesPorFuncao[perfil.id]?.agenda.editar}
+                                      onCheckedChange={(checked) => atualizarPermissao(perfil.id, 'agenda', 'editar', checked === true)}
+                                      className="data-[state=checked]:bg-purple-600 data-[state=checked]:border-purple-600" 
+                                    />
                                   </div>
                                   <div className="flex items-center justify-between">
                                     <Label htmlFor={`agenda-excluir-${index}`} className="text-sm text-purple-800">Excluir</Label>
-                                    <Checkbox id={`agenda-excluir-${index}`} defaultChecked={index <= 1} 
-                                      className="data-[state=checked]:bg-purple-600 data-[state=checked]:border-purple-600" />
+                                    <Checkbox 
+                                      id={`agenda-excluir-${index}`} 
+                                      checked={permissoesPorFuncao[perfil.id]?.agenda.excluir}
+                                      onCheckedChange={(checked) => atualizarPermissao(perfil.id, 'agenda', 'excluir', checked === true)}
+                                      className="data-[state=checked]:bg-purple-600 data-[state=checked]:border-purple-600" 
+                                    />
                                   </div>
                                 </div>
                               </div>
@@ -726,18 +1043,66 @@ export function ConfigUsuarios() {
                                 <div className="p-3 space-y-3">
                                   <div className="flex items-center justify-between border-b border-indigo-100 pb-2">
                                     <Label htmlFor={`clientes-ver-${index}`} className="text-sm text-indigo-800">Visualizar</Label>
-                                    <Checkbox id={`clientes-ver-${index}`} defaultChecked={index <= 3} 
-                                      className="data-[state=checked]:bg-indigo-600 data-[state=checked]:border-indigo-600" />
+                                    <Checkbox 
+                                      id={`clientes-ver-${index}`} 
+                                      checked={permissoesPorFuncao[perfil.id]?.clientes.visualizar}
+                                      onCheckedChange={(checked) => atualizarPermissao(perfil.id, 'clientes', 'visualizar', checked === true)}
+                                      className="data-[state=checked]:bg-indigo-600 data-[state=checked]:border-indigo-600" 
+                                    />
                                   </div>
                                   <div className="flex items-center justify-between border-b border-indigo-100 pb-2">
                                     <Label htmlFor={`clientes-editar-${index}`} className="text-sm text-indigo-800">Editar</Label>
-                                    <Checkbox id={`clientes-editar-${index}`} defaultChecked={index <= 2} 
-                                      className="data-[state=checked]:bg-indigo-600 data-[state=checked]:border-indigo-600" />
+                                    <Checkbox 
+                                      id={`clientes-editar-${index}`} 
+                                      checked={permissoesPorFuncao[perfil.id]?.clientes.editar}
+                                      onCheckedChange={(checked) => atualizarPermissao(perfil.id, 'clientes', 'editar', checked === true)}
+                                      className="data-[state=checked]:bg-indigo-600 data-[state=checked]:border-indigo-600" 
+                                    />
                                   </div>
                                   <div className="flex items-center justify-between">
                                     <Label htmlFor={`clientes-excluir-${index}`} className="text-sm text-indigo-800">Excluir</Label>
-                                    <Checkbox id={`clientes-excluir-${index}`} defaultChecked={index <= 1} 
-                                      className="data-[state=checked]:bg-indigo-600 data-[state=checked]:border-indigo-600" />
+                                    <Checkbox 
+                                      id={`clientes-excluir-${index}`} 
+                                      checked={permissoesPorFuncao[perfil.id]?.clientes.excluir}
+                                      onCheckedChange={(checked) => atualizarPermissao(perfil.id, 'clientes', 'excluir', checked === true)}
+                                      className="data-[state=checked]:bg-indigo-600 data-[state=checked]:border-indigo-600" 
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+                              
+                              <div className="bg-gradient-to-br from-amber-50 to-white rounded-lg border border-amber-100 shadow-sm overflow-hidden">
+                                <div className="bg-amber-100/60 p-3 flex items-center space-x-2">
+                                  <PackageSearch className="h-4 w-4 text-amber-600" />
+                                  <Label className="text-md font-medium text-amber-800">Produtos</Label>
+                                </div>
+                                <div className="p-3 space-y-3">
+                                  <div className="flex items-center justify-between border-b border-amber-100 pb-2">
+                                    <Label htmlFor={`produtos-ver-${index}`} className="text-sm text-amber-800">Visualizar</Label>
+                                    <Checkbox 
+                                      id={`produtos-ver-${index}`} 
+                                      checked={permissoesPorFuncao[perfil.id]?.produtos.visualizar}
+                                      onCheckedChange={(checked) => atualizarPermissao(perfil.id, 'produtos', 'visualizar', checked === true)}
+                                      className="data-[state=checked]:bg-amber-600 data-[state=checked]:border-amber-600" 
+                                    />
+                                  </div>
+                                  <div className="flex items-center justify-between border-b border-amber-100 pb-2">
+                                    <Label htmlFor={`produtos-editar-${index}`} className="text-sm text-amber-800">Editar</Label>
+                                    <Checkbox 
+                                      id={`produtos-editar-${index}`} 
+                                      checked={permissoesPorFuncao[perfil.id]?.produtos.editar}
+                                      onCheckedChange={(checked) => atualizarPermissao(perfil.id, 'produtos', 'editar', checked === true)}
+                                      className="data-[state=checked]:bg-amber-600 data-[state=checked]:border-amber-600" 
+                                    />
+                                  </div>
+                                  <div className="flex items-center justify-between">
+                                    <Label htmlFor={`produtos-excluir-${index}`} className="text-sm text-amber-800">Excluir</Label>
+                                    <Checkbox 
+                                      id={`produtos-excluir-${index}`} 
+                                      checked={permissoesPorFuncao[perfil.id]?.produtos.excluir}
+                                      onCheckedChange={(checked) => atualizarPermissao(perfil.id, 'produtos', 'excluir', checked === true)}
+                                      className="data-[state=checked]:bg-amber-600 data-[state=checked]:border-amber-600" 
+                                    />
                                   </div>
                                 </div>
                               </div>
@@ -750,18 +1115,30 @@ export function ConfigUsuarios() {
                                 <div className="p-3 space-y-3">
                                   <div className="flex items-center justify-between border-b border-green-100 pb-2">
                                     <Label htmlFor={`financeiro-ver-${index}`} className="text-sm text-green-800">Visualizar</Label>
-                                    <Checkbox id={`financeiro-ver-${index}`} defaultChecked={index <= 2} 
-                                      className="data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600" />
+                                    <Checkbox 
+                                      id={`financeiro-ver-${index}`} 
+                                      checked={permissoesPorFuncao[perfil.id]?.financeiro.visualizar}
+                                      onCheckedChange={(checked) => atualizarPermissao(perfil.id, 'financeiro', 'visualizar', checked === true)}
+                                      className="data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600" 
+                                    />
                                   </div>
                                   <div className="flex items-center justify-between border-b border-green-100 pb-2">
                                     <Label htmlFor={`financeiro-editar-${index}`} className="text-sm text-green-800">Editar</Label>
-                                    <Checkbox id={`financeiro-editar-${index}`} defaultChecked={index <= 1} 
-                                      className="data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600" />
+                                    <Checkbox 
+                                      id={`financeiro-editar-${index}`} 
+                                      checked={permissoesPorFuncao[perfil.id]?.financeiro.editar}
+                                      onCheckedChange={(checked) => atualizarPermissao(perfil.id, 'financeiro', 'editar', checked === true)}
+                                      className="data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600" 
+                                    />
                                   </div>
                                   <div className="flex items-center justify-between">
                                     <Label htmlFor={`financeiro-excluir-${index}`} className="text-sm text-green-800">Excluir</Label>
-                                    <Checkbox id={`financeiro-excluir-${index}`} defaultChecked={index === 0} 
-                                      className="data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600" />
+                                    <Checkbox 
+                                      id={`financeiro-excluir-${index}`} 
+                                      checked={permissoesPorFuncao[perfil.id]?.financeiro.excluir}
+                                      onCheckedChange={(checked) => atualizarPermissao(perfil.id, 'financeiro', 'excluir', checked === true)}
+                                      className="data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600" 
+                                    />
                                   </div>
                                 </div>
                               </div>
@@ -774,18 +1151,30 @@ export function ConfigUsuarios() {
                                 <div className="p-3 space-y-3">
                                   <div className="flex items-center justify-between border-b border-amber-100 pb-2">
                                     <Label htmlFor={`estoque-ver-${index}`} className="text-sm text-amber-800">Visualizar</Label>
-                                    <Checkbox id={`estoque-ver-${index}`} defaultChecked={index <= 2} 
-                                      className="data-[state=checked]:bg-amber-600 data-[state=checked]:border-amber-600" />
+                                    <Checkbox 
+                                      id={`estoque-ver-${index}`} 
+                                      checked={permissoesPorFuncao[perfil.id]?.estoque.visualizar}
+                                      onCheckedChange={(checked) => atualizarPermissao(perfil.id, 'estoque', 'visualizar', checked === true)}
+                                      className="data-[state=checked]:bg-amber-600 data-[state=checked]:border-amber-600" 
+                                    />
                                   </div>
                                   <div className="flex items-center justify-between border-b border-amber-100 pb-2">
                                     <Label htmlFor={`estoque-editar-${index}`} className="text-sm text-amber-800">Editar</Label>
-                                    <Checkbox id={`estoque-editar-${index}`} defaultChecked={index <= 1} 
-                                      className="data-[state=checked]:bg-amber-600 data-[state=checked]:border-amber-600" />
+                                    <Checkbox 
+                                      id={`estoque-editar-${index}`} 
+                                      checked={permissoesPorFuncao[perfil.id]?.estoque.editar}
+                                      onCheckedChange={(checked) => atualizarPermissao(perfil.id, 'estoque', 'editar', checked === true)}
+                                      className="data-[state=checked]:bg-amber-600 data-[state=checked]:border-amber-600" 
+                                    />
                                   </div>
                                   <div className="flex items-center justify-between">
                                     <Label htmlFor={`estoque-excluir-${index}`} className="text-sm text-amber-800">Excluir</Label>
-                                    <Checkbox id={`estoque-excluir-${index}`} defaultChecked={index === 0} 
-                                      className="data-[state=checked]:bg-amber-600 data-[state=checked]:border-amber-600" />
+                                    <Checkbox 
+                                      id={`estoque-excluir-${index}`} 
+                                      checked={permissoesPorFuncao[perfil.id]?.estoque.excluir}
+                                      onCheckedChange={(checked) => atualizarPermissao(perfil.id, 'estoque', 'excluir', checked === true)}
+                                      className="data-[state=checked]:bg-amber-600 data-[state=checked]:border-amber-600" 
+                                    />
                                   </div>
                                 </div>
                               </div>
@@ -798,18 +1187,30 @@ export function ConfigUsuarios() {
                                 <div className="p-3 space-y-3">
                                   <div className="flex items-center justify-between border-b border-blue-100 pb-2">
                                     <Label htmlFor={`relatorios-ver-${index}`} className="text-sm text-blue-800">Visualizar</Label>
-                                    <Checkbox id={`relatorios-ver-${index}`} defaultChecked={index <= 1} 
-                                      className="data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600" />
+                                    <Checkbox 
+                                      id={`relatorios-ver-${index}`} 
+                                      checked={permissoesPorFuncao[perfil.id]?.relatorios.visualizar}
+                                      onCheckedChange={(checked) => atualizarPermissao(perfil.id, 'relatorios', 'visualizar', checked === true)}
+                                      className="data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600" 
+                                    />
                                   </div>
                                   <div className="flex items-center justify-between border-b border-blue-100 pb-2">
                                     <Label htmlFor={`relatorios-editar-${index}`} className="text-sm text-blue-800">Exportar</Label>
-                                    <Checkbox id={`relatorios-editar-${index}`} defaultChecked={index === 0} 
-                                      className="data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600" />
+                                    <Checkbox 
+                                      id={`relatorios-editar-${index}`} 
+                                      checked={permissoesPorFuncao[perfil.id]?.relatorios.editar}
+                                      onCheckedChange={(checked) => atualizarPermissao(perfil.id, 'relatorios', 'editar', checked === true)}
+                                      className="data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600" 
+                                    />
                                   </div>
                                   <div className="flex items-center justify-between">
                                     <Label htmlFor={`relatorios-excluir-${index}`} className="text-sm text-blue-800">Configurar</Label>
-                                    <Checkbox id={`relatorios-excluir-${index}`} defaultChecked={index === 0} 
-                                      className="data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600" />
+                                    <Checkbox 
+                                      id={`relatorios-excluir-${index}`} 
+                                      checked={permissoesPorFuncao[perfil.id]?.relatorios.excluir}
+                                      onCheckedChange={(checked) => atualizarPermissao(perfil.id, 'relatorios', 'excluir', checked === true)}
+                                      className="data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600" 
+                                    />
                                   </div>
                                 </div>
                               </div>
@@ -822,18 +1223,66 @@ export function ConfigUsuarios() {
                                 <div className="p-3 space-y-3">
                                   <div className="flex items-center justify-between border-b border-slate-100 pb-2">
                                     <Label htmlFor={`config-ver-${index}`} className="text-sm text-slate-800">Visualizar</Label>
-                                    <Checkbox id={`config-ver-${index}`} defaultChecked={index <= 1} 
-                                      className="data-[state=checked]:bg-slate-600 data-[state=checked]:border-slate-600" />
+                                    <Checkbox 
+                                      id={`config-ver-${index}`} 
+                                      checked={permissoesPorFuncao[perfil.id]?.configuracoes.visualizar}
+                                      onCheckedChange={(checked) => atualizarPermissao(perfil.id, 'configuracoes', 'visualizar', checked === true)}
+                                      className="data-[state=checked]:bg-slate-600 data-[state=checked]:border-slate-600" 
+                                    />
                                   </div>
                                   <div className="flex items-center justify-between border-b border-slate-100 pb-2">
                                     <Label htmlFor={`config-editar-${index}`} className="text-sm text-slate-800">Editar</Label>
-                                    <Checkbox id={`config-editar-${index}`} defaultChecked={index === 0} 
-                                      className="data-[state=checked]:bg-slate-600 data-[state=checked]:border-slate-600" />
+                                    <Checkbox 
+                                      id={`config-editar-${index}`} 
+                                      checked={permissoesPorFuncao[perfil.id]?.configuracoes.editar}
+                                      onCheckedChange={(checked) => atualizarPermissao(perfil.id, 'configuracoes', 'editar', checked === true)}
+                                      className="data-[state=checked]:bg-slate-600 data-[state=checked]:border-slate-600" 
+                                    />
                                   </div>
                                   <div className="flex items-center justify-between">
                                     <Label htmlFor={`config-sistema-${index}`} className="text-sm text-slate-800">Sistema</Label>
-                                    <Checkbox id={`config-sistema-${index}`} defaultChecked={index === 0} 
-                                      className="data-[state=checked]:bg-slate-600 data-[state=checked]:border-slate-600" />
+                                    <Checkbox 
+                                      id={`config-sistema-${index}`} 
+                                      checked={permissoesPorFuncao[perfil.id]?.configuracoes.excluir}
+                                      onCheckedChange={(checked) => atualizarPermissao(perfil.id, 'configuracoes', 'excluir', checked === true)}
+                                      className="data-[state=checked]:bg-slate-600 data-[state=checked]:border-slate-600" 
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+                              
+                              <div className="bg-gradient-to-br from-violet-50 to-white rounded-lg border border-violet-100 shadow-sm overflow-hidden">
+                                <div className="bg-violet-100/60 p-3 flex items-center space-x-2">
+                                  <UserCog className="h-4 w-4 text-violet-600" />
+                                  <Label className="text-md font-medium text-violet-800">Perfil</Label>
+                                </div>
+                                <div className="p-3 space-y-3">
+                                  <div className="flex items-center justify-between border-b border-violet-100 pb-2">
+                                    <Label htmlFor={`perfil-ver-${index}`} className="text-sm text-violet-800">Visualizar</Label>
+                                    <Checkbox 
+                                      id={`perfil-ver-${index}`} 
+                                      checked={permissoesPorFuncao[perfil.id]?.perfil.visualizar}
+                                      onCheckedChange={(checked) => atualizarPermissao(perfil.id, 'perfil', 'visualizar', checked === true)}
+                                      className="data-[state=checked]:bg-violet-600 data-[state=checked]:border-violet-600" 
+                                    />
+                                  </div>
+                                  <div className="flex items-center justify-between border-b border-violet-100 pb-2">
+                                    <Label htmlFor={`perfil-editar-${index}`} className="text-sm text-violet-800">Editar</Label>
+                                    <Checkbox 
+                                      id={`perfil-editar-${index}`} 
+                                      checked={permissoesPorFuncao[perfil.id]?.perfil.editar}
+                                      onCheckedChange={(checked) => atualizarPermissao(perfil.id, 'perfil', 'editar', checked === true)}
+                                      className="data-[state=checked]:bg-violet-600 data-[state=checked]:border-violet-600" 
+                                    />
+                                  </div>
+                                  <div className="flex items-center justify-between">
+                                    <Label htmlFor={`perfil-excluir-${index}`} className="text-sm text-violet-800">Configurações</Label>
+                                    <Checkbox 
+                                      id={`perfil-excluir-${index}`} 
+                                      checked={permissoesPorFuncao[perfil.id]?.perfil.excluir}
+                                      onCheckedChange={(checked) => atualizarPermissao(perfil.id, 'perfil', 'excluir', checked === true)}
+                                      className="data-[state=checked]:bg-violet-600 data-[state=checked]:border-violet-600" 
+                                    />
                                   </div>
                                 </div>
                               </div>
@@ -850,11 +1299,49 @@ export function ConfigUsuarios() {
                         <div>
                           <h4 className="text-sm font-medium text-purple-700">Segurança do Sistema de Permissões</h4>
                           <p className="text-sm text-purple-600 mt-1">
-                            As alterações em permissões são registradas em logs de auditoria. 
-                            Permissões específicas podem ser personalizadas nas configurações avançadas do sistema.
+                            As alterações em permissões são registradas em logs de auditoria.
+                            Permissões específicas são aplicadas para cada módulo do sistema, permitindo um controle
+                            granular sobre o que cada usuário pode acessar e modificar.
                           </p>
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
+                              <CheckCircle className="h-3 w-3 mr-1" /> Visualizar
+                            </Badge>
+                            <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
+                              <Edit className="h-3 w-3 mr-1" /> Editar
+                            </Badge>
+                            <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
+                              <Trash2 className="h-3 w-3 mr-1" /> Excluir
+                            </Badge>
+                            <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
+                              <Settings className="h-3 w-3 mr-1" /> Configurar
+                            </Badge>
+                          </div>
                         </div>
                       </div>
+                    </div>
+                    <div className="mt-6 flex justify-between items-center">
+                      <Button 
+                        variant="outline" 
+                        className="border-purple-200 text-purple-700 hover:bg-purple-50"
+                        onClick={() => {
+                          // Implementação futura: Resetar permissões para padrões
+                          toast({
+                            title: "Funcionalidade em desenvolvimento",
+                            description: "Redefinição para permissões padrão será implementada em breve."
+                          });
+                        }}
+                      >
+                        <XCircle className="h-4 w-4 mr-2" />
+                        Redefinir para Padrão
+                      </Button>
+                      <Button 
+                        onClick={salvarPermissoes} 
+                        className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800"
+                      >
+                        <Save className="h-4 w-4 mr-2" />
+                        Salvar Permissões
+                      </Button>
                     </div>
                   </div>
                 </CardContent>
@@ -992,7 +1479,13 @@ export function ConfigUsuarios() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="cargo">Cargo</Label>
-                  <Select value={novoUsuarioCargo} onValueChange={setNovoUsuarioCargo}>
+                  <Select 
+                    value={novoUsuarioCargo} 
+                    onValueChange={(value) => {
+                      setNovoUsuarioCargo(value);
+                      setNovoUsuarioEhProfissional(value === "Profissional");
+                    }}
+                  >
                     <SelectTrigger id="cargo">
                       <SelectValue placeholder="Selecione um cargo" />
                     </SelectTrigger>
@@ -1049,16 +1542,18 @@ export function ConfigUsuarios() {
                 )}
               </div>
               
-              <div className="flex items-center space-x-2 pt-2">
-                <Checkbox 
-                  id="ehProfissional" 
-                  checked={novoUsuarioEhProfissional} 
-                  onCheckedChange={(checked) => setNovoUsuarioEhProfissional(checked === true)}
-                />
-                <Label htmlFor="ehProfissional" className="font-medium">
-                  Este usuário é um profissional do salão
-                </Label>
-              </div>
+              {novoUsuarioCargo === "Profissional" && (
+                <div className="flex items-center space-x-2 pt-2">
+                  <Checkbox 
+                    id="ehProfissional" 
+                    checked={novoUsuarioEhProfissional} 
+                    onCheckedChange={(checked) => setNovoUsuarioEhProfissional(checked === true)}
+                  />
+                  <Label htmlFor="ehProfissional" className="font-medium">
+                    Este usuário é um profissional do salão
+                  </Label>
+                </div>
+              )}
               {novoUsuarioEhProfissional && (
                 <p className="text-sm text-muted-foreground">
                   Marcar esta opção habilitará campos adicionais na aba "Dados Profissionais".
@@ -1205,7 +1700,13 @@ export function ConfigUsuarios() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="edit-cargo">Cargo</Label>
-                  <Select value={editUsuarioCargo} onValueChange={setEditUsuarioCargo}>
+                  <Select 
+                    value={editUsuarioCargo} 
+                    onValueChange={(value) => {
+                      setEditUsuarioCargo(value);
+                      setEditUsuarioEhProfissional(value === "Profissional");
+                    }}
+                  >
                     <SelectTrigger id="edit-cargo">
                       <SelectValue placeholder="Selecione um cargo" />
                     </SelectTrigger>
@@ -1262,16 +1763,18 @@ export function ConfigUsuarios() {
                 )}
               </div>
               
-              <div className="flex items-center space-x-2 pt-2">
-                <Checkbox 
-                  id="edit-ehProfissional" 
-                  checked={editUsuarioEhProfissional} 
-                  onCheckedChange={(checked) => setEditUsuarioEhProfissional(checked === true)}
-                />
-                <Label htmlFor="edit-ehProfissional" className="font-medium">
-                  Este usuário é um profissional do salão
-                </Label>
-              </div>
+              {editUsuarioCargo === "Profissional" && (
+                <div className="flex items-center space-x-2 pt-2">
+                  <Checkbox 
+                    id="edit-ehProfissional" 
+                    checked={editUsuarioEhProfissional} 
+                    onCheckedChange={(checked) => setEditUsuarioEhProfissional(checked === true)}
+                  />
+                  <Label htmlFor="edit-ehProfissional" className="font-medium">
+                    Este usuário é um profissional do salão
+                  </Label>
+                </div>
+              )}
               {editUsuarioEhProfissional && (
                 <p className="text-sm text-muted-foreground">
                   Marcar esta opção habilitará campos adicionais na aba "Dados Profissionais".
@@ -1430,4 +1933,4 @@ export function ConfigUsuarios() {
       </Dialog>
     </div>
   );
-}
+});

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, forwardRef, useImperativeHandle, useEffect } from "react";
 import { 
   Card, 
   CardContent, 
@@ -11,10 +11,44 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Copy, QrCode, Eye, MessageCircle, ExternalLink } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
-export function ConfigLinkAgendamento() {
+export const ConfigLinkAgendamento = forwardRef((props, ref) => {
   const [customUrl, setCustomUrl] = useState("meu-salao");
   const { toast } = useToast();
+  
+  // Carregar URL customizada do Supabase
+  useEffect(() => {
+    const loadCustomUrl = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (!user) return;
+        
+        // Buscar dados do estabelecimento
+        const { data: estabelecimentoData } = await supabase
+          .from('establishment_details')
+          .select('custom_url')
+          .eq('id', user.id)
+          .single();
+          
+        if (estabelecimentoData?.custom_url) {
+          setCustomUrl(estabelecimentoData.custom_url);
+        }
+      } catch (error) {
+        console.error("Erro ao carregar URL personalizada:", error);
+      }
+    };
+    
+    loadCustomUrl();
+  }, []);
+  
+  // Expor o método getFormData para o componente pai
+  useImperativeHandle(ref, () => ({
+    getFormData: () => ({
+      customUrl
+    })
+  }));
   
   const copyBookingLink = () => {
     const link = `https://pulse-salon.com.br/${customUrl}`;
@@ -141,4 +175,4 @@ export function ConfigLinkAgendamento() {
       </Card>
     </div>
   );
-} 
+}); 

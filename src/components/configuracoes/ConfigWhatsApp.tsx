@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, forwardRef, useImperativeHandle } from "react";
 import { Button } from "@/components/ui/button";
 import { 
   Card, 
@@ -85,7 +85,7 @@ interface ConnectResponse {
   instance: WhatsAppInstance;
 }
 
-export function ConfigWhatsApp() {
+export const ConfigWhatsApp = forwardRef((props, ref) => {
   // Configurações da API uazapi
   const SERVER_URL = 'https://i9place3.uazapi.com';
   
@@ -498,6 +498,22 @@ export function ConfigWhatsApp() {
       setIsLoading(false);
     }
   };
+  
+  // Implementar o método getFormData para ser exposto via ref
+  useImperativeHandle(ref, () => ({
+    getFormData: () => {
+      // Retornar os dados da instância
+      return {
+        instanceToken: instanceToken || '',
+        instanceStatus: connectedInstance?.status || '',
+        instanceName: connectedInstance?.name || '',
+        qrcode: connectedInstance?.qrcode || '',
+        paircode: connectedInstance?.paircode || '',
+        profileName: connectedInstance?.profileName || '',
+        profilePicUrl: connectedInstance?.profilePicUrl || ''
+      };
+    }
+  }));
   
   return (
     <div className="space-y-6">
@@ -1028,5 +1044,5 @@ export function ConfigWhatsApp() {
       </Dialog>
     </div>
   );
-}
+});
 

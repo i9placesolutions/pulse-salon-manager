@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, forwardRef, useImperativeHandle, useEffect } from "react";
 import { 
   Card, 
   CardContent, 
@@ -35,7 +34,7 @@ type ConfigParcelamento = {
   taxaJuros: number;
 };
 
-export function ConfigPagamentos() {
+export const ConfigPagamentos = forwardRef((props, ref) => {
   const [metodosPagamento, setMetodosPagamento] = useState<MetodoPagamento[]>([
     { id: "dinheiro", metodo: "Dinheiro", taxa: 0, ativo: true },
     { 
@@ -113,6 +112,14 @@ export function ConfigPagamentos() {
       description: "As configurações de pagamento foram salvas com sucesso."
     });
   };
+
+  // Expor o método getFormData para o componente pai
+  useImperativeHandle(ref, () => ({
+    getFormData: () => ({
+      metodosPagamento,
+      parcelamento
+    })
+  }));
 
   return (
     <div className="grid gap-4 md:grid-cols-2">
@@ -254,4 +261,4 @@ export function ConfigPagamentos() {
       </Card>
     </div>
   );
-}
+});

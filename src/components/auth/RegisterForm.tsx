@@ -1,10 +1,9 @@
-
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
-import { Mail, Lock, User, Loader2, Eye, EyeOff, UserPlus, Check } from "lucide-react";
+import { Mail, Lock, User, Loader2, Eye, EyeOff, Check } from "lucide-react";
 import { useAppState } from "@/contexts/AppStateContext";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -58,6 +57,7 @@ const RegisterForm = () => {
         options: {
           data: {
             establishment_name: establishmentNameFromFullName,
+            full_name: fullName
           }
         }
       });
@@ -68,19 +68,19 @@ const RegisterForm = () => {
       setEstablishmentName(establishmentNameFromFullName);
       
       // Definir como primeiro login
-      setProfileState((prev) => ({
-        ...prev,
+      setProfileState({
         isFirstLogin: true,
-        isProfileComplete: false
-      }));
+        isProfileComplete: false,
+        trialEndsAt: new Date(new Date().setDate(new Date().getDate() + 7)), // 7 dias de teste
+        subscriptionActive: false
+      });
       
       // Salvar no localStorage
       localStorage.setItem('firstLogin', 'true');
       localStorage.setItem('profileComplete', 'false');
       localStorage.setItem('establishmentName', establishmentNameFromFullName);
-      
-      // Redirecionar para a página de perfil do estabelecimento
-      navigate("/establishment-profile");
+      localStorage.setItem('trialEndsAt', new Date(new Date().setDate(new Date().getDate() + 7)).toISOString());
+      localStorage.setItem('subscriptionActive', 'false');
       
       toast({
         title: "Conta criada com sucesso!",
@@ -89,6 +89,9 @@ const RegisterForm = () => {
         className: "shadow-xl",
         duration: 8000 // Aumentado para 8 segundos (8000ms)
       });
+      
+      // Redirecionar para a página inicial
+      navigate("/");
     } catch (error: any) {
       setIsLoading(false);
       toast({
@@ -247,14 +250,15 @@ const RegisterForm = () => {
 
       <Button
         type="submit"
-        className="w-full mt-2 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white font-medium py-2.5 rounded-lg transition-all duration-300 flex items-center justify-center"
-        disabled={isLoading || !isFormValid()}
+        className="w-full mt-2 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white font-medium py-2.5 rounded-lg transition-all duration-300 flex items-center justify-center gap-2"
+        disabled={isLoading}
       >
         {isLoading ? (
           <Loader2 className="h-5 w-5 animate-spin" />
         ) : (
           <>
-            <UserPlus className="h-4 w-4 mr-2" /> Criar conta
+            Criar minha conta
+            <Check className="h-4 w-4" />
           </>
         )}
       </Button>

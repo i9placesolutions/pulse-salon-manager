@@ -7,6 +7,7 @@ import AppLayout from "./components/layout/AppLayout";
 import Index from "./pages/Index";
 import Register from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
 import NotFound from "./pages/NotFound";
@@ -14,6 +15,7 @@ import { SpecialtiesProvider } from "./contexts/SpecialtiesContext";
 import { AppStateProvider, useAppState } from "./contexts/AppStateContext";
 import { supabase } from "@/integrations/supabase/client";
 import { User, Session } from '@supabase/supabase-js';
+import SupabaseConnectionTest from "./components/SupabaseConnectionTest";
 
 // Componente de carregamento
 const Loading = () => (
@@ -181,6 +183,7 @@ const ProtectedRoute = ({
 }: ProtectedRouteProps) => {
   const { profileState } = useAppState();
   const location = useLocation();
+  const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -200,6 +203,35 @@ const ProtectedRoute = ({
     };
   }, []);
 
+  // Verificar se o perfil está incompleto e redirecionar para configurações
+  useEffect(() => {
+    if (!isLoading && user) {
+      // Bloquear acesso à página de perfil de estabelecimento se o perfil não estiver completo
+      if (!profileState.isProfileComplete && location.pathname === "/establishment-profile") {
+        navigate("/configuracoes", { 
+          replace: true,
+          state: { 
+            blockedRoute: true, 
+            message: "Complete o cadastro do estabelecimento antes de acessar o perfil."
+          }
+        });
+        return;
+      }
+      
+      // Redirecionar para configurações se tentar acessar outra página e o perfil não estiver completo
+      if (requireCompleteProfile && !profileState.isProfileComplete && location.pathname !== "/configuracoes") {
+        navigate("/configuracoes", { 
+          replace: true,
+          state: { 
+            blockedRoute: true, 
+            message: "Complete o cadastro do estabelecimento para acessar esta área."
+          }
+        });
+        return;
+      }
+    }
+  }, [isLoading, user, profileState.isProfileComplete, location.pathname, navigate, requireCompleteProfile]);
+
   if (isLoading) {
     return <Loading />;
   }
@@ -210,9 +242,22 @@ const ProtectedRoute = ({
   }
 
   // Se o perfil não estiver completo e a rota exigir perfil completo
-  if (requireCompleteProfile && !profileState.isProfileComplete) {
-    // Redirecionar para a página de perfil
-    return <Navigate to="/establishment-profile" state={{ from: location }} replace />;
+  // E se o caminho não for /configuracoes
+  if (requireCompleteProfile && !profileState.isProfileComplete && location.pathname !== "/configuracoes") {
+    return <Navigate to="/configuracoes" state={{ 
+      from: location, 
+      blockedRoute: true,
+      message: "Complete o cadastro do estabelecimento para acessar esta área."
+    }} replace />;
+  }
+
+  // Bloqueio específico para a página de perfil
+  if (location.pathname === "/establishment-profile" && !profileState.isProfileComplete) {
+    return <Navigate to="/configuracoes" state={{ 
+      from: location, 
+      blockedRoute: true,
+      message: "Complete o cadastro do estabelecimento antes de acessar o perfil." 
+    }} replace />;
   }
 
   // Se a assinatura estiver expirada e a rota exigir assinatura ativa
@@ -240,6 +285,7 @@ const PublicRoute = ({ children }: { children: ReactNode }) => {
   const [isRedirecting, setIsRedirecting] = useState(false);
   const { profileState } = useAppState();
   const navigate = useNavigate();
+  const location = useLocation();
   
   useEffect(() => {
     // Verificar se o usuário está autenticado
@@ -265,9 +311,15 @@ const PublicRoute = ({ children }: { children: ReactNode }) => {
     if (user) {
       setIsRedirecting(true);
       
-      // Se o perfil não estiver completo, redirecionar para perfil
+      // Se o perfil não estiver completo, redirecionar para a página de configurações
       if (!profileState.isProfileComplete) {
-        navigate("/establishment-profile", { replace: true });
+        navigate("/configuracoes", { 
+          replace: true,
+          state: { 
+            fromPublicRoute: true,
+            message: "Complete seu cadastro antes de acessar o sistema."
+          }
+        });
         return;
       }
 
@@ -281,7 +333,7 @@ const PublicRoute = ({ children }: { children: ReactNode }) => {
       // Caso contrário, redirecionar para o dashboard
       navigate("/dashboard", { replace: true });
     }
-  }, [user, isLoading, profileState, navigate]);
+  }, [user, isLoading, profileState, navigate, location.pathname]);
 
   if (isLoading) {
     return <Loading />;
@@ -296,14 +348,32 @@ const PublicRoute = ({ children }: { children: ReactNode }) => {
   return <Loading />;
 };
 
-// Aplicação principal
+// Componente que exibe a página inicial com o teste de conexão Supabase
+const HomePage = () => {
+  return (
+    <div>
+      <Index />
+      <SupabaseConnectionTest />
+    </div>
+  );
+};
+
+// Rotas da aplicação
 const AppRoutes = () => (
   <BrowserRouter>
     <Routes>
+      <Route 
+        path="/" 
+        element={
+          <PublicRoute>
+            <HomePage />
+          </PublicRoute>
+        } 
+      />
       {/* Auth routes */}
-      <Route path="/" element={<PublicRoute><Index /></PublicRoute>} />
       <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
       <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
+      <Route path="/reset-password" element={<PublicRoute><ResetPassword /></PublicRoute>} />
       <Route path="/terms" element={<Terms />} />
       <Route path="/privacy" element={<Privacy />} />
       
@@ -442,7 +512,7 @@ const AppRoutes = () => (
         </ProtectedRoute>
       } />
       <Route path="/configuracoes" element={
-        <ProtectedRoute>
+        <ProtectedRoute requireCompleteProfile={false} requireActiveSubscription={false}>
           <AppLayout>
             <Suspense fallback={<Loading />}>
               <Configuracoes />
