@@ -10,7 +10,7 @@ import {
   toastLoading
 } from "@/hooks/use-toast";
 
-// Documentação dos toasts
+// Documentação dos toasts (objeto para evitar erros de tipagem)
 export const TOAST_DOCUMENTATION = {
   uso: `
 // Uso básico

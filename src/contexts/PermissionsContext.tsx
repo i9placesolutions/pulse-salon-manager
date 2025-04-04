@@ -82,22 +82,23 @@ export const PermissionsProvider = ({ children }: { children: ReactNode }) => {
     try {
       setIsLoading(true);
       
-      const { data, error } = await supabase.rpc('get_current_user_permissions');
+      const { data: rpcData, error } = await supabase.rpc('get_current_user_permissions');
       
       if (error) {
         console.error("Erro ao buscar permissões:", error);
         return;
       }
       
-      if (data) {
+      if (rpcData) {
         // Converter o retorno para o formato esperado
-        const jsonData = data as {
+        // Precisamos fazer uma conversão segura do tipo
+        const jsonData = rpcData as unknown as {
           role: UserRole;
           permissions: Permissions;
         };
         
-        setUserRole(jsonData.role);
-        setPermissions(jsonData.permissions);
+        setUserRole(jsonData.role || 'none');
+        setPermissions(jsonData.permissions || defaultPermissions);
       }
     } catch (error) {
       console.error("Erro ao buscar permissões:", error);
