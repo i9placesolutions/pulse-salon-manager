@@ -1,9 +1,9 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Calendar, Clock, AlertCircle, X, Ban, CheckCircle2 } from "lucide-react";
+import { Calendar, Clock, AlertCircle, X, Ban, CheckCircle2, Calendar as CalendarIcon, User } from "lucide-react";
 import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useToast } from "@/components/ui/use-toast";
@@ -17,6 +17,8 @@ import {
   SheetTitle,
   SheetClose
 } from "@/components/ui/sheet";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 
 export interface BlockTimeFormData {
   startDate: string;
@@ -24,22 +26,32 @@ export interface BlockTimeFormData {
   startTime: string;
   endTime: string;
   reason?: string;
+  professionalId?: number | null;
+  blockFullDay: boolean;
 }
 
 interface BlockTimeDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onConfirm: (blockData: BlockTimeFormData) => void;
+  professionals?: { id: number; name: string }[];
 }
 
-export const BlockTimeDialog = ({ open, onOpenChange, onConfirm }: BlockTimeDialogProps) => {
+export const BlockTimeDialog = ({ 
+  open, 
+  onOpenChange, 
+  onConfirm,
+  professionals = [] 
+}: BlockTimeDialogProps) => {
   const { toast } = useToast();
   const [formData, setFormData] = useState<BlockTimeFormData>({
     startDate: format(new Date(), "yyyy-MM-dd"),
     endDate: format(new Date(), "yyyy-MM-dd"),
     startTime: "09:00",
     endTime: "18:00",
-    reason: ""
+    reason: "",
+    professionalId: null,
+    blockFullDay: false
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   
@@ -67,7 +79,9 @@ export const BlockTimeDialog = ({ open, onOpenChange, onConfirm }: BlockTimeDial
         endDate: format(new Date(), "yyyy-MM-dd"),
         startTime: "09:00",
         endTime: "18:00",
-        reason: ""
+        reason: "",
+        professionalId: null,
+        blockFullDay: false
       });
       setFormErrors({
         startDate: "",
@@ -94,8 +108,10 @@ export const BlockTimeDialog = ({ open, onOpenChange, onConfirm }: BlockTimeDial
         if (value < formData.startDate) return "Data final deve ser posterior à data inicial";
         return "";
       case "startTime":
+        if (formData.blockFullDay) return "";
         return value ? "" : "Horário inicial é obrigatório";
       case "endTime":
+        if (formData.blockFullDay) return "";
         if (!value) return "Horário final é obrigatório";
         if (formData.startDate === formData.endDate && value <= formData.startTime) {
           return "Horário final deve ser posterior ao horário inicial";
@@ -106,18 +122,36 @@ export const BlockTimeDialog = ({ open, onOpenChange, onConfirm }: BlockTimeDial
     }
   };
   
-  const handleFieldChange = (field: keyof typeof formData, value: string) => {
+  const handleFieldChange = (field: keyof typeof formData, value: any) => {
     // Atualiza o estado do formulário
     setFormData(prev => ({ ...prev, [field]: value }));
     
+    // Se estamos alterando o blockFullDay, precisamos atualizar a validação dos horários
+    if (field === "blockFullDay") {
+      // Se vamos bloquear o dia todo, removemos os erros dos campos de horário
+      if (value === true) {
+        setFormErrors(prev => ({ ...prev, startTime: "", endTime: "" }));
+      } else {
+        // Se não vamos mais bloquear o dia todo, precisamos revalidar os horários
+        const startTimeError = validateField("startTime", formData.startTime);
+        const endTimeError = validateField("endTime", formData.endTime);
+        setFormErrors(prev => ({ 
+          ...prev, 
+          startTime: startTimeError, 
+          endTime: endTimeError 
+        }));
+      }
+      return;
+    }
+    
     // Marca o campo como tocado
-    if (!touched[field as keyof typeof touched]) {
+    if (field in touched && !touched[field as keyof typeof touched]) {
       setTouched(prev => ({ ...prev, [field]: true }));
     }
     
     // Valida o campo
     if (field in formErrors) {
-      const error = validateField(field as keyof typeof formErrors, value);
+      const error = validateField(field as keyof typeof formErrors, String(value));
       setFormErrors(prev => ({ ...prev, [field]: error }));
       
       // Se estamos alterando datas ou horários, revalidar também os campos relacionados
@@ -132,6 +166,11 @@ export const BlockTimeDialog = ({ open, onOpenChange, onConfirm }: BlockTimeDial
   };
   
   const isFormValid = (): boolean => {
+    // Se blockFullDay é true, não precisamos validar os horários
+    if (formData.blockFullDay) {
+      return !formErrors.startDate && !formErrors.endDate;
+    }
+    
     return !formErrors.startDate && 
            !formErrors.endDate && 
            !formErrors.startTime && 
@@ -154,8 +193,14 @@ export const BlockTimeDialog = ({ open, onOpenChange, onConfirm }: BlockTimeDial
     // Validações básicas
     const startDateError = validateField("startDate", formData.startDate);
     const endDateError = validateField("endDate", formData.endDate);
-    const startTimeError = validateField("startTime", formData.startTime);
-    const endTimeError = validateField("endTime", formData.endTime);
+    
+    let startTimeError = "";
+    let endTimeError = "";
+    
+    if (!formData.blockFullDay) {
+      startTimeError = validateField("startTime", formData.startTime);
+      endTimeError = validateField("endTime", formData.endTime);
+    }
     
     setFormErrors({
       startDate: startDateError,
@@ -194,7 +239,7 @@ export const BlockTimeDialog = ({ open, onOpenChange, onConfirm }: BlockTimeDial
               </SheetClose>
             </div>
             <SheetDescription className="text-blue-100">
-              Selecione o período em que o salão não aceitará agendamentos.
+              Selecione o período em que o não aceitará agendamentos.
             </SheetDescription>
           </SheetHeader>
         </div>
@@ -202,6 +247,35 @@ export const BlockTimeDialog = ({ open, onOpenChange, onConfirm }: BlockTimeDial
         {/* Conteúdo rolável */}
         <div className="flex-1 overflow-y-auto bg-white p-6">
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Tipo de bloqueio: Geral ou Profissional específico */}
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label className="text-sm font-medium flex items-center gap-1">
+                  <User className="h-4 w-4 text-muted-foreground" />
+                  Tipo de Bloqueio <span className="text-destructive">*</span>
+                </Label>
+                <Select 
+                  value={formData.professionalId ? String(formData.professionalId) : "geral"}
+                  onValueChange={(value) => {
+                    const professionalId = value === "geral" ? null : Number(value);
+                    handleFieldChange("professionalId", professionalId);
+                  }}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Selecione o tipo de bloqueio" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="geral">Bloqueio Geral</SelectItem>
+                    {professionals.map((professional) => (
+                      <SelectItem key={professional.id} value={String(professional.id)}>
+                        {professional.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label className="text-sm font-medium flex items-center gap-1">
@@ -264,64 +338,79 @@ export const BlockTimeDialog = ({ open, onOpenChange, onConfirm }: BlockTimeDial
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label className="text-sm font-medium flex items-center gap-1">
-                  <Clock className="h-4 w-4 text-muted-foreground" />
-                  Horário do Bloqueio <span className="text-destructive">*</span>
+              {/* Opção para bloquear o dia todo */}
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="block-all-day"
+                  checked={formData.blockFullDay}
+                  onCheckedChange={(checked) => handleFieldChange("blockFullDay", checked)}
+                />
+                <Label htmlFor="block-all-day" className="cursor-pointer">
+                  Bloquear o dia todo
                 </Label>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label className="text-xs text-muted-foreground">Horário Inicial</Label>
-                    <Input
-                      type="time"
-                      className={cn(
-                        touched.startTime && formErrors.startTime ? "border-destructive" : "",
-                        touched.startTime && !formErrors.startTime ? "border-green-500" : ""
+              </div>
+
+              {/* Horários - apenas exibidos se não estiver bloqueando o dia todo */}
+              {!formData.blockFullDay && (
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium flex items-center gap-1">
+                    <Clock className="h-4 w-4 text-muted-foreground" />
+                    Horário do Bloqueio <span className="text-destructive">*</span>
+                  </Label>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label className="text-xs text-muted-foreground">Horário Inicial</Label>
+                      <Input
+                        type="time"
+                        className={cn(
+                          touched.startTime && formErrors.startTime ? "border-destructive" : "",
+                          touched.startTime && !formErrors.startTime ? "border-green-500" : ""
+                        )}
+                        value={formData.startTime}
+                        onChange={(e) => handleFieldChange("startTime", e.target.value)}
+                        required={!formData.blockFullDay}
+                      />
+                      {touched.startTime && formErrors.startTime && (
+                        <div className="text-xs text-destructive flex items-center gap-1">
+                          <AlertCircle className="h-3 w-3" />
+                          {formErrors.startTime}
+                        </div>
                       )}
-                      value={formData.startTime}
-                      onChange={(e) => handleFieldChange("startTime", e.target.value)}
-                      required
-                    />
-                    {touched.startTime && formErrors.startTime && (
-                      <div className="text-xs text-destructive flex items-center gap-1">
-                        <AlertCircle className="h-3 w-3" />
-                        {formErrors.startTime}
-                      </div>
-                    )}
-                    {touched.startTime && !formErrors.startTime && (
-                      <div className="text-xs text-green-500 flex items-center gap-1">
-                        <CheckCircle2 className="h-3 w-3" />
-                        Horário válido
-                      </div>
-                    )}
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-xs text-muted-foreground">Horário Final</Label>
-                    <Input
-                      type="time"
-                      className={cn(
-                        touched.endTime && formErrors.endTime ? "border-destructive" : "",
-                        touched.endTime && !formErrors.endTime ? "border-green-500" : ""
+                      {touched.startTime && !formErrors.startTime && (
+                        <div className="text-xs text-green-500 flex items-center gap-1">
+                          <CheckCircle2 className="h-3 w-3" />
+                          Horário válido
+                        </div>
                       )}
-                      value={formData.endTime}
-                      onChange={(e) => handleFieldChange("endTime", e.target.value)}
-                      required
-                    />
-                    {touched.endTime && formErrors.endTime && (
-                      <div className="text-xs text-destructive flex items-center gap-1">
-                        <AlertCircle className="h-3 w-3" />
-                        {formErrors.endTime}
-                      </div>
-                    )}
-                    {touched.endTime && !formErrors.endTime && (
-                      <div className="text-xs text-green-500 flex items-center gap-1">
-                        <CheckCircle2 className="h-3 w-3" />
-                        Horário válido
-                      </div>
-                    )}
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-xs text-muted-foreground">Horário Final</Label>
+                      <Input
+                        type="time"
+                        className={cn(
+                          touched.endTime && formErrors.endTime ? "border-destructive" : "",
+                          touched.endTime && !formErrors.endTime ? "border-green-500" : ""
+                        )}
+                        value={formData.endTime}
+                        onChange={(e) => handleFieldChange("endTime", e.target.value)}
+                        required={!formData.blockFullDay}
+                      />
+                      {touched.endTime && formErrors.endTime && (
+                        <div className="text-xs text-destructive flex items-center gap-1">
+                          <AlertCircle className="h-3 w-3" />
+                          {formErrors.endTime}
+                        </div>
+                      )}
+                      {touched.endTime && !formErrors.endTime && (
+                        <div className="text-xs text-green-500 flex items-center gap-1">
+                          <CheckCircle2 className="h-3 w-3" />
+                          Horário válido
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
 
               <div className="space-y-2">
                 <Label className="text-sm font-medium flex items-center gap-1">
