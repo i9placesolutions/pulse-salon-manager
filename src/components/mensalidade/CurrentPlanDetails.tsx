@@ -5,16 +5,25 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Loader2, Clock, CheckCircle, AlertTriangle } from "lucide-react";
-import { SubscriptionDetails } from "@/types/subscription";
+import { SubscriptionDetails, SubscriptionPlan } from "@/types/subscription";
 
 interface CurrentPlanDetailsProps {
   subscription: SubscriptionDetails | null;
-  isLoading: boolean;
-  onUpgrade: () => void;
-  onCancel: () => void;
+  isLoading?: boolean;
+  onUpgrade?: () => void;
+  onCancel?: () => void;
+  onRenewChange?: (autoRenew: boolean) => void;
+  plan?: SubscriptionPlan;
 }
 
-export function CurrentPlanDetails({ subscription, isLoading, onUpgrade, onCancel }: CurrentPlanDetailsProps) {
+export function CurrentPlanDetails({ 
+  subscription, 
+  isLoading = false, 
+  onUpgrade, 
+  onCancel,
+  onRenewChange,
+  plan
+}: CurrentPlanDetailsProps) {
   const [daysLeft, setDaysLeft] = useState<number | null>(null);
   
   useEffect(() => {
@@ -113,7 +122,7 @@ export function CurrentPlanDetails({ subscription, isLoading, onUpgrade, onCance
         <div className="mt-4">
           <h4 className="text-sm font-medium mb-2">Detalhes do plano:</h4>
           <div className="text-sm space-y-1">
-            <p><span className="font-medium">Plano:</span> {subscription?.planId || 'Plano Básico (Teste)'}</p>
+            <p><span className="font-medium">Plano:</span> {plan?.name || subscription?.planId || 'Plano Básico (Teste)'}</p>
             {isTrial ? (
               <p><span className="font-medium">Período de teste:</span> 7 dias</p>
             ) : (
@@ -132,7 +141,7 @@ export function CurrentPlanDetails({ subscription, isLoading, onUpgrade, onCance
         </div>
       </CardContent>
       <CardFooter className="flex flex-col sm:flex-row gap-2">
-        {(isTrial || isExpired) && (
+        {(isTrial || isExpired) && onUpgrade && (
           <Button 
             onClick={onUpgrade} 
             className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700"
@@ -140,13 +149,22 @@ export function CurrentPlanDetails({ subscription, isLoading, onUpgrade, onCance
             {isTrial ? 'Assinar agora' : 'Renovar assinatura'}
           </Button>
         )}
-        {isActive && (
+        {isActive && onCancel && (
           <Button 
             variant="outline" 
             onClick={onCancel} 
             className="w-full sm:w-auto border-gray-300 text-gray-700 hover:bg-gray-50"
           >
             Cancelar assinatura
+          </Button>
+        )}
+        {isActive && onRenewChange && (
+          <Button
+            variant="outline"
+            onClick={() => onRenewChange(!subscription?.autoRenew)}
+            className="w-full sm:w-auto border-gray-300 text-gray-700 hover:bg-gray-50"
+          >
+            {subscription?.autoRenew ? 'Desativar renovação automática' : 'Ativar renovação automática'}
           </Button>
         )}
       </CardFooter>
