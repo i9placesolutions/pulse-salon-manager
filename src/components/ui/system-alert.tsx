@@ -1,7 +1,7 @@
 
 import { cn } from "@/lib/utils";
 import { AlertCircle, Bell, CheckCircle, Info, X } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 type SystemAlertVariant = "info" | "success" | "warning" | "error" | "demo";
 
@@ -25,16 +25,30 @@ export function SystemAlert({
   autoClose
 }: SystemAlertProps) {
   const [visible, setVisible] = useState(true);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Fechar automaticamente após o tempo especificado, apenas uma vez no carregamento inicial
+  // Fechar automaticamente após o tempo especificado, apenas uma vez ao montar o componente
   useEffect(() => {
     if (autoClose && autoClose > 0 && visible) {
-      const timer = setTimeout(() => {
+      // Limpa qualquer timer existente para evitar duplicação
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+      }
+      
+      // Define um novo timer
+      timerRef.current = setTimeout(() => {
         setVisible(false);
       }, autoClose);
-      return () => clearTimeout(timer);
     }
-  }, [autoClose]); // Removido visible da dependência para evitar re-renderizações
+    
+    // Cleanup na desmontagem
+    return () => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
+    };
+  }, []); // Dependência vazia para executar apenas uma vez na montagem
 
   if (!visible) return null;
 

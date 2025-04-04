@@ -6,7 +6,9 @@ import { Mail, AlertCircle } from "lucide-react";
 export function EmailConfirmAlert() {
   const [visible, setVisible] = useState(true);
 
-  return visible ? (
+  if (!visible) return null;
+
+  return (
     <SystemAlert
       title="Confirme seu e-mail"
       message="Enviamos um link de confirmação para seu e-mail. Por favor, verifique sua caixa de entrada e confirme sua conta para continuar usando todas as funcionalidades."
@@ -21,5 +23,5 @@ export function EmailConfirmAlert() {
       dismissible={true}
       autoClose={12000} // 12 segundos (maior tempo para leitura)
     />
-  ) : null;
+  );
 }
