@@ -1,3 +1,4 @@
+
 import { cn } from "@/lib/utils";
 import { AlertCircle, Bell, CheckCircle, Info, X } from "lucide-react";
 import { useState, useEffect } from "react";
@@ -25,15 +26,15 @@ export function SystemAlert({
 }: SystemAlertProps) {
   const [visible, setVisible] = useState(true);
 
-  // Fechar automaticamente após o tempo especificado
+  // Fechar automaticamente após o tempo especificado, apenas uma vez no carregamento inicial
   useEffect(() => {
-    if (autoClose && autoClose > 0) {
+    if (autoClose && autoClose > 0 && visible) {
       const timer = setTimeout(() => {
         setVisible(false);
       }, autoClose);
       return () => clearTimeout(timer);
     }
-  }, [autoClose]);
+  }, [autoClose]); // Removido visible da dependência para evitar re-renderizações
 
   if (!visible) return null;
 
@@ -101,4 +102,4 @@ export function SystemAlert({
       </div>
     </div>
   );
-} 
+}

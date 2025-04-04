@@ -20,7 +20,6 @@ export function EmailConfirmAlert() {
       className="shadow-lg"
       dismissible={true}
       autoClose={12000} // 12 segundos (maior tempo para leitura)
-      onClose={() => setVisible(false)}
     />
   ) : null;
 }
