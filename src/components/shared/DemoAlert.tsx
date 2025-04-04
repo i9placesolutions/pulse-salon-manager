@@ -1,13 +1,8 @@
 
-import { useState } from "react";
 import { SystemAlert } from "@/components/ui/system-alert";
 import { StarIcon, SparklesIcon } from "lucide-react";
 
 export function DemoAlert() {
-  const [visible, setVisible] = useState(true);
-  
-  if (!visible) return null;
-
   return (
     <SystemAlert
       title="Login de teste realizado"

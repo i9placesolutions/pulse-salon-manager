@@ -26,16 +26,14 @@ export function SystemAlert({
 }: SystemAlertProps) {
   const [visible, setVisible] = useState(true);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const isFirstRender = useRef(true);
 
-  // Fechar automaticamente após o tempo especificado, apenas uma vez ao montar o componente
+  // Fechar automaticamente após o tempo especificado
   useEffect(() => {
-    if (autoClose && autoClose > 0 && visible) {
-      // Limpa qualquer timer existente para evitar duplicação
-      if (timerRef.current) {
-        clearTimeout(timerRef.current);
-      }
+    // Importante: só executamos esta lógica uma vez na montagem
+    if (isFirstRender.current && autoClose && autoClose > 0 && visible) {
+      isFirstRender.current = false;
       
-      // Define um novo timer
       timerRef.current = setTimeout(() => {
         setVisible(false);
       }, autoClose);
@@ -48,7 +46,7 @@ export function SystemAlert({
         timerRef.current = null;
       }
     };
-  }, []); // Dependência vazia para executar apenas uma vez na montagem
+  }, []);
 
   if (!visible) return null;
 
@@ -88,6 +86,15 @@ export function SystemAlert({
     }
   };
 
+  const handleDismiss = () => {
+    // Limpa qualquer timer existente para evitar memory leaks
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+    setVisible(false);
+  };
+
   return (
     <div 
       className={cn(
@@ -106,7 +113,7 @@ export function SystemAlert({
         </div>
         {dismissible && (
           <button 
-            onClick={() => setVisible(false)}
+            onClick={handleDismiss}
             className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
             aria-label="Fechar alerta"
           >
