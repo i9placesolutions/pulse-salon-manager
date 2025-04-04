@@ -52,6 +52,7 @@ export function QuickPOS({ services, professionals, onSale }: QuickPOSProps) {
     toast({
       title: "Venda registrada",
       description: "O serviço foi registrado com sucesso!",
+      variant: "success",
     });
 
     // Reset form

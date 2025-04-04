@@ -2,6 +2,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { FormCard } from "@/components/shared/FormCard";
+import { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
+import { Download } from "lucide-react";
 
 interface Activity {
   id: number;
@@ -29,13 +32,79 @@ const activities: Activity[] = [
 ];
 
 export function ActivityHistory() {
+  const { toast } = useToast();
+  const [isExportingPDF, setIsExportingPDF] = useState(false);
+  const [isExportingExcel, setIsExportingExcel] = useState(false);
+
+  const handleExportPDF = () => {
+    setIsExportingPDF(true);
+    
+    // Simulação da exportação
+    setTimeout(() => {
+      setIsExportingPDF(false);
+      
+      toast({
+        variant: "info",
+        title: "PDF Exportado!",
+        description: "O histórico de atividades foi exportado em PDF com sucesso.",
+        className: "shadow-xl",
+      });
+    }, 1500);
+  };
+
+  const handleExportExcel = () => {
+    setIsExportingExcel(true);
+    
+    // Simulação da exportação
+    setTimeout(() => {
+      setIsExportingExcel(false);
+      
+      toast({
+        variant: "info",
+        title: "Excel Exportado!",
+        description: "O histórico de atividades foi exportado em Excel com sucesso.",
+        className: "shadow-xl",
+      });
+    }, 1500);
+  };
+
   const headerActions = (
     <div className="flex gap-2">
-      <Button variant="outline" size="sm">
-        PDF
+      <Button 
+        variant="outline" 
+        size="sm" 
+        onClick={handleExportPDF}
+        disabled={isExportingPDF}
+      >
+        {isExportingPDF ? (
+          <>
+            <span className="mr-2 h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent"></span>
+            Exportando...
+          </>
+        ) : (
+          <>
+            <Download className="h-3.5 w-3.5 mr-1" />
+            PDF
+          </>
+        )}
       </Button>
-      <Button variant="outline" size="sm">
-        Excel
+      <Button 
+        variant="outline" 
+        size="sm"
+        onClick={handleExportExcel}
+        disabled={isExportingExcel}
+      >
+        {isExportingExcel ? (
+          <>
+            <span className="mr-2 h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent"></span>
+            Exportando...
+          </>
+        ) : (
+          <>
+            <Download className="h-3.5 w-3.5 mr-1" />
+            Excel
+          </>
+        )}
       </Button>
     </div>
   );

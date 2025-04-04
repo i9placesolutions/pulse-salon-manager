@@ -1,9 +1,7 @@
-
-import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { lazy, Suspense, ReactNode, useEffect, useState } from "react";
 import AppLayout from "./components/layout/AppLayout";
 import Index from "./pages/Index";
@@ -55,12 +53,17 @@ const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { setProfileState, setEstablishmentName } = useAppState();
+  // Vamos adicionar uma flag para controlar os toasts de boas-vindas
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   useEffect(() => {
     // Configurar listener de mudança de autenticação
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, currentSession) => {
-      setSession(currentSession);
-      setUser(currentSession?.user ?? null);
+      // Não atualizamos se for a carga inicial, isso será feito em getInitialSession
+      if (!isInitialLoad) {
+        setSession(currentSession);
+        setUser(currentSession?.user ?? null);
+      }
       
       // Se ocorrer logout, limpar os dados de perfil
       if (event === 'SIGNED_OUT') {
@@ -78,7 +81,7 @@ const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
 
       // Quando o usuário fizer login, buscar os dados do perfil
-      if (event === 'SIGNED_IN' && currentSession) {
+      if (event === 'SIGNED_IN' && currentSession && !isInitialLoad) {
         setTimeout(async () => {
           try {
             const { data: profileData, error } = await supabase
@@ -152,6 +155,7 @@ const AuthProvider = ({ children }: { children: ReactNode }) => {
         console.error("Erro ao verificar sessão:", err);
       } finally {
         setIsLoading(false);
+        setIsInitialLoad(false);
       }
     }
     
@@ -233,7 +237,9 @@ const ProtectedRoute = ({
 const PublicRoute = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRedirecting, setIsRedirecting] = useState(false);
   const { profileState } = useAppState();
+  const navigate = useNavigate();
   
   useEffect(() => {
     // Verificar se o usuário está autenticado
@@ -250,30 +256,44 @@ const PublicRoute = ({ children }: { children: ReactNode }) => {
       subscription.unsubscribe();
     };
   }, []);
+  
+  // Efeito para controlar redirecionamentos e evitar loops
+  useEffect(() => {
+    if (isLoading || isRedirecting) return;
+    
+    // Se o usuário estiver autenticado, redirecionar com base no estado do perfil
+    if (user) {
+      setIsRedirecting(true);
+      
+      // Se o perfil não estiver completo, redirecionar para perfil
+      if (!profileState.isProfileComplete) {
+        navigate("/establishment-profile", { replace: true });
+        return;
+      }
+
+      // Se a assinatura estiver expirada e não estiver mais no período de teste
+      const today = new Date();
+      if (!profileState.subscriptionActive && profileState.trialEndsAt && today > profileState.trialEndsAt) {
+        navigate("/mensalidade", { replace: true });
+        return;
+      }
+
+      // Caso contrário, redirecionar para o dashboard
+      navigate("/dashboard", { replace: true });
+    }
+  }, [user, isLoading, profileState, navigate]);
 
   if (isLoading) {
     return <Loading />;
   }
 
-  // Se o usuário estiver autenticado, redirecionar com base no estado do perfil
-  if (user) {
-    // Se o perfil não estiver completo, redirecionar para perfil
-    if (!profileState.isProfileComplete) {
-      return <Navigate to="/establishment-profile" replace />;
-    }
-
-    // Se a assinatura estiver expirada e não estiver mais no período de teste
-    const today = new Date();
-    if (!profileState.subscriptionActive && profileState.trialEndsAt && today > profileState.trialEndsAt) {
-      return <Navigate to="/mensalidade" replace />;
-    }
-
-    // Caso contrário, redirecionar para o dashboard
-    return <Navigate to="/dashboard" replace />;
+  // Se não estiver autenticado ou redirecionando, mostrar a página pública
+  if (!user || isRedirecting) {
+    return <>{children}</>;
   }
-
-  // Se não estiver autenticado, mostrar a página pública
-  return <>{children}</>;
+  
+  // Fallback enquanto estiver redirecionando
+  return <Loading />;
 };
 
 // Aplicação principal
@@ -454,7 +474,6 @@ const App = () => (
       <TooltipProvider>
         <SpecialtiesProvider>
           <AuthProvider>
-            <Toaster />
             <Sonner />
             <AppRoutes />
           </AuthProvider>

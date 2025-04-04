@@ -96,7 +96,7 @@ export function WhatsAppSender({ defaultPhoneNumber = '', token }: WhatsAppSende
       toast({
         title: "Mensagem enviada",
         description: "A mensagem de texto foi enviada com sucesso",
-        variant: "default",
+        variant: "success",
         id: "whatsapp-text-success"
       });
       // Limpar o formulário após envio bem-sucedido
@@ -128,7 +128,7 @@ export function WhatsAppSender({ defaultPhoneNumber = '', token }: WhatsAppSende
       toast({
         title: "Mídia enviada",
         description: "A mídia foi enviada com sucesso",
-        variant: "default",
+        variant: "success",
         id: "whatsapp-media-success"
       });
       // Limpar o formulário após envio bem-sucedido
@@ -160,7 +160,7 @@ export function WhatsAppSender({ defaultPhoneNumber = '', token }: WhatsAppSende
       toast({
         title: "Localização enviada",
         description: "A localização foi enviada com sucesso",
-        variant: "default",
+        variant: "success",
         id: "whatsapp-location-success"
       });
       // Limpar o formulário após envio bem-sucedido

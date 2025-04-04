@@ -182,7 +182,7 @@ export function ConfigWhatsApp() {
     toast({
       title: "Sucesso",
       description: "Dados da instância principal atualizados",
-      variant: "default",
+      variant: "success",
       id: "main-instance-updated"
     });
   };
@@ -313,7 +313,7 @@ export function ConfigWhatsApp() {
       toast({
         title: "Sucesso",
         description: "Dados da instância atualizados",
-        variant: "default",
+        variant: "success",
         id: "whatsapp-instance-updated"
       });
     } catch (err) {

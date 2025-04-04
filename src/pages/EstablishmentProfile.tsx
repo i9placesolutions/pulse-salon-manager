@@ -411,6 +411,9 @@ export default function EstablishmentProfile() {
     setIsSaving(true);
     
     try {
+      // Verificar se é uma criação inicial ou uma edição
+      const isEditing = profileState.isProfileComplete;
+      
       // Fazer upload da logo se houver
       const logoUrl = await uploadLogo(userId);
       
@@ -465,22 +468,35 @@ export default function EstablishmentProfile() {
       // Marcar o perfil como completo
       updateProfileCompletion(true);
       
-      // Mostrar mensagem de sucesso
-      toast({
-        title: "Perfil salvo com sucesso!",
-        description: `Bem-vindo ao ${profile.name}! Você será redirecionado para o dashboard.`,
-        duration: 5000,
-      });
-      
-      // Redirecionar para o dashboard após um breve delay
-      setTimeout(() => {
-        navigate("/dashboard");
-      }, 3000);
+      // Comportamento diferente baseado em criação vs edição
+      if (isEditing) {
+        // Mostrar mensagem de sucesso para edição
+        toast({
+          variant: "success",
+          title: "Perfil editado com sucesso!",
+          description: "As alterações foram salvas.",
+          className: "shadow-xl",
+        });
+      } else {
+        // Mostrar mensagem de sucesso para criação inicial
+        toast({
+          variant: "success",
+          title: "Perfil salvo com sucesso!",
+          description: `Bem-vindo ao ${profile.name}! Você será redirecionado para o dashboard.`,
+          className: "shadow-xl",
+        });
+        
+        // Redirecionar para o dashboard apenas na criação inicial
+        setTimeout(() => {
+          navigate("/dashboard");
+        }, 3000);
+      }
     } catch (error: any) {
       toast({
         variant: "destructive",
         title: "Erro ao salvar perfil",
         description: error.message || "Ocorreu um erro ao salvar seu perfil. Tente novamente.",
+        className: "shadow-xl",
       });
     } finally {
       setIsSaving(false);

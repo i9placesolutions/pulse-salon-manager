@@ -14,11 +14,12 @@ import { NotificationPreferences } from "@/components/mensalidade/NotificationPr
 import { SubscriptionStatusWidget } from "@/components/mensalidade/SubscriptionStatusWidget";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency } from "@/utils/currency";
-import { SubscriptionPlan, SubscriptionStatus, PaymentMethod, Invoice } from "@/types/subscription";
+import { SubscriptionPlan, SubscriptionStatus, PaymentMethod, Invoice, SubscriptionDetails } from "@/types/subscription";
 import { PageLayout } from "@/components/shared/PageLayout";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { useAppState } from "@/contexts/AppStateContext";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { createCustomer, createSubscription, SubscriptionParams } from "@/lib/asaasApi";
 
 const plans: SubscriptionPlan[] = [
   {
@@ -153,8 +154,15 @@ export default function Mensalidade() {
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [notificationPrefs, setNotificationPrefs] = useState(mockNotificationPreferences);
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [asaasCustomerId, setAsaasCustomerId] = useState<string | null>(null);
   const navigate = useNavigate();
-  const { profileState, updateSubscriptionStatus } = useAppState();
+  const { 
+    profileState, 
+    updateSubscriptionStatus,
+    userName,
+    userEmail
+  } = useAppState();
   
   const isTrialExpired = () => {
     if (!profileState.trialEndsAt) return false;
@@ -186,27 +194,123 @@ export default function Mensalidade() {
     setConfirmDialogOpen(true);
   };
 
-  const handlePaymentSubmit = (data: { method: PaymentMethod; [key: string]: any }) => {
+  const handlePaymentSubmit = async (data: { method: PaymentMethod; [key: string]: any }) => {
     console.log("Payment data:", data);
-    toast({
-      title: "Pagamento processado",
-      description: "Seu pagamento está sendo processado.",
-    });
+    setIsProcessingPayment(true);
+
+    try {
+      // Verifica se temos um plano selecionado
+      if (!selectedPlan) {
+        throw new Error("Nenhum plano selecionado");
+      }
+
+      // Cria o cliente no Asaas se não existir
+      let customerId = asaasCustomerId;
+      
+      if (!customerId) {
+        // Aqui você precisaria obter os dados do usuário logado
+        const customerData = {
+          name: userName || "Cliente Teste",
+          email: userEmail || "cliente@exemplo.com",
+          cpfCnpj: data.holderInfo?.cpfCnpj || "12345678900",
+          phone: data.holderInfo?.phone || "",
+          mobilePhone: data.holderInfo?.phone || "",
+          postalCode: data.holderInfo?.postalCode || "",
+          address: data.holderInfo?.address || "",
+          addressNumber: data.holderInfo?.addressNumber || "",
+          externalReference: `user_${profileState.isFirstLogin ? "trial" : "paid"}`,
+        };
+        
+        const customerResponse = await createCustomer(customerData);
+        customerId = customerResponse.id;
+        setAsaasCustomerId(customerId);
+      }
+
+      // Mapeia o método de pagamento para o formato do Asaas
+      const billingType: "BOLETO" | "CREDIT_CARD" | "PIX" = data.method === 'credit_card' 
+        ? 'CREDIT_CARD' 
+        : data.method === 'pix' 
+          ? 'PIX' 
+          : 'BOLETO';
+
+      // Obtém a data atual
+      const today = new Date();
+      // Adiciona 1 dia para a primeira cobrança
+      const nextDueDate = new Date(today);
+      nextDueDate.setDate(today.getDate() + 1);
+      const formattedDueDate = nextDueDate.toISOString().split('T')[0];
+
+      // Prepara os dados da assinatura
+      const subscriptionData: SubscriptionParams = {
+        customer: customerId,
+        billingType,
+        value: selectedPlan.price,
+        nextDueDate: formattedDueDate,
+        description: `Assinatura ${selectedPlan.name} - Pulse Salon Manager`,
+        cycle: 'MONTHLY',
+        externalReference: `plan_${selectedPlan.id}`,
+      };
+
+      // Adiciona dados do cartão se for pagamento por cartão de crédito
+      if (data.method === 'credit_card') {
+        subscriptionData.creditCard = {
+          holderName: data.cardName,
+          number: data.cardNumber,
+          expiryMonth: data.expiryMonth,
+          expiryYear: data.expiryYear,
+          ccv: data.cvv
+        };
+        
+        subscriptionData.creditCardHolderInfo = {
+          name: data.cardName,
+          email: userEmail || "cliente@exemplo.com",
+          cpfCnpj: data.holderInfo.cpfCnpj,
+          postalCode: data.holderInfo.postalCode,
+          addressNumber: data.holderInfo.addressNumber,
+          phone: data.holderInfo.phone,
+        };
+      }
+
+      // Cria a assinatura no Asaas
+      const subscriptionResponse = await createSubscription(subscriptionData);
+      console.log("Assinatura criada:", subscriptionResponse);
+      
+      // Atualiza o status da assinatura no sistema
+      updateSubscriptionStatus(true);
+      
+      toast({
+        title: "Assinatura confirmada",
+        description: "Sua assinatura foi processada com sucesso!",
+      });
+      
+      // Se for boleto ou PIX, abre o link do documento ou código PIX
+      if (data.method === 'boleto' && subscriptionResponse.invoiceUrl) {
+        window.open(subscriptionResponse.invoiceUrl, '_blank');
+      } else if (data.method === 'pix' && subscriptionResponse.invoiceUrl) {
+        window.open(subscriptionResponse.invoiceUrl, '_blank');
+      }
+      
+      // Redireciona para o dashboard após sucesso
+      setTimeout(() => {
+        navigate("/dashboard");
+      }, 2000);
+    } catch (error) {
+      console.error("Erro ao processar assinatura:", error);
+      toast({
+        title: "Erro no processamento",
+        description: "Houve um erro ao processar sua assinatura. Por favor, tente novamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessingPayment(false);
+    }
   };
 
   const handleSubscriptionConfirm = () => {
     setConfirmDialogOpen(false);
     
-    updateSubscriptionStatus(true);
-    
-    toast({
-      title: "Assinatura confirmada",
-      description: "Sua assinatura foi confirmada com sucesso!",
-    });
-    
-    setTimeout(() => {
-      navigate("/dashboard");
-    }, 2000);
+    // Agora o fluxo de confirmação só vai para a tela de pagamento
+    setSelectedTab("subscription");
   };
 
   const handleCancelSubscription = (reason: string) => {
@@ -241,6 +345,19 @@ export default function Mensalidade() {
       title: "Preferências atualizadas",
       description: "Suas preferências de notificação foram atualizadas.",
     });
+  };
+
+  // Na renderização do componente CurrentPlanDetails, utilizar o mock com a interface correta
+  const mockSubscriptionDetails: SubscriptionDetails = {
+    id: mockSubscription.id,
+    planId: mockSubscription.planId,
+    status: mockSubscription.status,
+    startDate: mockSubscription.startDate,
+    endDate: mockSubscription.endDate,
+    trialEndsAt: mockSubscription.trialEndsAt,
+    paymentMethod: mockSubscription.paymentMethod,
+    autoRenew: mockSubscription.autoRenew,
+    lastPayment: mockSubscription.lastPayment
   };
 
   return (
@@ -403,16 +520,64 @@ export default function Mensalidade() {
           <div className="grid gap-4 md:grid-cols-2">
             <div className="overflow-hidden rounded-lg border border-emerald-100 shadow-md">
               <div className="h-1 w-full bg-gradient-to-r from-emerald-400 via-green-500 to-teal-500"></div>
-              <CurrentPlanDetails
-                subscription={mockSubscription}
-                plan={plans.find(p => p.id === mockSubscription.planId)!}
-                onRenewChange={handleAutoRenewChange}
-                onCancelSubscription={() => setCancelDialogOpen(true)}
-              />
+              {profileState.subscriptionActive ? (
+                <CurrentPlanDetails
+                  subscription={mockSubscriptionDetails}
+                  isLoading={false}
+                  onUpgrade={() => setSelectedTab("plans")}
+                  onCancel={() => setCancelDialogOpen(true)}
+                />
+              ) : (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Detalhes do Plano</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {selectedPlan ? (
+                      <div className="space-y-4">
+                        <div>
+                          <h3 className="text-lg font-semibold">{selectedPlan.name}</h3>
+                          <p className="text-sm text-gray-500">{selectedPlan.description}</p>
+                        </div>
+                        <div className="py-2">
+                          <span className="text-2xl font-bold">{formatCurrency(selectedPlan.price)}</span>
+                          <span className="text-gray-500">/mês</span>
+                        </div>
+                        <div>
+                          <h4 className="font-medium mb-2">Recursos inclusos:</h4>
+                          <ul className="space-y-1">
+                            {selectedPlan.features.map((feature, index) => (
+                              <li key={index} className="flex items-center text-sm">
+                                <Check className="h-4 w-4 mr-2 text-green-500" />
+                                {feature}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="py-8 text-center">
+                        <p className="text-gray-500">Selecione um plano na aba "Planos" para continuar</p>
+                        <Button 
+                          onClick={() => setSelectedTab("plans")} 
+                          variant="outline" 
+                          className="mt-4"
+                        >
+                          Escolher Plano
+                        </Button>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
             </div>
             <div className="overflow-hidden rounded-lg border border-blue-100 shadow-md">
               <div className="h-1 w-full bg-gradient-to-r from-blue-400 via-indigo-500 to-purple-500"></div>
-              <PaymentMethodForm onSubmit={handlePaymentSubmit} />
+              <PaymentMethodForm 
+                onSubmit={handlePaymentSubmit} 
+                customerId={asaasCustomerId || undefined}
+                loading={isProcessingPayment}
+              />
             </div>
           </div>
         </TabsContent>

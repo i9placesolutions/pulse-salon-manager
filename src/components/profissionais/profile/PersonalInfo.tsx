@@ -4,12 +4,45 @@ import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Camera } from "lucide-react";
 import { FormCard } from "@/components/shared/FormCard";
+import { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
 
 export function PersonalInfo() {
+  const { toast } = useToast();
+  const [isSaving, setIsSaving] = useState(false);
+  
+  const handleSave = () => {
+    setIsSaving(true);
+    
+    // Simulação de salvamento
+    setTimeout(() => {
+      setIsSaving(false);
+      
+      // Mostrar mensagem de sucesso
+      toast({
+        variant: "success",
+        title: "Perfil editado com sucesso!",
+        description: "As alterações foram salvas.",
+        className: "shadow-xl",
+      });
+    }, 1000);
+  };
+
   return (
     <FormCard 
       title="Informações Pessoais"
-      footer={<Button>Salvar Alterações</Button>}
+      footer={
+        <Button onClick={handleSave} disabled={isSaving}>
+          {isSaving ? (
+            <>
+              <span className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"></span>
+              Salvando...
+            </>
+          ) : (
+            "Salvar Alterações"
+          )}
+        </Button>
+      }
     >
       <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start sm:gap-8">
         <div className="flex flex-col items-center gap-2 mb-4 sm:mb-0">

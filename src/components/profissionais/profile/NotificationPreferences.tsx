@@ -3,12 +3,45 @@ import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { FormCard } from "@/components/shared/FormCard";
 import { Button } from "@/components/ui/button";
+import { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
 
 export function NotificationPreferences() {
+  const { toast } = useToast();
+  const [isSaving, setIsSaving] = useState(false);
+  
+  const handleSave = () => {
+    setIsSaving(true);
+    
+    // Simulação de salvamento
+    setTimeout(() => {
+      setIsSaving(false);
+      
+      // Mostrar mensagem de sucesso
+      toast({
+        variant: "success",
+        title: "Preferências salvas com sucesso!",
+        description: "Suas preferências de notificação foram atualizadas.",
+        className: "shadow-xl",
+      });
+    }, 1000);
+  };
+
   return (
     <FormCard 
       title="Preferências de Notificação"
-      footer={<Button>Salvar Preferências</Button>}
+      footer={
+        <Button onClick={handleSave} disabled={isSaving}>
+          {isSaving ? (
+            <>
+              <span className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"></span>
+              Salvando...
+            </>
+          ) : (
+            "Salvar Preferências"
+          )}
+        </Button>
+      }
     >
       <div className="space-y-4">
         <h4 className="font-medium">Canais de Comunicação</h4>

@@ -1,8 +1,7 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Calendar, Clock, AlertCircle, X, Ban, CheckCircle2, Calendar as CalendarIcon, User, Plus, Trash2 } from "lucide-react";
+import { Calendar, Clock, AlertCircle, X, Ban, CheckCircle2, User, Plus, Trash2 } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -245,16 +244,24 @@ export const BlockTimeDialog = ({
     if (temporaryBlocks.length > 0) {
       setIsSubmitting(true);
       
-      // Simulando uma chamada API para cada bloco
-      await Promise.all(temporaryBlocks.map(block => 
-        new Promise(resolve => setTimeout(() => {
-          onConfirm(block);
-          resolve(null);
-        }, 300))
-      ));
+      try {
+        // Processando cada bloco
+        for (const block of temporaryBlocks) {
+          await onConfirm(block);
+        }
+        
+        onOpenChange(false);
+      } catch (error) {
+        console.error("Erro ao salvar bloqueios:", error);
+        toast({
+          title: "Erro ao salvar",
+          description: "Ocorreu um erro ao salvar os bloqueios de horário.",
+          variant: "destructive"
+        });
+      } finally {
+        setIsSubmitting(false);
+      }
       
-      setIsSubmitting(false);
-      onOpenChange(false);
       return;
     }
     
@@ -294,12 +301,19 @@ export const BlockTimeDialog = ({
       return;
     }
 
-    // Simulando uma chamada API
-    await new Promise(resolve => setTimeout(resolve, 800));
-    
-    onConfirm(formData);
-    setIsSubmitting(false);
-    onOpenChange(false);
+    try {
+      await onConfirm(formData);
+      onOpenChange(false);
+    } catch (error) {
+      console.error("Erro ao salvar bloqueio:", error);
+      toast({
+        title: "Erro ao salvar",
+        description: "Ocorreu um erro ao salvar o bloqueio de horário.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
   
   // Formatar o nome do profissional de acordo com o ID
@@ -363,6 +377,39 @@ export const BlockTimeDialog = ({
               </div>
             </div>
 
+            {/* Nova seção: Tipo de bloqueio de horário */}
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label className="text-sm font-medium flex items-center gap-1">
+                  <Clock className="h-4 w-4 text-muted-foreground" />
+                  Opção de Bloqueio <span className="text-destructive">*</span>
+                </Label>
+                <div className="grid grid-cols-1 gap-3">
+                  <div className="flex items-center space-x-2 p-3 border rounded-md hover:bg-gray-50 cursor-pointer"
+                       onClick={() => handleFieldChange("blockFullDay", true)}>
+                    <div className={`w-4 h-4 rounded-full border ${formData.blockFullDay ? 'bg-blue-500 border-blue-500' : 'border-gray-300'}`}>
+                      {formData.blockFullDay && <div className="w-2 h-2 rounded-full bg-white m-auto mt-1"></div>}
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-medium">Bloquear dia inteiro</p>
+                      <p className="text-xs text-muted-foreground">Bloqueia todas as horas dos dias selecionados</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center space-x-2 p-3 border rounded-md hover:bg-gray-50 cursor-pointer"
+                       onClick={() => handleFieldChange("blockFullDay", false)}>
+                    <div className={`w-4 h-4 rounded-full border ${!formData.blockFullDay ? 'bg-blue-500 border-blue-500' : 'border-gray-300'}`}>
+                      {!formData.blockFullDay && <div className="w-2 h-2 rounded-full bg-white m-auto mt-1"></div>}
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-medium">Bloquear horários específicos</p>
+                      <p className="text-xs text-muted-foreground">Selecione horários específicos para bloquear</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label className="text-sm font-medium flex items-center gap-1">
@@ -423,18 +470,6 @@ export const BlockTimeDialog = ({
                     )}
                   </div>
                 </div>
-              </div>
-
-              {/* Opção para bloquear o dia todo */}
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="block-all-day"
-                  checked={formData.blockFullDay}
-                  onCheckedChange={(checked) => handleFieldChange("blockFullDay", checked)}
-                />
-                <Label htmlFor="block-all-day" className="cursor-pointer">
-                  Bloquear o dia todo
-                </Label>
               </div>
 
               {/* Horários - apenas exibidos se não estiver bloqueando o dia todo */}

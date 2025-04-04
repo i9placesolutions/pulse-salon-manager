@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { AppointmentDialog } from "@/components/appointments/AppointmentDialog";
 import { AppointmentFilters } from "@/components/appointments/AppointmentFilters";
 import { WeeklyCalendar } from "@/components/appointments/WeeklyCalendar";
-import { BlockTimeDialog } from "@/components/appointments/BlockTimeDialog";
+import { BlockTimeDialog, BlockTimeData } from "@/components/appointments/BlockTimeDialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { 
@@ -35,10 +35,7 @@ import {
   Palette,
   Calendar
 } from "lucide-react";
-import type { BlockTimeFormData } from "@/components/appointments/BlockTimeDialog";
-import { AppointmentList } from "@/components/appointments/AppointmentList";
-import { useToast } from "@/hooks/use-toast";
-import { format, addDays, addMonths, subDays, eachDayOfInterval, endOfMonth, endOfWeek, isSameDay, startOfMonth, startOfWeek, subMonths } from "date-fns";
+import { format, parseISO, isToday, isThisWeek, isThisMonth, addDays, subDays, subMonths, addMonths } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import type { Appointment, Professional } from "@/types/appointment";
 import { Card, CardContent } from "@/components/ui/card";
@@ -78,6 +75,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import * as z from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { supabase } from "@/integrations/supabase/client";
+import { AppointmentList } from "@/components/appointments/AppointmentList";
+import { useToast } from "@/hooks/use-toast";
 
 // Temporary mock data
 const professionals: Professional[] = [
@@ -228,8 +228,8 @@ const Appointments = () => {
   
   // Estado para controlar o modal de novo agendamento
   const [newAppointmentOpen, setNewAppointmentOpen] = useState(false);
-  const [newAppointmentDate, setNewAppointmentDate] = useState<Date | undefined>(undefined);
-  const [newAppointmentTime, setNewAppointmentTime] = useState<string>("");
+  const [newAppointmentDate, setNewAppointmentDate] = useState<Date | null>(null);
+  const [newAppointmentTime, setNewAppointmentTime] = useState<string | null>(null);
   
   // Novo estado para controlar o modal de relatórios
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
@@ -255,6 +255,9 @@ const Appointments = () => {
   
   // Estado para controlar o formato de exportação selecionado
   const [exportFormat, setExportFormat] = useState<"pdf" | "excel">("pdf");
+  
+  const [existingBlocks, setExistingBlocks] = useState<BlockTimeData[]>([]);
+  const [isLoadingBlocks, setIsLoadingBlocks] = useState(false);
   
   const { toast } = useToast();
 
@@ -719,6 +722,91 @@ const Appointments = () => {
     }
   }, [reportClientSearch, reportClientFilter, showReportResults, reportDateRange, reportProfessionalFilter, reportStatusFilter, reportPaymentStatusFilter, reportSortBy]);
 
+  // Função para carregar bloqueios de horário existentes
+  const loadBlockedTimes = async () => {
+    try {
+      setIsLoadingBlocks(true);
+      // Obter o ID do usuário atual
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        throw new Error("Usuário não autenticado");
+      }
+      
+      // Buscar bloqueios de horário
+      const { data, error } = await supabase
+        .from('blocked_times')
+        .select('*')
+        .eq('establishment_id', user.id)
+        .order('start_date', { ascending: true });
+      
+      if (error) {
+        throw error;
+      }
+      
+      // Mapear para o formato esperado pelo componente
+      const mappedData: BlockTimeData[] = data.map((block: any) => ({
+        id: block.id,
+        professionalId: block.professional_id,
+        startDate: block.start_date,
+        endDate: block.end_date,
+        startTime: block.start_time || "00:00",
+        endTime: block.end_time || "23:59",
+        reason: block.reason,
+        blockFullDay: block.is_full_day
+      }));
+      
+      setExistingBlocks(mappedData);
+    } catch (error) {
+      console.error("Erro ao carregar bloqueios:", error);
+      toast({
+        title: "Erro ao carregar bloqueios",
+        description: "Não foi possível carregar os bloqueios existentes.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoadingBlocks(false);
+    }
+  };
+  
+  // Função para excluir um bloqueio
+  const handleDeleteBlock = async (id: number) => {
+    try {
+      const { error } = await supabase
+        .from('blocked_times')
+        .delete()
+        .eq('id', id);
+      
+      if (error) {
+        throw error;
+      }
+      
+      // Atualizar a lista local
+      setExistingBlocks(prev => prev.filter(block => block.id !== id));
+      
+      toast({
+        title: "Bloqueio removido",
+        description: "O bloqueio de horário foi removido com sucesso.",
+        variant: "success"
+      });
+    } catch (error: any) {
+      console.error("Erro ao remover bloqueio:", error);
+      toast({
+        title: "Erro ao remover bloqueio",
+        description: error.message || "Ocorreu um erro ao remover o bloqueio.",
+        variant: "destructive"
+      });
+    }
+  };
+  
+  // Carregar bloqueios quando o componente monta e quando o modal for aberto
+  useEffect(() => {
+    // Carrega bloqueios na inicialização e quando o modal é aberto
+    if (isBlockTimeOpen) {
+      loadBlockedTimes();
+    }
+  }, [isBlockTimeOpen]);
+
   return (
     <PageLayout variant="purple">
       <PageHeader 
@@ -982,11 +1070,59 @@ const Appointments = () => {
       <BlockTimeDialog
         open={isBlockTimeOpen}
         onOpenChange={setIsBlockTimeOpen}
-        onConfirm={(blockData) => {
-          toast({
-            title: "Horários bloqueados",
-            description: `Período bloqueado de ${blockData.startDate} até ${blockData.endDate}, das ${blockData.startTime} às ${blockData.endTime}`
-          });
+        professionals={professionals}
+        existingBlocks={existingBlocks}
+        onDeleteBlock={handleDeleteBlock}
+        onConfirm={async (blockData) => {
+          try {
+            // Obter o ID do usuário atual
+            const { data: { user } } = await supabase.auth.getUser();
+            
+            if (!user) {
+              throw new Error("Usuário não autenticado");
+            }
+            
+            // Mapear os dados do formulário para o formato do banco de dados
+            const blockedTimeData = {
+              establishment_id: user.id,
+              professional_id: blockData.professionalId || null,
+              start_date: blockData.startDate,
+              end_date: blockData.endDate,
+              start_time: blockData.blockFullDay ? null : blockData.startTime,
+              end_time: blockData.blockFullDay ? null : blockData.endTime,
+              reason: blockData.reason || null,
+              is_full_day: blockData.blockFullDay,
+              created_at: new Date().toISOString()
+            };
+            
+            // Inserir no Supabase
+            const { data, error } = await supabase
+              .from('blocked_times')
+              .insert(blockedTimeData)
+              .select();
+            
+            if (error) {
+              throw error;
+            }
+            
+            toast({
+              title: "Horários bloqueados",
+              description: blockData.blockFullDay 
+                ? `Dias bloqueados de ${format(new Date(blockData.startDate), "dd/MM/yyyy")} até ${format(new Date(blockData.endDate), "dd/MM/yyyy")}`
+                : `Período bloqueado de ${format(new Date(blockData.startDate), "dd/MM/yyyy")} até ${format(new Date(blockData.endDate), "dd/MM/yyyy")}, das ${blockData.startTime} às ${blockData.endTime}`
+            });
+            
+            // Recarregar bloqueios após adicionar
+            await loadBlockedTimes();
+            
+          } catch (error: any) {
+            console.error("Erro ao bloquear horário:", error);
+            toast({
+              title: "Erro ao bloquear horário",
+              description: error.message || "Ocorreu um erro ao bloquear o horário",
+              variant: "destructive"
+            });
+          }
         }}
       />
 

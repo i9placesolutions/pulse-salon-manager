@@ -6,6 +6,9 @@ import { useToast } from "@/components/ui/use-toast";
 import { Mail, Lock, Loader2, LogIn, Check } from "lucide-react";
 import { useAppState } from "@/contexts/AppStateContext";
 import { supabase } from "@/integrations/supabase/client";
+import { sendTextMessage, MAIN_INSTANCE_TOKEN } from "@/lib/whatsappApi";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 const LoginForm = () => {
   const [email, setEmail] = useState("");
@@ -123,6 +126,9 @@ const LoginForm = () => {
         // Redirecionar para o dashboard (perfil completo e assinatura ativa ou ainda no período de teste)
         navigate("/dashboard");
         
+        // Enviar notificação de login por WhatsApp
+        sendLoginNotificationWhatsApp(profileData);
+        
         // Se estiver no período de teste, mostrar mensagem com dias restantes
         if (!profileData.subscription_active && trialEndsAt && today <= trialEndsAt) {
           const daysLeft = Math.ceil((trialEndsAt.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
@@ -155,6 +161,52 @@ const LoginForm = () => {
     }
     
     setIsLoading(false);
+  };
+
+  // Função para enviar notificação de login por WhatsApp
+  const sendLoginNotificationWhatsApp = async (profileData: any) => {
+    try {
+      // Buscar dados detalhados do estabelecimento para obter o número de WhatsApp
+      const { data: establishmentData, error: establishmentError } = await supabase
+        .from('establishment_details')
+        .select('whatsapp')
+        .eq('id', profileData.id)
+        .single();
+
+      if (establishmentError || !establishmentData?.whatsapp) {
+        console.error("Erro ao buscar WhatsApp do estabelecimento:", establishmentError);
+        return;
+      }
+
+      // Formatar o número de telefone (remover formatação)
+      const phoneNumber = establishmentData.whatsapp.replace(/\D/g, "");
+      
+      // Formatação da data e hora atuais
+      const currentDate = format(new Date(), "dd/MM/yyyy", { locale: ptBR });
+      const currentTime = format(new Date(), "HH:mm", { locale: ptBR });
+
+      // Preparar a mensagem
+      const messageText = `✨ Login realizado com sucesso no *Pulse Salon Manager!*
+👤 Usuário: *${email}*
+🏢 Estabelecimento: *${profileData.establishment_name}*
+📅 Data: *${currentDate}*
+🕒 Horário: *${currentTime}*
+
+Se não foi você, entre em contato com o suporte imediatamente. 🔒`;
+
+      // Enviar a mensagem usando a instância principal de notificação
+      await sendTextMessage({
+        number: phoneNumber,
+        text: messageText,
+        token: MAIN_INSTANCE_TOKEN, // Usar o token da instância principal
+        readchat: true
+      });
+
+      console.log("Notificação de login enviada com sucesso");
+    } catch (error) {
+      console.error("Erro ao enviar notificação de login:", error);
+      // Não mostrar toast de erro para o usuário para não afetar a experiência
+    }
   };
 
   return (
