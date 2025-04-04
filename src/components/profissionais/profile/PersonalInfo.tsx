@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { v4 as uuidv4 } from "uuid";
+import { SystemUser } from "@/types/supabase";
 
 export function PersonalInfo() {
   const { toast } = useToast();
@@ -75,22 +76,23 @@ export function PersonalInfo() {
       // Determinar a role final baseada no checkbox
       const finalRole = isProfessional ? 'professional' : role;
       
+      // Preparar dados do usuário
+      const userData: Partial<SystemUser> = {
+        id: uuidv4(),
+        name,
+        email,
+        phone: phone || null,
+        role: finalRole as SystemUser['role'],
+        is_professional: isProfessional,
+        birth_date: birthDate || null,
+        address: address || null,
+        status: 'active'
+      };
+      
       // Salvar no Supabase
       const { data, error } = await supabase
         .from('system_users')
-        .insert([
-          {
-            id: uuidv4(),
-            name,
-            email,
-            phone,
-            role: finalRole,
-            is_professional: isProfessional,
-            birth_date: birthDate || null,
-            address: address || null,
-            status: 'active'
-          }
-        ]);
+        .insert([userData]);
         
       if (error) {
         throw error;
