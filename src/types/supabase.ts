@@ -135,97 +135,57 @@ export type SubscriptionResponse = {
 // Extensão do tipo Json da base de dados
 export type Json = string | number | boolean | null | { [key: string]: Json } | Json[];
 
-// Definição de interfaces para cada função RPC
-export interface RPCFunctionDefs {
+// Definição dos tipos de retorno para cada função RPC
+export type RPCReturnTypes = {
   get_current_user_permissions: {
-    args: Record<string, unknown>;
-    returns: {role: string, permissions: Record<string, boolean>};
+    role: string;
+    permissions: Record<string, boolean>;
   };
   insert_webhook_event: {
-    args: {provider_input: string, event_type_input: string, payload_input: any};
-    returns: {id: string};
+    id: string;
   };
-  update_webhook_event_status: {
-    args: {event_id_input: string, processed_input: boolean, processing_result_input: string};
-    returns: null;
-  };
-  insert_payment_history: {
-    args: Record<string, unknown>;
-    returns: null;
-  };
-  insert_subscription: {
-    args: Record<string, unknown>;
-    returns: null;
-  };
-  update_subscription_status: {
-    args: {subscription_id_input: string, status_input: string};
-    returns: null;
-  };
+  update_webhook_event_status: null;
+  insert_payment_history: null;
+  insert_subscription: null;
+  update_subscription_status: null;
   find_profile_by_customer_id: {
-    args: {customer_id_input: string};
-    returns: {id: string} | null;
-  };
+    id: string;
+  } | null;
   find_profile_by_id: {
-    args: {profile_id_input: string};
-    returns: {id: string} | null;
-  };
-  update_profile_customer_id: {
-    args: {profile_id_input: string, customer_id_input: string};
-    returns: null;
-  };
-  update_profile_subscription: {
-    args: {customer_id_input: string, is_active_input: boolean};
-    returns: null;
-  };
-  update_subscription_billing_date: {
-    args: {subscription_id_input: string, next_date_input: string};
-    returns: null;
-  };
-  get_blocked_times: {
-    args: {establishment_id_input: string};
-    returns: BlockedTime[];
-  };
+    id: string;
+  } | null;
+  update_profile_customer_id: null;
+  update_profile_subscription: null;
+  update_subscription_billing_date: null;
+  get_blocked_times: BlockedTime[];
   create_blocked_time: {
-    args: {
-      establishment_id_input: string, 
-      professional_id_input: string, 
-      start_date_input: string, 
-      end_date_input: string, 
-      start_time_input?: string, 
-      end_time_input?: string, 
-      reason_input?: string, 
-      is_full_day_input: boolean
-    };
-    returns: {id: string};
+    id: string;
   };
-  delete_blocked_time: {
-    args: {block_id_input: string};
-    returns: boolean;
-  };
-}
-
-// Tipo genérico para chamadas RPC
-export type RPCFunction<T extends keyof RPCFunctionDefs> = (
-  args: RPCFunctionDefs[T]['args']
-) => Promise<{
-  data: RPCFunctionDefs[T]['returns'];
-  error: any;
-}>;
-
-// Definição de RPCFunctions como um registro de funções RPC
-export type RPCFunctions = {
-  [K in keyof RPCFunctionDefs]: RPCFunction<K>;
+  delete_blocked_time: boolean;
 };
 
-// Tipo para retornos específicos
+// Tipagens específicas para facilitar uso em código
 export type WebhookEventInsertResponse = {
   id: string;
 };
 
 export type ProfileResponse = {
   id: string;
-};
+} | null;
 
 export type BlockedTimeResponse = {
   id: string;
 };
+
+// Definição genérica para as funções RPC do Supabase
+export type RPCFunction<T extends keyof RPCReturnTypes> = (
+  functionName: T,
+  args?: Record<string, any>,
+  options?: {
+    head?: boolean;
+    count?: 'exact' | 'planned' | 'estimated';
+  }
+) => Promise<{
+  data: RPCReturnTypes[T];
+  error: any;
+}>;

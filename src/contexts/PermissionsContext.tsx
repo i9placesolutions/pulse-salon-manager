@@ -1,7 +1,7 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Json, RPCFunctions } from "@/types/supabase";
+import { Json, RPCReturnTypes } from "@/types/supabase";
 
 type UserRole = 'admin' | 'manager' | 'professional' | 'receptionist' | 'user' | 'none';
 
@@ -90,12 +90,14 @@ export const PermissionsProvider = ({ children }: { children: ReactNode }) => {
       }
       
       if (rpcData) {
-        const typedRole = rpcData.role as UserRole || 'none';
+        // Validamos e processamos os dados retornados
+        const responseData = rpcData as RPCReturnTypes['get_current_user_permissions'];
+        const typedRole = (responseData.role as UserRole) || 'none';
         setUserRole(typedRole);
         
-        // Converter as permissões para o formato esperado
-        if (rpcData.permissions) {
-          setPermissions(rpcData.permissions as Permissions);
+        // Aplicamos as permissões retornadas
+        if (responseData.permissions) {
+          setPermissions(responseData.permissions as Permissions);
         } else {
           setPermissions(defaultPermissions);
         }

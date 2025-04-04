@@ -8,7 +8,7 @@
 
 // Importando apenas o necessário
 import { supabase } from '@/integrations/supabase/client';
-import { WebhookEvent, WebhookEventInsertResponse, ProfileResponse } from '@/types/supabase';
+import { WebhookEventInsertResponse, ProfileResponse, BlockedTime } from '@/types/supabase';
 import asaasLogger, { startAsaasTransaction } from './asaasLogger';
 
 // Tipo para eventos de pagamento
@@ -62,7 +62,7 @@ export async function handleWebhook(eventData: AsaasPaymentEvent): Promise<{
     logger.info('Webhook recebido', { event: eventData.event });
 
     // Salvar o evento bruto no banco de dados para rastreabilidade
-    const { data: eventRecord, error: eventError } = await supabase
+    const { data: eventInsertData, error: eventError } = await supabase
       .rpc('insert_webhook_event', {
         provider_input: 'asaas',
         event_type_input: eventData.event,
@@ -78,10 +78,11 @@ export async function handleWebhook(eventData: AsaasPaymentEvent): Promise<{
     const result = await processEventByType(eventData, logger);
 
     // Atualizar o registro do evento como processado
-    if (eventRecord && eventRecord.id) {
+    if (eventInsertData) {
+      const eventId = (eventInsertData as WebhookEventInsertResponse).id;
       const { error: updateError } = await supabase
         .rpc('update_webhook_event_status', {
-          event_id_input: eventRecord.id,
+          event_id_input: eventId,
           processed_input: result.success,
           processing_result_input: result.message
         });
@@ -448,11 +449,14 @@ async function updateSubscriptionStatus(
       }
 
       // Atualizar o external_customer_id para facilitar futuras consultas
-      await supabase
-        .rpc('update_profile_customer_id', {
-          profile_id_input: alternativeProfile.id,
-          customer_id_input: customerId
-        });
+      const typedProfile = alternativeProfile as ProfileResponse;
+      if (typedProfile) {
+        await supabase
+          .rpc('update_profile_customer_id', {
+            profile_id_input: (typedProfile as any).id,
+            customer_id_input: customerId
+          });
+      }
     }
 
     // Atualizar o status da assinatura

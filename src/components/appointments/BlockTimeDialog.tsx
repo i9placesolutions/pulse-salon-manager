@@ -1,3 +1,4 @@
+
 import {
   AlertDialog,
   AlertDialogAction,
@@ -46,7 +47,6 @@ import { cn } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect, useState } from "react";
 
-// Este arquivo já existe, mas precisamos atualizar a tipagem para BlockTimeData
 // Adicionando apenas a exportação da interface para uso em outros componentes
 
 export interface BlockTimeData {
@@ -124,7 +124,18 @@ export const BlockTimeDialog = ({
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
-      await onSave(values);
+      // Garantimos que todos os campos obrigatórios estejam presentes
+      const blockData: BlockTimeData = {
+        professionalId: values.professionalId,
+        startDate: values.startDate,
+        endDate: values.endDate,
+        startTime: values.startTime || "00:00",
+        endTime: values.endTime || "23:59",
+        reason: values.reason || "",
+        isFullDay: values.isFullDay,
+      };
+      
+      await onSave(blockData);
       onOpenChange(false);
       form.reset();
     } catch (error) {
