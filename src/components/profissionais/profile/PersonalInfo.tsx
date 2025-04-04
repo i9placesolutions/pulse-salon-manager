@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Camera } from "lucide-react";
 import { FormCard } from "@/components/shared/FormCard";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Checkbox } from "@/components/ui/checkbox";
 
@@ -14,6 +14,13 @@ export function PersonalInfo() {
   const [isSaving, setIsSaving] = useState(false);
   const [isProfessional, setIsProfessional] = useState(false);
   const [role, setRole] = useState('user');
+  
+  // Efeito para garantir que o checkbox seja marcado quando "professional" é selecionado
+  useEffect(() => {
+    if (role === 'professional') {
+      setIsProfessional(true);
+    }
+  }, [role]);
   
   const handleRoleChange = (newRole: string) => {
     setRole(newRole);
