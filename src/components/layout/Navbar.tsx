@@ -168,7 +168,7 @@ export const Navbar = ({
                   <span className="text-sm font-medium bg-clip-text text-transparent bg-gradient-to-r from-blue-700 to-purple-700">
                     {userName || "Usuário"}
                   </span>
-                  <span className="text-xs text-gray-500 truncate max-w-[120px]">
+                  <span className="text-xs text-gray-500">
                     {userEmail || ""}
                   </span>
                 </div>
@@ -177,7 +177,7 @@ export const Navbar = ({
             <DropdownMenuContent align="end" className="w-56">
               <div className="px-2 py-1.5">
                 <p className="text-sm font-medium">{userName || "Usuário"}</p>
-                <p className="text-xs text-muted-foreground truncate">{userEmail || ""}</p>
+                <p className="text-xs text-muted-foreground break-all">{userEmail || ""}</p>
               </div>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => navigate('/establishment-profile')} className="cursor-pointer text-neutral hover:text-primary hover:bg-primary/5">

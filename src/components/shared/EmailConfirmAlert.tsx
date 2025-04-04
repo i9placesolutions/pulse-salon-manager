@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { SystemAlert } from "@/components/ui/system-alert";
 import { Mail, AlertCircle } from "lucide-react";
 
