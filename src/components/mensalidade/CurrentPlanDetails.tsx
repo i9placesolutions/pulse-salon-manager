@@ -1,5 +1,4 @@
 
-// Se este arquivo não existir ainda, ele será criado com o conteúdo atualizado para o período de 7 dias
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -13,6 +12,7 @@ interface CurrentPlanDetailsProps {
   onUpgrade?: () => void;
   onCancel?: () => void;
   onRenewChange?: (autoRenew: boolean) => void;
+  onCancelSubscription?: () => void;
   plan?: SubscriptionPlan;
 }
 
@@ -22,6 +22,7 @@ export function CurrentPlanDetails({
   onUpgrade, 
   onCancel,
   onRenewChange,
+  onCancelSubscription,
   plan
 }: CurrentPlanDetailsProps) {
   const [daysLeft, setDaysLeft] = useState<number | null>(null);
@@ -149,10 +150,10 @@ export function CurrentPlanDetails({
             {isTrial ? 'Assinar agora' : 'Renovar assinatura'}
           </Button>
         )}
-        {isActive && onCancel && (
+        {isActive && (onCancel || onCancelSubscription) && (
           <Button 
             variant="outline" 
-            onClick={onCancel} 
+            onClick={onCancelSubscription || onCancel} 
             className="w-full sm:w-auto border-gray-300 text-gray-700 hover:bg-gray-50"
           >
             Cancelar assinatura
