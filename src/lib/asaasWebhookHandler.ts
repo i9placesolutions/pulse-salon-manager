@@ -8,7 +8,7 @@
 
 // Importando apenas o necessário
 import { supabase } from '@/integrations/supabase/client';
-import { WebhookEvent, RPCFunctions, WebhookEventInsertResponse, ProfileResponse } from '@/types/supabase';
+import { WebhookEvent, WebhookEventInsertResponse, ProfileResponse } from '@/types/supabase';
 import asaasLogger, { startAsaasTransaction } from './asaasLogger';
 
 // Tipo para eventos de pagamento
@@ -63,7 +63,7 @@ export async function handleWebhook(eventData: AsaasPaymentEvent): Promise<{
 
     // Salvar o evento bruto no banco de dados para rastreabilidade
     const { data: eventRecord, error: eventError } = await supabase
-      .rpc<RPCFunctions['insert_webhook_event'], WebhookEventInsertResponse>('insert_webhook_event', {
+      .rpc('insert_webhook_event', {
         provider_input: 'asaas',
         event_type_input: eventData.event,
         payload_input: eventData
@@ -80,7 +80,7 @@ export async function handleWebhook(eventData: AsaasPaymentEvent): Promise<{
     // Atualizar o registro do evento como processado
     if (eventRecord && eventRecord.id) {
       const { error: updateError } = await supabase
-        .rpc<RPCFunctions['update_webhook_event_status'], null>('update_webhook_event_status', {
+        .rpc('update_webhook_event_status', {
           event_id_input: eventRecord.id,
           processed_input: result.success,
           processing_result_input: result.message
@@ -171,7 +171,7 @@ async function handlePaymentConfirmed(
 
     // Registrar pagamento no histórico usando RPC
     const { error } = await supabase
-      .rpc<RPCFunctions['insert_payment_history'], null>('insert_payment_history', {
+      .rpc('insert_payment_history', {
         external_id_input: payment.id,
         customer_id_input: payment.customer,
         amount_input: payment.value,
@@ -225,7 +225,7 @@ async function handleSubscriptionCreated(
     
     // Registrar assinatura no banco de dados usando RPC
     const { error } = await supabase
-      .rpc<RPCFunctions['insert_subscription'], null>('insert_subscription', {
+      .rpc('insert_subscription', {
         external_id_input: subscription.id,
         customer_id_input: subscription.customer,
         plan_value_input: subscription.value,
@@ -275,7 +275,7 @@ async function handleSubscriptionPaymentCreated(
   try {
     // Registrar pagamento de assinatura usando RPC
     const { error } = await supabase
-      .rpc<RPCFunctions['insert_payment_history'], null>('insert_payment_history', {
+      .rpc('insert_payment_history', {
         external_id_input: payment.id,
         customer_id_input: payment.customer,
         amount_input: payment.value,
@@ -336,7 +336,7 @@ async function handleSubscriptionPaymentFailed(
   try {
     // Registrar falha de pagamento usando RPC
     const { error } = await supabase
-      .rpc<RPCFunctions['insert_payment_history'], null>('insert_payment_history', {
+      .rpc('insert_payment_history', {
         external_id_input: payment.id,
         customer_id_input: payment.customer,
         amount_input: payment.value,
@@ -393,7 +393,7 @@ async function handleSubscriptionCancelled(
     
     // Atualizar registro da assinatura usando RPC
     const { error } = await supabase
-      .rpc<RPCFunctions['update_subscription_status'], null>('update_subscription_status', {
+      .rpc('update_subscription_status', {
         subscription_id_input: subscription.id, 
         status_input: subscription.status
       });
@@ -426,7 +426,7 @@ async function updateSubscriptionStatus(
   try {
     // Encontrar o perfil do usuário pelo ID externo do cliente
     const { data: profileData, error: profileError } = await supabase
-      .rpc<RPCFunctions['find_profile_by_customer_id'], ProfileResponse>('find_profile_by_customer_id', {
+      .rpc('find_profile_by_customer_id', {
         customer_id_input: customerId
       });
 
@@ -438,7 +438,7 @@ async function updateSubscriptionStatus(
     if (!profileData) {
       // Tentar encontrar por outros campos
       const { data: alternativeProfile, error } = await supabase
-        .rpc<RPCFunctions['find_profile_by_id'], ProfileResponse>('find_profile_by_id', {
+        .rpc('find_profile_by_id', {
           profile_id_input: customerId
         });
 
@@ -449,7 +449,7 @@ async function updateSubscriptionStatus(
 
       // Atualizar o external_customer_id para facilitar futuras consultas
       await supabase
-        .rpc<RPCFunctions['update_profile_customer_id'], null>('update_profile_customer_id', {
+        .rpc('update_profile_customer_id', {
           profile_id_input: alternativeProfile.id,
           customer_id_input: customerId
         });
@@ -457,7 +457,7 @@ async function updateSubscriptionStatus(
 
     // Atualizar o status da assinatura
     const { error: updateError } = await supabase
-      .rpc<RPCFunctions['update_profile_subscription'], null>('update_profile_subscription', {
+      .rpc('update_profile_subscription', {
         customer_id_input: customerId,
         is_active_input: isActive
       });
@@ -483,7 +483,7 @@ async function updateSubscriptionNextBillingDate(
 ): Promise<void> {
   try {
     const { error } = await supabase
-      .rpc<RPCFunctions['update_subscription_billing_date'], null>('update_subscription_billing_date', {
+      .rpc('update_subscription_billing_date', {
         subscription_id_input: subscriptionId,
         next_date_input: nextBillingDate
       });

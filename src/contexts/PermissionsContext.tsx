@@ -82,7 +82,7 @@ export const PermissionsProvider = ({ children }: { children: ReactNode }) => {
     try {
       setIsLoading(true);
       
-      const { data: rpcData, error } = await supabase.rpc<RPCFunctions['get_current_user_permissions']>('get_current_user_permissions');
+      const { data: rpcData, error } = await supabase.rpc('get_current_user_permissions');
       
       if (error) {
         console.error("Erro ao buscar permissões:", error);
@@ -90,14 +90,15 @@ export const PermissionsProvider = ({ children }: { children: ReactNode }) => {
       }
       
       if (rpcData) {
-        // Realizar cast específico para os dados esperados
-        const typedData = rpcData as unknown as {
-          role: UserRole;
-          permissions: Permissions;
-        };
+        const typedRole = rpcData.role as UserRole || 'none';
+        setUserRole(typedRole);
         
-        setUserRole(typedData.role || 'none');
-        setPermissions(typedData.permissions || defaultPermissions);
+        // Converter as permissões para o formato esperado
+        if (rpcData.permissions) {
+          setPermissions(rpcData.permissions as Permissions);
+        } else {
+          setPermissions(defaultPermissions);
+        }
       }
     } catch (error) {
       console.error("Erro ao buscar permissões:", error);
