@@ -21,7 +21,7 @@ export function EmailConfirmAlert() {
       }
       className="shadow-lg"
       dismissible={true}
-      autoClose={12000} // 12 segundos (maior tempo para leitura)
+      autoClose={12000}
     />
   );
 }
