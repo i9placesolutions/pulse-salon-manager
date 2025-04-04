@@ -222,12 +222,8 @@ export default function Mensalidade() {
         };
         
         const customerResponse = await createCustomer(customerData);
-        if (customerResponse && customerResponse.data && customerResponse.data.id) {
-          customerId = customerResponse.data.id;
-          setAsaasCustomerId(customerId);
-        } else {
-          throw new Error("Falha ao criar cliente");
-        }
+        customerId = customerResponse.id;
+        setAsaasCustomerId(customerId);
       }
 
       // Mapeia o método de pagamento para o formato do Asaas
@@ -288,10 +284,10 @@ export default function Mensalidade() {
       });
       
       // Se for boleto ou PIX, abre o link do documento ou código PIX
-      if (data.method === 'boleto' && subscriptionResponse.data && subscriptionResponse.data.invoiceUrl) {
-        window.open(subscriptionResponse.data.invoiceUrl, '_blank');
-      } else if (data.method === 'pix' && subscriptionResponse.data && subscriptionResponse.data.invoiceUrl) {
-        window.open(subscriptionResponse.data.invoiceUrl, '_blank');
+      if (data.method === 'boleto' && subscriptionResponse.invoiceUrl) {
+        window.open(subscriptionResponse.invoiceUrl, '_blank');
+      } else if (data.method === 'pix' && subscriptionResponse.invoiceUrl) {
+        window.open(subscriptionResponse.invoiceUrl, '_blank');
       }
       
       // Redireciona para o dashboard após sucesso

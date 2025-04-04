@@ -1,130 +1,31 @@
-
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Camera } from "lucide-react";
 import { FormCard } from "@/components/shared/FormCard";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { Checkbox } from "@/components/ui/checkbox";
-import { supabase } from "@/integrations/supabase/client";
-import { v4 as uuidv4 } from "uuid";
-import { SystemUser } from "@/types/supabase";
 
 export function PersonalInfo() {
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
-  const [isProfessional, setIsProfessional] = useState(false);
-  const [role, setRole] = useState<SystemUser['role']>('user');
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
-  const [birthDate, setBirthDate] = useState('');
-  const [address, setAddress] = useState('');
   
-  // Efeito para garantir que o checkbox seja marcado quando "professional" é selecionado
-  useEffect(() => {
-    if (role === 'professional') {
-      setIsProfessional(true);
-    }
-  }, [role]);
-  
-  const handleRoleChange = (newRole: SystemUser['role']) => {
-    setRole(newRole);
-    // Quando o cargo "professional" é selecionado, marca automaticamente o checkbox
-    if (newRole === 'professional') {
-      setIsProfessional(true);
-    }
-  };
-  
-  const handleSave = async () => {
-    if (!name || !email) {
-      toast({
-        variant: "destructive",
-        title: "Dados incompletos",
-        description: "Por favor, preencha pelo menos nome e e-mail.",
-        className: "shadow-xl",
-      });
-      return;
-    }
-
+  const handleSave = () => {
     setIsSaving(true);
     
-    try {
-      // Verificar se o email já existe
-      const { data: existingUsers, error: checkError } = await supabase
-        .from('system_users')
-        .select('id')
-        .eq('email', email);
-      
-      if (checkError) {
-        throw checkError;
-      }
-
-      if (existingUsers && existingUsers.length > 0) {
-        toast({
-          variant: "destructive",
-          title: "Erro ao criar usuário",
-          description: "Este e-mail já está sendo utilizado por outro usuário.",
-          className: "shadow-xl",
-        });
-        setIsSaving(false);
-        return;
-      }
-
-      // Determinar a role final baseada no checkbox
-      const finalRole = isProfessional ? 'professional' : role;
-      
-      // Preparar dados do usuário
-      const userData: SystemUser = {
-        id: uuidv4(),
-        name,
-        email,
-        phone: phone || undefined,
-        role: finalRole,
-        is_professional: isProfessional,
-        birth_date: birthDate || undefined,
-        address: address || undefined,
-        status: 'active'
-      };
-      
-      // Salvar no Supabase
-      const { error } = await supabase
-        .from('system_users')
-        .insert(userData);
-        
-      if (error) {
-        throw error;
-      }
-
-      // Limpar o formulário
-      setName('');
-      setEmail('');
-      setPhone('');
-      setBirthDate('');
-      setAddress('');
-      setRole('user');
-      setIsProfessional(false);
+    // Simulação de salvamento
+    setTimeout(() => {
+      setIsSaving(false);
       
       // Mostrar mensagem de sucesso
       toast({
         variant: "success",
-        title: "Usuário cadastrado com sucesso!",
-        description: "As informações foram salvas no sistema.",
+        title: "Perfil editado com sucesso!",
+        description: "As alterações foram salvas.",
         className: "shadow-xl",
       });
-    } catch (error: any) {
-      console.error("Erro ao salvar:", error);
-      toast({
-        variant: "destructive",
-        title: "Erro ao salvar usuário",
-        description: error.message || "Ocorreu um erro ao tentar salvar os dados.",
-        className: "shadow-xl",
-      });
-    } finally {
-      setIsSaving(false);
-    }
+    }, 1000);
   };
 
   return (
@@ -159,75 +60,23 @@ export function PersonalInfo() {
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="name">Nome Completo</Label>
-              <Input 
-                id="name" 
-                placeholder="Nome completo" 
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-              />
+              <Input id="name" placeholder="Seu nome" />
             </div>
             <div className="space-y-2">
               <Label htmlFor="email">E-mail</Label>
-              <Input 
-                id="email" 
-                type="email" 
-                placeholder="seu@email.com" 
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
+              <Input id="email" type="email" placeholder="seu@email.com" />
             </div>
             <div className="space-y-2">
               <Label htmlFor="phone">Telefone</Label>
-              <Input 
-                id="phone" 
-                placeholder="(00) 00000-0000" 
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-              />
+              <Input id="phone" placeholder="(00) 00000-0000" />
             </div>
             <div className="space-y-2">
               <Label htmlFor="birthDate">Data de Nascimento</Label>
-              <Input 
-                id="birthDate" 
-                type="date" 
-                value={birthDate}
-                onChange={(e) => setBirthDate(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="role">Cargo</Label>
-              <select 
-                id="role"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                value={role}
-                onChange={(e) => handleRoleChange(e.target.value as SystemUser['role'])}
-              >
-                <option value="admin">Administrador</option>
-                <option value="manager">Gerente</option>
-                <option value="professional">Profissional</option>
-                <option value="receptionist">Recepcionista</option>
-                <option value="user">Usuário</option>
-              </select>
-            </div>
-            <div className="space-y-2 flex items-center pt-6">
-              <Checkbox 
-                id="isProfessional" 
-                checked={isProfessional} 
-                onCheckedChange={(checked) => setIsProfessional(checked as boolean)}
-                className="mr-2" 
-              />
-              <Label htmlFor="isProfessional" className="cursor-pointer">
-                Este usuário é um profissional do salão
-              </Label>
+              <Input id="birthDate" type="date" />
             </div>
             <div className="space-y-2 sm:col-span-2">
               <Label htmlFor="address">Endereço</Label>
-              <Input 
-                id="address" 
-                placeholder="Endereço completo" 
-                value={address}
-                onChange={(e) => setAddress(e.target.value)}
-              />
+              <Input id="address" placeholder="Seu endereço completo" />
             </div>
           </div>
         </div>

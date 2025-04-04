@@ -1,4 +1,3 @@
-
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -13,7 +12,6 @@ import Privacy from "./pages/Privacy";
 import NotFound from "./pages/NotFound";
 import { SpecialtiesProvider } from "./contexts/SpecialtiesContext";
 import { AppStateProvider, useAppState } from "./contexts/AppStateContext";
-import { PermissionsProvider, usePermissions } from "./contexts/PermissionsContext";
 import { supabase } from "@/integrations/supabase/client";
 import { User, Session } from '@supabase/supabase-js';
 
@@ -47,7 +45,6 @@ interface ProtectedRouteProps {
   children: ReactNode;
   requireCompleteProfile?: boolean;
   requireActiveSubscription?: boolean;
-  requiredPermission?: string;
 }
 
 // Contexto para autenticação
@@ -180,11 +177,9 @@ const AuthProvider = ({ children }: { children: ReactNode }) => {
 const ProtectedRoute = ({ 
   children, 
   requireCompleteProfile = true, 
-  requireActiveSubscription = true,
-  requiredPermission
+  requireActiveSubscription = true 
 }: ProtectedRouteProps) => {
   const { profileState } = useAppState();
-  const { permissions, isLoading: permissionsLoading } = usePermissions();
   const location = useLocation();
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -205,7 +200,7 @@ const ProtectedRoute = ({
     };
   }, []);
 
-  if (isLoading || permissionsLoading) {
+  if (isLoading) {
     return <Loading />;
   }
 
@@ -232,11 +227,6 @@ const ProtectedRoute = ({
       // Caso contrário, redireciona para a página de mensalidade
       return <Navigate to="/mensalidade" state={{ from: location }} replace />;
     }
-  }
-
-  // Verificar permissão específica
-  if (requiredPermission && !permissions[requiredPermission as keyof typeof permissions]) {
-    return <Navigate to="/dashboard" state={{ from: location }} replace />;
   }
 
   // Se todas as verificações passarem, renderiza o conteúdo
@@ -371,7 +361,7 @@ const AppRoutes = () => (
       
       {/* Protected routes with sidebar */}
       <Route path="/dashboard" element={
-        <ProtectedRoute requiredPermission="view_dashboard">
+        <ProtectedRoute>
           <AppLayout>
             <Suspense fallback={<Loading />}>
               <Dashboard />
@@ -380,7 +370,7 @@ const AppRoutes = () => (
         </ProtectedRoute>
       } />
       <Route path="/appointments" element={
-        <ProtectedRoute requiredPermission="view_appointments">
+        <ProtectedRoute>
           <AppLayout>
             <Suspense fallback={<Loading />}>
               <Appointments />
@@ -389,7 +379,7 @@ const AppRoutes = () => (
         </ProtectedRoute>
       } />
       <Route path="/clientes" element={
-        <ProtectedRoute requiredPermission="view_clients">
+        <ProtectedRoute>
           <AppLayout>
             <Suspense fallback={<Loading />}>
               <Clientes />
@@ -398,7 +388,7 @@ const AppRoutes = () => (
         </ProtectedRoute>
       } />
       <Route path="/servicos" element={
-        <ProtectedRoute requiredPermission="view_services">
+        <ProtectedRoute>
           <AppLayout>
             <Suspense fallback={<Loading />}>
               <Servicos />
@@ -407,7 +397,7 @@ const AppRoutes = () => (
         </ProtectedRoute>
       } />
       <Route path="/profissionais" element={
-        <ProtectedRoute requiredPermission="view_professionals">
+        <ProtectedRoute>
           <AppLayout>
             <Suspense fallback={<Loading />}>
               <Profissionais />
@@ -416,7 +406,7 @@ const AppRoutes = () => (
         </ProtectedRoute>
       } />
       <Route path="/financeiro" element={
-        <ProtectedRoute requiredPermission="view_financial">
+        <ProtectedRoute>
           <AppLayout>
             <Suspense fallback={<Loading />}>
               <Financeiro />
@@ -425,7 +415,7 @@ const AppRoutes = () => (
         </ProtectedRoute>
       } />
       <Route path="/estoque" element={
-        <ProtectedRoute requiredPermission="view_stock">
+        <ProtectedRoute>
           <AppLayout>
             <Suspense fallback={<Loading />}>
               <Estoque />
@@ -434,7 +424,7 @@ const AppRoutes = () => (
         </ProtectedRoute>
       } />
       <Route path="/pdv" element={
-        <ProtectedRoute requiredPermission="view_pdv">
+        <ProtectedRoute>
           <AppLayout>
             <Suspense fallback={<Loading />}>
               <PDV />
@@ -443,7 +433,7 @@ const AppRoutes = () => (
         </ProtectedRoute>
       } />
       <Route path="/marketing" element={
-        <ProtectedRoute requiredPermission="view_marketing">
+        <ProtectedRoute>
           <AppLayout>
             <Suspense fallback={<Loading />}>
               <Marketing />
@@ -452,7 +442,7 @@ const AppRoutes = () => (
         </ProtectedRoute>
       } />
       <Route path="/configuracoes" element={
-        <ProtectedRoute requiredPermission="view_settings">
+        <ProtectedRoute>
           <AppLayout>
             <Suspense fallback={<Loading />}>
               <Configuracoes />
@@ -461,7 +451,7 @@ const AppRoutes = () => (
         </ProtectedRoute>
       } />
       <Route path="/messaging" element={
-        <ProtectedRoute requiredPermission="view_messaging">
+        <ProtectedRoute>
           <AppLayout>
             <Suspense fallback={<Loading />}>
               <MessagingPage />
@@ -483,12 +473,10 @@ const App = () => (
     <AppStateProvider>
       <TooltipProvider>
         <SpecialtiesProvider>
-          <PermissionsProvider>
-            <AuthProvider>
-              <Sonner />
-              <AppRoutes />
-            </AuthProvider>
-          </PermissionsProvider>
+          <AuthProvider>
+            <Sonner />
+            <AppRoutes />
+          </AuthProvider>
         </SpecialtiesProvider>
       </TooltipProvider>
     </AppStateProvider>

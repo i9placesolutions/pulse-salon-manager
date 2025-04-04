@@ -1,4 +1,3 @@
-
 /**
  * Manipulador de Webhooks do Asaas
  * 
@@ -6,14 +5,13 @@
  * Projetado para uso em ambientes de API serverless (como Vercel, Netlify, etc.)
  */
 
-// Importando apenas o necessário
 import { supabase } from '@/integrations/supabase/client';
-import { WebhookEventInsertResponse, ProfileResponse, BlockedTime } from '@/types/supabase';
+import { WebhookEvent } from './asaasApi';
 import asaasLogger, { startAsaasTransaction } from './asaasLogger';
 
 // Tipo para eventos de pagamento
 export interface AsaasPaymentEvent {
-  event: string;
+  event: WebhookEvent;
   payment: {
     id: string;
     customer: string;
@@ -62,11 +60,14 @@ export async function handleWebhook(eventData: AsaasPaymentEvent): Promise<{
     logger.info('Webhook recebido', { event: eventData.event });
 
     // Salvar o evento bruto no banco de dados para rastreabilidade
-    const { data: eventInsertData, error: eventError } = await supabase
-      .rpc('insert_webhook_event', {
-        provider_input: 'asaas',
-        event_type_input: eventData.event,
-        payload_input: eventData
+    const { data: eventRecord, error: eventError } = await supabase
+      .from('webhook_events')
+      .insert({
+        provider: 'asaas',
+        event_type: eventData.event,
+        payload: eventData,
+        processed: false,
+        created_at: new Date().toISOString()
       });
 
     if (eventError) {
@@ -78,14 +79,15 @@ export async function handleWebhook(eventData: AsaasPaymentEvent): Promise<{
     const result = await processEventByType(eventData, logger);
 
     // Atualizar o registro do evento como processado
-    if (eventInsertData) {
-      const eventId = (eventInsertData as WebhookEventInsertResponse).id;
+    if (eventRecord) {
       const { error: updateError } = await supabase
-        .rpc('update_webhook_event_status', {
-          event_id_input: eventId,
-          processed_input: result.success,
-          processing_result_input: result.message
-        });
+        .from('webhook_events')
+        .update({
+          processed: result.success,
+          processed_at: new Date().toISOString(),
+          processing_result: result.message
+        })
+        .eq('id', eventRecord[0].id);
 
       if (updateError) {
         logger.error('Erro ao atualizar status de processamento', updateError);
@@ -94,7 +96,7 @@ export async function handleWebhook(eventData: AsaasPaymentEvent): Promise<{
 
     logger.info('Processamento de webhook concluído', { success: result.success });
     return result;
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Erro ao processar webhook', error);
     return {
       success: false,
@@ -145,7 +147,7 @@ async function processEventByType(
           message: `Evento ${eventType} registrado sem processamento específico`
         };
     }
-  } catch (error: any) {
+  } catch (error) {
     logger.error(`Erro ao processar evento ${eventType}`, error);
     return {
       success: false,
@@ -167,24 +169,23 @@ async function handlePaymentConfirmed(
   try {
     // Se for pagamento de assinatura, atualizar status da assinatura
     if (payment.subscription) {
-      await updateSubscriptionStatus(payment.customer, true, logger);
+      await updateSubscriptionStatus(payment.customer, true);
     }
 
-    // Registrar pagamento no histórico usando RPC
-    const { error } = await supabase
-      .rpc('insert_payment_history', {
-        external_id_input: payment.id,
-        customer_id_input: payment.customer,
-        amount_input: payment.value,
-        payment_date_input: payment.paymentDate || new Date().toISOString(),
-        payment_method_input: payment.billingType,
-        description_input: payment.description,
-        status_input: 'CONFIRMED',
-        subscription_id_input: payment.subscription || null,
-        provider_input: 'asaas',
-        invoice_url_input: payment.invoiceUrl || null,
-        due_date_input: payment.dueDate || null
-      });
+    // Registrar pagamento no histórico
+    const { error } = await supabase.from('payment_history').insert({
+      external_id: payment.id,
+      customer_id: payment.customer,
+      amount: payment.value,
+      payment_date: payment.paymentDate || new Date().toISOString(),
+      payment_method: payment.billingType,
+      description: payment.description,
+      status: 'CONFIRMED',
+      subscription_id: payment.subscription || null,
+      provider: 'asaas',
+      invoice_url: payment.invoiceUrl || null,
+      created_at: new Date().toISOString()
+    });
 
     if (error) {
       throw new Error(`Erro ao registrar pagamento: ${error.message}`);
@@ -194,7 +195,7 @@ async function handlePaymentConfirmed(
       success: true,
       message: `Pagamento ${payment.id} processado com sucesso`
     };
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Erro ao processar pagamento confirmado', error);
     return {
       success: false,
@@ -222,20 +223,20 @@ async function handleSubscriptionCreated(
 
   try {
     // Atualizar status da assinatura
-    await updateSubscriptionStatus(subscription.customer, true, logger);
+    await updateSubscriptionStatus(subscription.customer, true);
     
-    // Registrar assinatura no banco de dados usando RPC
-    const { error } = await supabase
-      .rpc('insert_subscription', {
-        external_id_input: subscription.id,
-        customer_id_input: subscription.customer,
-        plan_value_input: subscription.value,
-        billing_type_input: subscription.billingType,
-        status_input: subscription.status,
-        next_billing_date_input: subscription.nextDueDate,
-        description_input: subscription.description,
-        provider_input: 'asaas'
-      });
+    // Registrar assinatura no banco de dados
+    const { error } = await supabase.from('subscriptions').insert({
+      external_id: subscription.id,
+      customer_id: subscription.customer,
+      plan_value: subscription.value,
+      billing_type: subscription.billingType,
+      status: subscription.status,
+      next_billing_date: subscription.nextDueDate,
+      description: subscription.description,
+      provider: 'asaas',
+      created_at: new Date().toISOString()
+    });
 
     if (error) {
       throw new Error(`Erro ao registrar assinatura: ${error.message}`);
@@ -245,7 +246,7 @@ async function handleSubscriptionCreated(
       success: true,
       message: `Assinatura ${subscription.id} registrada com sucesso`
     };
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Erro ao processar criação de assinatura', error);
     return {
       success: false,
@@ -274,21 +275,21 @@ async function handleSubscriptionPaymentCreated(
   logger.info('Processando pagamento de assinatura', { paymentId: payment.id });
 
   try {
-    // Registrar pagamento de assinatura usando RPC
-    const { error } = await supabase
-      .rpc('insert_payment_history', {
-        external_id_input: payment.id,
-        customer_id_input: payment.customer,
-        amount_input: payment.value,
-        payment_date_input: new Date().toISOString(),
-        due_date_input: payment.dueDate,
-        payment_method_input: payment.billingType,
-        description_input: `Pagamento de assinatura: ${payment.description}`,
-        status_input: 'PENDING',
-        subscription_id_input: subscription.id,
-        provider_input: 'asaas',
-        invoice_url_input: payment.invoiceUrl || null
-      });
+    // Registrar pagamento de assinatura
+    const { error } = await supabase.from('payment_history').insert({
+      external_id: payment.id,
+      customer_id: payment.customer,
+      amount: payment.value,
+      payment_date: new Date().toISOString(),
+      due_date: payment.dueDate,
+      payment_method: payment.billingType,
+      description: `Pagamento de assinatura: ${payment.description}`,
+      status: 'PENDING',
+      subscription_id: subscription.id,
+      provider: 'asaas',
+      invoice_url: payment.invoiceUrl || null,
+      created_at: new Date().toISOString()
+    });
 
     if (error) {
       throw new Error(`Erro ao registrar pagamento de assinatura: ${error.message}`);
@@ -298,15 +299,14 @@ async function handleSubscriptionPaymentCreated(
     await updateSubscriptionNextBillingDate(
       subscription.id,
       subscription.customer,
-      subscription.nextDueDate,
-      logger
+      subscription.nextDueDate
     );
 
     return {
       success: true,
       message: `Pagamento de assinatura ${payment.id} registrado com sucesso`
     };
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Erro ao processar pagamento de assinatura', error);
     return {
       success: false,
@@ -335,21 +335,21 @@ async function handleSubscriptionPaymentFailed(
   logger.info('Processando falha em pagamento de assinatura', { paymentId: payment.id });
 
   try {
-    // Registrar falha de pagamento usando RPC
-    const { error } = await supabase
-      .rpc('insert_payment_history', {
-        external_id_input: payment.id,
-        customer_id_input: payment.customer,
-        amount_input: payment.value,
-        payment_date_input: new Date().toISOString(),
-        due_date_input: payment.dueDate,
-        payment_method_input: payment.billingType,
-        description_input: `Falha no pagamento de assinatura: ${payment.description}`,
-        status_input: 'FAILED',
-        subscription_id_input: subscription.id,
-        provider_input: 'asaas',
-        invoice_url_input: payment.invoiceUrl || null
-      });
+    // Registrar falha de pagamento
+    const { error } = await supabase.from('payment_history').insert({
+      external_id: payment.id,
+      customer_id: payment.customer,
+      amount: payment.value,
+      payment_date: new Date().toISOString(),
+      due_date: payment.dueDate,
+      payment_method: payment.billingType,
+      description: `Falha no pagamento de assinatura: ${payment.description}`,
+      status: 'FAILED',
+      subscription_id: subscription.id,
+      provider: 'asaas',
+      invoice_url: payment.invoiceUrl || null,
+      created_at: new Date().toISOString()
+    });
 
     if (error) {
       throw new Error(`Erro ao registrar falha de pagamento: ${error.message}`);
@@ -362,7 +362,7 @@ async function handleSubscriptionPaymentFailed(
       success: true,
       message: `Falha de pagamento ${payment.id} registrada com sucesso`
     };
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Erro ao processar falha de pagamento', error);
     return {
       success: false,
@@ -390,14 +390,16 @@ async function handleSubscriptionCancelled(
 
   try {
     // Atualizar status da assinatura para cancelada/expirada
-    await updateSubscriptionStatus(subscription.customer, false, logger);
+    await updateSubscriptionStatus(subscription.customer, false);
     
-    // Atualizar registro da assinatura usando RPC
+    // Atualizar registro da assinatura
     const { error } = await supabase
-      .rpc('update_subscription_status', {
-        subscription_id_input: subscription.id, 
-        status_input: subscription.status
-      });
+      .from('subscriptions')
+      .update({
+        status: subscription.status,
+        updated_at: new Date().toISOString()
+      })
+      .eq('external_id', subscription.id);
 
     if (error) {
       throw new Error(`Erro ao atualizar status da assinatura: ${error.message}`);
@@ -407,7 +409,7 @@ async function handleSubscriptionCancelled(
       success: true,
       message: `Assinatura ${subscription.id} cancelada com sucesso`
     };
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Erro ao processar cancelamento de assinatura', error);
     return {
       success: false,
@@ -421,56 +423,53 @@ async function handleSubscriptionCancelled(
  */
 async function updateSubscriptionStatus(
   customerId: string,
-  isActive: boolean,
-  logger: any
+  isActive: boolean
 ): Promise<void> {
   try {
     // Encontrar o perfil do usuário pelo ID externo do cliente
     const { data: profileData, error: profileError } = await supabase
-      .rpc('find_profile_by_customer_id', {
-        customer_id_input: customerId
-      });
+      .from('profiles')
+      .select('id')
+      .eq('external_customer_id', customerId)
+      .single();
 
     if (profileError) {
-      logger.error(`Perfil não encontrado: ${profileError.message}`);
       throw new Error(`Perfil não encontrado: ${profileError.message}`);
     }
 
     if (!profileData) {
       // Tentar encontrar por outros campos
+      // Este é um fallback e pode precisar ser ajustado com base na sua estrutura de dados
       const { data: alternativeProfile, error } = await supabase
-        .rpc('find_profile_by_id', {
-          profile_id_input: customerId
-        });
+        .from('profiles')
+        .select('id')
+        .eq('id', customerId)
+        .single();
 
       if (error || !alternativeProfile) {
-        logger.error('Não foi possível encontrar o perfil do usuário');
         throw new Error('Não foi possível encontrar o perfil do usuário');
       }
 
       // Atualizar o external_customer_id para facilitar futuras consultas
-      const typedProfile = alternativeProfile as ProfileResponse;
-      if (typedProfile) {
-        await supabase
-          .rpc('update_profile_customer_id', {
-            profile_id_input: (typedProfile as any).id,
-            customer_id_input: customerId
-          });
-      }
+      await supabase
+        .from('profiles')
+        .update({ external_customer_id: customerId })
+        .eq('id', alternativeProfile.id);
     }
 
     // Atualizar o status da assinatura
     const { error: updateError } = await supabase
-      .rpc('update_profile_subscription', {
-        customer_id_input: customerId,
-        is_active_input: isActive
-      });
+      .from('profiles')
+      .update({
+        subscription_active: isActive,
+        updated_at: new Date().toISOString()
+      })
+      .eq('external_customer_id', customerId);
 
     if (updateError) {
-      logger.error(`Erro ao atualizar status da assinatura: ${updateError.message}`);
       throw new Error(`Erro ao atualizar status da assinatura: ${updateError.message}`);
     }
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Erro ao atualizar status da assinatura', error);
     throw error;
   }
@@ -482,22 +481,22 @@ async function updateSubscriptionStatus(
 async function updateSubscriptionNextBillingDate(
   subscriptionId: string,
   customerId: string,
-  nextBillingDate: string,
-  logger: any
+  nextBillingDate: string
 ): Promise<void> {
   try {
     const { error } = await supabase
-      .rpc('update_subscription_billing_date', {
-        subscription_id_input: subscriptionId,
-        next_date_input: nextBillingDate
-      });
+      .from('subscriptions')
+      .update({
+        next_billing_date: nextBillingDate,
+        updated_at: new Date().toISOString()
+      })
+      .eq('external_id', subscriptionId);
 
     if (error) {
-      logger.error(`Erro ao atualizar próxima data de cobrança: ${error.message}`);
       throw new Error(`Erro ao atualizar próxima data de cobrança: ${error.message}`);
     }
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Erro ao atualizar próxima data de cobrança', error);
     throw error;
   }
-}
+} 
