@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
 interface AppStateContextType {
@@ -47,7 +48,7 @@ const initialDialogsState = {
   isOrderDialogOpen: false,
 };
 
-// Data atual + 7 dias para o período de teste
+// Data atual + 7 dias para o período de teste (atualizado de 7 dias)
 const trialEndDate = new Date();
 trialEndDate.setDate(trialEndDate.getDate() + 7);
 

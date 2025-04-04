@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -116,7 +115,7 @@ const LoginForm = () => {
         navigate("/mensalidade");
         toast({
           title: "Período de teste encerrado",
-          description: "Seu período de teste acabou. Por favor, escolha um plano para continuar.",
+          description: "Seu período de teste de 7 dias acabou. Por favor, escolha um plano para continuar.",
           variant: "destructive",
           className: "shadow-xl"
         });
