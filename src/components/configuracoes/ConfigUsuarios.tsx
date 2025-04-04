@@ -77,7 +77,7 @@ export function ConfigUsuarios() {
   const [novoUsuarioConfirmarSenha, setNovoUsuarioConfirmarSenha] = useState('');
   const [erroSenha, setErroSenha] = useState('');
   // Novos estados para profissionais
-  const [novoUsuarioEhProfissional, setNovoUsuarioEhProfissional] = useState(false);
+  const [novoUsuarioEhProfissional, setNovoUsuarioEhProfissional] = useState(true);
   const [novoUsuarioTelefone, setNovoUsuarioTelefone] = useState('');
   const [novoUsuarioEspecialidades, setNovoUsuarioEspecialidades] = useState<string[]>([]);
   const [novoUsuarioNivelExperiencia, setNovoUsuarioNivelExperiencia] = useState('beginner');
@@ -228,7 +228,7 @@ export function ConfigUsuarios() {
     setEditUsuarioConfirmarSenha('');
     setEditErroSenha('');
     // Configurar campos de profissional se aplicável
-    setEditUsuarioEhProfissional(usuario.ehProfissional || false);
+    setEditUsuarioEhProfissional(usuario.cargo === 'Profissional' ? true : false);
     setEditUsuarioTelefone(usuario.telefone || '');
     setEditUsuarioEspecialidades(usuario.especialidades || []);
     setEditUsuarioNivelExperiencia(usuario.nivelExperiencia || 'beginner');
@@ -360,7 +360,7 @@ export function ConfigUsuarios() {
     setNovoUsuarioSenha('');
     setNovoUsuarioConfirmarSenha('');
     setErroSenha('');
-    setNovoUsuarioEhProfissional(false);
+    setNovoUsuarioEhProfissional(true);
     setNovoUsuarioTelefone('');
     setNovoUsuarioEspecialidades([]);
     setNovoUsuarioNivelExperiencia('beginner');
@@ -992,7 +992,18 @@ export function ConfigUsuarios() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="cargo">Cargo</Label>
-                  <Select value={novoUsuarioCargo} onValueChange={setNovoUsuarioCargo}>
+                  <Select 
+                    value={novoUsuarioCargo} 
+                    onValueChange={(value) => {
+                      setNovoUsuarioCargo(value);
+                      // Se o cargo for Profissional, marca o checkbox automaticamente
+                      if (value === 'Profissional') {
+                        setNovoUsuarioEhProfissional(true);
+                      } else {
+                        setNovoUsuarioEhProfissional(false);
+                      }
+                    }}
+                  >
                     <SelectTrigger id="cargo">
                       <SelectValue placeholder="Selecione um cargo" />
                     </SelectTrigger>
@@ -1049,16 +1060,19 @@ export function ConfigUsuarios() {
                 )}
               </div>
               
-              <div className="flex items-center space-x-2 pt-2">
-                <Checkbox 
-                  id="ehProfissional" 
-                  checked={novoUsuarioEhProfissional} 
-                  onCheckedChange={(checked) => setNovoUsuarioEhProfissional(checked === true)}
-                />
-                <Label htmlFor="ehProfissional" className="font-medium">
-                  Este usuário é um profissional do salão
-                </Label>
-              </div>
+              {/* Mostra o checkbox apenas se o cargo for Profissional */}
+              {novoUsuarioCargo === 'Profissional' && (
+                <div className="flex items-center space-x-2 pt-2">
+                  <Checkbox 
+                    id="ehProfissional" 
+                    checked={novoUsuarioEhProfissional} 
+                    onCheckedChange={(checked) => setNovoUsuarioEhProfissional(checked === true)}
+                  />
+                  <Label htmlFor="ehProfissional" className="font-medium">
+                    Este usuário é um profissional do salão
+                  </Label>
+                </div>
+              )}
               {novoUsuarioEhProfissional && (
                 <p className="text-sm text-muted-foreground">
                   Marcar esta opção habilitará campos adicionais na aba "Dados Profissionais".
@@ -1205,7 +1219,18 @@ export function ConfigUsuarios() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="edit-cargo">Cargo</Label>
-                  <Select value={editUsuarioCargo} onValueChange={setEditUsuarioCargo}>
+                  <Select 
+                    value={editUsuarioCargo} 
+                    onValueChange={(value) => {
+                      setEditUsuarioCargo(value);
+                      // Se o cargo for Profissional, marca o checkbox automaticamente
+                      if (value === 'Profissional') {
+                        setEditUsuarioEhProfissional(true);
+                      } else {
+                        setEditUsuarioEhProfissional(false);
+                      }
+                    }}
+                  >
                     <SelectTrigger id="edit-cargo">
                       <SelectValue placeholder="Selecione um cargo" />
                     </SelectTrigger>
@@ -1262,16 +1287,19 @@ export function ConfigUsuarios() {
                 )}
               </div>
               
-              <div className="flex items-center space-x-2 pt-2">
-                <Checkbox 
-                  id="edit-ehProfissional" 
-                  checked={editUsuarioEhProfissional} 
-                  onCheckedChange={(checked) => setEditUsuarioEhProfissional(checked === true)}
-                />
-                <Label htmlFor="edit-ehProfissional" className="font-medium">
-                  Este usuário é um profissional do salão
-                </Label>
-              </div>
+              {/* Mostra o checkbox apenas se o cargo for Profissional */}
+              {editUsuarioCargo === 'Profissional' && (
+                <div className="flex items-center space-x-2 pt-2">
+                  <Checkbox 
+                    id="edit-ehProfissional" 
+                    checked={editUsuarioEhProfissional} 
+                    onCheckedChange={(checked) => setEditUsuarioEhProfissional(checked === true)}
+                  />
+                  <Label htmlFor="edit-ehProfissional" className="font-medium">
+                    Este usuário é um profissional do salão
+                  </Label>
+                </div>
+              )}
               {editUsuarioEhProfissional && (
                 <p className="text-sm text-muted-foreground">
                   Marcar esta opção habilitará campos adicionais na aba "Dados Profissionais".
