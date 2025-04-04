@@ -1,7 +1,7 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Json } from "@/types/supabase";
+import { Json, RPCFunctions } from "@/types/supabase";
 
 type UserRole = 'admin' | 'manager' | 'professional' | 'receptionist' | 'user' | 'none';
 
@@ -82,7 +82,7 @@ export const PermissionsProvider = ({ children }: { children: ReactNode }) => {
     try {
       setIsLoading(true);
       
-      const { data: rpcData, error } = await supabase.rpc('get_current_user_permissions');
+      const { data: rpcData, error } = await supabase.rpc<RPCFunctions['get_current_user_permissions']>('get_current_user_permissions');
       
       if (error) {
         console.error("Erro ao buscar permissões:", error);
@@ -90,15 +90,14 @@ export const PermissionsProvider = ({ children }: { children: ReactNode }) => {
       }
       
       if (rpcData) {
-        // Converter o retorno para o formato esperado
-        // Precisamos fazer uma conversão segura do tipo
-        const jsonData = rpcData as unknown as {
+        // Realizar cast específico para os dados esperados
+        const typedData = rpcData as unknown as {
           role: UserRole;
           permissions: Permissions;
         };
         
-        setUserRole(jsonData.role || 'none');
-        setPermissions(jsonData.permissions || defaultPermissions);
+        setUserRole(typedData.role || 'none');
+        setPermissions(typedData.permissions || defaultPermissions);
       }
     } catch (error) {
       console.error("Erro ao buscar permissões:", error);

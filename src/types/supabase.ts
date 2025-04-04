@@ -140,17 +140,34 @@ export interface RPCResponse {
   [key: string]: any;
 }
 
+// Tipagens específicas para retornos de RPC
+export interface WebhookEventInsertResponse {
+  id: string;
+}
+
+export interface ProfileResponse {
+  id: string;
+}
+
+export interface BlockedTimeResponse {
+  id: string;
+}
+
 // Tipagem para usar FetchAPI com funções RPC
 export interface RPCFunctions {
   get_current_user_permissions: (args?: Record<string, unknown>) => Promise<{data: {role: string, permissions: Record<string, boolean>}, error: any}>;
-  insert_webhook_event: (args: {provider_input: string, event_type_input: string, payload_input: any}) => Promise<{data: {id: string}, error: any}>;
+  insert_webhook_event: (args: {provider_input: string, event_type_input: string, payload_input: any}) => Promise<{data: WebhookEventInsertResponse, error: any}>;
   update_webhook_event_status: (args: {event_id_input: string, processed_input: boolean, processing_result_input: string}) => Promise<{data: null, error: any}>;
   insert_payment_history: (args: Record<string, unknown>) => Promise<{data: null, error: any}>;
   insert_subscription: (args: Record<string, unknown>) => Promise<{data: null, error: any}>;
   update_subscription_status: (args: {subscription_id_input: string, status_input: string}) => Promise<{data: null, error: any}>;
-  find_profile_by_customer_id: (args: {customer_id_input: string}) => Promise<{data: {id: string} | null, error: any}>;
-  find_profile_by_id: (args: {profile_id_input: string}) => Promise<{data: {id: string} | null, error: any}>;
+  find_profile_by_customer_id: (args: {customer_id_input: string}) => Promise<{data: ProfileResponse | null, error: any}>;
+  find_profile_by_id: (args: {profile_id_input: string}) => Promise<{data: ProfileResponse | null, error: any}>;
   update_profile_customer_id: (args: {profile_id_input: string, customer_id_input: string}) => Promise<{data: null, error: any}>;
   update_profile_subscription: (args: {customer_id_input: string, is_active_input: boolean}) => Promise<{data: null, error: any}>;
   update_subscription_billing_date: (args: {subscription_id_input: string, next_date_input: string}) => Promise<{data: null, error: any}>;
+  // Funções para bloqueio de horários
+  get_blocked_times: (args: {establishment_id_input: string}) => Promise<{data: BlockedTime[], error: any}>;
+  create_blocked_time: (args: {establishment_id_input: string, professional_id_input: string, start_date_input: string, end_date_input: string, start_time_input?: string, end_time_input?: string, reason_input?: string, is_full_day_input: boolean}) => Promise<{data: BlockedTimeResponse, error: any}>;
+  delete_blocked_time: (args: {block_id_input: string}) => Promise<{data: boolean, error: any}>;
 }
