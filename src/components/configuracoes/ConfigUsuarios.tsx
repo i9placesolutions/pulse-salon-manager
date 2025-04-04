@@ -10,7 +10,6 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { 
   SystemUser, 
   UserPermission, 
@@ -27,12 +26,12 @@ export function ConfigUsuarios() {
   const [permissions, setPermissions] = useState<Partial<UserPermission>>({});
   
   // Novos estados para o formulário de adição
-  const [newUser, setNewUser] = useState({
+  const [newUser, setNewUser] = useState<Partial<SystemUser>>({
     name: '',
     email: '',
-    role: 'user' as SystemUser['role'],
+    role: 'user',
     is_professional: false,
-    status: 'active' as SystemUser['status']
+    status: 'active'
   });
 
   useEffect(() => {
@@ -50,7 +49,8 @@ export function ConfigUsuarios() {
         throw error;
       }
 
-      setUsers(data || []);
+      // Aqui adicionamos a conversão de tipo explícita
+      setUsers(data as unknown as UserWithPermissions[]);
     } catch (error: any) {
       console.error('Erro ao buscar usuários:', error);
       toast({
@@ -217,9 +217,9 @@ export function ConfigUsuarios() {
       }
       
       // Criar o usuário
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('system_users')
-        .insert([newUser]);
+        .insert([newUser as SystemUser]);
       
       if (error) throw error;
       

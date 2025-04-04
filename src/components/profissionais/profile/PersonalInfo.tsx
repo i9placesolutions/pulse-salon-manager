@@ -16,7 +16,7 @@ export function PersonalInfo() {
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
   const [isProfessional, setIsProfessional] = useState(false);
-  const [role, setRole] = useState('user');
+  const [role, setRole] = useState<SystemUser['role']>('user');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -30,7 +30,7 @@ export function PersonalInfo() {
     }
   }, [role]);
   
-  const handleRoleChange = (newRole: string) => {
+  const handleRoleChange = (newRole: SystemUser['role']) => {
     setRole(newRole);
     // Quando o cargo "professional" é selecionado, marca automaticamente o checkbox
     if (newRole === 'professional') {
@@ -77,22 +77,22 @@ export function PersonalInfo() {
       const finalRole = isProfessional ? 'professional' : role;
       
       // Preparar dados do usuário
-      const userData: Partial<SystemUser> = {
+      const userData: SystemUser = {
         id: uuidv4(),
         name,
         email,
-        phone: phone || null,
-        role: finalRole as SystemUser['role'],
+        phone: phone || undefined,
+        role: finalRole,
         is_professional: isProfessional,
-        birth_date: birthDate || null,
-        address: address || null,
+        birth_date: birthDate || undefined,
+        address: address || undefined,
         status: 'active'
       };
       
       // Salvar no Supabase
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('system_users')
-        .insert([userData]);
+        .insert(userData);
         
       if (error) {
         throw error;
@@ -200,7 +200,7 @@ export function PersonalInfo() {
                 id="role"
                 className="w-full px-3 py-2 border border-gray-300 rounded-md"
                 value={role}
-                onChange={(e) => handleRoleChange(e.target.value)}
+                onChange={(e) => handleRoleChange(e.target.value as SystemUser['role'])}
               >
                 <option value="admin">Administrador</option>
                 <option value="manager">Gerente</option>

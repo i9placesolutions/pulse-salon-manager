@@ -1,6 +1,7 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { Json } from "@/types/supabase";
 
 type UserRole = 'admin' | 'manager' | 'professional' | 'receptionist' | 'user' | 'none';
 
@@ -89,8 +90,14 @@ export const PermissionsProvider = ({ children }: { children: ReactNode }) => {
       }
       
       if (data) {
-        setUserRole(data.role as UserRole);
-        setPermissions(data.permissions as Permissions);
+        // Converter o retorno para o formato esperado
+        const jsonData = data as {
+          role: UserRole;
+          permissions: Permissions;
+        };
+        
+        setUserRole(jsonData.role);
+        setPermissions(jsonData.permissions);
       }
     } catch (error) {
       console.error("Erro ao buscar permissões:", error);
