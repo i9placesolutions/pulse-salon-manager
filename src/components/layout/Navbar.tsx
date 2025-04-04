@@ -1,3 +1,4 @@
+
 import { Link, useNavigate } from "react-router-dom";
 import { Menu, Bell, Plus, User, LogOut, Clock, Sun, Stars, Calendar } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -5,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
+import { useAppState } from "@/contexts/AppStateContext";
+import { supabase } from "@/integrations/supabase/client";
 
 // Array of motivational quotes
 const motivationalQuotes = [
@@ -27,6 +30,7 @@ export const Navbar = ({
   const navigate = useNavigate();
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isScrolled, setIsScrolled] = useState(false);
+  const { establishmentName, userAvatar, userName, userEmail } = useAppState();
   
   // Get current day of the year to select a quote
   const dayOfYear = Math.floor((new Date().getTime() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 1000 / 60 / 60 / 24);
@@ -73,6 +77,23 @@ export const Navbar = ({
   const hour = currentTime.getHours();
   const isDaytime = hour >= 6 && hour < 18;
 
+  // Função para lidar com logout
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate('/');
+  };
+  
+  // Gerar iniciais do nome do usuário para o avatar
+  const getNameInitials = () => {
+    if (!userName) return "US";
+    return userName.split(' ')
+      .filter(n => n)
+      .map(n => n[0])
+      .slice(0, 2)
+      .join('')
+      .toUpperCase();
+  };
+
   return (
     <header 
       className={cn(
@@ -94,7 +115,7 @@ export const Navbar = ({
           </Button>
           <div className="relative">
             <h1 className="font-semibold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">
-              Barbearia Silva
+              {establishmentName}
             </h1>
             <p className="text-xs font-medium text-blue-600/80 animate-pulse-soft flex items-center gap-1">
               <span className="inline-block w-1.5 h-1.5 rounded-full bg-blue-500 animate-ping"></span>
@@ -131,17 +152,45 @@ export const Navbar = ({
           </Button>
 
           {/* User Profile */}
-          <Button 
-            variant="ghost" 
-            className="gap-2 bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-all" 
-            onClick={() => navigate('/establishment-profile')}
-          >
-            <Avatar className="h-8 w-8 ring-2 ring-offset-1 ring-blue-200">
-              <AvatarImage src="/placeholder.svg" />
-              <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white">JS</AvatarFallback>
-            </Avatar>
-            <span className="hidden md:inline font-medium bg-clip-text text-transparent bg-gradient-to-r from-blue-700 to-purple-700">João Silva</span>
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button 
+                variant="ghost" 
+                className="gap-2 bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-all" 
+              >
+                <Avatar className="h-8 w-8 ring-2 ring-offset-1 ring-blue-200">
+                  <AvatarImage src={userAvatar || ""} />
+                  <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white">
+                    {getNameInitials()}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="hidden md:flex flex-col items-start">
+                  <span className="text-sm font-medium bg-clip-text text-transparent bg-gradient-to-r from-blue-700 to-purple-700">
+                    {userName || "Usuário"}
+                  </span>
+                  <span className="text-xs text-gray-500 truncate max-w-[120px]">
+                    {userEmail || ""}
+                  </span>
+                </div>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <div className="px-2 py-1.5">
+                <p className="text-sm font-medium">{userName || "Usuário"}</p>
+                <p className="text-xs text-muted-foreground truncate">{userEmail || ""}</p>
+              </div>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => navigate('/establishment-profile')} className="cursor-pointer text-neutral hover:text-primary hover:bg-primary/5">
+                <User className="w-4 h-4 mr-2" />
+                <span>Meu Perfil</span>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-red-500 hover:text-red-700 hover:bg-red-50">
+                <LogOut className="w-4 h-4 mr-2" />
+                <span>Sair</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
     </header>

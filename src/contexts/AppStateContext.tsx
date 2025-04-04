@@ -1,5 +1,6 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface AppStateContextType {
   dialogsState: {
@@ -36,6 +37,12 @@ interface AppStateContextType {
   updateSubscriptionStatus: (isActive: boolean) => void;
   establishmentName: string;
   setEstablishmentName: (name: string) => void;
+  userAvatar: string | null;
+  setUserAvatar: (url: string | null) => void;
+  userName: string;
+  setUserName: (name: string) => void;
+  userEmail: string;
+  setUserEmail: (email: string) => void;
 }
 
 const initialDialogsState = {
@@ -65,6 +72,9 @@ export const AppStateProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [dialogsState, setDialogsState] = useState(initialDialogsState);
   const [profileState, setProfileState] = useState(initialProfileState);
   const [establishmentName, setEstablishmentName] = useState('Meu Salão');
+  const [userAvatar, setUserAvatar] = useState<string | null>(null);
+  const [userName, setUserName] = useState('');
+  const [userEmail, setUserEmail] = useState('');
 
   useEffect(() => {
     console.log('AppStateProvider inicializado', { dialogsState, profileState });
@@ -75,9 +85,24 @@ export const AppStateProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const storedTrialEnds = localStorage.getItem('trialEndsAt');
     const storedSubscription = localStorage.getItem('subscriptionActive');
     const storedName = localStorage.getItem('establishmentName');
+    const storedUserAvatar = localStorage.getItem('userAvatar');
+    const storedUserName = localStorage.getItem('userName');
+    const storedUserEmail = localStorage.getItem('userEmail');
     
     if (storedName) {
       setEstablishmentName(storedName);
+    }
+    
+    if (storedUserAvatar) {
+      setUserAvatar(storedUserAvatar);
+    }
+    
+    if (storedUserName) {
+      setUserName(storedUserName);
+    }
+    
+    if (storedUserEmail) {
+      setUserEmail(storedUserEmail);
     }
     
     if (storedProfileComplete || storedFirstLogin || storedTrialEnds || storedSubscription) {
@@ -89,7 +114,50 @@ export const AppStateProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         subscriptionActive: storedSubscription === 'true'
       }));
     }
+    
+    // Buscar dados do usuário no Supabase
+    loadUserData();
   }, []);
+
+  // Função para carregar dados do usuário logado
+  const loadUserData = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (session?.user) {
+      setUserEmail(session.user.email || '');
+      
+      // Buscar dados do perfil
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', session.user.id)
+        .single();
+      
+      if (profileData && !profileError) {
+        setEstablishmentName(profileData.establishment_name);
+        localStorage.setItem('establishmentName', profileData.establishment_name);
+      }
+      
+      // Buscar dados detalhados do estabelecimento
+      const { data: detailsData, error: detailsError } = await supabase
+        .from('establishment_details')
+        .select('*')
+        .eq('id', session.user.id)
+        .single();
+      
+      if (detailsData && !detailsError) {
+        if (detailsData.logo_url) {
+          setUserAvatar(detailsData.logo_url);
+          localStorage.setItem('userAvatar', detailsData.logo_url);
+        }
+        
+        if (detailsData.responsible_name) {
+          setUserName(detailsData.responsible_name);
+          localStorage.setItem('userName', detailsData.responsible_name);
+        }
+      }
+    }
+  };
 
   // Função para atualizar o estado de conclusão do perfil
   const updateProfileCompletion = (isComplete: boolean) => {
@@ -108,6 +176,23 @@ export const AppStateProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     localStorage.setItem('establishmentName', establishmentName);
   }, [establishmentName]);
 
+  // Atualizar o localStorage quando o avatar do usuário mudar
+  useEffect(() => {
+    if (userAvatar) {
+      localStorage.setItem('userAvatar', userAvatar);
+    }
+  }, [userAvatar]);
+
+  // Atualizar o localStorage quando o nome do usuário mudar
+  useEffect(() => {
+    localStorage.setItem('userName', userName);
+  }, [userName]);
+
+  // Atualizar o localStorage quando o email do usuário mudar
+  useEffect(() => {
+    localStorage.setItem('userEmail', userEmail);
+  }, [userEmail]);
+
   return (
     <AppStateContext.Provider 
       value={{ 
@@ -118,7 +203,13 @@ export const AppStateProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         updateProfileCompletion, 
         updateSubscriptionStatus,
         establishmentName,
-        setEstablishmentName
+        setEstablishmentName,
+        userAvatar,
+        setUserAvatar,
+        userName,
+        setUserName,
+        userEmail,
+        setUserEmail
       }}
     >
       {children}
