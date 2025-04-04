@@ -1,7 +1,7 @@
 
 import { cn } from "@/lib/utils";
 import { AlertCircle, Bell, CheckCircle, Info, X } from "lucide-react";
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 
 type SystemAlertVariant = "info" | "success" | "warning" | "error" | "demo";
 
@@ -24,31 +24,48 @@ export function SystemAlert({
   className,
   autoClose
 }: SystemAlertProps) {
-  const [visible, setVisible] = useState(true);
+  // Usando useRef para controlar a visibilidade em vez de useState
+  // para evitar o ciclo de re-renderização
+  const alertRef = useRef<HTMLDivElement>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
-  const isFirstRender = useRef(true);
-
-  // Fechar automaticamente após o tempo especificado
+  
+  // Configurar o timer de autoclose apenas uma vez quando o componente monta
   useEffect(() => {
-    // Importante: só executamos esta lógica uma vez na montagem
-    if (isFirstRender.current && autoClose && autoClose > 0 && visible) {
-      isFirstRender.current = false;
-      
+    if (autoClose && autoClose > 0) {
       timerRef.current = setTimeout(() => {
-        setVisible(false);
+        handleDismiss();
       }, autoClose);
     }
     
-    // Cleanup na desmontagem
+    // Cleanup ao desmontar o componente
     return () => {
       if (timerRef.current) {
         clearTimeout(timerRef.current);
-        timerRef.current = null;
       }
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  if (!visible) return null;
+  // Função para fechar o alerta
+  const handleDismiss = () => {
+    if (alertRef.current) {
+      // Adicionar animação de saída
+      alertRef.current.classList.add("animate-fade-out");
+      
+      // Remover o elemento após a animação
+      setTimeout(() => {
+        if (alertRef.current) {
+          alertRef.current.style.display = "none";
+        }
+      }, 300); // Duração da animação
+    }
+    
+    // Limpar o timer
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+  };
 
   // Definir classes com base na variante
   const getVariantClasses = () => {
@@ -86,17 +103,9 @@ export function SystemAlert({
     }
   };
 
-  const handleDismiss = () => {
-    // Limpa qualquer timer existente para evitar memory leaks
-    if (timerRef.current) {
-      clearTimeout(timerRef.current);
-      timerRef.current = null;
-    }
-    setVisible(false);
-  };
-
   return (
     <div 
+      ref={alertRef}
       className={cn(
         "relative rounded-xl border-l-8 p-4 shadow-md animate-slide-up mb-4",
         getVariantClasses(),

@@ -19,4 +19,4 @@ export function DemoAlert() {
       autoClose={8000}
     />
   );
-} 
+}
