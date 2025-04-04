@@ -8,12 +8,19 @@ import { FormCard } from "@/components/shared/FormCard";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Checkbox } from "@/components/ui/checkbox";
+import { supabase } from "@/integrations/supabase/client";
+import { v4 as uuidv4 } from "uuid";
 
 export function PersonalInfo() {
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
   const [isProfessional, setIsProfessional] = useState(false);
   const [role, setRole] = useState('user');
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [birthDate, setBirthDate] = useState('');
+  const [address, setAddress] = useState('');
   
   // Efeito para garantir que o checkbox seja marcado quando "professional" é selecionado
   useEffect(() => {
@@ -30,21 +37,92 @@ export function PersonalInfo() {
     }
   };
   
-  const handleSave = () => {
+  const handleSave = async () => {
+    if (!name || !email) {
+      toast({
+        variant: "destructive",
+        title: "Dados incompletos",
+        description: "Por favor, preencha pelo menos nome e e-mail.",
+        className: "shadow-xl",
+      });
+      return;
+    }
+
     setIsSaving(true);
     
-    // Simulação de salvamento
-    setTimeout(() => {
-      setIsSaving(false);
+    try {
+      // Verificar se o email já existe
+      const { data: existingUsers, error: checkError } = await supabase
+        .from('system_users')
+        .select('id')
+        .eq('email', email);
+      
+      if (checkError) {
+        throw checkError;
+      }
+
+      if (existingUsers && existingUsers.length > 0) {
+        toast({
+          variant: "destructive",
+          title: "Erro ao criar usuário",
+          description: "Este e-mail já está sendo utilizado por outro usuário.",
+          className: "shadow-xl",
+        });
+        setIsSaving(false);
+        return;
+      }
+
+      // Determinar a role final baseada no checkbox
+      const finalRole = isProfessional ? 'professional' : role;
+      
+      // Salvar no Supabase
+      const { data, error } = await supabase
+        .from('system_users')
+        .insert([
+          {
+            id: uuidv4(),
+            name,
+            email,
+            phone,
+            role: finalRole,
+            is_professional: isProfessional,
+            birth_date: birthDate || null,
+            address: address || null,
+            status: 'active'
+          }
+        ]);
+        
+      if (error) {
+        throw error;
+      }
+
+      // Limpar o formulário
+      setName('');
+      setEmail('');
+      setPhone('');
+      setBirthDate('');
+      setAddress('');
+      setRole('user');
+      setIsProfessional(false);
       
       // Mostrar mensagem de sucesso
       toast({
         variant: "success",
-        title: "Perfil editado com sucesso!",
-        description: "As alterações foram salvas.",
+        title: "Usuário cadastrado com sucesso!",
+        description: "As informações foram salvas no sistema.",
         className: "shadow-xl",
       });
-    }, 1000);
+    } catch (error: any) {
+      console.error("Erro ao salvar:", error);
+      toast({
+        variant: "destructive",
+        title: "Erro ao salvar usuário",
+        description: error.message || "Ocorreu um erro ao tentar salvar os dados.",
+        className: "shadow-xl",
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -79,19 +157,40 @@ export function PersonalInfo() {
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="name">Nome Completo</Label>
-              <Input id="name" placeholder="Seu nome" />
+              <Input 
+                id="name" 
+                placeholder="Nome completo" 
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="email">E-mail</Label>
-              <Input id="email" type="email" placeholder="seu@email.com" />
+              <Input 
+                id="email" 
+                type="email" 
+                placeholder="seu@email.com" 
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="phone">Telefone</Label>
-              <Input id="phone" placeholder="(00) 00000-0000" />
+              <Input 
+                id="phone" 
+                placeholder="(00) 00000-0000" 
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="birthDate">Data de Nascimento</Label>
-              <Input id="birthDate" type="date" />
+              <Input 
+                id="birthDate" 
+                type="date" 
+                value={birthDate}
+                onChange={(e) => setBirthDate(e.target.value)}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="role">Cargo</Label>
@@ -121,7 +220,12 @@ export function PersonalInfo() {
             </div>
             <div className="space-y-2 sm:col-span-2">
               <Label htmlFor="address">Endereço</Label>
-              <Input id="address" placeholder="Seu endereço completo" />
+              <Input 
+                id="address" 
+                placeholder="Endereço completo" 
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+              />
             </div>
           </div>
         </div>

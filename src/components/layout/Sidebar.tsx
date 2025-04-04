@@ -1,3 +1,4 @@
+
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -20,28 +21,31 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useState, useMemo } from "react";
+import { usePermissions } from "@/contexts/PermissionsContext";
+import { supabase } from "@/integrations/supabase/client";
 
 interface MenuItem {
   icon: any;
   label: string;
   path: string;
   category?: string;
+  permission?: string;
 }
 
-const menuItems: MenuItem[] = [
-  { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard", category: "principal" },
-  { icon: Calendar, label: "Agendamentos", path: "/appointments", category: "principal" },
-  { icon: Users, label: "Clientes", path: "/clientes", category: "principal" },
-  { icon: Scissors, label: "Serviços", path: "/servicos", category: "principal" },
-  { icon: UserSquare2, label: "Profissionais", path: "/profissionais", category: "principal" },
-  { icon: ShoppingBag, label: "PDV", path: "/pdv", category: "principal" },
-  { icon: DollarSign, label: "Financeiro", path: "/financeiro", category: "principal" },
-  { icon: Package, label: "Estoque", path: "/estoque", category: "principal" },
-  { icon: BarChart, label: "Marketing", path: "/marketing", category: "principal" },
-  { icon: MessageSquare, label: "Mensagens", path: "/messaging", category: "principal" },
+const allMenuItems: MenuItem[] = [
+  { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard", category: "principal", permission: "view_dashboard" },
+  { icon: Calendar, label: "Agendamentos", path: "/appointments", category: "principal", permission: "view_appointments" },
+  { icon: Users, label: "Clientes", path: "/clientes", category: "principal", permission: "view_clients" },
+  { icon: Scissors, label: "Serviços", path: "/servicos", category: "principal", permission: "view_services" },
+  { icon: UserSquare2, label: "Profissionais", path: "/profissionais", category: "principal", permission: "view_professionals" },
+  { icon: ShoppingBag, label: "PDV", path: "/pdv", category: "principal", permission: "view_pdv" },
+  { icon: DollarSign, label: "Financeiro", path: "/financeiro", category: "principal", permission: "view_financial" },
+  { icon: Package, label: "Estoque", path: "/estoque", category: "principal", permission: "view_stock" },
+  { icon: BarChart, label: "Marketing", path: "/marketing", category: "principal", permission: "view_marketing" },
+  { icon: MessageSquare, label: "Mensagens", path: "/messaging", category: "principal", permission: "view_messaging" },
   { icon: CreditCard, label: "Mensalidade", path: "/mensalidade", category: "configuracoes" },
-  { icon: Settings, label: "Configurações", path: "/configuracoes", category: "configuracoes" },
+  { icon: Settings, label: "Configurações", path: "/configuracoes", category: "configuracoes", permission: "view_settings" },
 ];
 
 const menuItemColors = {
@@ -77,16 +81,33 @@ export const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
   const location = useLocation();
   const navigate = useNavigate();
   const [pinnedItems, setPinnedItems] = useState<string[]>([]);
+  const { permissions, userRole } = usePermissions();
+
+  // Filtrar itens de menu com base nas permissões do usuário
+  const menuItems = useMemo(() => {
+    return allMenuItems.filter(item => {
+      // Mensalidade está sempre disponível
+      if (item.path === "/mensalidade") return true;
+      
+      // Se não tem requisito de permissão, mostrar
+      if (!item.permission) return true;
+      
+      // Verificar se o usuário tem a permissão necessária
+      return permissions[item.permission as keyof typeof permissions];
+    });
+  }, [permissions]);
 
   // Agrupar itens do menu por categoria
-  const groupedMenuItems = menuItems.reduce((acc, item) => {
-    const category = item.category || "outros";
-    if (!acc[category]) {
-      acc[category] = [];
-    }
-    acc[category].push(item);
-    return acc;
-  }, {} as Record<string, MenuItem[]>);
+  const groupedMenuItems = useMemo(() => {
+    return menuItems.reduce((acc, item) => {
+      const category = item.category || "outros";
+      if (!acc[category]) {
+        acc[category] = [];
+      }
+      acc[category].push(item);
+      return acc;
+    }, {} as Record<string, MenuItem[]>);
+  }, [menuItems]);
 
   // Função para alternar item fixado
   const togglePinnedItem = (path: string) => {
@@ -95,6 +116,12 @@ export const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
         ? prev.filter(p => p !== path)
         : [...prev, path]
     );
+  };
+
+  // Função para fazer logout
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate('/');
   };
 
   const renderMenuItem = (item: MenuItem) => {
@@ -220,8 +247,11 @@ export const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
                 Fixados
               </div>
               {pinnedItems.map(path => {
-                const item = menuItems.find(i => i.path === path);
-                if (item) return renderMenuItem(item);
+                const item = allMenuItems.find(i => i.path === path);
+                if (item && (!item.permission || permissions[item.permission as keyof typeof permissions])) {
+                  return renderMenuItem(item);
+                }
+                return null;
               })}
               <div className="mt-2 border-b dark:border-neutral-800" />
             </div>
@@ -230,7 +260,7 @@ export const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
           {/* Menu categorizado */}
           {Object.entries(groupedMenuItems).map(([category, items]) => (
             <div key={category}>
-              {isOpen && (
+              {isOpen && items.length > 0 && (
                 <div className={cn(
                   "px-3 py-1 text-xs font-medium capitalize rounded-md mb-2",
                   category === "principal" ? "bg-gradient-to-r from-blue-100 to-blue-50 dark:from-blue-950 dark:to-blue-900 text-blue-700 dark:text-blue-300" : "",
@@ -257,6 +287,7 @@ export const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
                 "text-red-500 hover:bg-gradient-to-r hover:from-red-50 hover:to-pink-50 dark:hover:from-red-950 dark:hover:to-pink-950 transition-colors",
                 !isOpen && "justify-center"
               )}
+              onClick={handleLogout}
             >
               <div className="flex items-center justify-center w-7 h-7 rounded-md bg-red-100 dark:bg-red-900/30">
                 <LogOut className="w-4 h-4 text-red-600 dark:text-red-400" />

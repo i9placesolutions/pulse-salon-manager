@@ -126,12 +126,186 @@ export type Database = {
         }
         Relationships: []
       }
+      system_users: {
+        Row: {
+          address: string | null
+          auth_id: string | null
+          avatar_url: string | null
+          birth_date: string | null
+          created_at: string | null
+          email: string
+          id: string
+          is_professional: boolean
+          last_login: string | null
+          name: string
+          phone: string | null
+          role: string
+          status: string
+        }
+        Insert: {
+          address?: string | null
+          auth_id?: string | null
+          avatar_url?: string | null
+          birth_date?: string | null
+          created_at?: string | null
+          email: string
+          id?: string
+          is_professional?: boolean
+          last_login?: string | null
+          name: string
+          phone?: string | null
+          role: string
+          status?: string
+        }
+        Update: {
+          address?: string | null
+          auth_id?: string | null
+          avatar_url?: string | null
+          birth_date?: string | null
+          created_at?: string | null
+          email?: string
+          id?: string
+          is_professional?: boolean
+          last_login?: string | null
+          name?: string
+          phone?: string | null
+          role?: string
+          status?: string
+        }
+        Relationships: []
+      }
+      user_permissions: {
+        Row: {
+          edit_appointments: boolean
+          edit_clients: boolean
+          edit_financial: boolean
+          edit_marketing: boolean
+          edit_professionals: boolean
+          edit_services: boolean
+          edit_stock: boolean
+          id: string
+          user_id: string | null
+          view_appointments: boolean
+          view_clients: boolean
+          view_dashboard: boolean
+          view_financial: boolean
+          view_marketing: boolean
+          view_messaging: boolean
+          view_pdv: boolean
+          view_professionals: boolean
+          view_reports: boolean
+          view_services: boolean
+          view_settings: boolean
+          view_stock: boolean
+        }
+        Insert: {
+          edit_appointments?: boolean
+          edit_clients?: boolean
+          edit_financial?: boolean
+          edit_marketing?: boolean
+          edit_professionals?: boolean
+          edit_services?: boolean
+          edit_stock?: boolean
+          id?: string
+          user_id?: string | null
+          view_appointments?: boolean
+          view_clients?: boolean
+          view_dashboard?: boolean
+          view_financial?: boolean
+          view_marketing?: boolean
+          view_messaging?: boolean
+          view_pdv?: boolean
+          view_professionals?: boolean
+          view_reports?: boolean
+          view_services?: boolean
+          view_settings?: boolean
+          view_stock?: boolean
+        }
+        Update: {
+          edit_appointments?: boolean
+          edit_clients?: boolean
+          edit_financial?: boolean
+          edit_marketing?: boolean
+          edit_professionals?: boolean
+          edit_services?: boolean
+          edit_stock?: boolean
+          id?: string
+          user_id?: string | null
+          view_appointments?: boolean
+          view_clients?: boolean
+          view_dashboard?: boolean
+          view_financial?: boolean
+          view_marketing?: boolean
+          view_messaging?: boolean
+          view_pdv?: boolean
+          view_professionals?: boolean
+          view_reports?: boolean
+          view_services?: boolean
+          view_settings?: boolean
+          view_stock?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_permissions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "system_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_permissions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users_with_permissions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
-      [_ in never]: never
+      users_with_permissions: {
+        Row: {
+          address: string | null
+          auth_id: string | null
+          avatar_url: string | null
+          birth_date: string | null
+          created_at: string | null
+          edit_appointments: boolean | null
+          edit_clients: boolean | null
+          edit_financial: boolean | null
+          edit_marketing: boolean | null
+          edit_professionals: boolean | null
+          edit_services: boolean | null
+          edit_stock: boolean | null
+          email: string | null
+          id: string | null
+          is_professional: boolean | null
+          last_login: string | null
+          name: string | null
+          phone: string | null
+          role: string | null
+          status: string | null
+          view_appointments: boolean | null
+          view_clients: boolean | null
+          view_dashboard: boolean | null
+          view_financial: boolean | null
+          view_marketing: boolean | null
+          view_messaging: boolean | null
+          view_pdv: boolean | null
+          view_professionals: boolean | null
+          view_reports: boolean | null
+          view_services: boolean | null
+          view_settings: boolean | null
+          view_stock: boolean | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
-      [_ in never]: never
+      get_current_user_permissions: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
     }
     Enums: {
       [_ in never]: never
