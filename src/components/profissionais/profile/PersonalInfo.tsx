@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -6,10 +7,21 @@ import { Camera } from "lucide-react";
 import { FormCard } from "@/components/shared/FormCard";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { Checkbox } from "@/components/ui/checkbox";
 
 export function PersonalInfo() {
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
+  const [isProfessional, setIsProfessional] = useState(false);
+  const [role, setRole] = useState('user');
+  
+  const handleRoleChange = (newRole: string) => {
+    setRole(newRole);
+    // Quando o cargo "professional" é selecionado, marca automaticamente o checkbox
+    if (newRole === 'professional') {
+      setIsProfessional(true);
+    }
+  };
   
   const handleSave = () => {
     setIsSaving(true);
@@ -73,6 +85,32 @@ export function PersonalInfo() {
             <div className="space-y-2">
               <Label htmlFor="birthDate">Data de Nascimento</Label>
               <Input id="birthDate" type="date" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="role">Cargo</Label>
+              <select 
+                id="role"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                value={role}
+                onChange={(e) => handleRoleChange(e.target.value)}
+              >
+                <option value="admin">Administrador</option>
+                <option value="manager">Gerente</option>
+                <option value="professional">Profissional</option>
+                <option value="receptionist">Recepcionista</option>
+                <option value="user">Usuário</option>
+              </select>
+            </div>
+            <div className="space-y-2 flex items-center pt-6">
+              <Checkbox 
+                id="isProfessional" 
+                checked={isProfessional} 
+                onCheckedChange={(checked) => setIsProfessional(checked as boolean)}
+                className="mr-2" 
+              />
+              <Label htmlFor="isProfessional" className="cursor-pointer">
+                Este usuário é um profissional do salão
+              </Label>
             </div>
             <div className="space-y-2 sm:col-span-2">
               <Label htmlFor="address">Endereço</Label>

@@ -96,55 +96,6 @@ export type Database = {
         }
         Relationships: []
       }
-      blocked_times: {
-        Row: {
-          id: number
-          establishment_id: string
-          professional_id: number | null
-          start_date: string
-          end_date: string
-          start_time: string | null
-          end_time: string | null
-          reason: string | null
-          is_full_day: boolean
-          created_at: string
-          updated_at: string | null
-        }
-        Insert: {
-          id?: number
-          establishment_id: string
-          professional_id?: number | null
-          start_date: string
-          end_date: string
-          start_time?: string | null
-          end_time?: string | null
-          reason?: string | null
-          is_full_day: boolean
-          created_at?: string
-          updated_at?: string | null
-        }
-        Update: {
-          id?: number
-          establishment_id?: string
-          professional_id?: number | null
-          start_date?: string
-          end_date?: string
-          start_time?: string | null
-          end_time?: string | null
-          reason?: string | null
-          is_full_day?: boolean
-          created_at?: string
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "blocked_times_establishment_id_fkey"
-            columns: ["establishment_id"]
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          }
-        ]
-      }
       profiles: {
         Row: {
           created_at: string
