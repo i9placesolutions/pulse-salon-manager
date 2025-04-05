@@ -37,8 +37,8 @@ type ConfigParcelamento = {
 };
 
 export const ConfigPagamentos = forwardRef((props, ref) => {
-  const [loading, setLoading] = useState(false);
-  const [metodosPagamento, setMetodosPagamento] = useState<MetodoPagamento[]>([
+  // Definir métodos de pagamento padrão
+  const metodosPagamentoPadrao: MetodoPagamento[] = [
     { id: "dinheiro", metodo: "Dinheiro", taxa: 0, ativo: true },
     { 
       id: "debito", 
@@ -64,7 +64,10 @@ export const ConfigPagamentos = forwardRef((props, ref) => {
       ] 
     },
     { id: "pix", metodo: "PIX", taxa: 1, ativo: true },
-  ]);
+  ];
+
+  const [loading, setLoading] = useState(false);
+  const [metodosPagamento, setMetodosPagamento] = useState<MetodoPagamento[]>(metodosPagamentoPadrao);
 
   const [parcelamento, setParcelamento] = useState<ConfigParcelamento>({
     numeroMaximoParcelas: 6,
@@ -96,10 +99,24 @@ export const ConfigPagamentos = forwardRef((props, ref) => {
         
         if (data) {
           // Configurar métodos de pagamento
-          if (data.payment_methods && Array.isArray(data.payment_methods)) {
-            setMetodosPagamento(data.payment_methods);
-          } else if (data.payment_methods && typeof data.payment_methods === 'object') {
-            setMetodosPagamento(Object.values(data.payment_methods));
+          if (data.payment_methods && Array.isArray(data.payment_methods) && data.payment_methods.length > 0) {
+            // Verificar se os objetos têm a estrutura correta
+            const metodosValidos = data.payment_methods.filter(
+              (metodo: any) => metodo && metodo.id && metodo.metodo && typeof metodo.taxa === 'number' && typeof metodo.ativo === 'boolean'
+            );
+            
+            if (metodosValidos.length > 0) {
+              setMetodosPagamento(metodosValidos as MetodoPagamento[]);
+            }
+          } else if (data.payment_methods && typeof data.payment_methods === 'object' && Object.keys(data.payment_methods).length > 0) {
+            const metodos = Object.values(data.payment_methods);
+            const metodosValidos = metodos.filter(
+              (metodo: any) => metodo && metodo.id && metodo.metodo && typeof metodo.taxa === 'number' && typeof metodo.ativo === 'boolean'
+            );
+            
+            if (metodosValidos.length > 0) {
+              setMetodosPagamento(metodosValidos as MetodoPagamento[]);
+            }
           }
           
           // Configurar parcelamento
@@ -111,7 +128,7 @@ export const ConfigPagamentos = forwardRef((props, ref) => {
         console.error('Erro ao carregar configurações de pagamento:', error);
         toast({
           title: "Erro ao carregar configurações",
-          description: "Não foi possível carregar as configurações de pagamento.",
+          description: "As configurações padrão de pagamento serão utilizadas.",
           variant: "destructive",
         });
       } finally {
