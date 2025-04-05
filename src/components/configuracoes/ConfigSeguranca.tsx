@@ -483,7 +483,7 @@ export const ConfigSeguranca = forwardRef((props, ref) => {
                           </div>
                           <Switch 
                             id="two-factor" 
-                            checked={configuracoes.autenticacao.doisFatores}
+                            checked={configuracoes?.autenticacao?.doisFatores || false}
                             onCheckedChange={(checked) => handleAutenticacaoChange('doisFatores', checked)}
                           />
                         </div>
@@ -499,7 +499,7 @@ export const ConfigSeguranca = forwardRef((props, ref) => {
                           </div>
                           <Switch 
                             id="strong-password" 
-                            checked={configuracoes.autenticacao.senhasFortes}
+                            checked={configuracoes?.autenticacao?.senhasFortes || false}
                             onCheckedChange={(checked) => handleAutenticacaoChange('senhasFortes', checked)}
                           />
                         </div>
@@ -515,7 +515,7 @@ export const ConfigSeguranca = forwardRef((props, ref) => {
                           </div>
                           <Switch 
                             id="login-attempt" 
-                            checked={configuracoes.autenticacao.bloqueioTentativas}
+                            checked={configuracoes?.autenticacao?.bloqueioTentativas || false}
                             onCheckedChange={(checked) => handleAutenticacaoChange('bloqueioTentativas', checked)}
                           />
                         </div>
@@ -526,13 +526,13 @@ export const ConfigSeguranca = forwardRef((props, ref) => {
                           <div className="space-y-0.5">
                             <Label className="font-medium">Expiração de Senha</Label>
                             <p className="text-sm text-muted-foreground">
-                              Solicitar troca de senha a cada {configuracoes.autenticacao.tempoExpiracaoSenha} dias
+                              Solicitar troca de senha a cada {configuracoes?.autenticacao?.tempoExpiracaoSenha || '60'} dias
                             </p>
                           </div>
                           <div className="flex items-center gap-2">
-                            {configuracoes.autenticacao.expiracaoSenha && (
+                            {configuracoes?.autenticacao?.expiracaoSenha && (
                               <Select
-                                value={configuracoes.autenticacao.tempoExpiracaoSenha}
+                                value={configuracoes?.autenticacao?.tempoExpiracaoSenha || '60'}
                                 onValueChange={(value) => handleAutenticacaoChange('tempoExpiracaoSenha', value)}
                               >
                                 <SelectTrigger className="w-24 border-red-200 focus:border-red-400">
@@ -548,7 +548,7 @@ export const ConfigSeguranca = forwardRef((props, ref) => {
                             )}
                             <Switch 
                               id="password-expiry" 
-                              checked={configuracoes.autenticacao.expiracaoSenha}
+                              checked={configuracoes?.autenticacao?.expiracaoSenha || false}
                               onCheckedChange={(checked) => handleAutenticacaoChange('expiracaoSenha', checked)}
                             />
                           </div>
@@ -565,7 +565,7 @@ export const ConfigSeguranca = forwardRef((props, ref) => {
                           </div>
                           <div className="flex items-center gap-2">
                             <Select
-                              value={configuracoes.autenticacao.tempoInatividade}
+                              value={configuracoes?.autenticacao?.tempoInatividade || '30'}
                               onValueChange={(value) => handleAutenticacaoChange('tempoInatividade', value)}
                             >
                               <SelectTrigger className="w-24 border-red-200 focus:border-red-400">
@@ -612,7 +612,7 @@ export const ConfigSeguranca = forwardRef((props, ref) => {
                           </div>
                           <Switch 
                             id="anonymize-data" 
-                            checked={configuracoes.privacidade.anonimizacaoDados}
+                            checked={configuracoes?.privacidade?.anonimizacaoDados || false}
                             onCheckedChange={(checked) => handlePrivacidadeChange('anonimizacaoDados', checked)}
                           />
                         </div>
@@ -628,7 +628,7 @@ export const ConfigSeguranca = forwardRef((props, ref) => {
                           </div>
                           <Switch 
                             id="consent-term" 
-                            checked={configuracoes.privacidade.termoConsentimento}
+                            checked={configuracoes?.privacidade?.termoConsentimento || false}
                             onCheckedChange={(checked) => handlePrivacidadeChange('termoConsentimento', checked)}
                           />
                         </div>
@@ -639,13 +639,13 @@ export const ConfigSeguranca = forwardRef((props, ref) => {
                           <div className="space-y-0.5">
                             <Label className="font-medium">Exclusão Automática</Label>
                             <p className="text-sm text-muted-foreground">
-                              Excluir dados de clientes inativos após {configuracoes.privacidade.periodoExclusao} anos
+                              Excluir dados de clientes inativos após {configuracoes?.privacidade?.periodoExclusao || '5'} anos
                             </p>
                           </div>
                           <div className="flex items-center gap-2">
-                            {configuracoes.privacidade.exclusaoAutomatica && (
+                            {configuracoes?.privacidade?.exclusaoAutomatica && (
                               <Select
-                                value={configuracoes.privacidade.periodoExclusao}
+                                value={configuracoes?.privacidade?.periodoExclusao || '5'}
                                 onValueChange={(value) => handlePrivacidadeChange('periodoExclusao', value)}
                               >
                                 <SelectTrigger className="w-24 border-purple-200 focus:border-purple-400">
@@ -661,7 +661,7 @@ export const ConfigSeguranca = forwardRef((props, ref) => {
                             )}
                             <Switch 
                               id="auto-delete" 
-                              checked={configuracoes.privacidade.exclusaoAutomatica}
+                              checked={configuracoes?.privacidade?.exclusaoAutomatica || false}
                               onCheckedChange={(checked) => handlePrivacidadeChange('exclusaoAutomatica', checked)}
                             />
                           </div>
@@ -677,8 +677,8 @@ export const ConfigSeguranca = forwardRef((props, ref) => {
                             </p>
                           </div>
                           <Switch 
-                            id="card-masking" 
-                            checked={configuracoes.privacidade.mascaramentoCartao}
+                            id="credit-card-masking" 
+                            checked={configuracoes?.privacidade?.mascaramentoCartao || false}
                             onCheckedChange={(checked) => handlePrivacidadeChange('mascaramentoCartao', checked)}
                           />
                         </div>
@@ -714,7 +714,7 @@ export const ConfigSeguranca = forwardRef((props, ref) => {
                           </div>
                           <Switch 
                             id="sensitive-data-log" 
-                            checked={configuracoes.auditoria.registroAcessoDadosSensiveis}
+                            checked={configuracoes?.auditoria?.registroAcessoDadosSensiveis || false}
                             onCheckedChange={(checked) => handleAuditoriaChange('registroAcessoDadosSensiveis', checked)}
                           />
                         </div>
@@ -730,7 +730,7 @@ export const ConfigSeguranca = forwardRef((props, ref) => {
                           </div>
                           <Switch 
                             id="critical-action-alert" 
-                            checked={configuracoes.auditoria.alertaAcoesCriticas}
+                            checked={configuracoes?.auditoria?.alertaAcoesCriticas || false}
                             onCheckedChange={(checked) => handleAuditoriaChange('alertaAcoesCriticas', checked)}
                           />
                         </div>
