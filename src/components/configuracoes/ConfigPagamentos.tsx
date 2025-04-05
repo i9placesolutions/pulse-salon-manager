@@ -1,4 +1,5 @@
-import { useState, forwardRef, useImperativeHandle, useEffect } from "react";
+import { useState, useEffect, forwardRef, useImperativeHandle } from "react";
+import { Button } from "@/components/ui/button";
 import { 
   Card, 
   CardContent, 
@@ -9,10 +10,16 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/components/ui/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { Loader2 } from "lucide-react";
+
+type Bandeira = {
+  nome: string;
+  taxa: number;
+};
 
 type MetodoPagamento = {
   id: string;
@@ -20,11 +27,6 @@ type MetodoPagamento = {
   taxa: number;
   ativo: boolean;
   bandeiras?: Bandeira[];
-};
-
-type Bandeira = {
-  nome: string;
-  taxa: number;
 };
 
 type ConfigParcelamento = {
@@ -35,6 +37,7 @@ type ConfigParcelamento = {
 };
 
 export const ConfigPagamentos = forwardRef((props, ref) => {
+  const [loading, setLoading] = useState(false);
   const [metodosPagamento, setMetodosPagamento] = useState<MetodoPagamento[]>([
     { id: "dinheiro", metodo: "Dinheiro", taxa: 0, ativo: true },
     { 
@@ -72,6 +75,53 @@ export const ConfigPagamentos = forwardRef((props, ref) => {
 
   const [editandoBandeira, setEditandoBandeira] = useState<{metodoId: string, bandeiraNome: string} | null>(null);
 
+  // Carregar dados do Supabase
+  useEffect(() => {
+    const carregarConfiguracoes = async () => {
+      try {
+        setLoading(true);
+        // Obter o usuário atual
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (!user) return;
+        
+        // Buscar configurações do estabelecimento
+        const { data, error } = await supabase
+          .from('establishment_details')
+          .select('payment_methods, installment_config')
+          .eq('id', user.id)
+          .single();
+          
+        if (error) throw error;
+        
+        if (data) {
+          // Configurar métodos de pagamento
+          if (data.payment_methods && Array.isArray(data.payment_methods)) {
+            setMetodosPagamento(data.payment_methods);
+          } else if (data.payment_methods && typeof data.payment_methods === 'object') {
+            setMetodosPagamento(Object.values(data.payment_methods));
+          }
+          
+          // Configurar parcelamento
+          if (data.installment_config) {
+            setParcelamento(data.installment_config as ConfigParcelamento);
+          }
+        }
+      } catch (error) {
+        console.error('Erro ao carregar configurações de pagamento:', error);
+        toast({
+          title: "Erro ao carregar configurações",
+          description: "Não foi possível carregar as configurações de pagamento.",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    carregarConfiguracoes();
+  }, []);
+
   const atualizarTaxa = (id: string, novaTaxa: number) => {
     setMetodosPagamento(metodos => 
       metodos.map(metodo => 
@@ -104,13 +154,48 @@ export const ConfigPagamentos = forwardRef((props, ref) => {
     );
   };
 
-  const salvarConfiguracoes = () => {
-    // Aqui implementaríamos a lógica para salvar no backend
-    // Por enquanto apenas mostramos um toast
-    toast({
-      title: "Configurações salvas",
-      description: "As configurações de pagamento foram salvas com sucesso."
-    });
+  const salvarConfiguracoes = async () => {
+    try {
+      setLoading(true);
+      
+      // Obter o usuário atual
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        toast({
+          title: "Erro ao salvar",
+          description: "Usuário não autenticado",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Atualizar no Supabase
+      const { data, error } = await supabase
+        .from('establishment_details')
+        .update({
+          payment_methods: metodosPagamento,
+          installment_config: parcelamento
+        })
+        .eq('id', user.id)
+        .select();
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Configurações salvas",
+        description: "As configurações de pagamento foram salvas com sucesso."
+      });
+    } catch (error) {
+      console.error("Erro ao salvar configurações:", error);
+      toast({
+        title: "Erro ao salvar",
+        description: "Ocorreu um erro ao salvar as configurações de pagamento.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Expor o método getFormData para o componente pai
@@ -123,6 +208,15 @@ export const ConfigPagamentos = forwardRef((props, ref) => {
 
   return (
     <div className="grid gap-4 md:grid-cols-2">
+      {loading && (
+        <div className="fixed inset-0 bg-black/10 flex items-center justify-center z-50">
+          <div className="bg-white p-4 rounded-lg shadow-lg flex items-center gap-2">
+            <Loader2 className="h-6 w-6 animate-spin text-purple-600" />
+            <span>Carregando configurações...</span>
+          </div>
+        </div>
+      )}
+      
       <Card>
         <CardHeader>
           <CardTitle>Métodos de Pagamento</CardTitle>
@@ -255,7 +349,20 @@ export const ConfigPagamentos = forwardRef((props, ref) => {
           </div>
           
           <div className="pt-4">
-            <Button onClick={salvarConfiguracoes} className="w-full">Salvar Configurações</Button>
+            <Button 
+              onClick={salvarConfiguracoes} 
+              className="w-full"
+              disabled={loading}
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Salvando...
+                </>
+              ) : (
+                "Salvar Configurações"
+              )}
+            </Button>
           </div>
         </CardContent>
       </Card>
