@@ -247,6 +247,30 @@ COMMENT ON COLUMN public.security_audit_logs.resource_id IS 'ID do recurso afeta
 COMMENT ON COLUMN public.security_audit_logs.details IS 'Detalhes adicionais da ação em formato JSON';
 COMMENT ON COLUMN public.security_audit_logs.created_at IS 'Data e hora de criação do log';
 
+-- Função para limpar logs antigos mantendo apenas registros recentes
+CREATE OR REPLACE FUNCTION public.limpar_registros_antigos(p_dias INTEGER DEFAULT 30)
+RETURNS INTEGER AS $$
+DECLARE
+    v_usuario_id UUID;
+    v_limite_data TIMESTAMP WITH TIME ZONE;
+    v_deleted INTEGER;
+BEGIN
+    -- Obter ID do usuário atual
+    SELECT auth.uid() INTO v_usuario_id;
+    
+    -- Calcular data limite para manter logs
+    SELECT (NOW() - (p_dias || ' days')::INTERVAL) INTO v_limite_data;
+    
+    -- Deletar registros antigos
+    DELETE FROM public.security_audit_logs 
+    WHERE establishment_id = v_usuario_id
+    AND created_at < v_limite_data
+    RETURNING COUNT(*) INTO v_deleted;
+    
+    RETURN v_deleted;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
 -- Configurar funções para atualização automática
 CREATE OR REPLACE FUNCTION public.handle_updated_at()
 RETURNS TRIGGER AS $$
@@ -519,28 +543,4 @@ BEGIN
     SET trial_ends_at = NOW() + (days || ' days')::INTERVAL
     WHERE id = user_id;
 END;
-$$;
-
--- Função para limpar logs antigos mantendo apenas registros recentes
-CREATE OR REPLACE FUNCTION public.limpar_registros_antigos(p_dias INTEGER DEFAULT 30)
-RETURNS INTEGER AS $$
-DECLARE
-    v_usuario_id UUID;
-    v_limite_data TIMESTAMP WITH TIME ZONE;
-    v_deleted INTEGER;
-BEGIN
-    -- Obter ID do usuário atual
-    SELECT auth.uid() INTO v_usuario_id;
-    
-    -- Calcular data limite para manter logs
-    SELECT (NOW() - (p_dias || ' days')::INTERVAL) INTO v_limite_data;
-    
-    -- Deletar registros antigos
-    DELETE FROM public.security_audit_logs 
-    WHERE establishment_id = v_usuario_id
-    AND created_at < v_limite_data
-    RETURNING COUNT(*) INTO v_deleted;
-    
-    RETURN v_deleted;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER; 
+$$; 
