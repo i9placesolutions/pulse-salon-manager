@@ -1,0 +1,81 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    
+    /* Nova paleta azul e rosa */
+    --primary: 217 91% 60%; /* Azul principal (blue-600) */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 213 93% 96%; /* Azul claro (blue-50) */
+    --secondary-foreground: 221 39% 11%;
+    
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 328 73% 45%; /* Cor #db2777 (pink-600) */
+    --accent-foreground: 0 0% 100%;
+    
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 217 91% 60%; /* Azul principal (blue-600) para foco */
+    --radius: 0.75rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-secondary text-neutral antialiased;
+  }
+
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus {
+    -webkit-text-fill-color: #313649;
+    -webkit-box-shadow: 0 0 0px 1000px #ffffff inset;
+    transition: background-color 5000s ease-in-out 0s;
+  }
+}
+
+@layer components {
+  .glass-card {
+    @apply bg-white/90 backdrop-blur-sm border border-white/20 shadow-lg;
+  }
+
+  .input-styles {
+    @apply w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-blue-600 
+           focus:ring-2 focus:ring-blue-600/20 outline-none transition-all duration-200
+           bg-white placeholder:text-gray-400;
+  }
+
+  .btn-primary {
+    @apply px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700
+           transform transition-all duration-200 font-medium
+           focus:outline-none focus:ring-2 focus:ring-blue-600/50
+           disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  
+  .btn-secondary {
+    @apply px-6 py-3 bg-[#db2777] text-white rounded-lg hover:bg-[#be185d]
+           transform transition-all duration-200 font-medium
+           focus:outline-none focus:ring-2 focus:ring-[#db2777]/50
+           disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .link-text {
+    @apply text-blue-600 hover:text-blue-800 transition-colors duration-200
+           underline-offset-4 hover:underline;
+  }
+}

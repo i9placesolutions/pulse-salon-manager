@@ -1,0 +1,1577 @@
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { 
+  Download, FileText, Calendar, Users, UserCheck, Package,
+  TrendingUp, Star, Clock, Activity, Scissors, ShoppingBag,
+  AlertTriangle, Filter, Eye, Settings, FileDown, FileSpreadsheet,
+  BarChart3, FileBarChart, BookOpen
+} from "lucide-react";
+import { formatCurrency } from "@/utils/currency";
+import { RevenueChart } from "@/components/financeiro/RevenueChart";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  PieChart,
+  Pie,
+  Cell
+} from "recharts";
+import { format, subDays, sub } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Progress } from "@/components/ui/progress";
+import { toast } from "@/components/ui/use-toast";
+import { ReportBuilder } from "@/components/relatorios/ReportBuilder";
+
+// Dados mockados para demonstração
+const salesData = [
+  { date: "01/03", revenue: 3200, expenses: 1800, services: 28, clients: 22 },
+  { date: "02/03", revenue: 2800, expenses: 1600, services: 24, clients: 20 },
+  { date: "03/03", revenue: 3600, expenses: 2000, services: 32, clients: 25 },
+  { date: "04/03", revenue: 4200, expenses: 2200, services: 38, clients: 30 },
+  { date: "05/03", revenue: 3800, expenses: 1900, services: 34, clients: 28 },
+  { date: "06/03", revenue: 4500, expenses: 2400, services: 40, clients: 32 },
+  { date: "07/03", revenue: 5000, expenses: 2600, services: 45, clients: 36 },
+];
+
+const metrics = [
+  {
+    title: "Faturamento do Mês",
+    value: formatCurrency(27100),
+    change: 12.5,
+    icon: FileText,
+    description: "vs. mês anterior"
+  },
+  {
+    title: "Atendimentos",
+    value: "241",
+    change: 8.2,
+    icon: Calendar,
+    description: "neste mês"
+  },
+  {
+    title: "Clientes Atendidos",
+    value: "193",
+    change: 5.3,
+    icon: Users,
+    description: "clientes únicos"
+  },
+  {
+    title: "Novos Clientes",
+    value: "28",
+    change: -2.1,
+    icon: UserCheck,
+    description: "este mês"
+  },
+];
+
+// Dados para relatório de atendimentos
+const appointmentsData = {
+  occupationRate: [
+    { professional: "Ana Silva", rate: 85 },
+    { professional: "João Santos", rate: 75 },
+    { professional: "Maria Oliveira", rate: 90 },
+  ],
+  servicesDuration: [
+    { service: "Corte Feminino", avgDuration: 45 },
+    { service: "Coloração", avgDuration: 120 },
+    { service: "Manicure", avgDuration: 60 },
+  ],
+  hourlyDistribution: Array.from({ length: 12 }, (_, i) => ({
+    hour: `${i + 8}:00`,
+    appointments: Math.floor(Math.random() * 8) + 1,
+  })),
+};
+
+// Dados para relatório de clientes
+const clientsData = {
+  visitFrequency: [
+    { frequency: "Semanal", clients: 45 },
+    { frequency: "Quinzenal", clients: 78 },
+    { frequency: "Mensal", clients: 125 },
+    { frequency: "Ocasional", clients: 89 },
+  ],
+  topServices: [
+    { name: "Corte Feminino", count: 156 },
+    { name: "Coloração", count: 98 },
+    { name: "Manicure", count: 87 },
+    { name: "Corte Masculino", count: 76 },
+  ],
+  retention: Array.from({ length: 6 }, (_, i) => ({
+    month: format(subDays(new Date(), i * 30), "MMM", { locale: ptBR }),
+    rate: 70 + Math.floor(Math.random() * 20),
+  })),
+};
+
+// Dados para relatório de profissionais
+const professionalsData = {
+  performance: [
+    { name: "Ana Silva", revenue: 8500, clients: 85, rating: 4.8 },
+    { name: "João Santos", revenue: 7200, clients: 72, rating: 4.6 },
+    { name: "Maria Oliveira", revenue: 9100, clients: 91, rating: 4.9 },
+  ],
+  serviceDistribution: [
+    { professional: "Ana Silva", services: [
+      { name: "Corte", count: 45 },
+      { name: "Coloração", count: 28 },
+      { name: "Hidratação", count: 15 },
+    ]},
+    { professional: "João Santos", services: [
+      { name: "Corte", count: 52 },
+      { name: "Barba", count: 38 },
+      { name: "Hidratação", count: 12 },
+    ]},
+  ],
+};
+
+// Dados para relatório de estoque
+const stockData = {
+  topProducts: [
+    { name: "Shampoo Pro", sold: 45, revenue: 2250 },
+    { name: "Condicionador Pro", sold: 38, revenue: 1900 },
+    { name: "Máscara Capilar", sold: 32, revenue: 1600 },
+  ],
+  lowStock: [
+    { name: "Shampoo Pro", current: 5, minimum: 10 },
+    { name: "Tintura #7", current: 3, minimum: 8 },
+    { name: "Óleo Capilar", current: 4, minimum: 12 },
+  ],
+  stockTurnover: Array.from({ length: 6 }, (_, i) => ({
+    month: format(subDays(new Date(), i * 30), "MMM", { locale: ptBR }),
+    turnover: 2 + Math.random(),
+  })),
+};
+
+const CHART_COLORS = ["#dc8c95", "#8b5cf6", "#22c55e", "#eab308"];
+
+export default function Relatorios() {
+  const [period, setPeriod] = useState<'month' | 'week' | 'year'>("month");
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [exportFormat, setExportFormat] = useState("pdf");
+  const [exportPeriod, setExportPeriod] = useState("month");
+  const [selectedReports, setSelectedReports] = useState({
+    financeiro: true,
+    atendimentos: true,
+    clientes: true,
+    profissionais: true,
+    estoque: true
+  });
+  const [selectedFilters, setSelectedFilters] = useState({
+    dataInicio: format(sub(new Date(), { months: 1 }), "yyyy-MM-dd"),
+    dataFim: format(new Date(), "yyyy-MM-dd"),
+    profissionais: [],
+    servicos: [],
+    categorias: []
+  });
+  
+  // Estado para controlar a visualização (relatórios predefinidos ou personalizados)
+  const [viewMode, setViewMode] = useState<"dashboard" | "builder">("dashboard");
+  
+  // Estado para armazenar os dados do relatório personalizado gerado
+  const [customReportData, setCustomReportData] = useState<any>(null);
+  const [customReportOptions, setCustomReportOptions] = useState<any>(null);
+
+  // Função para renderizar conteúdo personalizado com base no tipo de relatório
+  const renderCustomReportContent = (data: any, options: any) => {
+    if (!data) return null;
+    
+    switch(options.type) {
+      case "financeiro":
+        if (options.subtype === "receitas") {
+          return (
+            <div className="h-[400px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={data}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="date" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Bar dataKey="revenue" fill="#22c55e" name="Receitas" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          );
+        } else if (options.subtype === "despesas") {
+          return (
+            <div className="h-[400px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={data}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="date" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Bar dataKey="expenses" fill="#ef4444" name="Despesas" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          );
+        } else {
+          return (
+            <div className="h-[400px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={data}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="date" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Bar dataKey="revenue" fill="#22c55e" name="Receitas" />
+                  <Bar dataKey="expenses" fill="#ef4444" name="Despesas" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          );
+        }
+        break;
+        
+      case "atendimentos":
+        if (options.subtype === "cancelados" && data.cancelados) {
+          return (
+            <div>
+              <h3 className="text-lg font-medium mb-4">Atendimentos Cancelados</h3>
+              <div className="relative overflow-x-auto">
+                <table className="w-full text-sm text-left">
+                  <thead className="text-xs uppercase bg-gray-100">
+                    <tr>
+                      <th className="px-4 py-2">Data</th>
+                      <th className="px-4 py-2">Profissional</th>
+                      <th className="px-4 py-2">Cliente</th>
+                      <th className="px-4 py-2">Motivo</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {data.cancelados.map((item: any, index: number) => (
+                      <tr key={index} className="bg-white border-b">
+                        <td className="px-4 py-2">{item.data}</td>
+                        <td className="px-4 py-2">{item.profissional}</td>
+                        <td className="px-4 py-2">{item.cliente}</td>
+                        <td className="px-4 py-2">{item.motivo}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          );
+        } else {
+          return (
+            <div className="grid gap-4 md:grid-cols-2">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Taxa de Ocupação</CardTitle>
+                </CardHeader>
+                <CardContent className="h-[300px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={data.occupationRate}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="professional" />
+                      <YAxis unit="%" />
+                      <Tooltip />
+                      <Legend />
+                      <Bar dataKey="rate" fill="#dc8c95" name="Taxa de Ocupação" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Duração Média dos Serviços</CardTitle>
+                </CardHeader>
+                <CardContent className="h-[300px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={data.servicesDuration}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="service" />
+                      <YAxis unit="min" />
+                      <Tooltip />
+                      <Legend />
+                      <Bar dataKey="avgDuration" fill="#8b5cf6" name="Duração Média" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+            </div>
+          );
+        }
+        
+      case "profissionais":
+        return (
+          <div className="grid gap-4 md:grid-cols-2">
+            <Card className="md:col-span-2">
+              <CardHeader>
+                <CardTitle>Performance dos Profissionais</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-8">
+                  {data.performance.map((prof: any) => (
+                    <div key={prof.name} className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <h3 className="font-medium">{prof.name}</h3>
+                        <div className="flex items-center gap-4">
+                          <span className="flex items-center gap-1">
+                            <TrendingUp className="h-4 w-4 text-green-500" />
+                            {formatCurrency(prof.revenue)}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Users className="h-4 w-4 text-blue-500" />
+                            {prof.clients} clientes
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Star className="h-4 w-4 text-yellow-500" />
+                            {prof.rating}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="h-2 bg-secondary rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-primary" 
+                          style={{ width: `${(prof.clients / 100) * 100}%` }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        );
+        break;
+        
+      case "estoque":
+        if (options.subtype === "estoqueBaixo") {
+          return (
+            <Card>
+              <CardHeader>
+                <CardTitle>Alertas de Estoque</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {data.lowStock.map((item: any, index: number) => (
+                    <div key={index} className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <AlertTriangle className="h-4 w-4 text-yellow-500" />
+                        <span>{item.name}</span>
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        {item.current}/{item.minimum} unidades
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          );
+        } else {
+          return (
+            <div className="grid gap-4 md:grid-cols-2">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Produtos Mais Vendidos</CardTitle>
+                </CardHeader>
+                <CardContent className="h-[300px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={data.topProducts}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="name" />
+                      <YAxis yAxisId="left" orientation="left" />
+                      <Tooltip />
+                      <Legend />
+                      <Bar yAxisId="left" dataKey="sold" fill="#dc8c95" name="Unidades Vendidas" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+            </div>
+          );
+        }
+        break;
+        
+      default:
+        return <p>Selecione as opções desejadas para gerar um relatório personalizado.</p>;
+    }
+  };
+
+  // Função para gerar relatório personalizado com base nas opções selecionadas
+  const handleGenerateReport = (options: any) => {
+    console.log("Gerando relatório com as opções:", options);
+    setCustomReportOptions(options);
+    
+    // Simulando geração de dados baseados nas seleções do usuário
+    let reportData;
+    
+    switch(options.type) {
+      case "financeiro":
+        if (options.subtype === "receitas") {
+          reportData = salesData.map(item => ({
+            date: item.date,
+            revenue: item.revenue,
+          }));
+        } else if (options.subtype === "despesas") {
+          reportData = salesData.map(item => ({
+            date: item.date,
+            expenses: item.expenses,
+          }));
+        } else {
+          reportData = salesData;
+        }
+        break;
+        
+      case "atendimentos":
+        if (options.subtype === "cancelados") {
+          reportData = {
+            ...appointmentsData,
+            cancelados: [
+              { data: "01/03", profissional: "Ana Silva", cliente: "Carlos Oliveira", motivo: "Cliente desmarcou" },
+              { data: "03/03", profissional: "João Santos", cliente: "Maria Santos", motivo: "Profissional ausente" },
+              { data: "05/03", profissional: "Maria Oliveira", cliente: "Pedro Souza", motivo: "Cliente não compareceu" },
+            ]
+          };
+        } else {
+          reportData = appointmentsData;
+        }
+        break;
+        
+      case "clientes":
+        reportData = clientsData;
+        break;
+        
+      case "profissionais":
+        if (options.filters.profissionais.length > 0) {
+          // Filtrando para mostrar apenas profissionais selecionados
+          reportData = {
+            performance: professionalsData.performance.filter(prof => 
+              options.filters.profissionais.includes(prof.name === "Ana Silva" ? "1" : 
+                                                  prof.name === "João Santos" ? "2" : "3")),
+            serviceDistribution: professionalsData.serviceDistribution.filter(prof => 
+              options.filters.profissionais.includes(prof.professional === "Ana Silva" ? "1" : "2"))
+          };
+        } else {
+          reportData = professionalsData;
+        }
+        break;
+        
+      case "estoque":
+        if (options.subtype === "estoqueBaixo") {
+          reportData = { lowStock: stockData.lowStock };
+        } else {
+          reportData = stockData;
+        }
+        break;
+        
+      default:
+        reportData = {};
+    }
+    
+    setCustomReportData(reportData);
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold text-neutral">Relatórios</h1>
+          <p className="text-sm text-muted-foreground">
+            Acompanhe o desempenho do seu negócio
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <Button 
+            variant={viewMode === "dashboard" ? "default" : "outline"}
+            onClick={() => setViewMode("dashboard")}
+            className="flex items-center gap-2"
+          >
+            <FileBarChart className="h-4 w-4" />
+            Relatórios Padrão
+          </Button>
+          <Button 
+            variant={viewMode === "builder" ? "default" : "outline"}
+            onClick={() => setViewMode("builder")}
+            className="flex items-center gap-2"
+          >
+            <BarChart3 className="h-4 w-4" />
+            Construtor de Relatórios
+          </Button>
+          <Button 
+            onClick={() => setShowExportModal(true)} 
+            className="flex items-center gap-2 bg-primary hover:bg-primary/90"
+          >
+            <Download className="h-4 w-4" />
+            Exportar
+          </Button>
+        </div>
+      </div>
+
+      {viewMode === "builder" ? (
+        <div className="space-y-6">
+          <ReportBuilder onGenerateReport={handleGenerateReport} />
+          
+          {customReportData && customReportOptions && (
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <BookOpen className="h-5 w-5 text-primary" />
+                  Relatório Personalizado: {{
+                    financeiro: "Financeiro",
+                    atendimentos: "Atendimentos",
+                    clientes: "Clientes",
+                    profissionais: "Profissionais",
+                    estoque: "Estoque"
+                  }[customReportOptions.type] || "Personalizado"}
+                </CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Período: {format(new Date(customReportOptions.periodStart), "dd/MM/yyyy")} até {format(new Date(customReportOptions.periodEnd), "dd/MM/yyyy")}
+                </p>
+              </CardHeader>
+              <CardContent>
+                {renderCustomReportContent(customReportData, customReportOptions)}
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      ) : (
+        <>
+        {/* Métricas principais */}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {metrics.map((metric, index) => (
+          <Card key={index}>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium">
+                {metric.title}
+              </CardTitle>
+              <metric.icon className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{metric.value}</div>
+              <p className="text-xs text-muted-foreground flex items-center mt-1">
+                <span className={`mr-1 ${metric.change > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                  {metric.change > 0 ? '↑' : '↓'} {Math.abs(metric.change)}%
+                </span>
+                {metric.description}
+              </p>
+            </CardContent>
+          </Card>
+        ))}
+        </div>
+        </>
+
+      {/* Modal de Exportação Avançado */}
+      <Dialog open={showExportModal} onOpenChange={setShowExportModal}>
+        <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-xl">
+              <Download className="h-5 w-5" />
+              Exportação Avançada de Relatórios
+            </DialogTitle>
+            <DialogDescription>
+              Personalize completamente seus relatórios selecionando as áreas, filtros e opções de visualização desejadas.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <Tabs defaultValue="geral" className="mt-6">
+            <TabsList className="grid grid-cols-7 mb-4">
+              <TabsTrigger value="geral">Geral</TabsTrigger>
+              <TabsTrigger value="financeiro">Financeiro</TabsTrigger>
+              <TabsTrigger value="atendimentos">Atendimentos</TabsTrigger>
+              <TabsTrigger value="clientes">Clientes</TabsTrigger>
+              <TabsTrigger value="profissionais">Profissionais</TabsTrigger>
+              <TabsTrigger value="estoque">Estoque</TabsTrigger>
+              <TabsTrigger value="agendamentos">Agendamentos</TabsTrigger>
+            </TabsList>
+            
+            {/* Aba Geral */}
+            <TabsContent value="geral" className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Formato e Período */}
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-md">Configurações Gerais</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {/* Formato de Exportação */}
+                    <div className="space-y-2">
+                      <Label className="font-medium">Formato de Exportação</Label>
+                      <RadioGroup 
+                        value={exportFormat} 
+                        onValueChange={setExportFormat}
+                        className="flex space-x-4"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="pdf" id="pdf" />
+                          <Label htmlFor="pdf" className="flex items-center gap-1">
+                            <FileText className="h-4 w-4 text-primary" />
+                            PDF
+                          </Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="excel" id="excel" />
+                          <Label htmlFor="excel" className="flex items-center gap-1">
+                            <FileDown className="h-4 w-4 text-green-600" />
+                            Excel
+                          </Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="csv" id="csv" />
+                          <Label htmlFor="csv" className="flex items-center gap-1">
+                            <FileSpreadsheet className="h-4 w-4 text-blue-600" />
+                            CSV
+                          </Label>
+                        </div>
+                      </RadioGroup>
+                    </div>
+                    
+                    {/* Período Global */}
+                    <div className="space-y-2">
+                      <Label className="font-medium">Período</Label>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="date-start">Data Inicial</Label>
+                          <Input 
+                            id="date-start" 
+                            type="date" 
+                            value={selectedFilters.dataInicio}
+                            onChange={(e) => setSelectedFilters({...selectedFilters, dataInicio: e.target.value})}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="date-end">Data Final</Label>
+                          <Input 
+                            id="date-end" 
+                            type="date" 
+                            value={selectedFilters.dataFim}
+                            onChange={(e) => setSelectedFilters({...selectedFilters, dataFim: e.target.value})}
+                          />
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => setSelectedFilters({...selectedFilters, dataInicio: format(sub(new Date(), { days: 7 }), "yyyy-MM-dd"), dataFim: format(new Date(), "yyyy-MM-dd")})}>
+                          Última Semana
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => setSelectedFilters({...selectedFilters, dataInicio: format(sub(new Date(), { months: 1 }), "yyyy-MM-dd"), dataFim: format(new Date(), "yyyy-MM-dd")})}>
+                          Último Mês
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => setSelectedFilters({...selectedFilters, dataInicio: format(sub(new Date(), { months: 3 }), "yyyy-MM-dd"), dataFim: format(new Date(), "yyyy-MM-dd")})}>
+                          Último Trimestre
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => setSelectedFilters({...selectedFilters, dataInicio: format(sub(new Date(), { months: 6 }), "yyyy-MM-dd"), dataFim: format(new Date(), "yyyy-MM-dd")})}>
+                          Último Semestre
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => setSelectedFilters({...selectedFilters, dataInicio: format(sub(new Date(), { years: 1 }), "yyyy-MM-dd"), dataFim: format(new Date(), "yyyy-MM-dd")})}>
+                          Último Ano
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                {/* Seleção de Relatórios */}
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-md">Áreas do Relatório</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox 
+                          id="financeiro" 
+                          checked={selectedReports.financeiro}
+                          onCheckedChange={(checked) => setSelectedReports({...selectedReports, financeiro: !!checked})}
+                        />
+                        <Label htmlFor="financeiro" className="flex items-center gap-1">
+                          <FileText className="h-4 w-4 text-primary" />
+                          Financeiro
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox 
+                          id="atendimentos" 
+                          checked={selectedReports.atendimentos}
+                          onCheckedChange={(checked) => setSelectedReports({...selectedReports, atendimentos: !!checked})}
+                        />
+                        <Label htmlFor="atendimentos" className="flex items-center gap-1">
+                          <Calendar className="h-4 w-4 text-primary" />
+                          Atendimentos
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox 
+                          id="clientes" 
+                          checked={selectedReports.clientes}
+                          onCheckedChange={(checked) => setSelectedReports({...selectedReports, clientes: !!checked})}
+                        />
+                        <Label htmlFor="clientes" className="flex items-center gap-1">
+                          <Users className="h-4 w-4 text-primary" />
+                          Clientes
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox 
+                          id="profissionais" 
+                          checked={selectedReports.profissionais}
+                          onCheckedChange={(checked) => setSelectedReports({...selectedReports, profissionais: !!checked})}
+                        />
+                        <Label htmlFor="profissionais" className="flex items-center gap-1">
+                          <UserCheck className="h-4 w-4 text-primary" />
+                          Profissionais
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox 
+                          id="estoque" 
+                          checked={selectedReports.estoque}
+                          onCheckedChange={(checked) => setSelectedReports({...selectedReports, estoque: !!checked})}
+                        />
+                        <Label htmlFor="estoque" className="flex items-center gap-1">
+                          <Package className="h-4 w-4 text-primary" />
+                          Estoque
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox 
+                          id="agendamentos" 
+                          defaultChecked
+                        />
+                        <Label htmlFor="agendamentos" className="flex items-center gap-1">
+                          <Clock className="h-4 w-4 text-primary" />
+                          Agendamentos
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox 
+                          id="comissoes" 
+                          defaultChecked
+                        />
+                        <Label htmlFor="comissoes" className="flex items-center gap-1">
+                          <TrendingUp className="h-4 w-4 text-primary" />
+                          Comissões
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox 
+                          id="acessos" 
+                          defaultChecked
+                        />
+                        <Label htmlFor="acessos" className="flex items-center gap-1">
+                          <Eye className="h-4 w-4 text-primary" />
+                          Acessos ao Sistema
+                        </Label>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                {/* Opções de Visualização */}
+                <Card className="md:col-span-2">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-md">Opções de Visualização</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox id="include-charts" defaultChecked />
+                        <Label htmlFor="include-charts">Incluir gráficos</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox id="include-tables" defaultChecked />
+                        <Label htmlFor="include-tables">Incluir tabelas de dados</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox id="include-summary" defaultChecked />
+                        <Label htmlFor="include-summary">Incluir resumo executivo</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox id="include-metrics" defaultChecked />
+                        <Label htmlFor="include-metrics">Incluir métricas principais</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox id="include-comparisons" defaultChecked />
+                        <Label htmlFor="include-comparisons">Incluir comparações temporais</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox id="include-projections" defaultChecked />
+                        <Label htmlFor="include-projections">Incluir projeções futuras</Label>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+            
+            {/* Aba Financeiro */}
+            <TabsContent value="financeiro" className="space-y-4">
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-md">Relatório Financeiro</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Tipo de Relatório Financeiro</Label>
+                      <Select defaultValue="completo">
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione o tipo de relatório" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="completo">Relatório Completo</SelectItem>
+                          <SelectItem value="receitas">Apenas Receitas</SelectItem>
+                          <SelectItem value="despesas">Apenas Despesas</SelectItem>
+                          <SelectItem value="lucros">Lucros e Margens</SelectItem>
+                          <SelectItem value="fluxo">Fluxo de Caixa</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Categorização</Label>
+                      <Select defaultValue="todos">
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione a categorização" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="todos">Todas as Categorias</SelectItem>
+                          <SelectItem value="servicos">Serviços</SelectItem>
+                          <SelectItem value="produtos">Produtos</SelectItem>
+                          <SelectItem value="operacionais">Despesas Operacionais</SelectItem>
+                          <SelectItem value="pessoal">Despesas com Pessoal</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="fin-balanco" defaultChecked />
+                      <Label htmlFor="fin-balanco">Balanço Patrimonial</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="fin-dre" defaultChecked />
+                      <Label htmlFor="fin-dre">DRE</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="fin-impostos" defaultChecked />
+                      <Label htmlFor="fin-impostos">Impostos</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="fin-comparativo" defaultChecked />
+                      <Label htmlFor="fin-comparativo">Comparativo com períodos anteriores</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="fin-projecao" defaultChecked />
+                      <Label htmlFor="fin-projecao">Projeção Futura</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="fin-inadimplencia" defaultChecked />
+                      <Label htmlFor="fin-inadimplencia">Análise de Inadimplência</Label>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+            
+            {/* Aba Atendimentos */}
+            <TabsContent value="atendimentos" className="space-y-4">
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-md">Relatório de Atendimentos</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Filtrar por Profissional</Label>
+                      <Select defaultValue="todos">
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione o profissional" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="todos">Todos os Profissionais</SelectItem>
+                          <SelectItem value="ana">Ana Silva</SelectItem>
+                          <SelectItem value="joao">João Santos</SelectItem>
+                          <SelectItem value="maria">Maria Oliveira</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Status do Atendimento</Label>
+                      <Select defaultValue="todos">
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione o status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="todos">Todos os Status</SelectItem>
+                          <SelectItem value="concluido">Concluídos</SelectItem>
+                          <SelectItem value="cancelado">Cancelados</SelectItem>
+                          <SelectItem value="reagendado">Reagendados</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="atend-servicos" defaultChecked />
+                      <Label htmlFor="atend-servicos">Serviços Realizados</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="atend-duracao" defaultChecked />
+                      <Label htmlFor="atend-duracao">Duração Média</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="atend-satisfacao" defaultChecked />
+                      <Label htmlFor="atend-satisfacao">Índice de Satisfação</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="atend-horarios" defaultChecked />
+                      <Label htmlFor="atend-horarios">Distribuição por Horário</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="atend-produtos" defaultChecked />
+                      <Label htmlFor="atend-produtos">Produtos Utilizados</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="atend-cancelamentos" defaultChecked />
+                      <Label htmlFor="atend-cancelamentos">Motivos de Cancelamentos</Label>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+            
+            {/* Aba Clientes */}
+            <TabsContent value="clientes" className="space-y-4">
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-md">Relatório de Clientes</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Segmentação de Clientes</Label>
+                      <Select defaultValue="todos">
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione a segmentação" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="todos">Todos os Clientes</SelectItem>
+                          <SelectItem value="novos">Novos Clientes</SelectItem>
+                          <SelectItem value="recorrentes">Clientes Recorrentes</SelectItem>
+                          <SelectItem value="inativos">Clientes Inativos</SelectItem>
+                          <SelectItem value="vip">Clientes VIP</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Filtrar por Serviço Utilizado</Label>
+                      <Select defaultValue="todos">
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione o serviço" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="todos">Todos os Serviços</SelectItem>
+                          <SelectItem value="corte">Corte Feminino</SelectItem>
+                          <SelectItem value="coloracao">Coloração</SelectItem>
+                          <SelectItem value="manicure">Manicure</SelectItem>
+                          <SelectItem value="corte-m">Corte Masculino</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="cli-frequencia" defaultChecked />
+                      <Label htmlFor="cli-frequencia">Frequência de Visitas</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="cli-ticket" defaultChecked />
+                      <Label htmlFor="cli-ticket">Ticket Médio</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="cli-retencao" defaultChecked />
+                      <Label htmlFor="cli-retencao">Taxa de Retenção</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="cli-aniversarios" defaultChecked />
+                      <Label htmlFor="cli-aniversarios">Aniversariantes do Período</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="cli-aquisicao" defaultChecked />
+                      <Label htmlFor="cli-aquisicao">Canais de Aquisição</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="cli-ltv" defaultChecked />
+                      <Label htmlFor="cli-ltv">Valor Vitalício (LTV)</Label>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+            
+            {/* Aba Profissionais */}
+            <TabsContent value="profissionais" className="space-y-4">
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-md">Relatório de Profissionais</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Seleção de Profissionais</Label>
+                      <Select defaultValue="todos">
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione os profissionais" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="todos">Todos os Profissionais</SelectItem>
+                          <SelectItem value="ativos">Apenas Ativos</SelectItem>
+                          <SelectItem value="inativos">Apenas Inativos</SelectItem>
+                          <SelectItem value="novos">Novos Contratados</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Ordenar por</Label>
+                      <Select defaultValue="faturamento">
+                        <SelectTrigger>
+                          <SelectValue placeholder="Ordenar por" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="faturamento">Maior Faturamento</SelectItem>
+                          <SelectItem value="atendimentos">Mais Atendimentos</SelectItem>
+                          <SelectItem value="avaliacao">Melhor Avaliação</SelectItem>
+                          <SelectItem value="tempo-casa">Tempo na Empresa</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="prof-performance" defaultChecked />
+                      <Label htmlFor="prof-performance">Performance</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="prof-comissoes" defaultChecked />
+                      <Label htmlFor="prof-comissoes">Comissões</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="prof-horas" defaultChecked />
+                      <Label htmlFor="prof-horas">Horas Trabalhadas</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="prof-servicos" defaultChecked />
+                      <Label htmlFor="prof-servicos">Serviços Realizados</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="prof-produtos" defaultChecked />
+                      <Label htmlFor="prof-produtos">Produtos Vendidos</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="prof-avaliacoes" defaultChecked />
+                      <Label htmlFor="prof-avaliacoes">Avaliações de Clientes</Label>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+            
+            {/* Aba Estoque */}
+            <TabsContent value="estoque" className="space-y-4">
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-md">Relatório de Estoque</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Categorias de Produtos</Label>
+                      <Select defaultValue="todos">
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione a categoria" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="todos">Todas as Categorias</SelectItem>
+                          <SelectItem value="cabelo">Produtos para Cabelo</SelectItem>
+                          <SelectItem value="unhas">Produtos para Unhas</SelectItem>
+                          <SelectItem value="pele">Produtos para Pele</SelectItem>
+                          <SelectItem value="maquiagem">Maquiagem</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Status de Estoque</Label>
+                      <Select defaultValue="todos">
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione o status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="todos">Todos os Status</SelectItem>
+                          <SelectItem value="disponivel">Disponível</SelectItem>
+                          <SelectItem value="baixo">Estoque Baixo</SelectItem>
+                          <SelectItem value="critico">Estoque Crítico</SelectItem>
+                          <SelectItem value="esgotado">Esgotado</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="estq-movimentacao" defaultChecked />
+                      <Label htmlFor="estq-movimentacao">Movimentação de Estoque</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="estq-giro" defaultChecked />
+                      <Label htmlFor="estq-giro">Giro de Estoque</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="estq-custo" defaultChecked />
+                      <Label htmlFor="estq-custo">Custo Médio</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="estq-validade" defaultChecked />
+                      <Label htmlFor="estq-validade">Produtos a Vencer</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="estq-reposicao" defaultChecked />
+                      <Label htmlFor="estq-reposicao">Sugestão de Reposição</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="estq-perdas" defaultChecked />
+                      <Label htmlFor="estq-perdas">Perdas e Avarias</Label>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+            
+            {/* Aba Agendamentos */}
+            <TabsContent value="agendamentos" className="space-y-4">
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-md">Relatório de Agendamentos</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Status de Agendamentos</Label>
+                      <Select defaultValue="todos">
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione o status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="todos">Todos os Status</SelectItem>
+                          <SelectItem value="confirmados">Confirmados</SelectItem>
+                          <SelectItem value="pendentes">Pendentes</SelectItem>
+                          <SelectItem value="cancelados">Cancelados</SelectItem>
+                          <SelectItem value="concluidos">Concluídos</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Filtrar por Serviço</Label>
+                      <Select defaultValue="todos">
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione o serviço" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="todos">Todos os Serviços</SelectItem>
+                          <SelectItem value="corte">Corte Feminino</SelectItem>
+                          <SelectItem value="coloracao">Coloração</SelectItem>
+                          <SelectItem value="manicure">Manicure</SelectItem>
+                          <SelectItem value="corte-m">Corte Masculino</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="agend-ocupacao" defaultChecked />
+                      <Label htmlFor="agend-ocupacao">Taxa de Ocupação</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="agend-horarios" defaultChecked />
+                      <Label htmlFor="agend-horarios">Horários Mais Procurados</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="agend-antecedencia" defaultChecked />
+                      <Label htmlFor="agend-antecedencia">Antecedência Média</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="agend-no-show" defaultChecked />
+                      <Label htmlFor="agend-no-show">No-Shows</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="agend-canal" defaultChecked />
+                      <Label htmlFor="agend-canal">Canais de Agendamento</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="agend-reagendamentos" defaultChecked />
+                      <Label htmlFor="agend-reagendamentos">Reagendamentos</Label>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
+          
+          <DialogFooter className="flex justify-between items-center mt-6 pt-4 border-t">
+            <div className="flex items-center gap-2">
+              <Settings className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">
+                Configurações avançadas disponíveis em cada aba
+              </span>
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setShowExportModal(false)}>Cancelar</Button>
+              <Button 
+                onClick={() => {
+                  toast({
+                    title: "Relatório gerado com sucesso!",
+                    description: "O download começará em instantes.",
+                  });
+                  setShowExportModal(false);
+                }}
+                className="bg-primary hover:bg-primary/90"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Gerar Relatório Completo
+              </Button>
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {viewMode === "dashboard" && (
+        <>
+        {/* Gráficos e tabelas */}
+        <Tabs defaultValue="financeiro" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="financeiro">Financeiro</TabsTrigger>
+          <TabsTrigger value="atendimentos">Atendimentos</TabsTrigger>
+          <TabsTrigger value="clientes">Clientes</TabsTrigger>
+          <TabsTrigger value="profissionais">Profissionais</TabsTrigger>
+          <TabsTrigger value="estoque">Estoque</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="financeiro" className="space-y-4">
+          <RevenueChart data={salesData} period={period} setPeriod={setPeriod} />
+        </TabsContent>
+
+        <TabsContent value="atendimentos" className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2">
+            {/* Taxa de Ocupação */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Taxa de Ocupação</CardTitle>
+              </CardHeader>
+              <CardContent className="h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={appointmentsData.occupationRate}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="professional" />
+                    <YAxis unit="%" />
+                    <Tooltip />
+                    <Legend />
+                    <Bar dataKey="rate" fill="#dc8c95" name="Taxa de Ocupação" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+
+            {/* Duração Média dos Serviços */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Duração Média dos Serviços</CardTitle>
+              </CardHeader>
+              <CardContent className="h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={appointmentsData.servicesDuration}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="service" />
+                    <YAxis unit="min" />
+                    <Tooltip />
+                    <Legend />
+                    <Bar dataKey="avgDuration" fill="#8b5cf6" name="Duração Média" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+
+            {/* Distribuição por Horário */}
+            <Card className="md:col-span-2">
+              <CardHeader>
+                <CardTitle>Distribuição de Atendimentos por Horário</CardTitle>
+              </CardHeader>
+              <CardContent className="h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={appointmentsData.hourlyDistribution}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="hour" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Line 
+                      type="monotone" 
+                      dataKey="appointments" 
+                      stroke="#dc8c95" 
+                      name="Atendimentos"
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="clientes" className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2">
+            {/* Frequência de Visitas */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Frequência de Visitas</CardTitle>
+              </CardHeader>
+              <CardContent className="h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={clientsData.visitFrequency}
+                      dataKey="clients"
+                      nameKey="frequency"
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={80}
+                      label
+                    >
+                      {clientsData.visitFrequency.map((_, index) => (
+                        <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+
+            {/* Serviços Mais Utilizados */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Serviços Mais Utilizados</CardTitle>
+              </CardHeader>
+              <CardContent className="h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={clientsData.topServices}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Bar dataKey="count" fill="#dc8c95" name="Quantidade" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+
+            {/* Taxa de Retenção */}
+            <Card className="md:col-span-2">
+              <CardHeader>
+                <CardTitle>Taxa de Retenção de Clientes</CardTitle>
+              </CardHeader>
+              <CardContent className="h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={clientsData.retention}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="month" />
+                    <YAxis unit="%" />
+                    <Tooltip />
+                    <Legend />
+                    <Line 
+                      type="monotone" 
+                      dataKey="rate" 
+                      stroke="#22c55e" 
+                      name="Taxa de Retenção" 
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="profissionais" className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2">
+            {/* Performance dos Profissionais */}
+            <Card className="md:col-span-2">
+              <CardHeader>
+                <CardTitle>Performance dos Profissionais</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-8">
+                  {professionalsData.performance.map((prof) => (
+                    <div key={prof.name} className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <h3 className="font-medium">{prof.name}</h3>
+                        <div className="flex items-center gap-4">
+                          <span className="flex items-center gap-1">
+                            <TrendingUp className="h-4 w-4 text-green-500" />
+                            {formatCurrency(prof.revenue)}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Users className="h-4 w-4 text-blue-500" />
+                            {prof.clients} clientes
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Star className="h-4 w-4 text-yellow-500" />
+                            {prof.rating}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="h-2 bg-secondary rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-primary" 
+                          style={{ width: `${(prof.clients / 100) * 100}%` }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {professionalsData.serviceDistribution.map((prof) => (
+              <Card key={prof.professional}>
+                <CardHeader>
+                  <CardTitle>Serviços - {prof.professional}</CardTitle>
+                </CardHeader>
+                <CardContent className="h-[300px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={prof.services}
+                        dataKey="count"
+                        nameKey="name"
+                        cx="50%"
+                        cy="50%"
+                        outerRadius={80}
+                        label
+                      >
+                        {prof.services.map((_, index) => (
+                          <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                      <Legend />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="estoque" className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2">
+            {/* Produtos Mais Vendidos */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Produtos Mais Vendidos</CardTitle>
+              </CardHeader>
+              <CardContent className="h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={stockData.topProducts}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" />
+                    <YAxis yAxisId="left" orientation="left" stroke="#dc8c95" />
+                    <YAxis yAxisId="right" orientation="right" stroke="#8b5cf6" />
+                    <Tooltip />
+                    <Legend />
+                    <Bar yAxisId="left" dataKey="sold" fill="#dc8c95" name="Unidades Vendidas" />
+                    <Bar yAxisId="right" dataKey="revenue" fill="#8b5cf6" name="Receita" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+
+            {/* Produtos com Estoque Baixo */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Alertas de Estoque</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {stockData.lowStock.map((item) => (
+                    <div key={item.name} className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <AlertTriangle className="h-4 w-4 text-yellow-500" />
+                        <span>{item.name}</span>
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        {item.current}/{item.minimum} unidades
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Giro de Estoque */}
+            <Card className="md:col-span-2">
+              <CardHeader>
+                <CardTitle>Giro de Estoque</CardTitle>
+              </CardHeader>
+              <CardContent className="h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={stockData.stockTurnover}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="month" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Line 
+                      type="monotone" 
+                      dataKey="turnover" 
+                      stroke="#22c55e" 
+                      name="Giro de Estoque" 
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+      </Tabs>
+      </>
+      )}
+    </div>
+  );
+}
