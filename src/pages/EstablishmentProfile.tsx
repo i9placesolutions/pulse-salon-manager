@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/components/ui/use-toast";
-import { MapPin, Phone, Mail, Instagram, Facebook, MessageSquare, Upload, Copy, QrCode, Eye, MessageCircle, Building, Building2, MapPinned } from "lucide-react";
+import { MapPin, Phone, Mail, Instagram, Facebook, MessageSquare, Upload, Copy, QrCode, Eye, MessageCircle, Building, Building2, MapPinned, Clock, Plus, Trash2 } from "lucide-react";
 import { PageLayout } from "@/components/shared/PageLayout";
 import { PageHeader } from "@/components/shared/PageHeader";
 
@@ -30,6 +30,14 @@ interface EstablishmentProfile {
   description: string;
   customUrl: string;
   primaryColor: string;
+  workingHours: {
+    dayOfWeek: string;
+    openTime: string;
+    closeTime: string;
+    hasBreak: boolean;
+    breakStart: string;
+    breakEnd: string;
+  }[];
 }
 
 const defaultProfile: EstablishmentProfile = {
@@ -51,7 +59,57 @@ const defaultProfile: EstablishmentProfile = {
   logo: "",
   description: "Bem-vindo ao nosso salão! Oferecemos serviços de alta qualidade para cuidar da sua beleza.",
   customUrl: "meu-salao",
-  primaryColor: "#1e40af"
+  primaryColor: "#1e40af",
+  workingHours: [
+    {
+      dayOfWeek: "Segunda-feira",
+      openTime: "09:00",
+      closeTime: "18:00",
+      hasBreak: true,
+      breakStart: "12:00",
+      breakEnd: "13:00"
+    },
+    {
+      dayOfWeek: "Terça-feira",
+      openTime: "09:00",
+      closeTime: "18:00",
+      hasBreak: true,
+      breakStart: "12:00",
+      breakEnd: "13:00"
+    },
+    {
+      dayOfWeek: "Quarta-feira",
+      openTime: "09:00",
+      closeTime: "18:00",
+      hasBreak: true,
+      breakStart: "12:00",
+      breakEnd: "13:00"
+    },
+    {
+      dayOfWeek: "Quinta-feira",
+      openTime: "09:00",
+      closeTime: "18:00",
+      hasBreak: true,
+      breakStart: "12:00",
+      breakEnd: "13:00"
+    },
+    {
+      dayOfWeek: "Sexta-feira",
+      openTime: "09:00",
+      closeTime: "18:00",
+      hasBreak: true,
+      breakStart: "12:00",
+      breakEnd: "13:00"
+    },
+    {
+      dayOfWeek: "Sábado",
+      openTime: "09:00",
+      closeTime: "13:00",
+      hasBreak: false,
+      breakStart: "",
+      breakEnd: ""
+    }
+  ]
 };
 
 export default function EstablishmentProfile() {
@@ -117,6 +175,42 @@ export default function EstablishmentProfile() {
     });
   };
 
+  const addWorkingHour = () => {
+    const newWorkingHour = {
+      dayOfWeek: "Domingo",
+      openTime: "09:00",
+      closeTime: "18:00",
+      hasBreak: false,
+      breakStart: "",
+      breakEnd: ""
+    };
+    setProfile({
+      ...profile,
+      workingHours: [...profile.workingHours, newWorkingHour]
+    });
+  };
+
+  const removeWorkingHour = (index: number) => {
+    const updatedHours = [...profile.workingHours];
+    updatedHours.splice(index, 1);
+    setProfile({
+      ...profile,
+      workingHours: updatedHours
+    });
+  };
+
+  const updateWorkingHour = (index: number, field: string, value: string | boolean) => {
+    const updatedHours = [...profile.workingHours];
+    updatedHours[index] = {
+      ...updatedHours[index],
+      [field]: value
+    };
+    setProfile({
+      ...profile,
+      workingHours: updatedHours
+    });
+  };
+
   const copyBookingLink = () => {
     const link = `https://pulse-salon.com.br/${profile.customUrl}`;
     navigator.clipboard.writeText(link);
@@ -176,6 +270,12 @@ export default function EstablishmentProfile() {
             className="data-[state=active]:bg-blue-600 data-[state=active]:text-white"
           >
             Redes Sociais
+          </TabsTrigger>
+          <TabsTrigger 
+            value="hours" 
+            className="data-[state=active]:bg-blue-600 data-[state=active]:text-white"
+          >
+            Horário de Funcionamento
           </TabsTrigger>
         </TabsList>
 
@@ -515,6 +615,130 @@ export default function EstablishmentProfile() {
                 >
                   <Facebook className="h-4 w-4" />
                   Acessar Facebook
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="hours" className="space-y-4">
+          <Card className="border-blue-100">
+            <CardHeader className="bg-gradient-to-r from-blue-50 to-blue-100 border-b border-blue-100">
+              <CardTitle className="text-blue-700 flex items-center gap-2">
+                <Clock className="h-5 w-5 text-blue-600" />
+                Horário de Funcionamento
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4 p-6">
+              <div className="space-y-4">
+                {profile.workingHours.map((hour, index) => (
+                  <div key={index} className="p-4 border border-blue-100 rounded-md bg-blue-50/50">
+                    <div className="flex justify-between items-center mb-3">
+                      <div className="flex items-center gap-2">
+                        <select
+                          value={hour.dayOfWeek}
+                          onChange={(e) => updateWorkingHour(index, 'dayOfWeek', e.target.value)}
+                          className="border border-blue-200 rounded-md p-2 text-sm focus:border-blue-400 focus:outline-none"
+                        >
+                          <option value="Segunda-feira">Segunda-feira</option>
+                          <option value="Terça-feira">Terça-feira</option>
+                          <option value="Quarta-feira">Quarta-feira</option>
+                          <option value="Quinta-feira">Quinta-feira</option>
+                          <option value="Sexta-feira">Sexta-feira</option>
+                          <option value="Sábado">Sábado</option>
+                          <option value="Domingo">Domingo</option>
+                        </select>
+                      </div>
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        onClick={() => removeWorkingHour(index)}
+                        className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-3 mb-3">
+                      <div className="space-y-1">
+                        <Label htmlFor={`open-time-${index}`} className="text-xs text-blue-700">
+                          Horário de Abertura
+                        </Label>
+                        <Input
+                          id={`open-time-${index}`}
+                          type="time"
+                          value={hour.openTime}
+                          onChange={(e) => updateWorkingHour(index, 'openTime', e.target.value)}
+                          className="border-blue-200 focus:border-blue-400 h-9"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label htmlFor={`close-time-${index}`} className="text-xs text-blue-700">
+                          Horário de Fechamento
+                        </Label>
+                        <Input
+                          id={`close-time-${index}`}
+                          type="time"
+                          value={hour.closeTime}
+                          onChange={(e) => updateWorkingHour(index, 'closeTime', e.target.value)}
+                          className="border-blue-200 focus:border-blue-400 h-9"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="mb-3">
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          id={`has-break-${index}`}
+                          checked={hour.hasBreak}
+                          onChange={(e) => updateWorkingHour(index, 'hasBreak', e.target.checked)}
+                          className="rounded border-blue-300 text-blue-600 focus:ring-blue-500"
+                        />
+                        <Label htmlFor={`has-break-${index}`} className="text-sm text-blue-700">
+                          Possui intervalo
+                        </Label>
+                      </div>
+                    </div>
+
+                    {hour.hasBreak && (
+                      <div className="grid grid-cols-2 gap-3 mt-2 pl-6 pb-1">
+                        <div className="space-y-1">
+                          <Label htmlFor={`break-start-${index}`} className="text-xs text-blue-700">
+                            Início do Intervalo
+                          </Label>
+                          <Input
+                            id={`break-start-${index}`}
+                            type="time"
+                            value={hour.breakStart}
+                            onChange={(e) => updateWorkingHour(index, 'breakStart', e.target.value)}
+                            className="border-blue-200 focus:border-blue-400 h-9"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label htmlFor={`break-end-${index}`} className="text-xs text-blue-700">
+                            Fim do Intervalo
+                          </Label>
+                          <Input
+                            id={`break-end-${index}`}
+                            type="time"
+                            value={hour.breakEnd}
+                            onChange={(e) => updateWorkingHour(index, 'breakEnd', e.target.value)}
+                            className="border-blue-200 focus:border-blue-400 h-9"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+
+                <Button
+                  variant="outline"
+                  onClick={addWorkingHour}
+                  className="w-full border-dashed border-blue-200 text-blue-600 hover:bg-blue-50 gap-2"
+                >
+                  <Plus className="h-4 w-4" />
+                  Adicionar Horário
                 </Button>
               </div>
             </CardContent>

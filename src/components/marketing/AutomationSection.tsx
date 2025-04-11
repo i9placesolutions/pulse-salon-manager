@@ -5,11 +5,14 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { MessageSquare, Gift, Bell, Zap, Calendar, Settings, Plus, ClipboardCheck, ClipboardList } from "lucide-react";
-import { useState } from "react";
+import { MessageSquare, Bell, Zap, Calendar, Settings, Plus, ClipboardCheck, ClipboardList, Send } from "lucide-react";
+import { useState, useEffect } from "react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { toast } from "@/components/ui/use-toast";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { sendBulkMessage, fetchWhatsAppContacts, type WhatsAppContact } from "@/lib/uazapiService";
 
 const automations = [{
   id: 1,
@@ -18,13 +21,6 @@ const automations = [{
   icon: MessageSquare,
   active: true,
   message: "Olá! Seja bem-vindo(a)! Estamos felizes em ter você como cliente."
-}, {
-  id: 2,
-  title: "Aniversários",
-  description: "Envie parabéns e ofertas especiais no aniversário",
-  icon: Gift,
-  active: true,
-  message: "Feliz aniversário! 🎉 Como presente, preparamos um desconto especial para você!"
 }, {
   id: 3,
   title: "Reativação",
@@ -90,6 +86,32 @@ export function AutomationSection() {
       sendLocation: true
     }
   });
+  
+  // Estado para o envio de texto via instância uazapi
+  const [textMessage, setTextMessage] = useState("");
+  const [whatsappContacts, setWhatsappContacts] = useState<WhatsAppContact[]>([]);
+  const [selectedContacts, setSelectedContacts] = useState<string[]>([]);
+  const [isSending, setIsSending] = useState(false);
+  const [contactsFilter, setContactsFilter] = useState("");
+  
+  // Carregar contatos do WhatsApp
+  useEffect(() => {
+    loadWhatsAppContacts();
+  }, []);
+  
+  const loadWhatsAppContacts = async () => {
+    try {
+      const response = await fetchWhatsAppContacts();
+      setWhatsappContacts(response.contacts);
+    } catch (error) {
+      console.error("Erro ao carregar contatos do WhatsApp:", error);
+      toast({
+        title: "Erro ao carregar contatos",
+        description: "Não foi possível obter a lista de contatos do WhatsApp.",
+        variant: "destructive",
+      });
+    }
+  };
 
   const handleConfigureAutomation = (automation: typeof automations[0]) => {
     // Verifica se é a automação de agendamentos
@@ -116,55 +138,240 @@ export function AutomationSection() {
     console.log("Configuração salva:", selectedAutomation);
     setShowConfigModal(false);
   };
-  
+
   const handleSaveSchedulingConfig = () => {
-    console.log("Configuração de agendamentos salva:", schedulingConfig);
+    console.log("Configuração de agendamento salva:", schedulingConfig);
     setShowSchedulingModal(false);
   };
+  
+  // Função para enviar mensagem para os contatos selecionados
+  const handleSendTextMessage = async () => {
+    if (!textMessage.trim()) {
+      toast({
+        title: "Mensagem vazia",
+        description: "Por favor, digite uma mensagem para enviar.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (selectedContacts.length === 0) {
+      toast({
+        title: "Nenhum contato selecionado",
+        description: "Por favor, selecione pelo menos um contato para enviar a mensagem.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setIsSending(true);
+    try {
+      // Obter os números de telefone dos contatos selecionados
+      const phoneNumbers = whatsappContacts
+        .filter(contact => selectedContacts.includes(contact.id))
+        .map(contact => contact.number);
+      
+      // Enviar mensagem via uazapi
+      await sendBulkMessage(phoneNumbers, textMessage);
+      
+      // Limpar campos após o envio
+      setTextMessage("");
+      setSelectedContacts([]);
+      
+      toast({
+        title: "Mensagem enviada com sucesso",
+        description: `A mensagem foi enviada para ${phoneNumbers.length} contato(s).`,
+        variant: "default",
+      });
+    } catch (error) {
+      console.error("Erro ao enviar mensagem:", error);
+      toast({
+        title: "Erro ao enviar mensagem",
+        description: "Não foi possível enviar a mensagem. Tente novamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSending(false);
+    }
+  };
+  
+  // Filtrar contatos com base no texto de busca
+  const filteredContacts = contactsFilter
+    ? whatsappContacts.filter(contact => 
+        contact.name.toLowerCase().includes(contactsFilter.toLowerCase()) ||
+        contact.number.includes(contactsFilter)
+      )
+    : whatsappContacts;
+  
+  // Selecionar ou desselecionar todos os contatos
+  const toggleSelectAll = () => {
+    if (selectedContacts.length === filteredContacts.length) {
+      setSelectedContacts([]);
+    } else {
+      setSelectedContacts(filteredContacts.map(contact => contact.id));
+    }
+  };
+  
+  // Função para alternar a seleção de um contato
+  const toggleContactSelection = (contactId: string) => {
+    if (selectedContacts.includes(contactId)) {
+      setSelectedContacts(selectedContacts.filter(id => id !== contactId));
+    } else {
+      setSelectedContacts([...selectedContacts, contactId]);
+    }
+  };
 
-  return <div className="grid gap-4">
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight">Automações</h2>
-          <p className="text-sm text-muted-foreground">
-            Gerencie suas automações de marketing
-          </p>
-        </div>
-        <Button onClick={handleCreateNewAutomation}>
-          <Plus className="mr-2 h-4 w-4" />
-          Nova Automação
-        </Button>
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {automations.map(automation => <Card key={automation.id}>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <div className="p-2 bg-primary/10 rounded-lg">
-                    <automation.icon className="h-6 w-6 text-primary" />
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Automações Configuradas */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Settings className="h-5 w-5 text-primary" />
+              Automações Configuradas
+            </CardTitle>
+            <CardDescription>
+              Gerencie mensagens automáticas para seus clientes
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {automations.map((automation) => (
+                <div 
+                  key={automation.id} 
+                  className="p-4 border rounded-lg hover:border-blue-200 transition-colors cursor-pointer"
+                  onClick={() => handleConfigureAutomation(automation)}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-blue-50 rounded-full">
+                        {<automation.icon className="h-5 w-5 text-blue-500" />}
+                      </div>
+                      <div>
+                        <h3 className="font-medium">{automation.title}</h3>
+                        <p className="text-sm text-muted-foreground">{automation.description}</p>
+                      </div>
+                    </div>
+                    <Switch 
+                      checked={automation.active}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        automation.active = !automation.active;
+                      }}
+                    />
                   </div>
-                  <CardTitle>{automation.title}</CardTitle>
                 </div>
-                <Switch checked={automation.active} onCheckedChange={() => console.log("Toggle automation:", automation.id)} />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <CardDescription>{automation.description}</CardDescription>
-              <Button 
-                variant="outline" 
-                className="w-full mt-4" 
-                size="sm"
-                onClick={() => handleConfigureAutomation(automation)}
-              >
-                <Settings className="mr-2 h-4 w-4" />
-                Configurar
+              ))}
+              
+              <Button variant="outline" className="w-full" onClick={handleCreateNewAutomation}>
+                <Plus className="h-4 w-4 mr-2" />
+                Criar Nova Automação
               </Button>
-            </CardContent>
-          </Card>)}
+            </div>
+          </CardContent>
+        </Card>
+        
+        {/* Envio de Texto via uazapi */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Send className="h-5 w-5 text-primary" />
+              Envio de Texto via WhatsApp
+            </CardTitle>
+            <CardDescription>
+              Envie mensagens para contatos através da instância conectada
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="message-text">Mensagem</Label>
+                <Textarea
+                  id="message-text"
+                  placeholder="Digite sua mensagem..."
+                  className="min-h-[100px] mt-1"
+                  value={textMessage}
+                  onChange={(e) => setTextMessage(e.target.value)}
+                />
+              </div>
+              
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <Label>Contatos ({filteredContacts.length})</Label>
+                  <div className="flex items-center gap-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={toggleSelectAll}
+                      className="h-8 text-xs"
+                    >
+                      {selectedContacts.length === filteredContacts.length ? "Desmarcar Todos" : "Selecionar Todos"}
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={loadWhatsAppContacts}
+                      className="h-8 text-xs"
+                    >
+                      Atualizar
+                    </Button>
+                  </div>
+                </div>
+                
+                <Input
+                  type="text"
+                  placeholder="Filtrar contatos..."
+                  value={contactsFilter}
+                  onChange={(e) => setContactsFilter(e.target.value)}
+                  className="mb-2"
+                />
+                
+                {whatsappContacts.length === 0 ? (
+                  <Alert>
+                    <MessageSquare className="h-4 w-4" />
+                    <AlertTitle>Nenhum contato encontrado</AlertTitle>
+                    <AlertDescription>
+                      Certifique-se de que sua instância do WhatsApp está conectada.
+                    </AlertDescription>
+                  </Alert>
+                ) : (
+                  <div className="border rounded-md max-h-[200px] overflow-y-auto">
+                    {filteredContacts.map((contact) => (
+                      <div 
+                        key={contact.id}
+                        className="flex items-center space-x-2 p-2 hover:bg-slate-50 border-b cursor-pointer"
+                        onClick={() => toggleContactSelection(contact.id)}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selectedContacts.includes(contact.id)}
+                          onChange={() => {}}
+                          className="h-4 w-4"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium truncate">{contact.name || "Sem nome"}</p>
+                          <p className="text-sm text-muted-foreground">{contact.number}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+              
+              <Button 
+                className="w-full" 
+                onClick={handleSendTextMessage}
+                disabled={isSending || textMessage.trim() === "" || selectedContacts.length === 0}
+              >
+                {isSending ? "Enviando..." : "Enviar Mensagem"}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Modal de Configuração */}
+      {/* Modal de Configuração de Automação */}
       <Dialog open={showConfigModal} onOpenChange={setShowConfigModal}>
         <DialogContent className="max-w-md">
           <DialogHeader>
@@ -440,5 +647,6 @@ export function AutomationSection() {
           </div>
         </DialogContent>
       </Dialog>
-    </div>;
+    </div>
+  );
 }

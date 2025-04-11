@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Target, Bell, Zap, BarChart, MessageSquare, History } from "lucide-react";
+import { Target, Bell, Zap, BarChart, MessageSquare, History, Gift } from "lucide-react";
 import { MetricsCard } from "@/components/marketing/MetricsCard";
 import { BirthdayAutomation } from "@/components/marketing/BirthdayAutomation";
 import { MessageCampaignDialog } from "@/components/marketing/MessageCampaignDialog";
@@ -14,6 +14,8 @@ import { MessageHistory } from "@/components/marketing/MessageHistory";
 import { Button } from "@/components/ui/button";
 import type { MessageCampaignData } from "@/types/marketing";
 import { useLocation } from 'react-router-dom';
+import { sendBulkMessage, WhatsAppContact, fetchWhatsAppContacts } from "@/lib/uazapiService";
+import { toast } from "@/components/ui/use-toast";
 
 export default function Marketing() {
   const location = useLocation();
@@ -25,7 +27,8 @@ export default function Marketing() {
     recipients: "all",
     channels: ["whatsapp"], // WhatsApp is now the default channel
     scheduleDate: "",
-    scheduleTime: ""
+    scheduleTime: "",
+    selectedContactIds: []
   });
   
   // Estado para armazenar as mensagens enviadas
@@ -55,48 +58,120 @@ export default function Marketing() {
     setShowMessageDialog(true);
   };
 
-  const handleSubmitMessage = () => {
-    console.log("Submitting:", messageCampaignData);
-    
-    // Adicionar a mensagem ao histórico com status inicial "enviando"
-    const newMessage = {
-      id: Date.now().toString(),
-      titulo: messageCampaignData.title,
-      mensagem: messageCampaignData.message,
-      destinatarios: 25, // Simulação - seria calculado com base nos destinatários selecionados
-      dataEnvio: new Date().toISOString(),
-      status: "enviando",
-      canal: "whatsapp",
-      agendamento: messageCampaignData.scheduleDate ? 
-        `${messageCampaignData.scheduleDate}T${messageCampaignData.scheduleTime || '00:00:00'}` : 
-        undefined
-    };
-    
-    setSentMessages(prev => [newMessage, ...prev]);
-    setShowMessageDialog(false);
-    
-    // Simular mudança de status após alguns segundos
-    setTimeout(() => {
+  const handleSubmitMessage = async () => {
+    try {
+      // Preparar lista de números de destino conforme o tipo de destinatário selecionado
+      let targetNumbers: string[] = [];
+      
+      switch (messageCampaignData.recipients) {
+        case 'phone':
+          if (messageCampaignData.selectedContactIds && messageCampaignData.selectedContactIds.length > 0) {
+            // Filtrar contatos selecionados e obter seus números
+            const selectedContacts = whatsappContacts.filter(contact => 
+              messageCampaignData.selectedContactIds?.includes(contact.id)
+            );
+            targetNumbers = selectedContacts.map(contact => contact.number);
+          }
+          break;
+          
+        case 'all':
+          // Todos os contatos disponíveis
+          targetNumbers = whatsappContacts.map(contact => contact.number);
+          break;
+          
+        // Para os outros casos, seria necessário ter uma API para buscar clientes VIP, inativos, etc.
+        // Por enquanto estamos implementando apenas para contatos do WhatsApp
+        default:
+          // Simulação de números para outros tipos de destinatários
+          targetNumbers = whatsappContacts.slice(0, 5).map(contact => contact.number);
+          break;
+      }
+      
+      // Criar o novo item de mensagem para o histórico
+      const newMessage = {
+        id: Date.now().toString(),
+        titulo: messageCampaignData.title,
+        mensagem: messageCampaignData.message,
+        status: "enviando",
+        data: new Date().toLocaleString(),
+        destinos: targetNumbers.length,
+        entregues: 0,
+      };
+      
+      // Adicionar ao histórico de mensagens
+      setSentMessages(prev => [newMessage, ...prev]);
+      
+      // Enviar mensagens com delay configurado (3-8 segundos)
+      const results = await sendBulkMessage(
+        targetNumbers,
+        messageCampaignData.message,
+        3,  // minDelay em segundos
+        8   // maxDelay em segundos
+      );
+      
+      // Atualizar o status da mensagem com base nos resultados
+      const successCount = results.filter(r => r.success).length;
+      
       setSentMessages(prev => 
         prev.map(msg => 
-          msg.id === newMessage.id ? {...msg, status: "aguardando"} : msg
+          msg.id === newMessage.id 
+            ? {
+                ...msg,
+                status: successCount > 0 ? "enviado" : "erro",
+                entregues: successCount,
+                erro: successCount === 0 ? "Falha ao enviar mensagens" : undefined
+              }
+            : msg
         )
       );
       
-      // Depois de mais alguns segundos, mudar para entregue
-      setTimeout(() => {
-        setSentMessages(prev => 
-          prev.map(msg => 
-            msg.id === newMessage.id ? {...msg, status: "entregue"} : msg
-          )
-        );
-      }, 3000);
-    }, 2000);
+      // Feedback para o usuário
+      toast({
+        title: successCount > 0 ? "Mensagens enviadas com sucesso" : "Erro ao enviar mensagens",
+        description: `${successCount} de ${targetNumbers.length} mensagens foram entregues.`,
+        variant: successCount > 0 ? "default" : "destructive",
+      });
+      
+    } catch (error) {
+      console.error("Erro ao enviar mensagens:", error);
+      
+      // Atualizar o status da mensagem para erro
+      setSentMessages(prev => 
+        prev.map(msg => 
+          msg.id === prev[0].id 
+            ? { ...msg, status: "erro", erro: "Falha na conexão com o serviço de mensagens" }
+            : msg
+        )
+      );
+      
+      toast({
+        title: "Erro ao enviar mensagens",
+        description: "Ocorreu um erro ao tentar enviar as mensagens. Tente novamente mais tarde.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleMessageChange = (newData: MessageCampaignData) => {
     setMessageCampaignData(newData);
   };
+
+  const [whatsappContacts, setWhatsappContacts] = useState<WhatsAppContact[]>([]);
+
+  useEffect(() => {
+    const loadContacts = async () => {
+      try {
+        const response = await fetchWhatsAppContacts(100);
+        setWhatsappContacts(response.contacts);
+      } catch (error) {
+        console.error("Erro ao carregar contatos:", error);
+      }
+    };
+
+    if (showMessageDialog && whatsappContacts.length === 0) {
+      loadContacts();
+    }
+  }, [showMessageDialog]);
 
   return (
     <div className="space-y-6">
@@ -126,18 +201,18 @@ export default function Marketing() {
             Campanhas
           </TabsTrigger>
           <TabsTrigger 
-            value="aniversarios" 
-            className="data-[state=active]:bg-purple-600 data-[state=active]:text-white rounded"
-          >
-            <Bell className="mr-2 h-4 w-4" />
-            Aniversários
-          </TabsTrigger>
-          <TabsTrigger 
             value="automacao" 
             className="data-[state=active]:bg-green-600 data-[state=active]:text-white rounded"
           >
             <Zap className="mr-2 h-4 w-4" />
             Automação
+          </TabsTrigger>
+          <TabsTrigger 
+            value="aniversarios" 
+            className="data-[state=active]:bg-purple-600 data-[state=active]:text-white rounded"
+          >
+            <Gift className="mr-2 h-4 w-4" />
+            Aniversários
           </TabsTrigger>
           <TabsTrigger 
             value="mensagens" 
@@ -167,12 +242,12 @@ export default function Marketing() {
           </div>
         </TabsContent>
 
-        <TabsContent value="aniversarios">
-          <BirthdayAutomation />
-        </TabsContent>
-
         <TabsContent value="automacao">
           <AutomationSection />
+        </TabsContent>
+        
+        <TabsContent value="aniversarios">
+          <BirthdayAutomation />
         </TabsContent>
 
         <TabsContent value="mensagens">

@@ -7,6 +7,7 @@ export interface MessageCampaignData {
   channels: string[];
   scheduleDate?: string;
   scheduleTime?: string;
+  selectedContactIds?: string[]; // IDs dos contatos selecionados para envio
 }
 
 export interface MarketingMetric {

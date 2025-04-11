@@ -8,9 +8,7 @@ import {
   TabsTrigger 
 } from "@/components/ui/tabs";
 import { 
-  Settings, 
   MessageSquare, 
-  Users, 
   CreditCard, 
   FileText, 
   Shield, 
@@ -20,19 +18,15 @@ import {
 } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { ConfigGeral } from "@/components/configuracoes/ConfigGeral";
 import { ConfigWhatsApp } from "@/components/configuracoes/ConfigWhatsApp";
-import { ConfigSeguranca } from "@/components/configuracoes/ConfigSeguranca";
-import { ConfigUsuarios } from "@/components/configuracoes/ConfigUsuarios";
 import { ConfigPagamentos } from "@/components/configuracoes/ConfigPagamentos";
-import { ConfigRelatorios } from "@/components/configuracoes/ConfigRelatorios";
 import { ConfigLinkAgendamento } from "@/components/configuracoes/ConfigLinkAgendamento";
 import { PageLayout } from "@/components/shared/PageLayout";
 import { PageHeader } from "@/components/shared/PageHeader";
 
 export default function Configuracoes() {
   const location = useLocation();
-  const [activeTab, setActiveTab] = useState("geral");
+  const [activeTab, setActiveTab] = useState("whatsapp");
   
   // Obter a aba inicial da navegação, se disponível
   useEffect(() => {
@@ -90,15 +84,8 @@ export default function Configuracoes() {
       </Alert>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-2 bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 p-2 rounded-lg border border-blue-100 shadow-sm">
+        <TabsList className="grid grid-cols-2 md:grid-cols-3 gap-2 bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 p-2 rounded-lg border border-blue-100 shadow-sm">
 
-          <TabsTrigger 
-            value="geral" 
-            className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-blue-700 data-[state=active]:shadow-md data-[state=active]:text-white data-[state=inactive]:bg-white data-[state=inactive]:bg-opacity-60 data-[state=inactive]:text-gray-700 transition-all rounded-md"
-          >
-            <Settings className="h-4 w-4 mr-2" />
-            Geral
-          </TabsTrigger>
           <TabsTrigger 
             value="whatsapp" 
             className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-600 data-[state=active]:to-emerald-700 data-[state=active]:shadow-md data-[state=active]:text-white data-[state=inactive]:bg-white data-[state=inactive]:bg-opacity-60 data-[state=inactive]:text-gray-700 transition-all rounded-md"
@@ -111,14 +98,7 @@ export default function Configuracoes() {
             className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-purple-700 data-[state=active]:shadow-md data-[state=active]:text-white data-[state=inactive]:bg-white data-[state=inactive]:bg-opacity-60 data-[state=inactive]:text-gray-700 transition-all rounded-md"
           >
             <CalendarDays className="h-4 w-4 mr-2" />
-            Agendamento
-          </TabsTrigger>
-          <TabsTrigger 
-            value="usuarios" 
-            className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-indigo-600 data-[state=active]:to-indigo-700 data-[state=active]:shadow-md data-[state=active]:text-white data-[state=inactive]:bg-white data-[state=inactive]:bg-opacity-60 data-[state=inactive]:text-gray-700 transition-all rounded-md"
-          >
-            <Users className="h-4 w-4 mr-2" />
-            Usuários
+            Link de Agendamento
           </TabsTrigger>
           <TabsTrigger 
             value="pagamentos" 
@@ -127,36 +107,7 @@ export default function Configuracoes() {
             <CreditCard className="h-4 w-4 mr-2" />
             Pagamentos
           </TabsTrigger>
-          <TabsTrigger 
-            value="relatorios" 
-            className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-emerald-600 data-[state=active]:to-emerald-700 data-[state=active]:shadow-md data-[state=active]:text-white data-[state=inactive]:bg-white data-[state=inactive]:bg-opacity-60 data-[state=inactive]:text-gray-700 transition-all rounded-md"
-          >
-            <FileText className="h-4 w-4 mr-2" />
-            Relatórios
-          </TabsTrigger>
-          <TabsTrigger 
-            value="seguranca" 
-            className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-red-600 data-[state=active]:to-red-700 data-[state=active]:shadow-md data-[state=active]:text-white data-[state=inactive]:bg-white data-[state=inactive]:bg-opacity-60 data-[state=inactive]:text-gray-700 transition-all rounded-md"
-          >
-            <Shield className="h-4 w-4 mr-2" />
-            Segurança
-          </TabsTrigger>
         </TabsList>
-
-        <TabsContent value="geral" className="animate-in fade-in-50 duration-300">
-          <div className="bg-white rounded-lg border border-blue-100 shadow-md overflow-hidden">
-            <div className="h-1 w-full bg-gradient-to-r from-blue-400 via-blue-500 to-blue-600"></div>
-            <div className="p-2 bg-gradient-to-r from-blue-50 via-blue-100 to-blue-50 border-b border-blue-100">
-              <h2 className="text-xl font-medium px-4 py-3 text-blue-700 flex items-center">
-                <Settings className="h-5 w-5 mr-2 text-blue-600" />
-                Configurações Gerais
-              </h2>
-            </div>
-            <div className="p-6">
-              <ConfigGeral />
-            </div>
-          </div>
-        </TabsContent>
 
         <TabsContent value="whatsapp" className="animate-in fade-in-50 duration-300">
           <div className="bg-white rounded-lg border border-green-100 shadow-md overflow-hidden">
@@ -188,21 +139,6 @@ export default function Configuracoes() {
           </div>
         </TabsContent>
 
-        <TabsContent value="usuarios" className="animate-in fade-in-50 duration-300">
-          <div className="bg-white rounded-lg border border-indigo-100 shadow-md overflow-hidden">
-            <div className="h-1 w-full bg-gradient-to-r from-indigo-400 via-indigo-500 to-violet-600"></div>
-            <div className="p-2 bg-gradient-to-r from-indigo-50 via-indigo-100 to-indigo-50 border-b border-indigo-100">
-              <h2 className="text-xl font-medium px-4 py-3 text-indigo-700 flex items-center">
-                <Users className="h-5 w-5 mr-2 text-indigo-600" />
-                Gerenciamento de Usuários
-              </h2>
-            </div>
-            <div className="p-6">
-              <ConfigUsuarios />
-            </div>
-          </div>
-        </TabsContent>
-
         <TabsContent value="pagamentos" className="animate-in fade-in-50 duration-300">
           <div className="bg-white rounded-lg border border-amber-100 shadow-md overflow-hidden">
             <div className="h-1 w-full bg-gradient-to-r from-amber-400 via-amber-500 to-orange-600"></div>
@@ -214,36 +150,6 @@ export default function Configuracoes() {
             </div>
             <div className="p-6">
               <ConfigPagamentos />
-            </div>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="relatorios" className="animate-in fade-in-50 duration-300">
-          <div className="bg-white rounded-lg border border-cyan-100 shadow-md overflow-hidden">
-            <div className="h-1 w-full bg-gradient-to-r from-cyan-400 via-cyan-500 to-teal-600"></div>
-            <div className="p-2 bg-gradient-to-r from-cyan-50 via-cyan-100 to-cyan-50 border-b border-cyan-100">
-              <h2 className="text-xl font-medium px-4 py-3 text-cyan-700 flex items-center">
-                <FileText className="h-5 w-5 mr-2 text-cyan-600" />
-                Configurações de Relatórios
-              </h2>
-            </div>
-            <div className="p-6">
-              <ConfigRelatorios />
-            </div>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="seguranca" className="animate-in fade-in-50 duration-300">
-          <div className="bg-white rounded-lg border border-rose-100 shadow-md overflow-hidden">
-            <div className="h-1 w-full bg-gradient-to-r from-rose-400 via-rose-500 to-red-600"></div>
-            <div className="p-2 bg-gradient-to-r from-rose-50 via-rose-100 to-rose-50 border-b border-rose-100">
-              <h2 className="text-xl font-medium px-4 py-3 text-rose-700 flex items-center">
-                <Shield className="h-5 w-5 mr-2 text-rose-600" />
-                Configurações de Segurança
-              </h2>
-            </div>
-            <div className="p-6">
-              <ConfigSeguranca />
             </div>
           </div>
         </TabsContent>
