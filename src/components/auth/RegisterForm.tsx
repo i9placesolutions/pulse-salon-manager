@@ -24,6 +24,7 @@ import {
 import { cn } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import axios from "axios";
+import { supabase } from "@/lib/supabaseClient";
 
 const RegisterForm = () => {
   const [activeStep, setActiveStep] = useState(1);
@@ -251,28 +252,71 @@ const RegisterForm = () => {
 
     setIsLoading(true);
     try {
-      // To be implemented with Supabase
-      console.log("Register attempt", { 
-        estabelecimento, 
-        cnpj, 
-        endereco: {
-          cep,
-          logradouro: endereco,
-          numero,
-          complemento,
-          bairro,
-          cidade,
-          estado
-        },
-        email, 
+      // Upload da logo para o Storage (se existir)
+      let logoUrl = null;
+      if (logo) {
+        // Criar um nome único para o arquivo
+        const fileExt = logo.name.split('.').pop();
+        const fileName = `${Date.now()}.${fileExt}`;
+        const filePath = `logos/${fileName}`;
+
+        // Upload da imagem para o bucket 'logos'
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('logos')
+          .upload(filePath, logo);
+
+        if (uploadError) {
+          throw new Error(`Erro ao fazer upload da logo: ${uploadError.message}`);
+        }
+
+        // Obter a URL pública da imagem
+        const { data: urlData } = await supabase.storage
+          .from('logos')
+          .getPublicUrl(filePath);
+
+        logoUrl = urlData.publicUrl;
+      }
+
+      // Registrar o usuário no Supabase Auth
+      const { data, error } = await supabase.auth.signUp({
+        email,
         password,
-        whatsapp,
-        logo
+        options: {
+          data: {
+            establishment: estabelecimento,
+            cnpj: cnpj,
+            whatsapp: whatsapp,
+            logo_url: logoUrl
+          },
+        },
       });
-      
+
+      if (error) throw error;
+
+      if (data.user) {
+        // Atualizar o perfil do usuário com informações adicionais
+        const { error: profileError } = await supabase.from('profiles').update({
+          name: estabelecimento,
+          whatsapp: whatsapp,
+          establishment: estabelecimento,
+          cnpj: cnpj,
+          address_cep: cep,
+          address_street: endereco,
+          address_number: numero,
+          address_complement: complemento,
+          address_neighborhood: bairro,
+          address_city: cidade,
+          address_state: estado,
+          logo_url: logoUrl // Salvar a URL da logo no perfil
+        }).eq('id', data.user.id);
+
+        if (profileError) throw profileError;
+      }
+
       toast({
         title: "Cadastro realizado com sucesso!",
-        description: "Você será redirecionado para o login.",
+        description: "Verifique seu e-mail para confirmar sua conta.",
+        variant: "success"
       });
       
       // Redirecionamento será implementado posteriormente
@@ -280,7 +324,7 @@ const RegisterForm = () => {
       toast({
         variant: "destructive",
         title: "Erro ao criar conta",
-        description: "Por favor, tente novamente mais tarde.",
+        description: error.message || "Por favor, tente novamente mais tarde.",
       });
     } finally {
       setIsLoading(false);

@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
 import { Mail, Lock, Loader2, LogIn } from "lucide-react";
+import { supabase } from "@/lib/supabaseClient";
 
 const LoginForm = () => {
   const [email, setEmail] = useState("");
@@ -18,42 +19,36 @@ const LoginForm = () => {
     setIsLoading(true);
 
     try {
-      // To be implemented with Supabase
-      console.log("Login attempt", { email, password, rememberMe });
-      toast({
-        title: "Funcionalidade em desenvolvimento",
-        description: "O backend será implementado em breve.",
-        variant: "info",
-        className: "shadow-xl"
+      // Autenticação com Supabase
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email,
+        password: password,
       });
+
+      if (error) throw error;
+
+      if (data && data.user) {
+        toast({
+          title: "Login realizado com sucesso",
+          description: "Você será redirecionado para o dashboard.",
+          variant: "success"
+        });
+        
+        // Redirecionar para o dashboard
+        setTimeout(() => {
+          navigate("/dashboard");
+        }, 1000);
+      }
     } catch (error) {
       toast({
         variant: "destructive",
         title: "Erro ao fazer login",
         description: "Por favor, verifique suas credenciais e tente novamente.",
-        className: "shadow-xl animate-shake"
+        className: "shadow-xl"
       });
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleTestLogin = () => {
-    setIsLoading(true);
-    setTimeout(() => {
-      navigate("/dashboard");
-      toast({
-        title: "Login de teste realizado",
-        description: "Você está usando uma conta de demonstração.",
-        variant: "success",
-        className: "animate-bounce-gentle border-2 shadow-xl"
-      });
-    }, 1000);
-  };
-
-  const handleQuickFill = () => {
-    setEmail("teste@pulse.com");
-    setPassword("123456");
   };
 
   return (
@@ -116,64 +111,6 @@ const LoginForm = () => {
               <LogIn className="h-4 w-4 mr-2" /> Entrar
             </>
           )}
-        </Button>
-
-        <div className="flex gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full border-gray-200 hover:bg-gray-50 hover:border-gray-300 transition-colors duration-200"
-            onClick={handleQuickFill}
-          >
-            Preencher Teste
-          </Button>
-          <Button
-            type="button"
-            className="w-full bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100 hover:border-blue-300 transition-colors duration-200"
-            onClick={handleTestLogin}
-          >
-            Login Rápido
-          </Button>
-        </div>
-      </div>
-
-      <div className="relative">
-        <div className="absolute inset-0 flex items-center">
-          <span className="w-full border-t border-gray-200" />
-        </div>
-        <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-white px-2 text-neutral-soft">Ou entre com</span>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <Button
-          type="button"
-          className="w-full bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 hover:border-gray-300 transition-all duration-200"
-          onClick={() => {
-            toast({
-              title: "Google Login",
-              description: "Será implementado com Supabase",
-              variant: "primary",
-              className: "shadow-lg"
-            });
-          }}
-        >
-          Google
-        </Button>
-        <Button
-          type="button"
-          className="w-full bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 hover:border-gray-300 transition-all duration-200"
-          onClick={() => {
-            toast({
-              title: "Facebook Login",
-              description: "Será implementado com Supabase",
-              variant: "info",
-              className: "shadow-lg"
-            });
-          }}
-        >
-          Facebook
         </Button>
       </div>
     </form>

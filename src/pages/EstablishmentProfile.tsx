@@ -9,6 +9,13 @@ import { useToast } from "@/components/ui/use-toast";
 import { MapPin, Phone, Mail, Instagram, Facebook, MessageSquare, Upload, Copy, QrCode, Eye, MessageCircle, Building, Building2, MapPinned, Clock, Plus, Trash2 } from "lucide-react";
 import { PageLayout } from "@/components/shared/PageLayout";
 import { PageHeader } from "@/components/shared/PageHeader";
+import { supabase } from "@/lib/supabaseClient";
+import { ProfileForm } from "@/components/establishment/ProfileForm";
+import { WorkingHoursSection } from "@/components/establishment/WorkingHoursSection";
+import { SecuritySection } from "@/components/establishment/SecuritySection";
+import { BookingSection } from "@/components/establishment/BookingSection";
+import { WhatsAppSection } from "@/components/establishment/WhatsAppSection";
+import { PaymentsSection } from "@/components/establishment/PaymentsSection";
 
 interface EstablishmentProfile {
   name: string;
@@ -115,8 +122,170 @@ const defaultProfile: EstablishmentProfile = {
 export default function EstablishmentProfile() {
   const [profile, setProfile] = useState<EstablishmentProfile>(defaultProfile);
   const [logoPreview, setLogoPreview] = useState<string>("");
+  const [isLoading, setIsLoading] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+
+  // Estados para a seção de segurança
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [devices, setDevices] = useState<any[]>([]);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [isLoadingDevices, setIsLoadingDevices] = useState(false);
+
+  // Função para processar os dados do perfil
+  const processProfileData = (profileData: any) => {
+    // Converter dados do banco para o formato da interface
+    const formattedProfile: EstablishmentProfile = {
+      name: profileData.establishment || profileData.name || defaultProfile.name,
+      address: {
+        street: profileData.address_street || defaultProfile.address.street,
+        number: profileData.address_number || defaultProfile.address.number,
+        complement: profileData.address_complement || defaultProfile.address.complement,
+        neighborhood: profileData.address_neighborhood || defaultProfile.address.neighborhood,
+        city: profileData.address_city || defaultProfile.address.city,
+        state: profileData.address_state || defaultProfile.address.state,
+        zipCode: profileData.address_cep || defaultProfile.address.zipCode
+      },
+      whatsapp: profileData.whatsapp || defaultProfile.whatsapp,
+      email: profileData.email || defaultProfile.email,
+      instagram: profileData.instagram || defaultProfile.instagram,
+      facebook: profileData.facebook || defaultProfile.facebook,
+      tiktok: profileData.tiktok || defaultProfile.tiktok,
+      logo: profileData.logo_url || defaultProfile.logo,
+      description: profileData.description || defaultProfile.description,
+      customUrl: profileData.custom_url || defaultProfile.customUrl,
+      primaryColor: profileData.primary_color || defaultProfile.primaryColor,
+      workingHours: profileData.working_hours || defaultProfile.workingHours
+    };
+    
+    setProfile(formattedProfile);
+    
+    // Definir o preview da logo se existir
+    if (profileData.logo_url) {
+      setLogoPreview(profileData.logo_url);
+    }
+    
+    // Buscar os dispositivos conectados
+    fetchDevices();
+  };
+
+  // Buscar os dados do perfil do usuário logado
+  useEffect(() => {
+    const fetchProfileData = async () => {
+      try {
+        setIsLoading(true);
+        
+        // Verificar o usuário logado
+        const { data: authData, error: authError } = await supabase.auth.getUser();
+        
+        if (authError) {
+          console.error("Erro ao obter usuário autenticado:", authError);
+          toast({
+            title: "Erro de autenticação",
+            description: authError.message || "Não foi possível verificar sua identidade.",
+            variant: "destructive"
+          });
+          return;
+        }
+        
+        if (!authData || !authData.user) {
+          console.error("Usuário não encontrado ou não autenticado");
+          toast({
+            title: "Erro ao carregar perfil",
+            description: "Você precisa estar logado para acessar esta página.",
+            variant: "destructive"
+          });
+          return;
+        }
+        
+        const userId = authData.user.id;
+        console.log("ID do usuário autenticado:", userId);
+        
+        // Buscar os dados do perfil com mais detalhes de erro
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', userId)
+          .single();
+          
+        if (profileError) {
+          console.error("Erro detalhado ao buscar perfil:", profileError);
+          console.error("Código:", profileError.code);
+          console.error("Mensagem:", profileError.message);
+          console.error("Detalhes:", profileError.details);
+          
+          // Tentar verificar se o perfil existe
+          const { count, error: countError } = await supabase
+            .from('profiles')
+            .select('*', { count: 'exact', head: true })
+            .eq('id', userId);
+            
+          if (countError) {
+            console.error("Erro ao verificar existência do perfil:", countError);
+          } else {
+            console.log("Perfil encontrado na contagem:", count);
+          }
+          
+          toast({
+            title: "Erro ao carregar perfil",
+            description: `Erro: ${profileError.message}. Por favor, contate o suporte.`,
+            variant: "destructive"
+          });
+          
+          // Se o perfil não existir, tentar criar um novo
+          if (profileError.code === "PGRST116") {
+            console.log("Perfil não encontrado, tentando criar um novo...");
+            
+            const newProfile = {
+              id: userId,
+              name: authData.user.user_metadata?.name || "Meu Estabelecimento",
+              email: authData.user.email,
+              role: "user",
+              created_at: new Date().toISOString()
+            };
+            
+            const { error: insertError } = await supabase
+              .from('profiles')
+              .insert(newProfile);
+              
+            if (insertError) {
+              console.error("Erro ao criar perfil:", insertError);
+            } else {
+              console.log("Novo perfil criado com sucesso");
+              // Tentar buscar novamente após criar
+              const { data: newProfileData } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', userId)
+                .single();
+                
+              if (newProfileData) {
+                console.log("Perfil recém-criado carregado com sucesso");
+                processProfileData(newProfileData);
+              }
+            }
+          }
+        }
+        
+        if (profileData) {
+          console.log("Dados do perfil carregados:", profileData);
+          processProfileData(profileData);
+        }
+      } catch (error) {
+        console.error("Erro ao buscar dados do perfil:", error);
+        toast({
+          title: "Erro ao carregar perfil",
+          description: "Ocorreu um erro ao buscar os dados do seu estabelecimento.",
+          variant: "destructive"
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchProfileData();
+  }, [toast]);
 
   const formatWhatsApp = (value: string) => {
     const numbers = value.replace(/\D/g, '');
@@ -138,41 +307,163 @@ export default function EstablishmentProfile() {
     setProfile({ ...profile, whatsapp: formatted });
   };
 
-  const handleLogoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleLogoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
       if (!file.type.match('image.*')) {
         toast({
+          variant: "destructive",
           title: "Tipo de arquivo inválido",
-          description: "Por favor, selecione apenas imagens.",
-          variant: "destructive"
+          description: "Por favor, selecione uma imagem (JPG, PNG, GIF)."
         });
         return;
       }
-      
-      if (file.size > 2 * 1024 * 1024) {
+
+      try {
+        setIsLoading(true);
+        
+        // Preview da imagem
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setLogoPreview(reader.result as string);
+        };
+        reader.readAsDataURL(file);
+        
+        // Obter o usuário atual
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (!user) {
+          toast({
+            title: "Erro ao enviar logo",
+            description: "Você precisa estar logado para realizar esta ação.",
+            variant: "destructive"
+          });
+          return;
+        }
+        
+        // Criar um nome único para o arquivo
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${user.id}_${Date.now()}.${fileExt}`;
+        const filePath = `logos/${fileName}`;
+        
+        // Upload da imagem para o Storage
+        const { error: uploadError } = await supabase.storage
+          .from('logos')
+          .upload(filePath, file, {
+            upsert: true
+          });
+          
+        if (uploadError) {
+          throw new Error(`Erro ao fazer upload da logo: ${uploadError.message}`);
+        }
+        
+        // Obter a URL pública da imagem
+        const { data: urlData } = await supabase.storage
+          .from('logos')
+          .getPublicUrl(filePath);
+          
+        const logoUrl = urlData.publicUrl;
+        
+        // Atualizar o estado do perfil e o preview
+        setProfile({
+          ...profile,
+          logo: logoUrl
+        });
+        
+        // Atualizar o campo logo_url no banco de dados
+        const { error: updateError } = await supabase
+          .from('profiles')
+          .update({ logo_url: logoUrl })
+          .eq('id', user.id);
+          
+        if (updateError) {
+          throw updateError;
+        }
+        
         toast({
-          title: "Arquivo muito grande",
-          description: "O tamanho máximo permitido é 2MB.",
-          variant: "destructive"
+          title: "Logo atualizada com sucesso!",
+          description: "A logo do seu estabelecimento foi atualizada.",
+          variant: "success"
         });
-        return;
+      } catch (error) {
+        console.error("Erro ao fazer upload da logo:", error);
+        toast({
+          variant: "destructive",
+          title: "Erro ao fazer upload",
+          description: error.message || "Ocorreu um erro ao enviar a logo. Tente novamente."
+        });
+      } finally {
+        setIsLoading(false);
       }
-      
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setLogoPreview(reader.result as string);
-        setProfile({ ...profile, logo: reader.result as string });
-      };
-      reader.readAsDataURL(file);
     }
   };
 
-  const handleSave = () => {
-    toast({
-      title: "Perfil atualizado",
-      description: "As informações do estabelecimento foram atualizadas com sucesso!",
-    });
+  const handleSave = async () => {
+    try {
+      setIsLoading(true);
+      
+      // Obter o usuário atual
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        toast({
+          title: "Erro ao salvar perfil",
+          description: "Você precisa estar logado para realizar esta ação.",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      // Preparar os dados para salvar no banco (incluindo redes sociais e horários)
+      const profileUpdate = {
+        name: profile.name,
+        establishment: profile.name,
+        address_street: profile.address.street,
+        address_number: profile.address.number,
+        address_complement: profile.address.complement,
+        address_neighborhood: profile.address.neighborhood,
+        address_city: profile.address.city,
+        address_state: profile.address.state,
+        address_cep: profile.address.zipCode,
+        whatsapp: profile.whatsapp,
+        email: profile.email,
+        // Redes sociais
+        instagram: profile.instagram,
+        facebook: profile.facebook,
+        tiktok: profile.tiktok,
+        description: profile.description,
+        // Horários de funcionamento
+        working_hours: profile.workingHours
+      };
+      
+      console.log("Dados a serem salvos:", profileUpdate);
+      
+      // Atualizar o perfil no banco
+      const { error } = await supabase
+        .from('profiles')
+        .update(profileUpdate)
+        .eq('id', user.id);
+        
+      if (error) {
+        console.error("Erro retornado pelo Supabase:", error);
+        throw error;
+      }
+      
+      toast({
+        title: "Perfil salvo com sucesso!",
+        description: "As informações do seu estabelecimento foram atualizadas.",
+        variant: "success"
+      });
+    } catch (error) {
+      console.error("Erro ao salvar perfil:", error);
+      toast({
+        title: "Erro ao salvar perfil",
+        description: "Ocorreu um erro ao salvar os dados do seu estabelecimento.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const addWorkingHour = () => {
@@ -239,6 +530,263 @@ export default function EstablishmentProfile() {
     return `${street}, ${number}${complement ? `, ${complement}` : ''} - ${neighborhood} - ${city}/${state} - CEP: ${zipCode}`;
   };
 
+  // Função para alterar a senha
+  const handleChangePassword = async () => {
+    if (newPassword !== confirmPassword) {
+      toast({
+        title: "Senhas não coincidem",
+        description: "A nova senha e a confirmação devem ser iguais.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    if (newPassword.length < 6) {
+      toast({
+        title: "Senha muito curta",
+        description: "A senha deve ter pelo menos 6 caracteres.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    try {
+      setIsChangingPassword(true);
+      
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword
+      });
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Senha alterada com sucesso!",
+        description: "Sua senha foi atualizada com segurança.",
+        variant: "success"
+      });
+      
+      // Limpar campos após alteração bem-sucedida
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (error) {
+      console.error("Erro ao alterar senha:", error);
+      toast({
+        title: "Erro ao alterar senha",
+        description: error.message || "Ocorreu um erro ao alterar sua senha.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsChangingPassword(false);
+    }
+  };
+  
+  // Função para buscar os dispositivos conectados
+  const fetchDevices = async () => {
+    try {
+      setIsLoadingDevices(true);
+      
+      // Obter o usuário atual
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        console.error("Usuário não encontrado");
+        return;
+      }
+      
+      // Tentar buscar histórico de dispositivos da tabela profiles
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('devices')
+        .eq('id', user.id)
+        .single();
+      
+      if (profileError && profileError.code !== 'PGRST116') {
+        console.error("Erro ao buscar histórico de dispositivos:", profileError);
+      }
+      
+      // Na versão atual do Supabase, não existe uma API específica para listar sessões/dispositivos
+      // Então vamos simular com dados do navegador atual e armazenar na tabela profiles
+      const userAgent = navigator.userAgent;
+      const deviceInfo = getDeviceInfo(userAgent);
+      
+      // Estruturar o dispositivo atual
+      const currentDevice = {
+        id: crypto.randomUUID(),
+        type: deviceInfo.type,
+        name: deviceInfo.name,
+        os: deviceInfo.os,
+        browser: deviceInfo.browser,
+        lastActive: new Date().toISOString()
+      };
+      
+      // Verificar se já temos dispositivos armazenados
+      let devicesList = [];
+      if (profileData && profileData.devices && Array.isArray(profileData.devices)) {
+        devicesList = profileData.devices;
+        
+        // Verificar se o dispositivo atual já está na lista
+        const existingDeviceIndex = devicesList.findIndex(device => 
+          device.browser === currentDevice.browser && 
+          device.os === currentDevice.os && 
+          device.type === currentDevice.type
+        );
+        
+        if (existingDeviceIndex >= 0) {
+          // Atualizar último acesso
+          devicesList[existingDeviceIndex].lastActive = currentDevice.lastActive;
+        } else {
+          // Adicionar novo dispositivo à lista
+          devicesList.push(currentDevice);
+        }
+      } else {
+        // Primeira vez, criar lista com dispositivo atual
+        devicesList = [currentDevice];
+      }
+      
+      // Atualizar a tabela profiles com a lista de dispositivos
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ devices: devicesList })
+        .eq('id', user.id);
+      
+      if (updateError) {
+        console.error("Erro ao atualizar lista de dispositivos:", updateError);
+      }
+      
+      setDevices(devicesList);
+    } catch (error) {
+      console.error("Erro ao buscar dispositivos:", error);
+    } finally {
+      setIsLoadingDevices(false);
+    }
+  };
+  
+  // Função para identificar informações do dispositivo a partir do user agent
+  const getDeviceInfo = (userAgent) => {
+    let deviceType = "desktop";
+    let deviceName = "Computador";
+    let deviceOS = "Desconhecido";
+    let deviceBrowser = "Navegador";
+    
+    // Detectar o dispositivo
+    if (/iPad/i.test(userAgent)) {
+      deviceType = "tablet";
+      deviceName = "iPad";
+      deviceOS = "iOS";
+    } else if (/iPhone/i.test(userAgent)) {
+      deviceType = "mobile";
+      deviceName = "iPhone";
+      deviceOS = "iOS";
+    } else if (/Android/i.test(userAgent)) {
+      if (/Tablet|SM-T|Tab/i.test(userAgent)) {
+        deviceType = "tablet";
+        deviceName = "Tablet Android";
+      } else {
+        deviceType = "mobile";
+        deviceName = "Smartphone Android";
+      }
+      deviceOS = "Android";
+    } else if (/Windows Phone/i.test(userAgent)) {
+      deviceType = "mobile";
+      deviceName = "Windows Phone";
+      deviceOS = "Windows Mobile";
+    } else if (/Mac OS X/i.test(userAgent)) {
+      if (/iPad|iPhone|iPod/.test(userAgent)) {
+        deviceType = "mobile";
+        deviceName = "Dispositivo iOS";
+        deviceOS = "iOS";
+      } else {
+        deviceType = "desktop";
+        deviceName = "MacBook";
+        deviceOS = "macOS";
+      }
+    } else if (/Windows/i.test(userAgent)) {
+      deviceType = "desktop";
+      deviceName = "PC Windows";
+      deviceOS = "Windows";
+    } else if (/Linux/i.test(userAgent)) {
+      deviceType = "desktop";
+      deviceName = "Linux";
+      deviceOS = "Linux";
+    }
+    
+    // Detectar o navegador
+    if (/Chrome/i.test(userAgent) && !/Chromium|OPR|Edge|Edg/i.test(userAgent)) {
+      deviceBrowser = "Chrome";
+    } else if (/Firefox/i.test(userAgent)) {
+      deviceBrowser = "Firefox";
+    } else if (/Safari/i.test(userAgent) && !/Chrome|Chromium|OPR|Edge|Edg/i.test(userAgent)) {
+      deviceBrowser = "Safari";
+    } else if (/MSIE|Trident/i.test(userAgent)) {
+      deviceBrowser = "Internet Explorer";
+    } else if (/Edge|Edg/i.test(userAgent)) {
+      deviceBrowser = "Microsoft Edge";
+    } else if (/OPR/i.test(userAgent)) {
+      deviceBrowser = "Opera";
+    }
+    
+    return {
+      type: deviceType,
+      name: deviceName,
+      os: deviceOS,
+      browser: deviceBrowser
+    };
+  };
+
+  // Função para desconectar todos os dispositivos
+  const handleLogoutAllDevices = async () => {
+    try {
+      setIsLoadingDevices(true);
+      
+      // Obter o usuário atual
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        toast({
+          title: "Erro ao desconectar dispositivos",
+          description: "Usuário não encontrado",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      // Apagar a lista de dispositivos na tabela profiles
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ devices: [] })
+        .eq('id', user.id);
+      
+      if (updateError) {
+        console.error("Erro ao limpar lista de dispositivos:", updateError);
+      }
+      
+      // Fazer logout global com o Supabase
+      const { error } = await supabase.auth.signOut({ scope: 'global' });
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Todos os dispositivos foram desconectados",
+        description: "Você precisará fazer login novamente.",
+        variant: "success"
+      });
+      
+      // Redirecionar para a página de login após alguns segundos
+      setTimeout(() => {
+        window.location.href = '/';
+      }, 2000);
+    } catch (error) {
+      console.error("Erro ao desconectar dispositivos:", error);
+      toast({
+        title: "Erro ao desconectar dispositivos",
+        description: error.message || "Ocorreu um erro ao tentar desconectar todos os dispositivos.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoadingDevices(false);
+    }
+  };
+
   return (
     <PageLayout variant="blue">
       <PageHeader 
@@ -247,502 +795,116 @@ export default function EstablishmentProfile() {
         variant="blue"
         badge="Identificação"
         action={
-          <Button onClick={handleSave} variant="dashboard">Salvar Alterações</Button>
+          <Button 
+            onClick={handleSave} 
+            className="bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 text-white shadow-md hover:shadow-lg transition-all duration-200"
+          >
+            Salvar Alterações
+          </Button>
         }
       />
 
-      <Tabs defaultValue="info" className="space-y-4">
-        <TabsList className="bg-blue-50 border border-blue-100 p-1 rounded-lg">
+      <Tabs defaultValue="profile" className="space-y-4">
+        <TabsList className="mb-6 bg-gradient-to-r from-blue-50 to-indigo-100 p-1 rounded-lg">
           <TabsTrigger 
-            value="info" 
-            className="data-[state=active]:bg-blue-600 data-[state=active]:text-white"
+            value="profile" 
+            className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-blue-700 data-[state=active]:text-white data-[state=active]:shadow-md"
           >
-            Informações
+            Perfil
           </TabsTrigger>
           <TabsTrigger 
-            value="branding" 
-            className="data-[state=active]:bg-blue-600 data-[state=active]:text-white"
+            value="booking" 
+            className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-purple-700 data-[state=active]:text-white data-[state=active]:shadow-md"
           >
-            Identidade Visual
-          </TabsTrigger>
-          <TabsTrigger 
-            value="social" 
-            className="data-[state=active]:bg-blue-600 data-[state=active]:text-white"
-          >
-            Redes Sociais
+            Agenda Online
           </TabsTrigger>
           <TabsTrigger 
             value="hours" 
-            className="data-[state=active]:bg-blue-600 data-[state=active]:text-white"
+            className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-indigo-600 data-[state=active]:to-indigo-700 data-[state=active]:text-white data-[state=active]:shadow-md"
           >
             Horário de Funcionamento
           </TabsTrigger>
+          <TabsTrigger 
+            value="whatsapp" 
+            className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-600 data-[state=active]:to-green-700 data-[state=active]:text-white data-[state=active]:shadow-md"
+          >
+            WhatsApp
+          </TabsTrigger>
+          <TabsTrigger 
+            value="payments" 
+            className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-emerald-600 data-[state=active]:to-emerald-700 data-[state=active]:text-white data-[state=active]:shadow-md"
+          >
+            Pagamentos
+          </TabsTrigger>
+          <TabsTrigger 
+            value="security" 
+            className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-rose-600 data-[state=active]:to-rose-700 data-[state=active]:text-white data-[state=active]:shadow-md"
+            onClick={() => {
+              if (devices.length === 0) {
+                fetchDevices();
+              }
+            }}
+          >
+            Segurança
+          </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="info" className="space-y-4">
-          <Card className="border-blue-100">
-            <CardHeader className="bg-gradient-to-r from-blue-50 to-blue-100 border-b border-blue-100">
-              <CardTitle className="text-blue-700">Informações Básicas</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4 p-6">
-              <div className="space-y-2">
-                <Label htmlFor="name" className="text-blue-700">Nome do Estabelecimento</Label>
-                <Input
-                  id="name"
-                  value={profile.name}
-                  onChange={(e) => setProfile({ ...profile, name: e.target.value })}
-                  placeholder="Nome do seu salão"
-                  className="border-blue-200 focus:border-blue-400"
-                />
-              </div>
-
-              <div className="space-y-3 mt-4">
-                <Label className="text-blue-700 flex items-center gap-2">
-                  <MapPin className="h-4 w-4 text-blue-600" />
-                  Endereço Completo
-                </Label>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="md:col-span-2">
-                    <Label htmlFor="street" className="text-sm text-blue-600">Rua/Avenida</Label>
-                    <div className="flex items-center">
-                      <Building className="h-4 w-4 text-gray-400 mr-2" />
-                      <Input
-                        id="street"
-                        value={profile.address.street}
-                        onChange={(e) => handleAddressChange('street', e.target.value)}
-                        placeholder="Nome da rua"
-                        className="border-blue-200 focus:border-blue-400"
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <Label htmlFor="number" className="text-sm text-blue-600">Número</Label>
-                    <Input
-                      id="number"
-                      value={profile.address.number}
-                      onChange={(e) => handleAddressChange('number', e.target.value)}
-                      placeholder="Número"
-                      className="border-blue-200 focus:border-blue-400"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="complement" className="text-sm text-blue-600">Complemento</Label>
-                    <Input
-                      id="complement"
-                      value={profile.address.complement || ''}
-                      onChange={(e) => handleAddressChange('complement', e.target.value)}
-                      placeholder="Sala, andar, etc. (opcional)"
-                      className="border-blue-200 focus:border-blue-400"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="neighborhood" className="text-sm text-blue-600">Bairro</Label>
-                    <Input
-                      id="neighborhood"
-                      value={profile.address.neighborhood}
-                      onChange={(e) => handleAddressChange('neighborhood', e.target.value)}
-                      placeholder="Bairro"
-                      className="border-blue-200 focus:border-blue-400"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                  <div className="md:col-span-2">
-                    <Label htmlFor="city" className="text-sm text-blue-600">Cidade</Label>
-                    <div className="flex items-center">
-                      <Building2 className="h-4 w-4 text-gray-400 mr-2" />
-                      <Input
-                        id="city"
-                        value={profile.address.city}
-                        onChange={(e) => handleAddressChange('city', e.target.value)}
-                        placeholder="Cidade"
-                        className="border-blue-200 focus:border-blue-400"
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <Label htmlFor="state" className="text-sm text-blue-600">Estado</Label>
-                    <Input
-                      id="state"
-                      value={profile.address.state}
-                      onChange={(e) => handleAddressChange('state', e.target.value)}
-                      placeholder="UF"
-                      maxLength={2}
-                      className="border-blue-200 focus:border-blue-400"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="zipCode" className="text-sm text-blue-600">CEP</Label>
-                    <Input
-                      id="zipCode"
-                      value={profile.address.zipCode}
-                      onChange={(e) => handleAddressChange('zipCode', e.target.value)}
-                      placeholder="00000-000"
-                      className="border-blue-200 focus:border-blue-400"
-                    />
-                  </div>
-                </div>
-
-                <div className="mt-2 p-3 bg-blue-50 rounded-md border border-blue-100">
-                  <div className="flex items-center">
-                    <MapPinned className="h-4 w-4 text-blue-600 mr-2" />
-                    <span className="text-sm text-blue-700 font-medium">Endereço Completo:</span>
-                  </div>
-                  <p className="text-sm mt-1 pl-6 text-blue-600">{getFullAddress()}</p>
-                </div>
-              </div>
-
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="whatsapp" className="text-blue-700">
-                    <div className="flex items-center gap-2">
-                      <Phone className="h-4 w-4 text-blue-600" />
-                      WhatsApp
-                    </div>
-                  </Label>
-                  <Input
-                    id="whatsapp"
-                    value={profile.whatsapp}
-                    onChange={handleWhatsAppChange}
-                    placeholder="(00) 00000-0000"
-                    className="border-blue-200 focus:border-blue-400"
-                  />
-                  <p className="text-xs text-blue-600 mt-1">
-                    Formato: (64) 99618-5163
-                  </p>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="email" className="text-blue-700">
-                    <div className="flex items-center gap-2">
-                      <Mail className="h-4 w-4 text-blue-600" />
-                      E-mail
-                    </div>
-                  </Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={profile.email}
-                    onChange={(e) => setProfile({ ...profile, email: e.target.value })}
-                    placeholder="contato@seusalao.com.br"
-                    className="border-blue-200 focus:border-blue-400"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="description" className="text-blue-700">Descrição do Estabelecimento</Label>
-                <Textarea
-                  id="description"
-                  value={profile.description}
-                  onChange={(e) => setProfile({ ...profile, description: e.target.value })}
-                  placeholder="Descreva seu estabelecimento..."
-                  rows={4}
-                  className="border-blue-200 focus:border-blue-400"
-                />
-              </div>
-            </CardContent>
-          </Card>
+        <TabsContent value="profile" className="space-y-4">
+          <ProfileForm 
+            profile={profile}
+            logoPreview={logoPreview}
+            isLoading={isLoading}
+            fileInputRef={fileInputRef}
+            handleLogoUpload={handleLogoUpload}
+            handleWhatsAppChange={handleWhatsAppChange}
+            handleAddressChange={handleAddressChange}
+            handleSave={handleSave}
+            handleChange={(field, value) => {
+              setProfile(prev => ({
+                ...prev,
+                [field]: value
+              }));
+            }}
+          />
         </TabsContent>
 
-        <TabsContent value="branding" className="space-y-4">
-          <Card className="border-blue-100">
-            <CardHeader className="bg-gradient-to-r from-blue-50 to-blue-100 border-b border-blue-100">
-              <CardTitle className="text-blue-700">Identidade Visual</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4 p-6">
-              <div className="space-y-4">
-                <Label className="text-blue-700">Logo do Estabelecimento</Label>
-                <div className="flex flex-col md:flex-row md:items-center gap-4">
-                  <div
-                    className={`h-40 w-40 rounded-lg border-2 ${
-                      logoPreview ? 'border-blue-200' : 'border-dashed border-blue-300'
-                    } flex items-center justify-center overflow-hidden relative group cursor-pointer`}
-                    onClick={() => fileInputRef.current?.click()}
-                  >
-                    {logoPreview ? (
-                      <>
-                        <img
-                          src={logoPreview}
-                          alt="Logo do estabelecimento"
-                          className="h-full w-full object-contain"
-                        />
-                        <div className="absolute inset-0 bg-blue-800/70 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                          <Upload className="h-8 w-8 text-white" />
-                        </div>
-                      </>
-                    ) : (
-                      <div className="flex flex-col items-center text-blue-400">
-                        <Upload className="h-10 w-10 mb-2" />
-                        <span className="text-sm font-medium">Upload da Logo</span>
-                      </div>
-                    )}
-                  </div>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={handleLogoUpload}
-                  />
-                  <div className="space-y-3">
-                    <div className="text-sm text-blue-700">
-                      <p className="font-medium mb-1">Recomendações:</p>
-                      <ul className="space-y-1 text-blue-600">
-                        <li className="flex items-center gap-2">
-                          <span className="h-1.5 w-1.5 bg-blue-400 rounded-full"></span>
-                          Formatos aceitos: PNG, JPG ou SVG
-                        </li>
-                        <li className="flex items-center gap-2">
-                          <span className="h-1.5 w-1.5 bg-blue-400 rounded-full"></span>
-                          Tamanho máximo: 2MB
-                        </li>
-                        <li className="flex items-center gap-2">
-                          <span className="h-1.5 w-1.5 bg-blue-400 rounded-full"></span>
-                          Resolução ideal: 400x400 pixels ou maior
-                        </li>
-                        <li className="flex items-center gap-2">
-                          <span className="h-1.5 w-1.5 bg-blue-400 rounded-full"></span>
-                          Fundo transparente para melhor visualização
-                        </li>
-                      </ul>
-                    </div>
-                    <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
-                      <Upload className="h-3.5 w-3.5 mr-2" />
-                      Selecionar arquivo
-                    </Button>
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="primary-color" className="text-blue-700">Cor Principal</Label>
-                <div className="flex items-center gap-2">
-                  <Input
-                    id="primary-color"
-                    type="color"
-                    value={profile.primaryColor}
-                    onChange={(e) => setProfile({ ...profile, primaryColor: e.target.value })}
-                    className="w-20 h-10 p-1 border-blue-200"
-                  />
-                  <span className="text-sm text-blue-600">
-                    {profile.primaryColor}
-                  </span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="social" className="space-y-4">
-          <Card className="border-blue-100">
-            <CardHeader className="bg-gradient-to-r from-blue-50 to-blue-100 border-b border-blue-100">
-              <CardTitle className="text-blue-700">Redes Sociais</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4 p-6">
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="instagram" className="text-blue-700">
-                    <div className="flex items-center gap-2">
-                      <Instagram className="h-4 w-4 text-blue-600" />
-                      Instagram
-                    </div>
-                  </Label>
-                  <Input
-                    id="instagram"
-                    value={profile.instagram}
-                    onChange={(e) => setProfile({ ...profile, instagram: e.target.value })}
-                    placeholder="@seusalao"
-                    className="border-blue-200 focus:border-blue-400"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="facebook" className="text-blue-700">
-                    <div className="flex items-center gap-2">
-                      <Facebook className="h-4 w-4 text-blue-600" />
-                      Facebook
-                    </div>
-                  </Label>
-                  <Input
-                    id="facebook"
-                    value={profile.facebook}
-                    onChange={(e) => setProfile({ ...profile, facebook: e.target.value })}
-                    placeholder="/seusalao"
-                    className="border-blue-200 focus:border-blue-400"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="tiktok" className="text-blue-700">
-                    <div className="flex items-center gap-2">
-                      <MessageSquare className="h-4 w-4 text-blue-600" />
-                      TikTok
-                    </div>
-                  </Label>
-                  <Input
-                    id="tiktok"
-                    value={profile.tiktok}
-                    onChange={(e) => setProfile({ ...profile, tiktok: e.target.value })}
-                    placeholder="@seusalao"
-                    className="border-blue-200 focus:border-blue-400"
-                  />
-                </div>
-              </div>
-
-              <div className="flex gap-2">
-                <Button variant="dashboard" className="gap-2" onClick={openWhatsApp}>
-                  <MessageCircle className="h-4 w-4" />
-                  Abrir WhatsApp
-                </Button>
-                <Button
-                  variant="dashboard-outline"
-                  className="gap-2"
-                  onClick={() => window.open(`https://instagram.com/${profile.instagram}`, '_blank')}
-                >
-                  <Instagram className="h-4 w-4" />
-                  Acessar Instagram
-                </Button>
-                <Button
-                  variant="dashboard-outline"
-                  className="gap-2"
-                  onClick={() => window.open(`https://facebook.com/${profile.facebook}`, '_blank')}
-                >
-                  <Facebook className="h-4 w-4" />
-                  Acessar Facebook
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+        <TabsContent value="booking" className="space-y-4">
+          <BookingSection
+            profile={profile}
+            copyBookingLink={copyBookingLink}
+            openWhatsApp={openWhatsApp}
+          />
         </TabsContent>
 
         <TabsContent value="hours" className="space-y-4">
-          <Card className="border-blue-100">
-            <CardHeader className="bg-gradient-to-r from-blue-50 to-blue-100 border-b border-blue-100">
-              <CardTitle className="text-blue-700 flex items-center gap-2">
-                <Clock className="h-5 w-5 text-blue-600" />
-                Horário de Funcionamento
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4 p-6">
-              <div className="space-y-4">
-                {profile.workingHours.map((hour, index) => (
-                  <div key={index} className="p-4 border border-blue-100 rounded-md bg-blue-50/50">
-                    <div className="flex justify-between items-center mb-3">
-                      <div className="flex items-center gap-2">
-                        <select
-                          value={hour.dayOfWeek}
-                          onChange={(e) => updateWorkingHour(index, 'dayOfWeek', e.target.value)}
-                          className="border border-blue-200 rounded-md p-2 text-sm focus:border-blue-400 focus:outline-none"
-                        >
-                          <option value="Segunda-feira">Segunda-feira</option>
-                          <option value="Terça-feira">Terça-feira</option>
-                          <option value="Quarta-feira">Quarta-feira</option>
-                          <option value="Quinta-feira">Quinta-feira</option>
-                          <option value="Sexta-feira">Sexta-feira</option>
-                          <option value="Sábado">Sábado</option>
-                          <option value="Domingo">Domingo</option>
-                        </select>
-                      </div>
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        onClick={() => removeWorkingHour(index)}
-                        className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-3 mb-3">
-                      <div className="space-y-1">
-                        <Label htmlFor={`open-time-${index}`} className="text-xs text-blue-700">
-                          Horário de Abertura
-                        </Label>
-                        <Input
-                          id={`open-time-${index}`}
-                          type="time"
-                          value={hour.openTime}
-                          onChange={(e) => updateWorkingHour(index, 'openTime', e.target.value)}
-                          className="border-blue-200 focus:border-blue-400 h-9"
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <Label htmlFor={`close-time-${index}`} className="text-xs text-blue-700">
-                          Horário de Fechamento
-                        </Label>
-                        <Input
-                          id={`close-time-${index}`}
-                          type="time"
-                          value={hour.closeTime}
-                          onChange={(e) => updateWorkingHour(index, 'closeTime', e.target.value)}
-                          className="border-blue-200 focus:border-blue-400 h-9"
-                        />
-                      </div>
-                    </div>
+          <WorkingHoursSection 
+            workingHours={profile.workingHours} 
+            addWorkingHour={addWorkingHour} 
+            removeWorkingHour={removeWorkingHour} 
+            updateWorkingHour={updateWorkingHour} 
+          />
+        </TabsContent>
 
-                    <div className="mb-3">
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="checkbox"
-                          id={`has-break-${index}`}
-                          checked={hour.hasBreak}
-                          onChange={(e) => updateWorkingHour(index, 'hasBreak', e.target.checked)}
-                          className="rounded border-blue-300 text-blue-600 focus:ring-blue-500"
-                        />
-                        <Label htmlFor={`has-break-${index}`} className="text-sm text-blue-700">
-                          Possui intervalo
-                        </Label>
-                      </div>
-                    </div>
+        <TabsContent value="whatsapp" className="space-y-4">
+          <WhatsAppSection />
+        </TabsContent>
 
-                    {hour.hasBreak && (
-                      <div className="grid grid-cols-2 gap-3 mt-2 pl-6 pb-1">
-                        <div className="space-y-1">
-                          <Label htmlFor={`break-start-${index}`} className="text-xs text-blue-700">
-                            Início do Intervalo
-                          </Label>
-                          <Input
-                            id={`break-start-${index}`}
-                            type="time"
-                            value={hour.breakStart}
-                            onChange={(e) => updateWorkingHour(index, 'breakStart', e.target.value)}
-                            className="border-blue-200 focus:border-blue-400 h-9"
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <Label htmlFor={`break-end-${index}`} className="text-xs text-blue-700">
-                            Fim do Intervalo
-                          </Label>
-                          <Input
-                            id={`break-end-${index}`}
-                            type="time"
-                            value={hour.breakEnd}
-                            onChange={(e) => updateWorkingHour(index, 'breakEnd', e.target.value)}
-                            className="border-blue-200 focus:border-blue-400 h-9"
-                          />
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ))}
+        <TabsContent value="payments" className="space-y-4">
+          <PaymentsSection />
+        </TabsContent>
 
-                <Button
-                  variant="outline"
-                  onClick={addWorkingHour}
-                  className="w-full border-dashed border-blue-200 text-blue-600 hover:bg-blue-50 gap-2"
-                >
-                  <Plus className="h-4 w-4" />
-                  Adicionar Horário
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+        <TabsContent value="security" className="space-y-4">
+          <SecuritySection 
+            newPassword={newPassword} 
+            confirmPassword={confirmPassword} 
+            setNewPassword={setNewPassword} 
+            setConfirmPassword={setConfirmPassword} 
+            isChangingPassword={isChangingPassword} 
+            handleChangePassword={handleChangePassword} 
+            isLoadingDevices={isLoadingDevices} 
+            devices={devices} 
+            handleLogoutAllDevices={handleLogoutAllDevices} 
+          />
         </TabsContent>
       </Tabs>
     </PageLayout>

@@ -450,7 +450,7 @@ export default function PublicBooking() {
       
       {/* Modal de Login/Cadastro */}
       <LoginModal 
-        isOpen={isLoginModalOpen}
+        open={isLoginModalOpen}
         onClose={() => setIsLoginModalOpen(false)}
         onSuccess={handleLoginSuccess}
       />

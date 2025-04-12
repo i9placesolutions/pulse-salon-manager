@@ -16,11 +16,14 @@ import {
   UserSquare2,
   CreditCard,
   User,
-  ShoppingBag
+  ShoppingBag,
+  Building
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
+import { supabase } from "@/lib/supabaseClient";
+import { useToast } from "@/components/ui/use-toast";
 
 interface MenuItem {
   icon: any;
@@ -40,9 +43,9 @@ const menuItems: MenuItem[] = [
   { icon: Package, label: "Estoque", path: "/estoque", category: "principal" },
   { icon: BarChart, label: "Marketing", path: "/marketing", category: "principal" },
   { icon: MessageSquare, label: "Mensagens", path: "/messaging", category: "principal" },
+  { icon: Building, label: "Estabelecimento", path: "/establishment-profile", category: "configuracoes" },
   { icon: User, label: "Usuários", path: "/usuarios", category: "configuracoes" },
   { icon: CreditCard, label: "Mensalidade", path: "/mensalidade", category: "configuracoes" },
-  { icon: Settings, label: "Configurações", path: "/configuracoes", category: "configuracoes" },
 ];
 
 const menuItemColors = {
@@ -57,9 +60,9 @@ const menuItemColors = {
   "/estoque": { color: "text-indigo-600", bg: "bg-indigo-100", hover: "hover:bg-indigo-100" },
   "/marketing": { color: "text-rose-600", bg: "bg-rose-100", hover: "hover:bg-rose-100" },
   "/messaging": { color: "text-teal-600", bg: "bg-teal-100", hover: "hover:bg-teal-100" },
+  "/establishment-profile": { color: "text-violet-600", bg: "bg-violet-100", hover: "hover:bg-violet-100" },
   "/usuarios": { color: "text-indigo-600", bg: "bg-indigo-100", hover: "hover:bg-indigo-100" },
   "/mensalidade": { color: "text-orange-600", bg: "bg-orange-100", hover: "hover:bg-orange-100" },
-  "/configuracoes": { color: "text-gray-600", bg: "bg-gray-100", hover: "hover:bg-gray-100" },
 };
 
 // Cores para categorias
@@ -78,6 +81,7 @@ interface SidebarProps {
 export const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [pinnedItems, setPinnedItems] = useState<string[]>([]);
 
   // Agrupar itens do menu por categoria
@@ -89,6 +93,32 @@ export const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
     acc[category].push(item);
     return acc;
   }, {} as Record<string, MenuItem[]>);
+
+  // Função para realizar logout
+  const handleLogout = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      
+      if (error) {
+        throw error;
+      }
+      
+      toast({
+        title: "Logout realizado com sucesso",
+        description: "Você foi desconectado da sua conta.",
+        variant: "success"
+      });
+      
+      // Redirecionar para a página inicial
+      navigate("/");
+    } catch (error) {
+      toast({
+        title: "Erro ao sair",
+        description: "Ocorreu um erro ao tentar sair. Tente novamente.",
+        variant: "destructive"
+      });
+    }
+  };
 
   // Função para alternar item fixado
   const togglePinnedItem = (path: string) => {
@@ -254,6 +284,7 @@ export const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
         <div className="absolute bottom-0 left-0 right-0 p-2 border-t bg-gradient-to-t from-gray-100 to-white dark:from-neutral-950 dark:to-neutral-900">
           <div className="space-y-2">
             <button
+              onClick={handleLogout}
               className={cn(
                 "w-full flex items-center gap-2 px-3 py-2 rounded-lg",
                 "text-red-500 hover:bg-gradient-to-r hover:from-red-50 hover:to-pink-50 dark:hover:from-red-950 dark:hover:to-pink-950 transition-colors",

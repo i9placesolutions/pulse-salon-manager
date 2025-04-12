@@ -190,4 +190,191 @@ export function setApiUrl(url: string): void {
 // Obter a URL configurada ou usar o padrão
 export function getApiUrl(): string {
   return (window as any).WHATSAPP_API_URL || SERVER_URL;
-} 
+}
+
+// Serviço para comunicação com a API do WhatsApp uazapiGO
+const API_URL = "https://i9place3.uazapi.com";
+const ADMIN_TOKEN = "43TUukVMHTIQV5j4iqbX52ZhM63b7s2slt3q04vjygM3lpMf06";
+
+// Define os tipos principais
+export interface WhatsAppInstance {
+  id: string;
+  instanceName: string;
+  status: string;
+  qrcode?: string;
+  pairingCode?: string;
+  user?: {
+    name?: string;
+    id?: string;
+    profilePictureUrl?: string;
+  };
+  token?: string;
+}
+
+// Serviço para gerenciar as instâncias do WhatsApp
+export const whatsAppService = {
+  // Criar uma nova instância
+  async createInstance(name: string, userId: string, systemName?: string, adminField02?: string): Promise<WhatsAppInstance> {
+    try {
+      const response = await fetch(`${API_URL}/instance/init`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "admintoken": ADMIN_TOKEN
+        },
+        body: JSON.stringify({
+          name: name,
+          systemName: systemName || "Pulse Salon Manager",
+          adminField01: userId, // Usamos este campo para guardar o ID do usuário
+          adminField02: adminField02 || ""
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Erro ao criar instância: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      console.log("Resposta da API ao criar instância:", data);
+      
+      // Verificar se o token foi retornado corretamente
+      if (!data.token) {
+        console.error("Token da instância não encontrado na resposta:", data);
+        throw new Error("Token da instância não encontrado na resposta");
+      }
+      
+      // Salvar o token no localStorage para uso futuro
+      localStorage.setItem('whatsapp_instance_token', data.token);
+      
+      return {
+        id: data.instance.id,
+        instanceName: data.instance.name,
+        status: data.instance.status,
+        token: data.token
+      };
+    } catch (error) {
+      console.error("Erro ao criar instância:", error);
+      throw error;
+    }
+  },
+
+  // Conectar uma instância existente (gera QR code)
+  async connectInstance(instanceToken: string): Promise<any> {
+    try {
+      // Seguindo exatamente a documentação da API uazapiGO
+      // Não passamos o parâmetro "phone" para obter o QR code
+      const response = await fetch(`${API_URL}/instance/connect`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "token": instanceToken
+        },
+        // Enviamos um objeto vazio conforme a documentação
+        body: JSON.stringify({})
+      });
+
+      // Verifica se a resposta está OK
+      if (!response.ok) {
+        throw new Error(`Erro ao conectar instância: ${response.status}`);
+      }
+
+      // Retorna os dados exatamente como vieram da API
+      return await response.json();
+    } catch (error) {
+      console.error("Erro ao conectar instância:", error);
+      throw error;
+    }
+  },
+
+  // Obter o status atual da instância
+  async getInstanceStatus(instanceToken: string): Promise<any> {
+    try {
+      const response = await fetch(`${API_URL}/instance/status`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "token": instanceToken
+        }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("Erro ao verificar status da instância:", errorData);
+        throw new Error(errorData.message || "Não foi possível verificar o status da instância");
+      }
+
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error("Erro ao verificar status da instância:", error);
+      throw error;
+    }
+  },
+
+  // Desconectar uma instância
+  async disconnectInstance(instanceToken: string): Promise<any> {
+    try {
+      const response = await fetch(`${API_URL}/instance/logout`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          "token": instanceToken
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Erro ao desconectar instância: ${response.statusText}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error("Erro ao desconectar instância:", error);
+      throw error;
+    }
+  },
+
+  // Obter todas as instâncias (apenas para admin)
+  async getAllInstances(): Promise<WhatsAppInstance[]> {
+    try {
+      const response = await fetch(`${API_URL}/instance/all`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "admintoken": ADMIN_TOKEN
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Erro ao obter instâncias: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      return data.instances.map((instance: any) => ({
+        id: instance.id,
+        instanceName: instance.name,
+        status: instance.status,
+        user: {
+          name: instance.user?.name,
+          id: instance.user?.id,
+          profilePictureUrl: instance.user?.profilePictureUrl
+        }
+      }));
+    } catch (error) {
+      console.error("Erro ao obter instâncias:", error);
+      throw error;
+    }
+  },
+
+  // Encontrar instância por usuário 
+  async findInstanceByUserId(userId: string): Promise<WhatsAppInstance | null> {
+    try {
+      const instances = await this.getAllInstances();
+      // Encontra a instância correspondente ao ID do usuário (armazenado no adminField01)
+      const userInstance = instances.find(instance => instance.id.includes(userId));
+      return userInstance || null;
+    } catch (error) {
+      console.error("Erro ao buscar instância do usuário:", error);
+      return null;
+    }
+  }
+};

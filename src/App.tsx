@@ -1,5 +1,4 @@
 import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
@@ -40,6 +39,7 @@ const Usuarios = lazy(() => import("./pages/Usuarios"));
 const PDV = lazy(() => import("./pages/PDV"));
 const PublicBooking = lazy(() => import("./pages/PublicBooking"));
 const MessagingPage = lazy(() => import("./pages/MessagingPage"));
+const ProfileInfo = lazy(() => import("./pages/ProfileInfo"));
 
 const queryClient = new QueryClient();
 
@@ -53,8 +53,8 @@ const App = () => {
       <AppStateProvider>
         <TooltipProvider>
           <SpecialtiesProvider>
+            {/* Mantendo apenas um Toaster por aplicação */}
             <Toaster />
-            <Sonner />
             <BrowserRouter>
               <Routes>
                 {/* Auth routes */}
@@ -179,6 +179,13 @@ const App = () => {
                   <AppLayout>
                     <Suspense fallback={<Loading />}>
                       <MessagingPage />
+                    </Suspense>
+                  </AppLayout>
+                } />
+                <Route path="/profile-info" element={
+                  <AppLayout>
+                    <Suspense fallback={<Loading />}>
+                      <ProfileInfo />
                     </Suspense>
                   </AppLayout>
                 } />
