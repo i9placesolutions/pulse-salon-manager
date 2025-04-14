@@ -39,29 +39,31 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "@/components/ui/use-toast";
+import { createWhatsAppInstance, getInstanceStatus } from "@/services/whatsapp/api";
 
 // Interface para representar os dados da instância do WhatsApp
 interface WhatsAppInstance {
   id: string;
   token: string;
   status: string;
-  paircode: string;
-  qrcode: string;
+  paircode?: string;
+  qrcode?: string;
   name: string;
-  profileName: string;
-  profilePicUrl: string;
-  isBusiness: boolean;
-  plataform: string;
-  systemName: string;
-  owner: string;
-  lastDisconnect: string;
-  lastDisconnectReason: string;
-  adminField01: string;
-  openai_apikey: string;
-  chatbot_enabled: boolean;
-  chatbot_ignoreGroups: boolean;
-  chatbot_stopConversation: string;
-  chatbot_stopMinutes: number;
+  profileName?: string;
+  profilePicUrl?: string;
+  isBusiness?: boolean;
+  plataform?: string;
+  systemName?: string;
+  owner?: string;
+  lastDisconnect?: string;
+  lastDisconnectReason?: string;
+  adminField01?: string;
+  adminField02?: string;
+  openai_apikey?: string;
+  chatbot_enabled?: boolean;
+  chatbot_ignoreGroups?: boolean;
+  chatbot_stopConversation?: string;
+  chatbot_stopMinutes?: number;
   created: string;
   updated: string;
 }
@@ -74,7 +76,7 @@ interface ApiResponse {
   loggedIn: boolean;
   name: string;
   token: string;
-  info: string;
+  info?: string;
 }
 
 // Interface para a resposta da API de conexão
@@ -135,12 +137,18 @@ export function ConfigWhatsApp() {
     // Verificar instância principal
     checkMainInstance();
     
-    // Verificar se há um token do estabelecimento salvo no localStorage
-    const savedToken = localStorage.getItem('whatsapp_instance_token');
+    // Verificar se há uma instância conectada a partir do localStorage
+  }, []);
+  
+  useEffect(() => {
+    const token = localStorage.getItem('whatsapp_instance_token');
     
-    if (savedToken) {
-      setInstanceToken(savedToken);
-      checkConnectedInstance(savedToken);
+    if (token) {
+      setInstanceToken(token);
+      checkConnectedInstance(token);
+    } else {
+      // Se não houver token, definir explicitamente que não há instância conectada
+      setHasConnectedInstance(false);
     }
   }, []);
   
@@ -236,17 +244,10 @@ export function ConfigWhatsApp() {
     setIsCheckingStatus(true);
     
     try {
-      const response = await fetch(`${SERVER_URL}/instance/status`, {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json',
-          'token': instanceToken
-        }
-      });
+      // Usar o serviço de API para verificar o status da instância
+      const data = await getInstanceStatus(instanceToken);
       
-      const data = await response.json();
-      
-      if (response.ok && data.instance && data.instance.status === 'connected') {
+      if (data.instance && data.instance.status === 'connected') {
         // Se a instância estiver conectada, fechar o modal e atualizar os dados
         setIsQrModalOpen(false);
         setConnectSuccess(true);
@@ -279,9 +280,21 @@ export function ConfigWhatsApp() {
           window.clearInterval(statusCheckIntervalRef.current);
           statusCheckIntervalRef.current = null;
         }
+        
+        // Notificar o usuário
+        toast({
+          title: "WhatsApp conectado",
+          description: `Conexão estabelecida com sucesso para ${data.instance.profileName || 'sua conta do WhatsApp'}`,
+          variant: "default"
+        });
       }
     } catch (err) {
       console.error('Erro ao verificar status:', err);
+      toast({
+        title: "Erro ao verificar status",
+        description: err instanceof Error ? err.message : 'Erro desconhecido ao verificar status',
+        variant: "destructive"
+      });
     } finally {
       setIsCheckingStatus(false);
     }
@@ -467,33 +480,35 @@ export function ConfigWhatsApp() {
       // Preparar os dados para a requisição
       const requestData = {
         name,
-        systemName
+        systemName,
+        adminField01: "custom-metadata-1",
+        adminField02: "custom-metadata-2"
       };
       
-      // Fazer a chamada à API
-      const response = await fetch(`${SERVER_URL}/instance/init`, {
-        method: 'POST',
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-          'admintoken': adminToken
-        },
-        body: JSON.stringify(requestData)
-      });
-      
-      const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.message || 'Erro ao criar instância');
-      }
+      // Usar o serviço de API para criar a instância
+      const data = await createWhatsAppInstance(requestData);
       
       // Configurar o estado de sucesso e armazenar os dados retornados
       setSuccess(true);
       setInstanceData(data);
       setInstanceToken(data.token);
+      
+      // Informar o usuário sobre o sucesso
+      toast({
+        title: "Instância criada com sucesso",
+        description: `A instância "${data.name}" foi criada com sucesso. Token: ${data.token.substring(0, 8)}...`,
+        variant: "default",
+      });
     } catch (err) {
       console.error('Erro ao criar instância:', err);
       setError(err instanceof Error ? err.message : 'Erro desconhecido ao criar instância');
+      
+      // Informar o usuário sobre o erro
+      toast({
+        title: "Erro ao criar instância",
+        description: err instanceof Error ? err.message : 'Erro desconhecido ao criar instância',
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -726,10 +741,13 @@ export function ConfigWhatsApp() {
       )}
       
       {(!hasConnectedInstance || !connectedInstance) && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Conexão do WhatsApp do Estabelecimento</CardTitle>
-            <CardDescription>
+        <Card className="bg-white shadow-lg border-green-100">
+          <CardHeader className="bg-gradient-to-r from-green-50 to-green-100 border-b border-green-100">
+            <CardTitle className="flex items-center text-green-800">
+              <MessageSquare className="h-5 w-5 mr-2 text-green-700" />
+              Conexão do WhatsApp do Estabelecimento
+            </CardTitle>
+            <CardDescription className="text-green-700">
               Configure a integração com o WhatsApp para envio de mensagens automáticas aos seus clientes
             </CardDescription>
           </CardHeader>
@@ -778,7 +796,7 @@ export function ConfigWhatsApp() {
             <Button 
               onClick={createInstance} 
               disabled={isLoading || !name}
-              className="w-full"
+              className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white border-0 shadow-md hover:shadow-lg transition-all duration-200"
             >
               {isLoading ? (
                 <>
@@ -786,7 +804,10 @@ export function ConfigWhatsApp() {
                   Processando...
                 </>
               ) : (
-                'Criar Instância'
+                <>
+                  <MessageSquare className="mr-2 h-5 w-5" />
+                  Criar Instância do WhatsApp
+                </>
               )}
             </Button>
           </CardFooter>

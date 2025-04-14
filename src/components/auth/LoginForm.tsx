@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
 import { Mail, Lock, Loader2, LogIn } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
+import { sendLoginNotification } from "@/services/whatsapp/api";
 
 const LoginForm = () => {
   const [email, setEmail] = useState("");
@@ -13,6 +14,49 @@ const LoginForm = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  // Função para buscar os dados do estabelecimento
+  const fetchEstablishmentData = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("establishment, whatsapp")
+        .eq("id", userId)
+        .single();
+
+      if (error) {
+        console.error("Erro ao buscar dados do estabelecimento:", error);
+        return null;
+      }
+
+      return data;
+    } catch (error) {
+      console.error("Erro ao buscar dados do estabelecimento:", error);
+      return null;
+    }
+  };
+
+  // Função para enviar notificação de login
+  const sendLoginAlert = async (userId: string) => {
+    try {
+      // Buscar dados do estabelecimento
+      const establishmentData = await fetchEstablishmentData(userId);
+      
+      if (establishmentData && establishmentData.whatsapp && establishmentData.establishment) {
+        // Remover caracteres não numéricos do WhatsApp
+        const phoneNumber = establishmentData.whatsapp.replace(/\D/g, '');
+        
+        // Adicionar o prefixo do país se não tiver
+        const formattedPhone = phoneNumber.startsWith('55') ? phoneNumber : `55${phoneNumber}`;
+        
+        // Enviar notificação (não aguardamos a conclusão)
+        sendLoginNotification(establishmentData.establishment, formattedPhone);
+      }
+    } catch (error) {
+      console.error("Erro ao enviar notificação de login:", error);
+      // Não bloqueamos o fluxo principal em caso de erro
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,6 +77,9 @@ const LoginForm = () => {
           description: "Você será redirecionado para o dashboard.",
           variant: "success"
         });
+        
+        // Enviar notificação de login via WhatsApp
+        sendLoginAlert(data.user.id);
         
         // Redirecionar para o dashboard
         setTimeout(() => {
