@@ -20,9 +20,44 @@ export const useStockManagement = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
-  // Carregar dados iniciais
+  // Carregar dados iniciais e configurar assinaturas em tempo real
   useEffect(() => {
     loadInitialData();
+    
+    // Configurar assinaturas em tempo real
+    const productsSubscription = supabase
+      .channel('stock-products-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, (payload) => {
+        console.log('Mudança detectada em produtos:', payload);
+        // Recarregar produtos
+        loadProducts();
+      })
+      .subscribe();
+      
+    const suppliersSubscription = supabase
+      .channel('stock-suppliers-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'suppliers' }, (payload) => {
+        console.log('Mudança detectada em fornecedores:', payload);
+        // Recarregar fornecedores
+        loadSuppliers();
+      })
+      .subscribe();
+      
+    const movementsSubscription = supabase
+      .channel('stock-movements-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'stock_movements' }, (payload) => {
+        console.log('Mudança detectada em movimentações de estoque:', payload);
+        // Recarregar movimentações
+        loadStockMovements();
+      })
+      .subscribe();
+    
+    // Limpeza das assinaturas quando o componente for desmontado
+    return () => {
+      productsSubscription.unsubscribe();
+      suppliersSubscription.unsubscribe();
+      movementsSubscription.unsubscribe();
+    };
   }, []);
 
   // Atualizar métricas quando produtos mudam
@@ -34,30 +69,11 @@ export const useStockManagement = () => {
   const loadInitialData = async () => {
     setIsLoading(true);
     try {
-      // Carregar produtos
-      const { data: productsData, error: productsError } = await supabase
-        .from('products')
-        .select('*');
-        
-      if (productsError) throw productsError;
-      setProducts(productsData || []);
-
-      // Carregar fornecedores
-      const { data: suppliersData, error: suppliersError } = await supabase
-        .from('suppliers')
-        .select('*');
-        
-      if (suppliersError) throw suppliersError;
-      setSuppliers(suppliersData || []);
-
-      // Carregar movimentações de estoque
-      const { data: movementsData, error: movementsError } = await supabase
-        .from('stock_movements')
-        .select('*')
-        .order('date', { ascending: false });
-        
-      if (movementsError) throw movementsError;
-      setStockMovements(movementsData || []);
+      await Promise.all([
+        loadProducts(),
+        loadSuppliers(),
+        loadStockMovements()
+      ]);
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
       toast({
@@ -67,6 +83,55 @@ export const useStockManagement = () => {
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+  
+  // Função para carregar produtos
+  const loadProducts = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .select('*');
+        
+      if (error) throw error;
+      setProducts(data || []);
+      return data;
+    } catch (error) {
+      console.error('Erro ao carregar produtos:', error);
+      throw error;
+    }
+  };
+  
+  // Função para carregar fornecedores
+  const loadSuppliers = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('suppliers')
+        .select('*');
+        
+      if (error) throw error;
+      setSuppliers(data || []);
+      return data;
+    } catch (error) {
+      console.error('Erro ao carregar fornecedores:', error);
+      throw error;
+    }
+  };
+  
+  // Função para carregar movimentações de estoque
+  const loadStockMovements = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('stock_movements')
+        .select('*')
+        .order('date', { ascending: false });
+        
+      if (error) throw error;
+      setStockMovements(data || []);
+      return data;
+    } catch (error) {
+      console.error('Erro ao carregar movimentações de estoque:', error);
+      throw error;
     }
   };
 
@@ -332,6 +397,10 @@ export const useStockManagement = () => {
     stockMovements,
     metrics,
     isLoading,
+    loadInitialData,
+    loadProducts,
+    loadSuppliers,
+    loadStockMovements,
     addProduct,
     updateProduct,
     deleteProduct,

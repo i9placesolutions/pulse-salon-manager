@@ -49,6 +49,7 @@ import { useToast } from "@/hooks/use-toast";
 
 export default function Usuarios() {
   const { toast } = useToast();
+  const [realtimeSubscriptions, setRealtimeSubscriptions] = useState<any[]>([]);
   const { 
     users, 
     roles, 
@@ -65,9 +66,88 @@ export default function Usuarios() {
     getAvailablePermissions,
     hasPermission,
     updateRolePermissions,
-    fetchUsers
+    fetchUsers,
+    fetchRoles,
+    fetchSpecialties
   } = useUserManagement();
 
+  // Configurar assinaturas em tempo real
+  useEffect(() => {
+    // Função para configurar todas as assinaturas
+    const setupRealtimeSubscriptions = () => {
+      // Limpar assinaturas anteriores
+      realtimeSubscriptions.forEach(subscription => {
+        if (subscription) subscription.unsubscribe();
+      });
+      
+      console.log('Configurando assinaturas em tempo real para módulo de Usuários');
+
+      // Assinatura para perfis de usuários
+      const profilesSubscription = supabase
+        .channel('profiles-changes')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, () => {
+          console.log('Mudança detectada na tabela profiles');
+          fetchUsers();
+        })
+        .subscribe();
+      
+      // Assinatura para funções de usuários
+      const rolesSubscription = supabase
+        .channel('user-roles-changes')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'user_roles' }, () => {
+          console.log('Mudança detectada na tabela user_roles');
+          fetchRoles();
+        })
+        .subscribe();
+      
+      // Assinatura para especialidades
+      const specialtiesSubscription = supabase
+        .channel('user-specialties-changes')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'specialties' }, () => {
+          console.log('Mudança detectada na tabela specialties');
+          fetchSpecialties();
+        })
+        .subscribe();
+      
+      // Assinatura para atribuições de funções
+      const roleAssignmentsSubscription = supabase
+        .channel('role-assignments-changes')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'user_role_assignments' }, () => {
+          console.log('Mudança detectada na tabela user_role_assignments');
+          fetchUsers();
+        })
+        .subscribe();
+      
+      // Assinatura para especialidades de usuários
+      const userSpecialtiesSubscription = supabase
+        .channel('user-specialties-assignments-changes')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'user_specialties' }, () => {
+          console.log('Mudança detectada na tabela user_specialties');
+          fetchUsers();
+        })
+        .subscribe();
+      
+      // Salvar todas as assinaturas para limpeza posterior
+      setRealtimeSubscriptions([
+        profilesSubscription,
+        rolesSubscription,
+        specialtiesSubscription,
+        roleAssignmentsSubscription,
+        userSpecialtiesSubscription
+      ]);
+    };
+    
+    // Configurar assinaturas
+    setupRealtimeSubscriptions();
+    
+    // Limpar assinaturas ao desmontar
+    return () => {
+      realtimeSubscriptions.forEach(subscription => {
+        if (subscription) subscription.unsubscribe();
+      });
+    };
+  }, []);
+  
   // Estados para o modal de novo usuário
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<UserProfile | null>(null);
@@ -387,9 +467,7 @@ export default function Usuarios() {
       
       if (error) throw error;
       
-      // Atualizar a lista de usuários
-      fetchUsers();
-      
+      // A lista de usuários será atualizada automaticamente pelo listener em tempo real
       toast({
         title: "Usuário excluído",
         description: "O usuário foi excluído com sucesso",

@@ -28,6 +28,59 @@ export const useFinancialManagement = () => {
   // Carregar dados iniciais
   useEffect(() => {
     loadAllData();
+    
+    // Configurar assinaturas em tempo real
+    const paymentsSubscription = supabase
+      .channel('payments-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'payments' }, () => {
+        loadPayments();
+      })
+      .subscribe();
+      
+    const professionalsSubscription = supabase
+      .channel('professionals-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'professionals' }, () => {
+        loadProfessionals();
+      })
+      .subscribe();
+      
+    const accountsReceivableSubscription = supabase
+      .channel('accounts-receivable-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'accounts_receivable' }, () => {
+        loadAccountsReceivable();
+      })
+      .subscribe();
+      
+    const expensesSubscription = supabase
+      .channel('expenses-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'expenses' }, () => {
+        loadExpenses();
+      })
+      .subscribe();
+      
+    const cashFlowSubscription = supabase
+      .channel('cash-flow-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'cash_flow' }, () => {
+        loadCashFlow();
+      })
+      .subscribe();
+      
+    const taxRecordsSubscription = supabase
+      .channel('tax-records-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'tax_records' }, () => {
+        loadTaxRecords();
+      })
+      .subscribe();
+    
+    // Limpeza das assinaturas quando o componente for desmontado
+    return () => {
+      paymentsSubscription.unsubscribe();
+      professionalsSubscription.unsubscribe();
+      accountsReceivableSubscription.unsubscribe();
+      expensesSubscription.unsubscribe();
+      cashFlowSubscription.unsubscribe();
+      taxRecordsSubscription.unsubscribe();
+    };
   }, []);
 
   // Função principal para carregar todos os dados financeiros
@@ -634,8 +687,70 @@ export const useFinancialManagement = () => {
 
   // Atualizar fluxo de caixa
   const updateCashFlow = async (items: CashFlow[]) => {
-    setCashFlow(items);
-    // Aqui você poderia implementar uma sincronização com o banco de dados se necessário
+    setIsLoading(true);
+    try {
+      // Para cada item do fluxo de caixa, verificamos se é necessário atualizar ou criar
+      for (const item of items) {
+        if (item.id) {
+          // Atualizar item existente
+          const { error } = await supabase
+            .from('cash_flow')
+            .update({
+              date: item.date,
+              type: item.type,
+              category: item.category,
+              description: item.description,
+              value: item.value,
+              status: item.status,
+              payment_method: item.paymentMethod,
+              related_document: item.relatedDocument,
+              is_recurring: item.isRecurring,
+              updated_at: new Date()
+            })
+            .eq('id', item.id);
+            
+          if (error) throw error;
+        } else {
+          // Criar novo item
+          await addCashFlowItem(item);
+        }
+      }
+      
+      // Identificar itens que foram removidos (estão no banco mas não na lista atualizada)
+      const { data, error } = await supabase
+        .from('cash_flow')
+        .select('id');
+        
+      if (error) throw error;
+      
+      if (data) {
+        const currentIds = data.map(item => item.id);
+        const updatedIds = items.filter(item => item.id).map(item => item.id);
+        
+        // IDs que existem no banco mas não na lista atualizada
+        const idsToRemove = currentIds.filter(id => !updatedIds.includes(id));
+        
+        // Remover itens excluídos
+        if (idsToRemove.length > 0) {
+          const { error: deleteError } = await supabase
+            .from('cash_flow')
+            .delete()
+            .in('id', idsToRemove);
+            
+          if (deleteError) throw deleteError;
+        }
+      }
+      
+      // Atualizar o estado local com os itens atualizados
+      setCashFlow(items);
+      
+      return true;
+    } catch (error) {
+      console.error("Erro ao atualizar fluxo de caixa:", error);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Atualizar status de um imposto

@@ -131,6 +131,8 @@ export default function EstablishmentProfile() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [devices, setDevices] = useState<any[]>([]);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [realtimeSubscription, setRealtimeSubscription] = useState<any>(null);
+  const [userId, setUserId] = useState<string>("");
   const [isLoadingDevices, setIsLoadingDevices] = useState(false);
 
   // Função para processar os dados do perfil
@@ -170,6 +172,56 @@ export default function EstablishmentProfile() {
     fetchDevices();
   };
 
+  // Função para configurar assinatura em tempo real
+  const setupRealtimeSubscription = (uid: string) => {
+    if (!uid || uid.trim() === "") {
+      console.log("ID de usuário inválido para assinatura:", uid);
+      return;
+    }
+    
+    // Cancelar assinatura anterior se existir
+    if (realtimeSubscription) {
+      realtimeSubscription.unsubscribe();
+    }
+    
+    // Configurar nova assinatura para a tabela profiles
+    const subscription = supabase
+      .channel('profile-changes')
+      .on('postgres_changes', 
+        { 
+          event: '*', 
+          schema: 'public', 
+          table: 'profiles',
+          filter: `id=eq.${uid}` 
+        }, 
+        (payload) => {
+          console.log('Alteração em tempo real detectada:', payload);
+          if (payload.new) {
+            // Processar os dados do perfil atualizados
+            processProfileData(payload.new);
+            toast({
+              title: "Perfil atualizado",
+              description: "As informações foram atualizadas em tempo real.",
+            });
+          }
+        }
+      )
+      .subscribe();
+      
+    setRealtimeSubscription(subscription);
+    console.log("Assinatura em tempo real configurada para o perfil");
+  };
+  
+  // Limpar a assinatura quando o componente for desmontado
+  useEffect(() => {
+    return () => {
+      if (realtimeSubscription) {
+        console.log("Cancelando assinatura em tempo real");
+        realtimeSubscription.unsubscribe();
+      }
+    };
+  }, [realtimeSubscription]);
+
   // Buscar os dados do perfil do usuário logado
   useEffect(() => {
     const fetchProfileData = async () => {
@@ -199,14 +251,30 @@ export default function EstablishmentProfile() {
           return;
         }
         
-        const userId = authData.user.id;
-        console.log("ID do usuário autenticado:", userId);
+        const uid = authData.user.id;
+        console.log("ID do usuário autenticado:", uid);
+        
+        // Verificar se o ID é válido antes de prosseguir
+        if (!uid || uid.trim() === "") {
+          console.error("ID de usuário inválido ou vazio");
+          toast({
+            title: "Erro de autenticação",
+            description: "Não foi possível identificar seu usuário corretamente. Tente fazer login novamente.",
+            variant: "destructive"
+          });
+          return;
+        }
+        
+        setUserId(uid);
+        
+        // Configurar assinatura em tempo real para o perfil
+        setupRealtimeSubscription(uid);
         
         // Buscar os dados do perfil com mais detalhes de erro
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
           .select('*')
-          .eq('id', userId)
+          .eq('id', uid) // Usar o uid validado acima
           .single();
           
         if (profileError) {
@@ -219,7 +287,7 @@ export default function EstablishmentProfile() {
           const { count, error: countError } = await supabase
             .from('profiles')
             .select('*', { count: 'exact', head: true })
-            .eq('id', userId);
+            .eq('id', uid); // Usar o uid validado acima
             
           if (countError) {
             console.error("Erro ao verificar existência do perfil:", countError);
@@ -238,11 +306,12 @@ export default function EstablishmentProfile() {
             console.log("Perfil não encontrado, tentando criar um novo...");
             
             const newProfile = {
-              id: userId,
+              id: uid, // Usar o uid validado acima
               name: authData.user.user_metadata?.name || "Meu Estabelecimento",
               email: authData.user.email,
               role: "user",
-              created_at: new Date().toISOString()
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
             };
             
             const { error: insertError } = await supabase
@@ -257,7 +326,7 @@ export default function EstablishmentProfile() {
               const { data: newProfileData } = await supabase
                 .from('profiles')
                 .select('*')
-                .eq('id', userId)
+                .eq('id', uid) // Usar o uid validado acima
                 .single();
                 
               if (newProfileData) {
@@ -440,9 +509,12 @@ export default function EstablishmentProfile() {
       
       // Atualizar o perfil no banco
       const { error } = await supabase
-        .from('profiles')
-        .update(profileUpdate)
-        .eq('id', user.id);
+          .from('profiles')
+          .update({
+            ...profileUpdate,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', user.id);
         
       if (error) {
         console.error("Erro retornado pelo Supabase:", error);
@@ -454,6 +526,18 @@ export default function EstablishmentProfile() {
         description: "As informações do seu estabelecimento foram atualizadas.",
         variant: "success"
       });
+      
+      // Recarregar os dados para garantir sincronização
+      // Não é estritamente necessário devido ao realtime, mas garante consistência
+      const { data: refreshedData } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+        
+      if (refreshedData) {
+        processProfileData(refreshedData);
+      }
     } catch (error) {
       console.error("Erro ao salvar perfil:", error);
       toast({
