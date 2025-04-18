@@ -11,6 +11,9 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { LoginModal, UserData } from "@/components/public-booking/LoginModal";
+import { validateData, Validators } from "@/lib/dataValidation";
+import { addCSRFToken, verifyCSRFToken } from "@/lib/csrfProtection";
+import { supabase } from "@/lib/supabaseClient";
 
 // Tipos
 interface Service {
@@ -303,13 +306,87 @@ export default function PublicBooking() {
 
   const handleConfirmBooking = async () => {
     setLoading(true);
+    setError(null);
+    
     try {
-      // Simulação de uma requisição de agendamento
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      // Validar todos os dados do agendamento antes de enviar
+      if (!bookingDetails.service || !bookingDetails.professional || 
+          !bookingDetails.date || !bookingDetails.timeSlot || !bookingDetails.clientInfo) {
+        throw new Error("Informações de agendamento incompletas. Por favor, verifique todos os campos.");
+      }
+      
+      // Validação das informações do cliente
+      const clientInfoSchema = {
+        name: [Validators.required("Nome é obrigatório")],
+        phone: [Validators.required("Telefone é obrigatório"), Validators.phone("Telefone inválido")],
+        email: [Validators.email("E-mail inválido")],
+        acceptTerms: [Validators.required("É necessário aceitar os termos")]
+      };
+      
+      const clientErrors = validateData(bookingDetails.clientInfo, clientInfoSchema);
+      if (Object.keys(clientErrors).length > 0) {
+        const errorMessages = Object.values(clientErrors)
+          .flat()
+          .join(", ");
+        throw new Error(`Dados inválidos: ${errorMessages}`);
+      }
+      
+      // Sanitizar dados para prevenir XSS
+      const sanitizedNotes = bookingDetails.clientInfo.notes 
+        ? Validators.sanitize.text(bookingDetails.clientInfo.notes)
+        : "";
+      
+      const sanitizedClientInfo = {
+        ...bookingDetails.clientInfo,
+        name: Validators.sanitize.text(bookingDetails.clientInfo.name),
+        email: bookingDetails.clientInfo.email ? Validators.sanitize.text(bookingDetails.clientInfo.email) : "",
+        phone: Validators.sanitize.phone(bookingDetails.clientInfo.phone),
+        notes: sanitizedNotes
+      };
+      
+      // Usar proteção CSRF
+      await verifyCSRFToken(async () => {
+        // Criar objeto com dados do agendamento
+        const appointmentData = {
+          establishment_id: establishment?.id,
+          client_id: userData?.id || null,
+          client_name: sanitizedClientInfo.name,
+          client_phone: sanitizedClientInfo.phone,
+          client_email: sanitizedClientInfo.email,
+          professional_id: bookingDetails.professional.id,
+          professional_name: bookingDetails.professional.name,
+          service_id: bookingDetails.service.id,
+          service_name: bookingDetails.service.name,
+          date: bookingDetails.date.toISOString().split('T')[0],
+          start_time: bookingDetails.timeSlot.time,
+          duration: bookingDetails.service.duration,
+          price: bookingDetails.service.price,
+          notes: sanitizedClientInfo.notes,
+          status: "pending",
+          created_at: new Date().toISOString()
+        };
+        
+        // Adicionar token CSRF
+        const secureAppointmentData = addCSRFToken(appointmentData);
+        
+        // Aqui seria feita a chamada real para API
+        // Por enquanto, simulamos com um timeout
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+        
+        // Em produção, você faria algo como:
+        // const { data, error } = await supabase
+        //   .from('appointments')
+        //   .insert(secureAppointmentData)
+        //   .single();
+        
+        // if (error) throw error;
+      });
+      
       setIsBookingComplete(true);
-      setLoading(false);
     } catch (err) {
-      setError("Ocorreu um erro ao confirmar seu agendamento. Tente novamente.");
+      console.error("Erro ao confirmar agendamento:", err);
+      setError(err instanceof Error ? err.message : "Ocorreu um erro ao confirmar seu agendamento. Tente novamente.");
+    } finally {
       setLoading(false);
     }
   };

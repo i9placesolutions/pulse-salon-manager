@@ -18,8 +18,8 @@ interface Cliente {
   id: string;
   nome: string;
   cashbackDisponivel: number;
-  cupons: { id: string; descricao: string; valor: number }[];
-  ultimaVisita: string;
+  cupons?: { id: string; descricao: string; valor: number }[];
+  ultimaVisita?: string;
 }
 
 interface Beneficio {
@@ -118,7 +118,7 @@ export function BeneficiosClienteModal({
         valor: valor
       };
     } else if (tipoBeneficio === "cupom" && cupomSelecionado) {
-      const cupom = cliente.cupons.find(c => c.id === cupomSelecionado);
+      const cupom = cliente.cupons?.find(c => c.id === cupomSelecionado);
       if (cupom) {
         beneficio = {
           tipo: "cupom",
@@ -235,7 +235,7 @@ export function BeneficiosClienteModal({
                       onValueChange={setCupomSelecionado}
                       className="space-y-2"
                     >
-                      {cliente.cupons.map((cupom) => (
+                      {cliente.cupons?.map((cupom) => (
                         <div key={cupom.id} className="flex items-center space-x-2 p-2 rounded border border-blue-100">
                           <RadioGroupItem value={cupom.id} id={`cupom-${cupom.id}`} />
                           <Label 

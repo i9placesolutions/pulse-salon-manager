@@ -9,6 +9,9 @@ export interface Professional {
   hiringDate: string;
   experienceLevel: 'beginner' | 'intermediate' | 'expert';
   status: 'active' | 'inactive';
+  schedule?: {
+    [key: string]: { start: string; end: string };
+  };
   totalAppointments: number;
   totalCommission: number;
   averageMonthlyRevenue: number;

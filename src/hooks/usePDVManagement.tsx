@@ -16,7 +16,7 @@ export interface Cliente {
   nome: string;
   telefone?: string;
   email?: string;
-  cashbackDisponivel?: number;
+  cashbackDisponivel: number;
   cashback?: any[];
   cupons?: any[];
   ultimaVisita?: string;

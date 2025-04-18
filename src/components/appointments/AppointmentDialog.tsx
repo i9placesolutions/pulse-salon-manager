@@ -40,7 +40,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useToast } from "@/components/ui/use-toast";
 // Definindo interface local para Professional com a propriedade schedule
-interface Professional {
+interface AppointmentProfessional {
   id: number;
   name: string;
   specialties: string[];
@@ -162,7 +162,7 @@ export const AppointmentDialog = ({
   const { professionals: dbProfessionals = [] } = useProfessionalManagement();
   
   // Converter profissionais para o formato esperado pelo componente
-  const professionals: Professional[] = dbProfessionals.map(prof => {
+  const professionals: AppointmentProfessional[] = dbProfessionals.map(prof => {
     // Converter especialidades para string[] quando necessário
     const specialtiesAsStrings: string[] = Array.isArray(prof.specialties) 
       ? prof.specialties.map(spec => 

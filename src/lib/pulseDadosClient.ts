@@ -1,9 +1,12 @@
 import { createClient } from '@supabase/supabase-js';
 import { useState, useEffect } from 'react';
+import { addCSRFToken, verifyCSRFToken } from './csrfProtection';
+import { validateData, Validators } from './dataValidation';
+import { SecurityEventType, logSecurityEvent, monitorLoginAttempt, clearLoginAttempts } from '@/utils/securityMonitor';
 
 // Configuração do cliente Supabase para o banco pulsedados
-const pulseDadosUrl = 'https://wtpmedifsfbxctlssefd.supabase.co';
-const pulseDadosAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind0cG1lZGlmc2ZieGN0bHNzZWZkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQzMTMwNzUsImV4cCI6MjA1OTg4OTA3NX0.Mmro8vKbusSP_HNCqX9f5XlrotRbeA8-HIGvQE07mwU';
+const pulseDadosUrl = import.meta.env.VITE_SUPABASE_URL || 'https://wtpmedifsfbxctlssefd.supabase.co';
+const pulseDadosAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind0cG1lZGlmc2ZieGN0bHNzZWZkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQzMTMwNzUsImV4cCI6MjA1OTg4OTA3NX0.Mmro8vKbusSP_HNCqX9f5XlrotRbeA8-HIGvQE07mwU';
 
 export const pulseDadosClient = createClient(pulseDadosUrl, pulseDadosAnonKey);
 // Alias para compatibilidade com código existente
@@ -167,63 +170,91 @@ export async function getClientAppointmentHistory(clientId: string): Promise<Cli
  */
 export async function createOrUpdateClient(clientData: Partial<Client>, establishmentId: string): Promise<Client | null> {
   try {
+    // Valide os dados do cliente antes de processar
+    const validationSchema = {
+      name: [Validators.required('Nome é obrigatório')],
+      phone: [Validators.required('Telefone é obrigatório'), Validators.phone()],
+      email: [Validators.email()],
+      cpf: [Validators.cpf()]
+    };
+    
+    const errors = validateData(clientData, validationSchema);
+    if (Object.keys(errors).length > 0) {
+      console.error('Erro de validação:', errors);
+      throw new Error('Dados de cliente inválidos: ' + JSON.stringify(errors));
+    }
+    
+    // Sanitize os dados para prevenir XSS
+    if (clientData.name) clientData.name = Validators.sanitize.text(clientData.name);
+    if (clientData.email) clientData.email = Validators.sanitize.text(clientData.email);
+    
     // Normaliza o telefone (remove formatação)
     if (clientData.phone) {
-      clientData.phone = clientData.phone.replace(/\D/g, '');
+      clientData.phone = Validators.sanitize.phone(clientData.phone);
     }
     
-    // Verifica se cliente já existe
-    const { data: existingClient, error: searchError } = await pulseDadosClient
-      .from('clients')
-      .select('*')
-      .eq('phone', clientData.phone)
-      .eq('establishment_id', establishmentId)
-      .maybeSingle();
-    
-    if (searchError) {
-      console.error('Erro ao verificar cliente existente:', searchError);
-      return null;
-    }
-    
-    if (existingClient) {
-      // Atualiza cliente existente
-      const { data: updatedClient, error: updateError } = await pulseDadosClient
-        .from('clients')
-        .update({
-          ...clientData,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', existingClient.id)
-        .select()
-        .single();
+    // Utilize a proteção CSRF para a operação
+    return await verifyCSRFToken(async () => {
+      // Adiciona token CSRF aos dados
+      const secureData = addCSRFToken({
+        ...clientData,
+        establishment_id: establishmentId
+      });
       
-      if (updateError) {
-        console.error('Erro ao atualizar cliente:', updateError);
+      // Verifica se cliente já existe
+      const { data: existingClient, error: searchError } = await pulseDadosClient
+        .from('clients')
+        .select('*')
+        .eq('phone', secureData.phone)
+        .eq('establishment_id', establishmentId)
+        .maybeSingle();
+      
+      if (searchError) {
+        console.error('Erro ao verificar cliente existente:', searchError);
         return null;
       }
       
-      return updatedClient as Client;
-    } else {
-      // Cria novo cliente
-      const { data: newClient, error: createError } = await pulseDadosClient
-        .from('clients')
-        .insert({
-          ...clientData,
-          establishment_id: establishmentId,
-          status: 'active',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
-        .select()
-        .single();
-      
-      if (createError) {
-        console.error('Erro ao criar cliente:', createError);
-        return null;
+      if (existingClient) {
+        // Atualiza cliente existente
+        const { data: updatedClient, error: updateError } = await pulseDadosClient
+          .from('clients')
+          .update({
+            ...clientData,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', existingClient.id)
+          .select()
+          .single();
+        
+        if (updateError) {
+          console.error('Erro ao atualizar cliente:', updateError);
+          return null;
+        }
+        
+        return updatedClient as Client;
+      } else {
+        // Cria novo cliente
+        const { data: newClient, error: insertError } = await pulseDadosClient
+          .from('clients')
+          .insert({
+            ...clientData,
+            establishment_id: establishmentId,
+            status: 'active',
+            first_visit: new Date().toISOString().split('T')[0],
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          })
+          .select()
+          .single();
+        
+        if (insertError) {
+          console.error('Erro ao criar cliente:', insertError);
+          return null;
+        }
+        
+        return newClient as Client;
       }
-      
-      return newClient as Client;
-    }
+    });
   } catch (error) {
     console.error('Erro ao criar/atualizar cliente:', error);
     return null;
@@ -411,51 +442,165 @@ export async function getStockMovements() {
 }
 
 // Função para salvar agendamento
-export async function saveAppointment(appointmentData, services) {
-  const { data: appointment, error } = await supabase
-    .from('appointments')
-    .insert([appointmentData])
-    .select()
-    .single();
-
-  if (error) {
-    console.error('Erro ao salvar agendamento:', error);
-    return { error };
-  }
-
-  // Se tem serviços, salva também
-  if (services && services.length > 0) {
-    const servicesWithAppointmentId = services.map(service => ({
-      ...service,
-      appointment_id: appointment.id
-    }));
-
-    const { error: servicesError } = await supabase
-      .from('appointment_services')
-      .insert(servicesWithAppointmentId);
-
-    if (servicesError) {
-      console.error('Erro ao salvar serviços do agendamento:', servicesError);
-      return { error: servicesError };
+export async function saveAppointment(appointmentData: any, services: any[]): Promise<any> {
+  try {
+    // Validação dos dados do agendamento
+    const appointmentSchema = {
+      client_id: [Validators.required('Cliente é obrigatório')],
+      professional_id: [Validators.required('Profissional é obrigatório')],
+      date: [Validators.required('Data é obrigatória')],
+      start_time: [Validators.required('Horário inicial é obrigatório')]
+    };
+    
+    const errors = validateData(appointmentData, appointmentSchema);
+    if (Object.keys(errors).length > 0) {
+      console.error('Erro de validação do agendamento:', errors);
+      throw new Error('Dados de agendamento inválidos');
     }
+    
+    // Utiliza proteção CSRF
+    return await verifyCSRFToken(async () => {
+      // Sanitiza notas para prevenir XSS
+      if (appointmentData.notes) {
+        appointmentData.notes = Validators.sanitize.text(appointmentData.notes);
+      }
+      
+      // Adiciona token CSRF
+      const secureAppointmentData = addCSRFToken(appointmentData);
+      
+      const { data: appointment, error } = await pulseDadosClient
+        .from('appointments')
+        .upsert(secureAppointmentData)
+        .select()
+        .single();
+      
+      if (error) {
+        console.error('Erro ao salvar agendamento:', error);
+        return null;
+      }
+      
+      // Salva os serviços do agendamento
+      if (services && services.length > 0) {
+        // Remove serviços anteriores se estiver atualizando
+        if (appointmentData.id) {
+          await pulseDadosClient
+            .from('appointment_services')
+            .delete()
+            .eq('appointment_id', appointmentData.id);
+        }
+        
+        // Adiciona os novos serviços
+        const appointmentServices = services.map(service => ({
+          appointment_id: appointment.id,
+          service_id: service.id,
+          service_name: service.name,
+          duration: service.duration,
+          price: service.price
+        }));
+        
+        const { error: serviceError } = await pulseDadosClient
+          .from('appointment_services')
+          .insert(appointmentServices);
+        
+        if (serviceError) {
+          console.error('Erro ao salvar serviços do agendamento:', serviceError);
+        }
+      }
+      
+      return appointment;
+    });
+  } catch (error) {
+    console.error('Erro ao salvar agendamento:', error);
+    return null;
   }
-
-  return { appointment };
 }
 
-// Funções de autenticação
-export async function signIn(email, password) {
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email,
-    password
-  });
-
-  if (error) {
-    console.error('Erro ao fazer login:', error);
-    return { error };
+/**
+ * Funções de autenticação
+ */
+export async function signIn(email: string, password: string): Promise<any> {
+  try {
+    // Validação básica
+    if (!email || !password) {
+      console.error('Email e senha são obrigatórios');
+      return { error: { message: 'Email e senha são obrigatórios' } };
+    }
+    
+    // Verificar se não está bloqueado por muitas tentativas
+    if (monitorLoginAttempt(email)) {
+      logSecurityEvent({
+        type: SecurityEventType.LOGIN_FAILURE,
+        userEmail: email,
+        details: { reason: 'too_many_attempts' }
+      });
+      return { error: { message: 'Muitas tentativas de login. Tente novamente mais tarde.' } };
+    }
+    
+    // Validação de formato de email
+    const emailSchema = {
+      email: [Validators.email()]
+    };
+    
+    const errors = validateData({ email }, emailSchema);
+    if (Object.keys(errors).length > 0) {
+      console.error('Email inválido');
+      
+      // Registrar tentativa de login com email inválido
+      logSecurityEvent({
+        type: SecurityEventType.LOGIN_FAILURE,
+        userEmail: email,
+        details: { reason: 'invalid_email_format' }
+      });
+      
+      return { error: { message: 'Email inválido' } };
+    }
+    
+    // Verificar tentativa de injeção XSS no email
+    if (email.includes('<script') || email.includes('javascript:')) {
+      logSecurityEvent({
+        type: SecurityEventType.XSS_ATTEMPT,
+        details: { input: email }
+      });
+      return { error: { message: 'Formato de email inválido' } };
+    }
+    
+    // Usar proteção CSRF no login
+    return await verifyCSRFToken(async () => {
+      const { data, error } = await pulseDadosClient.auth.signInWithPassword({
+        email,
+        password
+      });
+      
+      if (error) {
+        console.error('Erro ao fazer login:', error);
+        
+        // Registrar falha de login
+        logSecurityEvent({
+          type: SecurityEventType.LOGIN_FAILURE,
+          userEmail: email,
+          details: { error: error.message }
+        });
+        
+        // Não revele detalhes específicos do erro para o usuário
+        return { error: { message: 'Falha na autenticação. Verifique suas credenciais.' } };
+      }
+      
+      // Login bem-sucedido - limpar contagem de tentativas
+      clearLoginAttempts(email);
+      
+      // Registrar login bem-sucedido
+      logSecurityEvent({
+        type: SecurityEventType.LOGIN_SUCCESS,
+        userId: data.user?.id,
+        userEmail: email
+      });
+      
+      return data;
+    });
+  } catch (error) {
+    console.error('Erro no processo de login:', error);
+    return { error: { message: 'Ocorreu um erro durante o login' } };
   }
-
-  return { user: data.user, session: data.session };
 }
 
 export async function signUp(email, password, userData) {

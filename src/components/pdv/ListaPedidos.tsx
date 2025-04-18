@@ -34,7 +34,6 @@ import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { RelatorioModal } from "./RelatorioModal";
 
 // Utilizando o tipo do hook
 import { Pedido } from "@/hooks/usePDVManagement";
@@ -51,7 +50,6 @@ export function ListaPedidos() {
   const [data, setData] = useState<Date | undefined>(new Date());
   const [status, setStatus] = useState<string>("");
   const [termoBusca, setTermoBusca] = useState<string>("");
-  const [showRelatorioModal, setShowRelatorioModal] = useState(false);
   
   // Hook para gerenciamento do PDV
   const {
@@ -62,8 +60,11 @@ export function ListaPedidos() {
   
   // Simulando carregamento dos dados
   const loadData = useCallback(async () => {
-    await buscarPedidos(data, status !== "todos" ? status : undefined);
-  }, [buscarPedidos, data, status]);
+    if (data) {
+      const dataFormatada = format(data, 'yyyy-MM-dd');
+      await buscarPedidos(dataFormatada);
+    }
+  }, [buscarPedidos, data]);
 
   useEffect(() => {
     loadData();
@@ -142,7 +143,8 @@ export function ListaPedidos() {
 
   // Função para gerar relatório
   const gerarRelatorio = () => {
-    setShowRelatorioModal(true);
+    // Funcionalidade de relatório removida
+    console.log('Funcionalidade de relatório removida');
   };
 
   // Mostrar carregamento
@@ -263,7 +265,7 @@ export function ListaPedidos() {
                     <TableRow key={pedido.id}>
                       <TableCell className="font-medium">{pedido.id}</TableCell>
                       <TableCell>
-                        {format(pedido.data, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                        {format(new Date(pedido.data), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
                       </TableCell>
                       <TableCell>{pedido.cliente.nome}</TableCell>
                       <TableCell>
@@ -343,12 +345,7 @@ export function ListaPedidos() {
           </div>
         </CardFooter>
       </Card>
-      
-      {/* Modal de Relatórios */}
-      <RelatorioModal 
-        isOpen={showRelatorioModal} 
-        onClose={() => setShowRelatorioModal(false)} 
-      />
+
     </div>
   );
 } 
