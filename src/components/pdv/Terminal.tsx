@@ -15,35 +15,17 @@ import {
   Gift, 
   Percent,
   ShoppingCart,
-  X
+  X,
+  Loader2
 } from "lucide-react";
 import { formatCurrency } from "@/utils/currency";
 import { SelecionarClienteModal } from "./SelecionarClienteModal";
 import { BeneficiosClienteModal } from "./BeneficiosClienteModal";
+import { usePDVManagement } from "@/hooks/usePDVManagement";
+import { useToast } from "@/components/ui/use-toast";
 
-// Tipos
-interface Item {
-  id: string;
-  nome: string;
-  tipo: "produto" | "servico";
-  preco: number;
-  quantidade: number;
-}
-
-interface Cliente {
-  id: string;
-  nome: string;
-  cashbackDisponivel: number;
-  cupons: { id: string; descricao: string; valor: number }[];
-  ultimaVisita: string;
-}
-
-interface Beneficio {
-  tipo: "cashback" | "cupom" | "desconto";
-  valor: number;
-  motivo?: string;
-  cupomId?: string;
-}
+// Usamos os tipos exportados pelo hook
+import { Item, Cliente, Beneficio } from "@/hooks/usePDVManagement";
 
 // Componente de item do pedido memoizado
 const ItemPedido = React.memo(({ 
@@ -145,26 +127,27 @@ const ResultadoBusca = React.memo(({
 });
 
 export function Terminal() {
-  const [termoBusca, setTermoBusca] = useState("");
+  const { toast } = useToast();
+  const [searchValue, setSearchValue] = useState('');
   const [itens, setItens] = useState<Item[]>([]);
-  const [cliente, setCliente] = useState<Cliente | null>(null);
+  const [resultadosBusca, setResultadosBusca] = useState<any[]>([]);
   const [showSelecionarCliente, setShowSelecionarCliente] = useState(false);
   const [showBeneficiosModal, setShowBeneficiosModal] = useState(false);
+  const [cliente, setCliente] = useState<Cliente | null>(null);
   const [beneficioAplicado, setBeneficioAplicado] = useState<Beneficio | null>(null);
   const [codigoPedido, setCodigoPedido] = useState("");
-
-  // Simula alguns produtos/serviços para adicionar
-  const produtosServicos = [
-    { id: "s1", nome: "Corte Feminino", tipo: "servico" as const, preco: 80 },
-    { id: "s2", nome: "Corte Masculino", tipo: "servico" as const, preco: 50 },
-    { id: "s3", nome: "Coloração", tipo: "servico" as const, preco: 150 },
-    { id: "s4", nome: "Escova", tipo: "servico" as const, preco: 60 },
-    { id: "s5", nome: "Manicure", tipo: "servico" as const, preco: 40 },
-    { id: "p1", nome: "Shampoo Profissional", tipo: "produto" as const, preco: 75 },
-    { id: "p2", nome: "Condicionador", tipo: "produto" as const, preco: 65 },
-    { id: "p3", nome: "Máscara Capilar", tipo: "produto" as const, preco: 90 },
-  ];
-
+  
+  // Hook para gerenciamento do PDV
+  const {
+    loading,
+    produtosServicos,
+    clientes,
+    buscarProdutosServicos,
+    buscarClientes,
+    salvarPedido,
+    processarPagamento
+  } = usePDVManagement();
+  
   // Gerar código único para o pedido quando é iniciado
   useEffect(() => {
     const data = new Date();
@@ -172,13 +155,26 @@ export function Terminal() {
     const random = Math.floor(1000 + Math.random() * 9000);
     setCodigoPedido(`PDV-${dataFormatada}-${random}`);
   }, []);
-
-  // Filtra produtos/serviços conforme a busca - Memoizado para evitar recálculos
-  const resultadosBusca = useMemo(() => {
-    return produtosServicos.filter(item => 
-      item.nome.toLowerCase().includes(termoBusca.toLowerCase())
-    );
-  }, [termoBusca]);
+  
+  // Carrega produtos e serviços ao inicializar
+  useEffect(() => {
+    buscarProdutosServicos();
+    buscarClientes();
+  }, [buscarProdutosServicos, buscarClientes]);
+  
+  // Busca produtos e serviços conforme digitação
+  useEffect(() => {
+    if (searchValue.trim().length >= 2) {
+      // Filtra os produtos e serviços já carregados
+      const resultados = produtosServicos.filter(
+        (item) => item.nome.toLowerCase().includes(searchValue.toLowerCase())
+      );
+      
+      setResultadosBusca(resultados);
+    } else {
+      setResultadosBusca([]);
+    }
+  }, [searchValue, produtosServicos]);
 
   // Calcular subtotal - Memoizado para evitar recálculos
   const subtotal = useMemo(() => {
@@ -218,7 +214,7 @@ export function Terminal() {
     });
     
     // Limpa o termo de busca após adicionar
-    setTermoBusca("");
+    setSearchValue("");
   }, []);
 
   // Handler para incrementar quantidade - useCallback para evitar recriação da função
@@ -265,6 +261,56 @@ export function Terminal() {
     setBeneficioAplicado(null);
   }, []);
 
+  // Handler para pesquisar - useCallback para evitar recriação da função
+  const handlePesquisar = useCallback((e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Se tiver apenas um resultado, adicionar automaticamente
+    if (resultadosBusca.length === 1) {
+      handleAdicionarItem(resultadosBusca[0]);
+    }
+  }, [resultadosBusca, handleAdicionarItem]);
+
+  // Exibe campo de busca e resultados
+  const renderBusca = () => {
+    return (
+      <div className="mb-4">
+        <form onSubmit={handlePesquisar}>
+          <div className="relative">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+            <Input
+              type="search"
+              placeholder="Buscar produtos e serviços..."
+              className="pl-9"
+              value={searchValue}
+              onChange={(e) => setSearchValue(e.target.value)}
+            />
+          </div>
+        </form>
+        
+        {resultadosBusca.length > 0 && (
+          <div className="mt-2">
+            <ScrollArea className="h-[200px]">
+              {resultadosBusca.map((item) => (
+                <ResultadoBusca
+                  key={item.id}
+                  item={item}
+                  onAdicionar={handleAdicionarItem}
+                />
+              ))}
+            </ScrollArea>
+          </div>
+        )}
+        
+        {searchValue.length >= 2 && resultadosBusca.length === 0 && (
+          <div className="p-2 text-sm text-gray-500 text-center mt-2">
+            Nenhum resultado encontrado para "{searchValue}"
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
       {/* Coluna da esquerda - Busca e Produtos */}
@@ -278,8 +324,8 @@ export function Terminal() {
                   type="text" 
                   placeholder="Buscar produto ou serviço..." 
                   className="pl-8 border-blue-200 focus-visible:ring-blue-500"
-                  value={termoBusca}
-                  onChange={(e) => setTermoBusca(e.target.value)}
+                  value={searchValue}
+                  onChange={(e) => setSearchValue(e.target.value)}
                 />
               </div>
               
@@ -293,22 +339,12 @@ export function Terminal() {
           <CardContent>
             <ScrollArea className="h-[320px] pr-4">
               <div className="space-y-1">
-                {termoBusca && resultadosBusca.length > 0 ? (
-                  resultadosBusca.map(item => (
-                    <ResultadoBusca 
-                      key={item.id}
-                      item={item}
-                      onAdicionar={handleAdicionarItem}
-                    />
-                  ))
-                ) : termoBusca ? (
+                {searchValue.length > 0 && resultadosBusca.length === 0 ? (
                   <div className="text-center py-8 text-gray-500">
-                    Nenhum resultado encontrado para "{termoBusca}"
+                    Nenhum resultado encontrado para "{searchValue}"
                   </div>
                 ) : (
-                  <div className="text-center py-8 text-gray-500">
-                    Digite algo para buscar produtos e serviços
-                  </div>
+                  renderBusca()
                 )}
               </div>
             </ScrollArea>
@@ -428,11 +464,74 @@ export function Terminal() {
             
             {/* Botões de ação */}
             <div className="flex gap-2 mt-4 w-full">
-              <Button variant="outline" className="w-1/2">
-                <Save className="h-4 w-4 mr-2" />
-                Salvar
+              <Button 
+                variant="outline" 
+                className="w-1/2" 
+                onClick={() => {
+                  if (itens.length === 0) {
+                    toast({
+                      variant: "destructive",
+                      title: "Nenhum item adicionado",
+                      description: "Adicione pelo menos um item para salvar o pedido."
+                    });
+                    return;
+                  }
+                  
+                  salvarPedido({
+                    cliente_id: cliente?.id,
+                    itens: itens.map(item => ({
+                      id: item.id,
+                      nome: item.nome,
+                      quantidade: item.quantidade,
+                      preco: item.preco,
+                      tipo: item.tipo
+                    })),
+                    beneficio: beneficioAplicado || undefined,
+                    subtotal: subtotal,
+                    total: total
+                  }).then(resultado => {
+                    if (resultado) {
+                      // Limpa o carrinho após salvar com sucesso
+                      setItens([]);
+                      setCliente(null);
+                      setBeneficioAplicado(null);
+                    }
+                  });
+                }}
+                disabled={loading || itens.length === 0}
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Processando
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-4 w-4 mr-2" />
+                    Salvar
+                  </>
+                )}
               </Button>
-              <Button className="w-1/2 bg-blue-600 hover:bg-blue-700">
+              <Button 
+                className="w-1/2 bg-blue-600 hover:bg-blue-700" 
+                disabled={loading || itens.length === 0}
+                onClick={() => {
+                  if (itens.length === 0) {
+                    toast({
+                      variant: "destructive",
+                      title: "Nenhum item adicionado",
+                      description: "Adicione pelo menos um item para realizar o pagamento."
+                    });
+                    return;
+                  }
+                  
+                  // Aqui redirecionaria para tela de pagamento ou abriria modal
+                  toast({
+                    title: "Processando pagamento",
+                    description: "Esta funcionalidade está em desenvolvimento."
+                  });
+                }}
+              >
                 <CreditCard className="h-4 w-4 mr-2" />
                 Pagamento
               </Button>

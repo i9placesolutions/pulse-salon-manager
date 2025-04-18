@@ -13,6 +13,7 @@ import NotFound from "./pages/NotFound";
 import { SpecialtiesProvider } from "./contexts/SpecialtiesContext";
 import { AppStateProvider } from "./contexts/AppStateContext";
 import { startBirthdayService } from "./lib/birthdayService";
+import { GlobalNotifications } from "./components/shared/GlobalNotifications";
 
 // Componente de carregamento
 const Loading = () => (
@@ -28,7 +29,6 @@ const Financeiro = lazy(() => import("./pages/Financeiro"));
 const Estoque = lazy(() => import("./pages/Estoque"));
 const Clientes = lazy(() => import("./pages/Clientes"));
 const Marketing = lazy(() => import("./pages/Marketing"));
-const Configuracoes = lazy(() => import("./pages/Configuracoes"));
 const Servicos = lazy(() => import("./pages/Servicos"));
 const Profissionais = lazy(() => import("./pages/Profissionais"));
 const Mensalidade = lazy(() => import("./pages/Mensalidade"));
@@ -39,7 +39,6 @@ const Usuarios = lazy(() => import("./pages/Usuarios"));
 const PDV = lazy(() => import("./pages/PDV"));
 const PublicBooking = lazy(() => import("./pages/PublicBooking"));
 const MessagingPage = lazy(() => import("./pages/MessagingPage"));
-const ProfileInfo = lazy(() => import("./pages/ProfileInfo"));
 
 const queryClient = new QueryClient();
 
@@ -56,6 +55,7 @@ const App = () => {
             {/* Mantendo apenas um Toaster por aplicação */}
             <Toaster />
             <BrowserRouter>
+              <GlobalNotifications />
               <Routes>
                 {/* Auth routes */}
                 <Route path="/" element={<Index />} />
@@ -147,13 +147,6 @@ const App = () => {
                     </Suspense>
                   </AppLayout>
                 } />
-                <Route path="/configuracoes" element={
-                  <AppLayout>
-                    <Suspense fallback={<Loading />}>
-                      <Configuracoes />
-                    </Suspense>
-                  </AppLayout>
-                } />
                 <Route path="/mensalidade" element={
                   <AppLayout>
                     <Suspense fallback={<Loading />}>
@@ -179,13 +172,6 @@ const App = () => {
                   <AppLayout>
                     <Suspense fallback={<Loading />}>
                       <MessagingPage />
-                    </Suspense>
-                  </AppLayout>
-                } />
-                <Route path="/profile-info" element={
-                  <AppLayout>
-                    <Suspense fallback={<Loading />}>
-                      <ProfileInfo />
                     </Suspense>
                   </AppLayout>
                 } />

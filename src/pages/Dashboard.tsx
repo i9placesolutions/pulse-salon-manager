@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { 
@@ -16,12 +16,14 @@ import {
   TrendingUp,
   ShoppingBag,
   Filter,
-  ChevronRight
+  ChevronRight,
+  Gift,
+  RefreshCw
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MetricsGrid } from "@/components/dashboard/MetricsGrid";
 import { RevenueChart } from "@/components/dashboard/RevenueChart";
-import { DashboardMetric, ServiceDistribution, TopProduct } from "@/types/dashboard";
+import { DashboardMetric, TopProduct } from "@/types/dashboard";
 import { formatCurrency } from "@/lib/utils";
 import {
   Table,
@@ -38,104 +40,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell
-} from "recharts";
 import { Badge } from "@/components/ui/badge";
-
-// Mock data
-const metrics: DashboardMetric[] = [
-  {
-    id: "monthly-revenue",
-    title: "Faturamento Mensal",
-    value: formatCurrency(45980),
-    change: 12.5,
-    trend: "up",
-    description: "vs. mês anterior",
-    icon: DollarSign
-  },
-  {
-    id: "ticket-medio",
-    title: "Ticket Médio",
-    value: formatCurrency(120),
-    change: 8.5,
-    trend: "up",
-    description: "vs. mês anterior",
-    icon: TrendingUp
-  },
-  {
-    id: "appointments",
-    title: "Agendamentos Hoje",
-    value: 24,
-    change: 4.1,
-    trend: "up",
-    description: "vs. ontem",
-    icon: Calendar
-  },
-  {
-    id: "clients",
-    title: "Clientes Atendidos",
-    value: 193,
-    change: 2.3,
-    trend: "up",
-    description: "este mês",
-    icon: Users
-  },
-  {
-    id: "products",
-    title: "Produtos Vendidos",
-    value: 78,
-    change: -5.2,
-    trend: "down",
-    description: "este mês",
-    icon: ShoppingBag
-  },
-  {
-    id: "avg-time",
-    title: "Tempo Médio",
-    value: 45,
-    suffix: "min",
-    change: 0,
-    trend: "neutral",
-    description: "por atendimento",
-    icon: Clock
-  }
-];
-
-const serviceDistribution: ServiceDistribution[] = [
-  { name: "Cortes", value: 35 },
-  { name: "Coloração", value: 25 },
-  { name: "Tratamentos", value: 20 },
-  { name: "Manicure", value: 15 },
-  { name: "Outros", value: 5 }
-];
-
-const topProducts: TopProduct[] = [
-  { name: "Corte Feminino", quantity: 145, revenue: 11600 },
-  { name: "Coloração", quantity: 89, revenue: 13350 },
-  { name: "Escova", quantity: 120, revenue: 7200 },
-  { name: "Hidratação", quantity: 78, revenue: 5460 },
-  { name: "Manicure", quantity: 156, revenue: 4680 }
-];
-
-const revenueData = [
-  { date: "01/03", revenue: 3200, expenses: 1800 },
-  { date: "02/03", revenue: 2800, expenses: 1600 },
-  { date: "03/03", revenue: 3600, expenses: 2000 },
-  { date: "04/03", revenue: 4200, expenses: 2200 },
-  { date: "05/03", revenue: 3800, expenses: 1900 },
-  { date: "06/03", revenue: 4500, expenses: 2400 },
-  { date: "07/03", revenue: 5000, expenses: 2600 }
-];
+import { Client } from "@/types/client";
+import { useDashboardData } from "@/hooks/useDashboardData";
 
 // Cores para os gráficos (usando as cores do sidebar)
 const COLORS = ['#0284c7', '#8b5cf6', '#10b981', '#f59e0b', '#f43f5e'];
@@ -144,6 +51,18 @@ export default function Dashboard() {
   const [period, setPeriod] = useState<string>("daily");
   const [periodoFilter, setPeriodoFilter] = useState<string>("30dias");
   const navigate = useNavigate();
+  
+  // Usar o hook de dados do dashboard
+  const {
+    isLoading,
+    error,
+    metrics,
+    revenueData,
+    topProducts,
+    birthdayClients,
+    upcomingAppointments,
+    refreshData
+  } = useDashboardData();
   
   // Lista de períodos para filtro
   const periodos = [
@@ -158,23 +77,11 @@ export default function Dashboard() {
     <div className="space-y-6">
       {/* Header com Filtros */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between bg-gradient-to-r from-blue-50 to-blue-100 p-6 rounded-xl border border-blue-100 shadow-sm">
-        <div className="flex items-center space-x-3">
-          <div className="bg-blue-100 p-3 rounded-full">
-            <ChevronRight className="h-5 w-5 text-blue-600" />
-          </div>
-          <div>
-            <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-semibold bg-clip-text text-transparent bg-gradient-to-r from-blue-700 to-blue-800">
-                Dashboard
-              </h1>
-              <Badge variant="outline" className="bg-blue-500 text-white border-blue-600 uppercase text-xs font-semibold">
-                Principal
-              </Badge>
-            </div>
-            <p className="text-sm text-blue-700/70">
-              Visão geral do seu negócio
-            </p>
-          </div>
+        <div className="space-y-1">
+          <h1 className="text-xl font-semibold text-blue-900">Dashboard</h1>
+          <p className="text-sm text-blue-700/70">
+            Visão geral do seu negócio
+          </p>
         </div>
         <div className="flex flex-wrap gap-2 items-center">
           <Button 
@@ -183,6 +90,17 @@ export default function Dashboard() {
           >
             <Calendar className="mr-2 h-4 w-4" />
             Agendamentos
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            className="mr-2"
+            onClick={() => refreshData()}
+            disabled={isLoading}
+          >
+            <RefreshCw className={`h-4 w-4 mr-1 ${isLoading ? 'animate-spin' : ''}`} />
+            Atualizar
           </Button>
 
           <div className="flex items-center gap-1 bg-white/80 px-2 py-1 rounded-lg border border-blue-100">
@@ -205,49 +123,78 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {/* Aviso de erro se houver */}
+      {error && (
+        <div className="bg-red-50 text-red-700 p-4 rounded-lg border border-red-200">
+          <p>{error}</p>
+        </div>
+      )}
+
       {/* Métricas Principais */}
-      <MetricsGrid metrics={metrics} />
+      {isLoading ? (
+        <div className="grid gap-4">
+          {/* Loading primeira linha: 2 cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {[...Array(2)].map((_, index) => (
+              <Card key={`top-${index}`} className="border border-gray-200 animate-pulse">
+                <CardHeader className="bg-gray-100 pb-2">
+                  <div className="h-6 bg-gray-200 rounded w-3/4"></div>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-10 bg-gray-200 rounded mb-2"></div>
+                  <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+          
+          {/* Loading segunda linha: 3 cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {[...Array(3)].map((_, index) => (
+              <Card key={`bottom-${index}`} className="border border-gray-200 animate-pulse">
+                <CardHeader className="bg-gray-100 pb-2">
+                  <div className="h-5 bg-gray-200 rounded w-2/3"></div>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-8 bg-gray-200 rounded mb-2"></div>
+                  <div className="h-3 bg-gray-200 rounded w-1/3"></div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      ) : metrics && metrics.length > 0 ? (
+        <MetricsGrid metrics={metrics} />
+      ) : (
+        <div className="bg-blue-50 p-6 rounded-lg text-center border border-blue-100">
+          <p className="text-blue-600">Nenhum dado de métricas encontrado.</p>
+        </div>
+      )}
 
       {/* Gráficos e Métricas de Serviços */}
       <div className="grid gap-4 md:grid-cols-2">
-        {/* Gráfico de Receita é renderizado pelo componente RevenueChart */}
-        <RevenueChart data={revenueData} period={period} setPeriod={setPeriod} />
-
-        {/* Distribuição de Serviços */}
-        <Card className="border-purple-200 shadow-sm hover:shadow transition-all">
-          <CardHeader className="bg-gradient-to-r from-purple-50 to-purple-100 rounded-t-lg">
+        {/* Gráfico de Receita */}
+        <Card className="border-blue-200 shadow-sm hover:shadow transition-all">
+          <CardHeader className="bg-gradient-to-r from-blue-50 to-blue-100 rounded-t-lg">
             <div className="flex items-center space-x-3">
-              <div className="bg-purple-100 p-2 rounded-full">
-                <ShoppingBag className="h-4 w-4 text-purple-600" />
+              <div className="bg-blue-100 p-2 rounded-full">
+                <TrendingUp className="h-4 w-4 text-blue-600" />
               </div>
-              <CardTitle className="text-purple-700">Distribuição de Serviços</CardTitle>
+              <CardTitle className="text-blue-700">Receita e Despesas</CardTitle>
             </div>
           </CardHeader>
           <CardContent className="pt-6">
-            <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={serviceDistribution}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    outerRadius={100}
-                    fill="#8884d8"
-                    dataKey="value"
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                  >
-                    {serviceDistribution.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip 
-                    formatter={(value) => [`${value}%`, 'Percentual']} 
-                    contentStyle={{ backgroundColor: '#fff', borderColor: '#e5e7eb' }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
+            {isLoading ? (
+              <div className="flex justify-center items-center h-[300px]">
+                <RefreshCw className="h-6 w-6 text-blue-400 animate-spin" />
+              </div>
+            ) : revenueData && revenueData.length > 0 ? (
+              <RevenueChart data={revenueData} period={period} setPeriod={setPeriod} />
+            ) : (
+              <div className="flex justify-center items-center h-[300px]">
+                <p className="text-blue-600">Nenhum dado de receita disponível.</p>
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -262,28 +209,103 @@ export default function Dashboard() {
             </div>
           </CardHeader>
           <CardContent className="pt-6">
-            <div className="space-y-6">
-              {topProducts.map((product, index) => (
-                <div key={product.name} className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium text-neutral-800">{product.name}</span>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-amber-600 font-medium">{product.quantity}x</span>
-                      <span className="text-xs font-medium text-amber-600">{formatCurrency(product.revenue)}</span>
+            {isLoading ? (
+              <div className="flex justify-center items-center h-[200px]">
+                <RefreshCw className="h-6 w-6 text-amber-400 animate-spin" />
+              </div>
+            ) : topProducts && topProducts.length > 0 ? (
+              <div className="space-y-6">
+                {topProducts.map((product, index) => (
+                  <div key={product.name} className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-medium text-neutral-800">{product.name}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-amber-600 font-medium">{product.quantity}x</span>
+                        <span className="text-xs font-medium text-amber-600">{formatCurrency(product.revenue)}</span>
+                      </div>
+                    </div>
+                    <div className="w-full h-2 bg-amber-100 rounded-full overflow-hidden">
+                      <div 
+                        className="h-full" 
+                        style={{ 
+                          width: `${(product.revenue / (topProducts[0]?.revenue || 1)) * 100}%`,
+                          backgroundColor: COLORS[index % COLORS.length]
+                        }} 
+                      />
                     </div>
                   </div>
-                  <div className="w-full h-2 bg-amber-100 rounded-full overflow-hidden">
-                    <div 
-                      className="h-full" 
-                      style={{ 
-                        width: `${(product.revenue / topProducts[0].revenue) * 100}%`,
-                        backgroundColor: COLORS[index % COLORS.length]
-                      }} 
-                    />
-                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="flex justify-center items-center h-[200px]">
+                <p className="text-amber-600">Nenhum serviço encontrado</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Aniversariantes do Mês */}
+        <Card className="border-purple-200 shadow-sm hover:shadow transition-all">
+          <CardHeader className="bg-gradient-to-r from-purple-50 to-purple-100 rounded-t-lg">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="bg-purple-100 p-2 rounded-full">
+                  <Gift className="h-4 w-4 text-purple-600" />
                 </div>
-              ))}
+                <CardTitle className="text-purple-700">Aniversariantes do Mês</CardTitle>
+              </div>
+              <Button 
+                variant="ghost" 
+                className="text-purple-700 hover:bg-purple-100 hover:text-purple-800"
+                onClick={() => navigate('/clientes', { state: { filter: 'birthday' } })}
+              >
+                Ver todos
+              </Button>
             </div>
+          </CardHeader>
+          <CardContent className="p-0">
+            {isLoading ? (
+              <div className="flex justify-center items-center h-[200px]">
+                <RefreshCw className="h-6 w-6 text-purple-400 animate-spin" />
+              </div>
+            ) : birthdayClients && birthdayClients.length > 0 ? (
+              <Table>
+                <TableHeader className="bg-purple-50">
+                  <TableRow className="hover:bg-purple-100/50">
+                    <TableHead className="text-purple-700">Cliente</TableHead>
+                    <TableHead className="text-purple-700">Data</TableHead>
+                    <TableHead className="text-right text-purple-700">Telefone</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {birthdayClients.slice(0, 5).map((client) => {
+                    // Formatar a data de aniversário
+                    const birthDate = new Date(client.birthDate);
+                    const day = birthDate.getDate().toString().padStart(2, '0');
+                    const month = (birthDate.getMonth() + 1).toString().padStart(2, '0');
+                    const formattedDate = `${day}/${month}`;
+                    
+                    return (
+                      <TableRow key={client.id} className="hover:bg-purple-50/50">
+                        <TableCell className="font-medium">{client.name}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center">
+                            <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
+                              {formattedDate}
+                            </Badge>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right">{client.phone}</TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            ) : (
+              <div className="p-6 text-center">
+                <p className="text-sm text-purple-600">Nenhum aniversariante no mês atual</p>
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -297,42 +319,46 @@ export default function Dashboard() {
                 </div>
                 <CardTitle className="text-green-700">Próximos Agendamentos</CardTitle>
               </div>
-              <Button variant="ghost" className="text-green-700 hover:bg-green-100 hover:text-green-800">
+              <Button 
+                variant="ghost" 
+                className="text-green-700 hover:bg-green-100 hover:text-green-800"
+                onClick={() => navigate('/appointments')}
+              >
                 Ver todos
               </Button>
             </div>
           </CardHeader>
           <CardContent className="p-0">
-            <Table>
-              <TableHeader className="bg-green-50">
-                <TableRow className="hover:bg-green-100/50">
-                  <TableHead className="text-green-700">Cliente</TableHead>
-                  <TableHead className="text-green-700">Serviço</TableHead>
-                  <TableHead className="text-green-700">Horário</TableHead>
-                  <TableHead className="text-right text-green-700">Valor</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                <TableRow className="hover:bg-green-50/50">
-                  <TableCell className="font-medium">Ana Silva</TableCell>
-                  <TableCell>Corte Feminino</TableCell>
-                  <TableCell>14:00</TableCell>
-                  <TableCell className="text-right">{formatCurrency(80)}</TableCell>
-                </TableRow>
-                <TableRow className="bg-green-50/30 hover:bg-green-100/40">
-                  <TableCell className="font-medium">Carlos Mendes</TableCell>
-                  <TableCell>Barba e Cabelo</TableCell>
-                  <TableCell>15:30</TableCell>
-                  <TableCell className="text-right">{formatCurrency(65)}</TableCell>
-                </TableRow>
-                <TableRow className="hover:bg-green-50/50">
-                  <TableCell className="font-medium">Patricia Santos</TableCell>
-                  <TableCell>Coloração</TableCell>
-                  <TableCell>16:45</TableCell>
-                  <TableCell className="text-right">{formatCurrency(150)}</TableCell>
-                </TableRow>
-              </TableBody>
-            </Table>
+            {isLoading ? (
+              <div className="flex justify-center items-center h-[200px]">
+                <RefreshCw className="h-6 w-6 text-green-400 animate-spin" />
+              </div>
+            ) : upcomingAppointments && upcomingAppointments.length > 0 ? (
+              <Table>
+                <TableHeader className="bg-green-50">
+                  <TableRow className="hover:bg-green-100/50">
+                    <TableHead className="text-green-700">Cliente</TableHead>
+                    <TableHead className="text-green-700">Serviço</TableHead>
+                    <TableHead className="text-green-700">Horário</TableHead>
+                    <TableHead className="text-right text-green-700">Valor</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {upcomingAppointments.map((appointment) => (
+                    <TableRow key={appointment.id} className="hover:bg-green-50/50">
+                      <TableCell className="font-medium">{appointment.client_name}</TableCell>
+                      <TableCell>{appointment.service}</TableCell>
+                      <TableCell>{appointment.start_time}</TableCell>
+                      <TableCell className="text-right">{formatCurrency(appointment.total_value)}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            ) : (
+              <div className="p-6 text-center">
+                <p className="text-sm text-green-600">Nenhum agendamento próximo</p>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

@@ -139,7 +139,7 @@ export const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
         key={item.path}
         to={item.path}
         className={cn(
-          "flex items-center gap-2 px-3 py-2 rounded-lg text-neutral-soft transition-all duration-200",
+          "flex items-center gap-2 px-3 py-1.5 rounded-lg text-neutral-soft transition-all duration-200",
           itemColors.hover,
           "hover:text-neutral-900 dark:hover:text-white",
           isActive ? `${itemColors.bg} ${itemColors.color} font-medium dark:bg-opacity-20` : "",
@@ -244,18 +244,18 @@ export const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
         </div>
 
         {/* Menu Items */}
-        <div className="p-2 space-y-4 overflow-y-auto h-[calc(100vh-4rem)]">
+        <div className="p-2 space-y-2">
           {/* Itens fixados */}
           {pinnedItems.length > 0 && isOpen && (
             <div className="mb-4">
-              <div className="px-3 py-1 text-xs font-medium bg-gradient-to-r from-blue-100 to-blue-50 dark:from-blue-950 dark:to-blue-900 text-blue-700 dark:text-blue-300 rounded-md mb-2">
+              <div className="px-3 py-0.5 text-xs font-medium bg-gradient-to-r from-blue-100 to-blue-50 dark:from-blue-950 dark:to-blue-900 text-blue-700 dark:text-blue-300 rounded-md mb-1">
                 Fixados
               </div>
               {pinnedItems.map(path => {
                 const item = menuItems.find(i => i.path === path);
                 if (item) return renderMenuItem(item);
               })}
-              <div className="mt-2 border-b dark:border-neutral-800" />
+              <div className="mt-1 border-b dark:border-neutral-800" />
             </div>
           )}
 
@@ -264,7 +264,7 @@ export const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
             <div key={category}>
               {isOpen && (
                 <div className={cn(
-                  "px-3 py-1 text-xs font-medium capitalize rounded-md mb-2",
+                  "px-3 py-0.5 text-xs font-medium capitalize rounded-md mb-1",
                   category === "principal" ? "bg-gradient-to-r from-blue-100 to-blue-50 dark:from-blue-950 dark:to-blue-900 text-blue-700 dark:text-blue-300" : "",
                   category === "configuracoes" ? "bg-gradient-to-r from-orange-100 to-orange-50 dark:from-orange-950 dark:to-orange-900 text-orange-700 dark:text-orange-300" : "",
                   category === "analise" ? "bg-gradient-to-r from-purple-100 to-purple-50 dark:from-purple-950 dark:to-purple-900 text-purple-700 dark:text-purple-300" : "",
@@ -273,7 +273,7 @@ export const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
                   {category}
                 </div>
               )}
-              <nav className="space-y-1">
+              <nav className="space-y-0.5">
                 {items.map(renderMenuItem)}
               </nav>
             </div>
@@ -282,11 +282,11 @@ export const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
 
         {/* Footer */}
         <div className="absolute bottom-0 left-0 right-0 p-2 border-t bg-gradient-to-t from-gray-100 to-white dark:from-neutral-950 dark:to-neutral-900">
-          <div className="space-y-2">
+          <div className="space-y-1">
             <button
               onClick={handleLogout}
               className={cn(
-                "w-full flex items-center gap-2 px-3 py-2 rounded-lg",
+                "w-full flex items-center gap-2 px-3 py-1.5 rounded-lg",
                 "text-red-500 hover:bg-gradient-to-r hover:from-red-50 hover:to-pink-50 dark:hover:from-red-950 dark:hover:to-pink-950 transition-colors",
                 !isOpen && "justify-center"
               )}

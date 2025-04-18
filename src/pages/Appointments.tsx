@@ -79,7 +79,11 @@ import * as z from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
-// Temporary mock data
+// Importando hook de gerenciamento de agendamentos
+import { useAppointmentManagement } from "@/hooks/useAppointmentManagement";
+import { useProfessionalManagement } from "@/hooks/useProfessionalManagement";
+
+// Dados de profissionais serão carregados do backend
 const professionals: Professional[] = [
   { 
     id: 1, 
@@ -121,78 +125,9 @@ const professionals: Professional[] = [
   },
 ];
 
-// Ampliando dados de exemplo para mostrar mais casos
-const mockAppointments: Appointment[] = [
-  {
-    id: 1,
-    clientId: 1,
-    clientName: "João Paulo",
-    professionalId: 1,
-    professionalName: "Ana Silva",
-    services: [
-      { id: 1, name: "Corte Masculino", duration: 30, price: 50 }
-    ],
-    date: new Date(),
-    startTime: "10:00",
-    endTime: "10:30",
-    duration: 30,
-    status: "confirmed",
-    paymentStatus: "pending",
-    totalValue: 50,
-    notes: "Cliente prefere corte mais curto"
-  },
-  {
-    id: 2,
-    clientId: 2,
-    clientName: "Maria Clara",
-    professionalId: 3,
-    professionalName: "Maria Oliveira",
-    services: [
-      { id: 2, name: "Manicure", duration: 60, price: 45 }
-    ],
-    date: new Date(),
-    startTime: "14:30",
-    endTime: "15:30",
-    duration: 60,
-    status: "pending",
-    paymentStatus: "pending",
-    totalValue: 45
-  },
-  {
-    id: 3,
-    clientId: 3,
-    clientName: "Carlos Mendes",
-    professionalId: 2,
-    professionalName: "Carlos Santos",
-    services: [
-      { id: 3, name: "Barba", duration: 30, price: 35 }
-    ],
-    date: addDays(new Date(), 1),
-    startTime: "11:00",
-    endTime: "11:30",
-    duration: 30,
-    status: "confirmed",
-    paymentStatus: "paid",
-    totalValue: 35
-  },
-  {
-    id: 4,
-    clientId: 4,
-    clientName: "Fernanda Alves",
-    professionalId: 1,
-    professionalName: "Ana Silva",
-    services: [
-      { id: 4, name: "Coloração", duration: 120, price: 150 }
-    ],
-    date: subDays(new Date(), 1),
-    startTime: "13:00",
-    endTime: "15:00",
-    duration: 120,
-    status: "completed",
-    paymentStatus: "paid",
-    totalValue: 150
-  }
-];
+// Dados de agendamentos serão carregados do Supabase
+// Mantém a estrutura dos mock appointments para referência
+const mockAppointments: Appointment[] = [];
 
 // Extrair lista de clientes únicos dos agendamentos para filtro
 const uniqueClients = Array.from(new Set(mockAppointments.map(app => app.clientId)))
@@ -206,7 +141,19 @@ const uniqueClients = Array.from(new Set(mockAppointments.map(app => app.clientI
   .filter(client => client.name !== "")
   .sort((a, b) => a.name.localeCompare(b.name));
 
+// Mock data para clientes e serviços - serão substituídos por dados do Supabase posteriormente
+const clients = [
+  { id: 1, name: "João Silva", phone: "11999999999", email: "joao@email.com" },
+  { id: 2, name: "Maria Santos", phone: "11988888888", email: "maria@email.com" }
+];
+
+const services = [
+  { id: 1, name: "Corte Masculino", duration: 30, price: 50, professionals: [1, 2] },
+  { id: 2, name: "Coloração", duration: 120, price: 150, professionals: [1, 3] }
+];
+
 const Appointments = () => {
+  // Estado para data selecionada (começa com a data atual)
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [selectedProfessional, setSelectedProfessional] = useState<string>("");
   const [viewMode, setViewMode] = useState<"day" | "week" | "month" | "list">("week");
@@ -214,7 +161,6 @@ const Appointments = () => {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [searchTerm, setSearchTerm] = useState<string>("");
-  const [filteredAppointments, setFilteredAppointments] = useState<Appointment[]>(mockAppointments);
   const [isCalendarLoading, setIsCalendarLoading] = useState(false);
   
   // Estados para controle de modais
@@ -230,84 +176,114 @@ const Appointments = () => {
   const [newAppointmentOpen, setNewAppointmentOpen] = useState(false);
   const [newAppointmentDate, setNewAppointmentDate] = useState<Date | undefined>(undefined);
   const [newAppointmentTime, setNewAppointmentTime] = useState<string>("");
-  
-  // Novo estado para controlar o modal de relatórios
-  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
-  
-  // Estados para os filtros do relatório
-  const [reportDateRange, setReportDateRange] = useState<DateRange>({ 
-    from: new Date(), 
-    to: addDays(new Date(), 30) 
-  });
-  const [reportProfessionalFilter, setReportProfessionalFilter] = useState<string[]>([]);
-  const [reportStatusFilter, setReportStatusFilter] = useState<string[]>([]);
-  const [reportServiceFilter, setReportServiceFilter] = useState<string[]>([]);
-  const [reportPaymentStatusFilter, setReportPaymentStatusFilter] = useState<string[]>([]);
-  const [reportSortBy, setReportSortBy] = useState<string>("date");
-  const [reportClientSearch, setReportClientSearch] = useState<string>("");
-  const [reportClientFilter, setReportClientFilter] = useState<string[]>([]);
-  
-  // Estados para os resultados do relatório
-  const [generatedReport, setGeneratedReport] = useState<Appointment[]>([]);
-  const [filteredReport, setFilteredReport] = useState<Appointment[]>([]);
-  const [isReportLoading, setIsReportLoading] = useState(false);
-  const [showReportResults, setShowReportResults] = useState(false);
-  
-  // Estado para controlar o formato de exportação selecionado
-  const [exportFormat, setExportFormat] = useState<"pdf" | "excel">("pdf");
-  
+
   const { toast } = useToast();
-
+  
+  // Usar o hook de gerenciamento de agendamentos
+  const {
+    appointments,
+    loading,
+    error,
+    filters,
+    updateFilters,
+    fetchAppointments,
+    createAppointment,
+    updateAppointment,
+    deleteAppointment,
+    blockProfessionalTime
+  } = useAppointmentManagement({
+    initialFilter: {
+      startDate: selectedDate,
+      professionalId: selectedProfessional ? parseInt(selectedProfessional) : null,
+      status: statusFilter || undefined,
+      searchTerm: searchTerm || undefined
+    }
+  });
+  
+  // Estado local para agendamentos filtrados
+  const [filteredAppointments, setFilteredAppointments] = useState<Appointment[]>([]);
+  
+  // Atualizar filtros quando mudança de seleção
   useEffect(() => {
-    // Simulando um carregamento de dados
-    setIsCalendarLoading(true);
-    const filterAppointments = () => {
-      return mockAppointments.filter(appointment => {
-        const matchesProfessional = selectedProfessional 
-          ? appointment.professionalId === parseInt(selectedProfessional)
-          : true;
-        
-        const matchesStatus = statusFilter
-          ? appointment.status === statusFilter
-          : true;
-        
-        const matchesSearch = searchTerm
-          ? appointment.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            appointment.services.some(service => 
-              service.name.toLowerCase().includes(searchTerm.toLowerCase())
-            )
-          : true;
-          
-        return matchesProfessional && matchesStatus && matchesSearch;
-      });
-    };
-    
-    // Simulando um pequeno delay de carregamento para mostrar animação
-    setTimeout(() => {
-      setFilteredAppointments(filterAppointments());
-      setIsCalendarLoading(false);
-    }, 300);
-  }, [selectedProfessional, statusFilter, searchTerm, selectedDate]);
-
-  const handleStatusChange = (appointmentId: number, newStatus: Appointment["status"]) => {
-    // Simulando uma atualização de estado com animação
-    const updatedAppointments = filteredAppointments.map(app => 
-      app.id === appointmentId ? {...app, status: newStatus} : app
-    );
-    
-    setFilteredAppointments(updatedAppointments);
-    
-    // Feedback visual ao usuário
-    toast({
-      title: "Status atualizado",
-      description: `Agendamento ${appointmentId} alterado para ${
-        newStatus === "confirmed" ? "confirmado" : 
-        newStatus === "canceled" ? "cancelado" : 
-        newStatus === "pending" ? "pendente" : "concluído"
-      }`,
-      variant: newStatus === "confirmed" ? "default" : 
-              newStatus === "canceled" ? "destructive" : undefined,
+    updateFilters({
+      startDate: selectedDate,
+      professionalId: selectedProfessional ? parseInt(selectedProfessional) : null,
+      status: statusFilter || undefined,
+      searchTerm: searchTerm || undefined
     });
+  }, [selectedDate, selectedProfessional, statusFilter, searchTerm, updateFilters]);
+  
+  // Atualizar agendamentos filtrados quando mudam os agendamentos do Supabase
+  useEffect(() => {
+    setIsCalendarLoading(loading);
+    
+    // Filtrar agendamentos localmente quando os dados são carregados
+    if (!loading && appointments) {
+      const filterAppointments = () => {
+        return appointments.filter(appointment => {
+          // Verificar se a data do agendamento está na semana selecionada se viewMode for week
+          let matchesDate = true;
+          if (viewMode === "day") {
+            matchesDate = isSameDay(new Date(appointment.date), selectedDate);
+          } else if (viewMode === "week") {
+            const startOfSelectedWeek = startOfWeek(selectedDate, { locale: ptBR });
+            const endOfSelectedWeek = endOfWeek(selectedDate, { locale: ptBR });
+            const appointmentDate = new Date(appointment.date);
+            matchesDate = appointmentDate >= startOfSelectedWeek && appointmentDate <= endOfSelectedWeek;
+          } else if (viewMode === "month") {
+            const startOfSelectedMonth = startOfMonth(selectedDate);
+            const endOfSelectedMonth = endOfMonth(selectedDate);
+            const appointmentDate = new Date(appointment.date);
+            matchesDate = appointmentDate >= startOfSelectedMonth && appointmentDate <= endOfSelectedMonth;
+          }
+
+          const matchesProfessional = selectedProfessional 
+            ? appointment.professionalId === parseInt(selectedProfessional)
+            : true;
+          
+          const matchesStatus = statusFilter
+            ? appointment.status === statusFilter
+            : true;
+          
+          const matchesSearch = searchTerm
+            ? appointment.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+              appointment.services.some(service => 
+                service.name.toLowerCase().includes(searchTerm.toLowerCase())
+              )
+            : true;
+            
+          return matchesDate && matchesProfessional && matchesStatus && matchesSearch;
+        });
+      };
+      
+      setFilteredAppointments(filterAppointments());
+    }
+  }, [appointments, loading, selectedDate, selectedProfessional, statusFilter, searchTerm, viewMode]);
+
+  // Buscar agendamentos ao montar o componente
+  useEffect(() => {
+    fetchAppointments();
+  }, [fetchAppointments]);
+
+  const handleStatusChange = async (appointmentId: number, newStatus: Appointment["status"]) => {
+    try {
+      // Atualizar o status no Supabase
+      await updateAppointment(appointmentId, { status: newStatus });
+      
+      // Feedback visual ao usuário (toast será mostrado pelo hook)
+      toast({
+        title: "Status atualizado",
+        description: `Agendamento ${appointmentId} alterado para ${
+          newStatus === "confirmed" ? "confirmado" : 
+          newStatus === "canceled" ? "cancelado" : 
+          newStatus === "pending" ? "pendente" : "concluído"
+        }`,
+        variant: newStatus === "confirmed" ? "default" : 
+                newStatus === "canceled" ? "destructive" : undefined,
+      });
+    } catch (error) {
+      console.error("Erro ao atualizar status:", error);
+    }
   };
 
   // Nova função para iniciar o processo de alteração de status com confirmação
@@ -341,40 +317,68 @@ const Appointments = () => {
   };
 
   // Nova função para confirmar o reagendamento
-  const confirmReschedule = () => {
+  const confirmReschedule = async () => {
     if (selectedAppointment && rescheduleDate && rescheduleTime) {
-      // Aqui você faria a chamada para a API para reagendar
-      // Simulando atualização do agendamento
-      const updatedAppointments = filteredAppointments.map(app => 
-        app.id === selectedAppointment.id 
-          ? {
-              ...app, 
-              date: rescheduleDate,
-              startTime: rescheduleTime,
-              professionalId: rescheduleProfessional ? parseInt(rescheduleProfessional) : app.professionalId,
-              professionalName: rescheduleProfessional 
-                ? professionals.find(p => p.id === parseInt(rescheduleProfessional))?.name || app.professionalName
-                : app.professionalName
-            } 
-          : app
-      );
-      
-      setFilteredAppointments(updatedAppointments);
-      setIsRescheduleOpen(false);
-      
-      toast({
-        title: "Reagendamento",
-        description: "Agendamento reagendado com sucesso",
-      });
+      try {
+        // Encontrar o nome do profissional selecionado
+        const professionalName = rescheduleProfessional 
+          ? professionals.find(p => p.id === parseInt(rescheduleProfessional))?.name || selectedAppointment.professionalName
+          : selectedAppointment.professionalName;
+        
+        // Atualizar o agendamento no Supabase
+        await updateAppointment(selectedAppointment.id, {
+          date: rescheduleDate,
+          startTime: rescheduleTime,
+          professionalId: rescheduleProfessional ? parseInt(rescheduleProfessional) : selectedAppointment.professionalId,
+          professionalName: professionalName
+        });
+        
+        // Fechar o modal de reagendamento
+        setIsRescheduleOpen(false);
+        
+        // O toast será mostrado pelo hook, mas podemos adicionar um mais específico aqui
+        toast({
+          title: "Reagendamento",
+          description: "Agendamento reagendado com sucesso",
+        });
+      } catch (error) {
+        console.error("Erro ao reagendar:", error);
+        toast({
+          title: "Erro no reagendamento",
+          description: "Não foi possível reagendar o agendamento",
+          variant: "destructive"
+        });
+      }
     }
   };
 
-  const handleBlockTime = (professionalId: number, date: Date, startTime: string, endTime: string) => {
-    // Aqui seria a chamada para a API para bloquear horário
-    toast({
-      title: "Horário bloqueado",
-      description: `Horário bloqueado para ${format(date, "dd/MM/yyyy")} das ${startTime} às ${endTime}`,
-    });
+  const handleBlockTime = async (professionalId: number, date: Date, startTime: string, endTime: string) => {
+    try {
+      // Criar objetos de data para início e fim do bloqueio
+      const [startHour, startMinute] = startTime.split(':').map(Number);
+      const [endHour, endMinute] = endTime.split(':').map(Number);
+      
+      const startDate = new Date(date);
+      startDate.setHours(startHour, startMinute, 0, 0);
+      
+      const endDate = new Date(date);
+      endDate.setHours(endHour, endMinute, 0, 0);
+      
+      // Bloquear o horário no Supabase usando o método do hook
+      await blockProfessionalTime(professionalId, startDate, endDate, "Horário bloqueado manualmente");
+      
+      toast({
+        title: "Horário bloqueado",
+        description: `Horário bloqueado para ${format(date, "dd/MM/yyyy")} das ${startTime} às ${endTime}`,
+      });
+    } catch (error) {
+      console.error("Erro ao bloquear horário:", error);
+      toast({
+        title: "Erro ao bloquear horário",
+        description: "Não foi possível bloquear o horário selecionado",
+        variant: "destructive"
+      });
+    }
   };
   
   const navigateDate = (direction: 'next' | 'prev') => {
@@ -414,310 +418,25 @@ const Appointments = () => {
     setNewAppointmentTime(time);
     setNewAppointmentOpen(true);
   };
-
-  // Função para filtrar agendamentos conforme os critérios do relatório
-  const filterAppointmentsForReport = (): Appointment[] => {
-    return mockAppointments.filter(appointment => {
-      // Filtragem por data
-      const appointmentDate = new Date(appointment.date);
-      const matchesDateRange = 
-        (!reportDateRange.from || appointmentDate >= reportDateRange.from) &&
-        (!reportDateRange.to || appointmentDate <= reportDateRange.to);
-      
-      // Filtragem por profissional
-      const matchesProfessional = reportProfessionalFilter.length === 0 
-        ? true 
-        : reportProfessionalFilter.includes(String(appointment.professionalId));
-      
-      // Filtragem por status
-      const matchesStatus = reportStatusFilter.length === 0
-        ? true
-        : reportStatusFilter.includes(appointment.status);
-      
-      // Filtragem por status de pagamento
-      const matchesPaymentStatus = reportPaymentStatusFilter.length === 0
-        ? true
-        : reportPaymentStatusFilter.includes(appointment.paymentStatus);
-      
-      // Filtragem por cliente (busca por nome)
-      const matchesClientSearch = reportClientSearch.trim() === ""
-        ? true
-        : appointment.clientName.toLowerCase().includes(reportClientSearch.toLowerCase());
-      
-      // Filtragem por cliente específico (dropdown)
-      const matchesClientFilter = reportClientFilter.length === 0
-        ? true
-        : reportClientFilter.includes(String(appointment.clientId));
-      
-      // Resultado final combinando todos os filtros
-      return matchesDateRange && matchesProfessional && matchesStatus && 
-             matchesPaymentStatus && matchesClientSearch && matchesClientFilter;
-    });
-  };
-
-  // Função para ordenar os resultados
-  const sortReportResults = (appointments: Appointment[]): Appointment[] => {
-    return [...appointments].sort((a, b) => {
-      switch (reportSortBy) {
-        case 'date':
-          return new Date(a.date).getTime() - new Date(b.date).getTime();
-        case 'professional':
-          return a.professionalName.localeCompare(b.professionalName);
-        case 'status':
-          return a.status.localeCompare(b.status);
-        case 'client':
-          return a.clientName.localeCompare(b.clientName);
-        case 'value':
-          return a.totalValue - b.totalValue;
-        default:
-          return 0;
-      }
-    });
-  };
-
-  // Função para gerar o relatório
-  const generateReport = () => {
-    setIsReportLoading(true);
-    
-    // Simulando processamento
-    setTimeout(() => {
-      try {
-        // Filtrar e ordenar os agendamentos
-        const filteredAppointments = filterAppointmentsForReport();
-        const sortedAppointments = sortReportResults(filteredAppointments);
-        
-        // Atualizar o estado com os resultados
-        setGeneratedReport(sortedAppointments);
-        setFilteredReport(sortedAppointments);
-        setShowReportResults(true);
-        setIsReportLoading(false);
-        
-        toast({
-          title: "Relatório gerado",
-          description: `Foram encontrados ${sortedAppointments.length} agendamentos. Para salvar o relatório, clique em Exportar.`,
-        });
-      } catch (error) {
-        setIsReportLoading(false);
-        toast({
-          title: "Erro ao gerar relatório",
-          description: "Ocorreu um erro ao processar os dados do relatório.",
-          variant: "destructive"
-        });
-      }
-    }, 800);
-  };
-
-  // Função para exportar o relatório para Excel
-  const exportReportToExcel = () => {
-    setIsReportLoading(true);
-    
-    try {
-      // Filtrar e ordenar os agendamentos se ainda não tiver gerado
-      const dataToExport = generatedReport.length > 0 
-        ? generatedReport 
-        : sortReportResults(filterAppointmentsForReport());
-      
-      // Criar cabeçalhos do Excel
-      const headers = [
-        'ID', 'Cliente', 'Profissional', 'Serviços', 
-        'Data', 'Horário', 'Duração', 'Status', 
-        'Pagamento', 'Valor Total', 'Observações'
-      ];
-      
-      // Criar linhas do Excel
-      const rows = dataToExport.map(appointment => [
-        appointment.id,
-        appointment.clientName,
-        appointment.professionalName,
-        appointment.services.map(s => s.name).join(' + '),
-        format(new Date(appointment.date), 'dd/MM/yyyy'),
-        `${appointment.startTime} - ${appointment.endTime}`,
-        `${appointment.duration} min`,
-        appointment.status === 'confirmed' ? 'Confirmado' :
-          appointment.status === 'pending' ? 'Pendente' :
-          appointment.status === 'canceled' ? 'Cancelado' : 'Concluído',
-        appointment.paymentStatus === 'paid' ? 'Pago' : 'Pendente',
-        `R$ ${appointment.totalValue.toFixed(2)}`,
-        appointment.notes || ''
-      ]);
-      
-      // Criar conteúdo no formato CSV (que Excel pode abrir)
-      const csvContent = [
-        headers.join(','),
-        ...rows.map(row => row.join(','))
-      ].join('\n');
-      
-      // Criar blob e link para download
-      const blob = new Blob([csvContent], { type: 'application/vnd.ms-excel' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      
-      // Configurar link para download
-      link.setAttribute('href', url);
-      link.setAttribute('download', `relatorio_agendamentos_${format(new Date(), 'dd-MM-yyyy')}.xlsx`);
-      document.body.appendChild(link);
-      
-      // Simular click no link
-      link.click();
-      
-      // Remover o link após o download
-      document.body.removeChild(link);
-      
-      setIsReportLoading(false);
-      toast({
-        title: "Relatório Excel exportado",
-        description: "O arquivo Excel foi baixado com sucesso.",
-      });
-    } catch (error) {
-      setIsReportLoading(false);
-      toast({
-        title: "Erro na exportação",
-        description: "Ocorreu um erro ao exportar o relatório para Excel.",
-        variant: "destructive"
-      });
-    }
-  };
-
-  // Função para exportar para PDF (simulando com HTML)
-  const exportReportToPDF = () => {
-    setIsReportLoading(true);
-    
-    try {
-      // Filtrar e ordenar os agendamentos se ainda não tiver gerado
-      const dataToExport = generatedReport.length > 0 
-        ? generatedReport 
-        : sortReportResults(filterAppointmentsForReport());
-      
-      // Simulando a criação de um PDF (na prática seria usado uma biblioteca como jsPDF)
-      // Por enquanto, vamos simular com um arquivo HTML que pode ser convertido para PDF pelo navegador
-      
-      // Criar conteúdo HTML para download
-      const htmlContent = `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <title>Relatório de Agendamentos</title>
-          <meta charset="utf-8">
-          <style>
-            body { font-family: Arial, sans-serif; margin: 20px; }
-            h1, h2 { color: #333; }
-            table { border-collapse: collapse; width: 100%; margin: 20px 0; }
-            th, td { padding: 8px; text-align: left; border-bottom: 1px solid #ddd; }
-            th { background-color: #f2f2f2; }
-            .confirmado { color: green; }
-            .pendente { color: orange; }
-            .cancelado { color: red; }
-            .concluido { color: blue; }
-            .sumario { background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin: 20px 0; }
-            @media print {
-              body { font-size: 12pt; }
-              h1 { font-size: 18pt; }
-              h2 { font-size: 16pt; }
-              .pagebreak { page-break-before: always; }
-            }
-          </style>
-        </head>
-        <body>
-          <h1>Relatório de Agendamentos</h1>
-          <p>Data de geração: ${format(new Date(), 'dd/MM/yyyy HH:mm')}</p>
-          
-          <div class="sumario">
-            <h2>Resumo</h2>
-            <p>Total de agendamentos: ${dataToExport.length}</p>
-            <p>Valor total: R$ ${dataToExport.reduce((sum, app) => sum + app.totalValue, 0).toFixed(2)}</p>
-            <p>Valor médio: R$ ${(dataToExport.reduce((sum, app) => sum + app.totalValue, 0) / (dataToExport.length || 1)).toFixed(2)}</p>
-            <p>Período: ${reportDateRange.from ? format(reportDateRange.from, 'dd/MM/yyyy') : 'Início'} a ${reportDateRange.to ? format(reportDateRange.to, 'dd/MM/yyyy') : 'Fim'}</p>
-          </div>
-          
-          <table>
-            <tr>
-              <th>Data</th>
-              <th>Cliente</th>
-              <th>Profissional</th>
-              <th>Serviço</th>
-              <th>Horário</th>
-              <th>Status</th>
-              <th>Pagamento</th>
-              <th>Valor</th>
-            </tr>
-            ${dataToExport.map(app => `
-              <tr>
-                <td>${format(new Date(app.date), 'dd/MM/yyyy')}</td>
-                <td>${app.clientName}</td>
-                <td>${app.professionalName}</td>
-                <td>${app.services.map(s => s.name).join(', ')}</td>
-                <td>${app.startTime} - ${app.endTime}</td>
-                <td class="${app.status === 'confirmed' ? 'confirmado' : 
-                            app.status === 'pending' ? 'pendente' : 
-                            app.status === 'canceled' ? 'cancelado' : 'concluido'}">
-                  ${app.status === 'confirmed' ? 'Confirmado' : 
-                    app.status === 'pending' ? 'Pendente' : 
-                    app.status === 'canceled' ? 'Cancelado' : 'Concluído'}
-                </td>
-                <td>${app.paymentStatus === 'paid' ? 'Pago' : 'Pendente'}</td>
-                <td>R$ ${app.totalValue.toFixed(2)}</td>
-              </tr>
-            `).join('')}
-          </table>
-          
-          <p><small>Este relatório foi gerado pelo Pulse Salon Manager</small></p>
-        </body>
-        </html>
-      `;
-      
-      // Criar blob e link para download
-      const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      
-      // Configurar link para download
-      link.setAttribute('href', url);
-      link.setAttribute('download', `relatorio_agendamentos_${format(new Date(), 'dd-MM-yyyy')}.html`);
-      document.body.appendChild(link);
-      
-      // Simular click no link
-      link.click();
-      
-      // Remover o link após o download
-      document.body.removeChild(link);
-      
-      setIsReportLoading(false);
-      toast({
-        title: "Relatório gerado",
-        description: "O arquivo HTML foi baixado com sucesso. Abra-o no navegador e use a função de impressão para salvar como PDF.",
-      });
-    } catch (error) {
-      setIsReportLoading(false);
-      toast({
-        title: "Erro na exportação",
-        description: "Ocorreu um erro ao gerar o relatório para PDF.",
-        variant: "destructive"
-      });
-    }
-  };
   
-  // Função para limpar todos os filtros do relatório
-  const clearReportFilters = () => {
-    setReportDateRange({ from: new Date(), to: addDays(new Date(), 30) });
-    setReportProfessionalFilter([]);
-    setReportStatusFilter([]);
-    setReportServiceFilter([]);
-    setReportPaymentStatusFilter([]);
-    setReportSortBy("date");
-    setReportClientSearch("");
-    setReportClientFilter([]);
-  };
-
-  // Efeito para atualizar o relatório quando os filtros são alterados
-  useEffect(() => {
-    if (showReportResults) {
-      // Só atualiza se já estiver mostrando resultados
-      const filteredAppointments = filterAppointmentsForReport();
-      const sortedAppointments = sortReportResults(filteredAppointments);
-      setGeneratedReport(sortedAppointments);
-      setFilteredReport(sortedAppointments);
+  // Função para lidar com a criação de um novo agendamento
+  const handleCreateAppointment = async (appointmentData: Omit<Appointment, 'id'>) => {
+    try {
+      await createAppointment(appointmentData);
+      setNewAppointmentOpen(false);
+      toast({
+        title: "Agendamento criado",
+        description: "O novo agendamento foi criado com sucesso",
+      });
+    } catch (error) {
+      console.error("Erro ao criar agendamento:", error);
+      toast({
+        title: "Erro ao criar agendamento",
+        description: "Não foi possível criar o agendamento",
+        variant: "destructive"
+      });
     }
-  }, [reportClientSearch, reportClientFilter, showReportResults, reportDateRange, reportProfessionalFilter, reportStatusFilter, reportPaymentStatusFilter, reportSortBy]);
+  };
 
   return (
     <PageLayout variant="purple">
@@ -741,13 +460,6 @@ const Appointments = () => {
             >
               <Ban className="h-4 w-4" />
               Bloquear Horário
-            </Button>
-            <Button
-              variant="appointments-secondary"
-              onClick={() => setIsReportModalOpen(true)}
-            >
-              <BarChart className="h-4 w-4" />
-              Relatórios
             </Button>
           </div>
         }
@@ -991,11 +703,62 @@ const Appointments = () => {
       />
 
       {/* Modal para novo agendamento */}
-      <AppointmentDialog
+      <AppointmentDialog 
         isOpen={newAppointmentOpen}
         onOpenChange={setNewAppointmentOpen}
         initialDate={newAppointmentDate}
         initialTime={newAppointmentTime}
+        onSubmit={async (formData) => {
+          // Converter os dados do formulário para o formato esperado pelo hook
+          const selectedClient = clients.find(c => c.id === formData.clientId);
+          const selectedServiceDetails = formData.selectedServices.map(ss => {
+            const service = services.find(s => s.id === ss.serviceId);
+            return service ? {
+              id: service.id,
+              name: service.name,
+              duration: service.duration,
+              price: service.price
+            } : null;
+          }).filter(Boolean);
+          
+          // Calcular o tempo total de duração baseado nos serviços
+          const totalDuration = selectedServiceDetails.reduce((total, service) => 
+            total + (service?.duration || 0), 0);
+          
+          // Calcular a hora de término
+          const [hours, minutes] = formData.time.split(':').map(Number);
+          const startDate = new Date(`${formData.date}T${formData.time}`);
+          const endDate = new Date(startDate.getTime() + totalDuration * 60000);
+          const endTime = `${String(endDate.getHours()).padStart(2, '0')}:${String(endDate.getMinutes()).padStart(2, '0')}`;
+          
+          // Selecionar o profissional do primeiro serviço (simplificação)
+          const professionalId = formData.selectedServices[0]?.professionalId;
+          const professionalName = professionals.find(p => p.id === professionalId)?.name || '';
+          
+          // Calcular o valor total
+          const totalValue = selectedServiceDetails.reduce((total, service) => 
+            total + (service?.price || 0), 0);
+          
+          // Criar o objeto de agendamento
+          const appointmentData = {
+            clientId: formData.clientId,
+            clientName: selectedClient?.name || '',
+            professionalId: professionalId || 0,
+            professionalName,
+            date: new Date(formData.date),
+            startTime: formData.time,
+            endTime,
+            duration: totalDuration,
+            status: 'pending' as const, // Definição de tipo explícita para corrigir erro
+            paymentStatus: 'pending' as const,
+            totalValue,
+            notes: formData.notes,
+            services: selectedServiceDetails as any[]
+          };
+          
+          // Chamar a função de criação de agendamento
+          await handleCreateAppointment(appointmentData);
+        }}
       />
 
       {/* Modal para confirmação de alteração de status */}
@@ -1169,500 +932,6 @@ const Appointments = () => {
                 onClick={() => setIsFilterOpen(false)}
               >
                 Aplicar Filtros
-              </Button>
-            </div>
-          </div>
-        </SheetContent>
-      </Sheet>
-
-      {/* Modal de Relatórios */}
-      <Sheet open={isReportModalOpen} onOpenChange={setIsReportModalOpen}>
-        <SheetContent side="right" className="p-0 w-full max-w-[500px] border-l flex flex-col h-[100dvh] bg-white">
-          {/* Cabeçalho fixo */}
-          <div className="sticky top-0 z-10 bg-gradient-to-r from-purple-600 to-indigo-600 border-b">
-            <SheetHeader className="p-6">
-              <div className="flex items-center justify-between">
-                <SheetTitle className="text-xl flex items-center gap-2 text-white">
-                  <FileText className="h-5 w-5 text-white" />
-                  Relatórios de Agendamentos
-                </SheetTitle>
-                <SheetClose className="rounded-full opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 text-white">
-                  <X className="h-4 w-4" />
-                  <span className="sr-only">Fechar</span>
-                </SheetClose>
-              </div>
-              <SheetDescription className="text-purple-100">
-                Configure o relatório e clique em "Gerar" para exportar
-              </SheetDescription>
-            </SheetHeader>
-          </div>
-          
-          {/* Conteúdo do modal */}
-          <div className="flex-1 overflow-y-auto bg-white">
-            <div className="p-6 space-y-6">
-              {/* Período do relatório */}
-              <div className="space-y-4">
-                <div className="flex items-center gap-2">
-                  <Calendar className="h-5 w-5 text-purple-700" />
-                  <h3 className="text-base font-medium">Período do relatório</h3>
-                </div>
-                
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {/* Data inicial */}
-                  <div>
-                    <Label htmlFor="report-start-date" className="block text-sm font-medium mb-2">
-                      Data inicial
-                    </Label>
-                    <Input 
-                      id="report-start-date"
-                      type="date" 
-                      value={reportDateRange.from ? format(reportDateRange.from, "yyyy-MM-dd") : ""}
-                      onChange={(e) => {
-                        const date = e.target.value ? new Date(e.target.value) : undefined;
-                        setReportDateRange(prev => ({ ...prev, from: date }));
-                      }}
-                      className="w-full"
-                    />
-                  </div>
-                  
-                  {/* Data final */}
-                  <div>
-                    <Label htmlFor="report-end-date" className="block text-sm font-medium mb-2">
-                      Data final
-                    </Label>
-                    <Input 
-                      id="report-end-date"
-                      type="date" 
-                      value={reportDateRange.to ? format(reportDateRange.to, "yyyy-MM-dd") : ""}
-                      onChange={(e) => {
-                        const date = e.target.value ? new Date(e.target.value) : undefined;
-                        setReportDateRange(prev => ({ ...prev, to: date }));
-                      }}
-                      className="w-full"
-                    />
-                  </div>
-                </div>
-              </div>
-              
-              {/* Filtro de profissionais */}
-              <div className="space-y-4 pt-6 border-t">
-                <div className="flex items-center gap-2">
-                  <UserCheck className="h-5 w-5 text-purple-700" />
-                  <h3 className="text-base font-medium">Profissionais</h3>
-                </div>
-                <Select 
-                  onValueChange={(value) => {
-                    if (value === "all") {
-                      setReportProfessionalFilter([]);
-                    } else {
-                      setReportProfessionalFilter([value]);
-                    }
-                  }}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Todos os profissionais" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos os profissionais</SelectItem>
-                    {professionals.map((prof) => (
-                      <SelectItem key={prof.id} value={String(prof.id)}>
-                        {prof.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              {/* Filtro de status */}
-              <div className="space-y-4 pt-6 border-t">
-                <div className="flex items-center gap-2">
-                  <Activity className="h-5 w-5 text-purple-700" />
-                  <h3 className="text-base font-medium">Status</h3>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="flex items-center space-x-3">
-                    <Checkbox 
-                      id="report-status-confirmed" 
-                      checked={reportStatusFilter.includes("confirmed") || reportStatusFilter.length === 0}
-                      onCheckedChange={(checked) => {
-                        if (checked) {
-                          if (!reportStatusFilter.includes("confirmed")) {
-                            setReportStatusFilter([...reportStatusFilter, "confirmed"]);
-                          }
-                        } else {
-                          setReportStatusFilter(reportStatusFilter.filter(s => s !== "confirmed"));
-                        }
-                      }}
-                    />
-                    <label 
-                      htmlFor="report-status-confirmed" 
-                      className="flex items-center text-sm font-medium leading-none gap-2"
-                    >
-                      <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                      Confirmados
-                    </label>
-                  </div>
-                  
-                  <div className="flex items-center space-x-3">
-                    <Checkbox 
-                      id="report-status-pending" 
-                      checked={reportStatusFilter.includes("pending") || reportStatusFilter.length === 0}
-                      onCheckedChange={(checked) => {
-                        if (checked) {
-                          if (!reportStatusFilter.includes("pending")) {
-                            setReportStatusFilter([...reportStatusFilter, "pending"]);
-                          }
-                        } else {
-                          setReportStatusFilter(reportStatusFilter.filter(s => s !== "pending"));
-                        }
-                      }}
-                    />
-                    <label 
-                      htmlFor="report-status-pending" 
-                      className="flex items-center text-sm font-medium leading-none gap-2"
-                    >
-                      <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-                      Pendentes
-                    </label>
-                  </div>
-                  
-                  <div className="flex items-center space-x-3">
-                    <Checkbox 
-                      id="report-status-canceled" 
-                      checked={reportStatusFilter.includes("canceled") || reportStatusFilter.length === 0}
-                      onCheckedChange={(checked) => {
-                        if (checked) {
-                          if (!reportStatusFilter.includes("canceled")) {
-                            setReportStatusFilter([...reportStatusFilter, "canceled"]);
-                          }
-                        } else {
-                          setReportStatusFilter(reportStatusFilter.filter(s => s !== "canceled"));
-                        }
-                      }}
-                    />
-                    <label 
-                      htmlFor="report-status-canceled" 
-                      className="flex items-center text-sm font-medium leading-none gap-2"
-                    >
-                      <div className="w-3 h-3 rounded-full bg-red-500"></div>
-                      Cancelados
-                    </label>
-                  </div>
-                  
-                  <div className="flex items-center space-x-3">
-                    <Checkbox 
-                      id="report-status-completed" 
-                      checked={reportStatusFilter.includes("completed") || reportStatusFilter.length === 0}
-                      onCheckedChange={(checked) => {
-                        if (checked) {
-                          if (!reportStatusFilter.includes("completed")) {
-                            setReportStatusFilter([...reportStatusFilter, "completed"]);
-                          }
-                        } else {
-                          setReportStatusFilter(reportStatusFilter.filter(s => s !== "completed"));
-                        }
-                      }}
-                    />
-                    <label 
-                      htmlFor="report-status-completed" 
-                      className="flex items-center text-sm font-medium leading-none gap-2"
-                    >
-                      <div className="w-3 h-3 rounded-full bg-blue-500"></div>
-                      Concluídos
-                    </label>
-                  </div>
-                </div>
-              </div>
-              
-              {/* Filtro de status de pagamento */}
-              <div className="space-y-4 pt-6 border-t">
-                <div className="flex items-center gap-2">
-                  <FileDown className="h-5 w-5 text-purple-700" />
-                  <h3 className="text-base font-medium">Status de Pagamento</h3>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="flex items-center space-x-3">
-                    <Checkbox 
-                      id="report-payment-paid" 
-                      checked={reportPaymentStatusFilter.includes("paid") || reportPaymentStatusFilter.length === 0}
-                      onCheckedChange={(checked) => {
-                        if (checked) {
-                          if (!reportPaymentStatusFilter.includes("paid")) {
-                            setReportPaymentStatusFilter([...reportPaymentStatusFilter, "paid"]);
-                          }
-                        } else {
-                          setReportPaymentStatusFilter(reportPaymentStatusFilter.filter(s => s !== "paid"));
-                        }
-                      }}
-                    />
-                    <label 
-                      htmlFor="report-payment-paid" 
-                      className="flex items-center text-sm font-medium leading-none gap-2"
-                    >
-                      <Check className="h-3 w-3 text-green-500" />
-                      Pagos
-                    </label>
-                  </div>
-                  
-                  <div className="flex items-center space-x-3">
-                    <Checkbox 
-                      id="report-payment-pending" 
-                      checked={reportPaymentStatusFilter.includes("pending") || reportPaymentStatusFilter.length === 0}
-                      onCheckedChange={(checked) => {
-                        if (checked) {
-                          if (!reportPaymentStatusFilter.includes("pending")) {
-                            setReportPaymentStatusFilter([...reportPaymentStatusFilter, "pending"]);
-                          }
-                        } else {
-                          setReportPaymentStatusFilter(reportPaymentStatusFilter.filter(s => s !== "pending"));
-                        }
-                      }}
-                    />
-                    <label 
-                      htmlFor="report-payment-pending" 
-                      className="flex items-center text-sm font-medium leading-none gap-2"
-                    >
-                      <Clock className="h-3 w-3 text-yellow-500" />
-                      Pendentes
-                    </label>
-                  </div>
-                </div>
-              </div>
-              
-              {/* Busca por cliente */}
-              <div className="space-y-4 pt-6 border-t">
-                <div className="flex items-center gap-2">
-                  <User className="h-5 w-5 text-purple-700" />
-                  <h3 className="text-base font-medium">Cliente</h3>
-                </div>
-                <div className="relative">
-                  <Input
-                    type="text"
-                    placeholder="Buscar por nome do cliente"
-                    value={reportClientSearch}
-                    onChange={(e) => setReportClientSearch(e.target.value)}
-                    className="pr-10"
-                  />
-                  <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                </div>
-                
-                <Select 
-                  onValueChange={(value) => {
-                    if (value === "all") {
-                      setReportClientFilter([]);
-                    } else {
-                      setReportClientFilter([value]);
-                    }
-                  }}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Todos os clientes" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos os clientes</SelectItem>
-                    {uniqueClients.map((client) => (
-                      <SelectItem key={client.id} value={String(client.id)}>
-                        {client.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              {/* Ordenação */}
-              <div className="space-y-4 pt-6 border-t">
-                <div className="flex items-center gap-2">
-                  <BarChart className="h-5 w-5 text-purple-700" />
-                  <h3 className="text-base font-medium">Ordenação</h3>
-                </div>
-                <Select 
-                  value={reportSortBy}
-                  onValueChange={(value) => setReportSortBy(value)}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Ordenar por..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="date">Data</SelectItem>
-                    <SelectItem value="professional">Profissional</SelectItem>
-                    <SelectItem value="client">Cliente</SelectItem>
-                    <SelectItem value="status">Status</SelectItem>
-                    <SelectItem value="value">Valor</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              {/* Resumo dos dados */}
-              <div className="space-y-4 pt-6 border-t">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <FileText className="h-5 w-5 text-purple-700" />
-                    <h3 className="text-base font-medium">Pré-visualização</h3>
-                  </div>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={clearReportFilters}
-                    className="text-xs px-2 h-8"
-                  >
-                    <X className="h-3 w-3 mr-1" /> Limpar filtros
-                  </Button>
-                </div>
-                
-                <div className="bg-gray-50 p-4 rounded-lg shadow-sm">
-                  <h4 className="font-medium text-sm mb-3 text-gray-700">Resumo</h4>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-xs text-gray-500 mb-1">Total de agendamentos:</p>
-                      <p className="font-semibold text-sm">{filterAppointmentsForReport().length}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-500 mb-1">Valor total:</p>
-                      <p className="font-semibold text-sm">
-                        R$ {filterAppointmentsForReport().reduce((sum, app) => sum + app.totalValue, 0).toFixed(2)}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-500 mb-1">Valor médio:</p>
-                      <p className="font-semibold text-sm">
-                        R$ {filterAppointmentsForReport().length 
-                          ? (filterAppointmentsForReport().reduce((sum, app) => sum + app.totalValue, 0) / 
-                             filterAppointmentsForReport().length).toFixed(2) 
-                          : "0.00"}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-500 mb-1">Período:</p>
-                      <p className="font-semibold text-sm">
-                        {reportDateRange.from && reportDateRange.to 
-                          ? `${format(reportDateRange.from, "dd/MM/yy")} - ${format(reportDateRange.to, "dd/MM/yy")}` 
-                          : "Não definido"}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Mostrar uma prévia dos últimos 5 registros */}
-                {showReportResults && filteredReport.length > 0 && (
-                  <div className="mt-4">
-                    <h4 className="text-sm font-medium mb-2">Últimos registros:</h4>
-                    <div className="bg-white border rounded-md overflow-hidden">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead className="w-[100px]">Data</TableHead>
-                            <TableHead>Cliente</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead className="text-right">Valor</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {filteredReport.slice(0, 5).map((app) => (
-                            <TableRow key={app.id}>
-                              <TableCell className="font-medium">
-                                {format(new Date(app.date), "dd/MM/yy")}
-                              </TableCell>
-                              <TableCell>{app.clientName}</TableCell>
-                              <TableCell>
-                                {app.status === "confirmed" ? (
-                                  <Badge variant="default" className="bg-green-600">Confirmado</Badge>
-                                ) : app.status === "pending" ? (
-                                  <Badge variant="secondary" className="bg-yellow-500">Pendente</Badge>
-                                ) : app.status === "canceled" ? (
-                                  <Badge variant="destructive">Cancelado</Badge>
-                                ) : (
-                                  <Badge variant="default" className="bg-blue-600">Concluído</Badge>
-                                )}
-                              </TableCell>
-                              <TableCell className="text-right">
-                                R$ {app.totalValue.toFixed(2)}
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                      {filteredReport.length > 5 && (
-                        <div className="p-2 text-center text-sm text-muted-foreground">
-                          Mostrando 5 de {filteredReport.length} registros
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-          
-          {/* Rodapé fixo */}
-          <div className="sticky bottom-0 mt-auto p-6 border-t bg-white shadow-sm">
-            <div className="flex flex-col gap-3 w-full">
-              {showReportResults && (
-                <div className="flex flex-col gap-3 w-full">
-                  <div className="space-y-2 mb-2">
-                    <h3 className="text-sm font-medium">Formato de exportação:</h3>
-                    <div className="flex gap-4">
-                      <div className="flex items-center space-x-2">
-                        <input
-                          type="radio"
-                          id="export-pdf"
-                          name="export-format"
-                          value="pdf"
-                          checked={exportFormat === "pdf"}
-                          onChange={() => setExportFormat("pdf")}
-                          className="h-4 w-4 border-gray-300 text-purple-600 focus:ring-purple-500"
-                        />
-                        <label htmlFor="export-pdf" className="text-sm font-medium text-gray-700">
-                          <div className="flex items-center gap-1">
-                            <File className="h-4 w-4 text-red-500" />
-                            PDF
-                          </div>
-                        </label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <input
-                          type="radio"
-                          id="export-excel"
-                          name="export-format"
-                          value="excel"
-                          checked={exportFormat === "excel"}
-                          onChange={() => setExportFormat("excel")}
-                          className="h-4 w-4 border-gray-300 text-purple-600 focus:ring-purple-500"
-                        />
-                        <label htmlFor="export-excel" className="text-sm font-medium text-gray-700">
-                          <div className="flex items-center gap-1">
-                            <FileText className="h-4 w-4 text-green-500" />
-                            Excel
-                          </div>
-                        </label>
-                      </div>
-                    </div>
-                  </div>
-                  <Button 
-                    variant="outline"
-                    onClick={exportFormat === "pdf" ? exportReportToPDF : exportReportToExcel}
-                    className="w-full"
-                  >
-                    <Download className="mr-2 h-4 w-4" />
-                    Exportar {exportFormat === "pdf" ? "PDF" : "Excel"}
-                  </Button>
-                </div>
-              )}
-              <Button 
-                variant="appointments"
-                onClick={generateReport}
-                className="bg-purple-600 hover:bg-purple-700 text-white w-full"
-              >
-                {isReportLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Gerando...
-                  </>
-                ) : (
-                  <>
-                    <FileDown className="mr-2 h-4 w-4" />
-                    Gerar Relatório
-                  </>
-                )}
               </Button>
             </div>
           </div>

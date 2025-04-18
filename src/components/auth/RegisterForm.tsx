@@ -252,79 +252,153 @@ const RegisterForm = () => {
 
     setIsLoading(true);
     try {
-      // Upload da logo para o Storage (se existir)
+      console.log("Iniciando processo de cadastro completo...");
+      
+      // Variável para armazenar a URL da logo
       let logoUrl = null;
+      
+      // Fazer upload da logo se existir
       if (logo) {
-        // Criar um nome único para o arquivo
-        const fileExt = logo.name.split('.').pop();
-        const fileName = `${Date.now()}.${fileExt}`;
-        const filePath = `logos/${fileName}`;
-
-        // Upload da imagem para o bucket 'logos'
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('logos')
-          .upload(filePath, logo);
-
-        if (uploadError) {
-          throw new Error(`Erro ao fazer upload da logo: ${uploadError.message}`);
+        try {
+          console.log("Iniciando upload da logo...");
+          
+          // Criar um nome único para o arquivo
+          const fileExt = logo.name.split('.').pop();
+          const fileName = `${Date.now()}.${fileExt}`;
+          const filePath = `${fileName}`;
+          
+          // Fazer upload da imagem para o bucket 'logos'
+          console.log("Tentando fazer upload para:", filePath);
+          const { data: uploadData, error: uploadError } = await supabase.storage
+            .from('logos')
+            .upload(filePath, logo, {
+              cacheControl: '3600',
+              upsert: true
+            });
+            
+          if (uploadError) {
+            console.error("Erro no upload da logo:", uploadError);
+            throw new Error(`Erro no upload: ${uploadError.message}`);
+          }
+          
+          console.log("Upload concluído com sucesso:", uploadData);
+          
+          // Obter a URL pública da imagem
+          const { data: urlData } = await supabase.storage
+            .from('logos')
+            .getPublicUrl(filePath);
+            
+          logoUrl = urlData.publicUrl;
+          console.log("URL pública da logo:", logoUrl);
+        } catch (logoError) {
+          console.error("Erro no processo de upload da logo:", logoError);
+          toast({
+            variant: "warning",
+            title: "Aviso sobre a logo",
+            description: "Não foi possível fazer o upload da logo, mas o cadastro continuará.",
+          });
         }
-
-        // Obter a URL pública da imagem
-        const { data: urlData } = await supabase.storage
-          .from('logos')
-          .getPublicUrl(filePath);
-
-        logoUrl = urlData.publicUrl;
       }
-
-      // Registrar o usuário no Supabase Auth
-      const { data, error } = await supabase.auth.signUp({
+      
+      // Preparar dados para o cadastro com a URL da logo
+      const userData = {
         email,
         password,
         options: {
           data: {
-            establishment: estabelecimento,
+            name: estabelecimento,
             cnpj: cnpj,
             whatsapp: whatsapp,
-            logo_url: logoUrl
+            logo_url: logoUrl, // Adicionar a URL da logo aos metadados
+            address_cep: cep,
+            address_street: endereco,
+            address_number: numero,
+            address_complement: complemento,
+            address_neighborhood: bairro,
+            address_city: cidade,
+            address_state: estado
           },
         },
+      };
+      
+      console.log("Enviando dados para registro:", {
+        email: userData.email,
+        metadataKeys: Object.keys(userData.options.data)
       });
 
-      if (error) throw error;
+      // Registrar o usuário no Supabase Auth
+      const { data, error } = await supabase.auth.signUp(userData);
 
-      if (data.user) {
-        // Atualizar o perfil do usuário com informações adicionais
-        const { error: profileError } = await supabase.from('profiles').update({
-          name: estabelecimento,
-          whatsapp: whatsapp,
-          establishment: estabelecimento,
-          cnpj: cnpj,
-          address_cep: cep,
-          address_street: endereco,
-          address_number: numero,
-          address_complement: complemento,
-          address_neighborhood: bairro,
-          address_city: cidade,
-          address_state: estado,
-          logo_url: logoUrl // Salvar a URL da logo no perfil
-        }).eq('id', data.user.id);
+      if (error) {
+        console.error("Erro detalhado ao registrar usuário:", error);
+        throw error;
+      }
 
-        if (profileError) throw profileError;
+      console.log("Usuário registrado com sucesso:", data?.user?.id);
+
+      // Agora vamos garantir que a logo seja salva também no perfil
+      if (data?.user && logoUrl) {
+        try {
+          // Aguardar um momento para que o perfil seja criado pelo trigger
+          await new Promise(resolve => setTimeout(resolve, 500));
+          
+          // Atualizar o perfil com a URL da logo
+          const { error: updateError } = await supabase
+            .from('profiles')
+            .update({ 
+              logo_url: logoUrl
+            })
+            .eq('id', data.user.id);
+            
+          if (updateError) {
+            console.error("Erro ao atualizar logo no perfil:", updateError);
+          } else {
+            console.log("Logo atualizada no perfil com sucesso");
+          }
+        } catch (profileError) {
+          console.error("Erro ao atualizar logo no perfil:", profileError);
+        }
       }
 
       toast({
         title: "Cadastro realizado com sucesso!",
-        description: "Verifique seu e-mail para confirmar sua conta.",
+        description: "Verifique seu e-mail para confirmar sua conta. Após confirmar, você poderá fazer login.",
         variant: "success"
       });
       
-      // Redirecionamento será implementado posteriormente
+      // Limpar o formulário
+      setEstabelecimento("");
+      setCnpj("");
+      setEmail("");
+      setPassword("");
+      setConfirmPassword("");
+      setWhatsapp("");
+      setLogo(null);
+      setLogoPreview("");
+      
+      // Redirecionamento para a página de login
+      setTimeout(() => {
+        window.location.href = "/";
+      }, 3000);
+      
     } catch (error) {
+      console.error("Erro completo no cadastro:", error);
+      
+      // Mensagens de erro mais descritivas baseadas no tipo de erro
+      let errorMessage = "Por favor, tente novamente mais tarde.";
+      
+      if (error.message?.includes("row-level security policy")) {
+        errorMessage = "Erro de permissão no servidor. Por favor, entre em contato com o suporte.";
+      } else if (error.message?.includes("Database error")) {
+        errorMessage = "Erro no banco de dados. Este email pode já estar em uso ou o servidor pode estar indisponível.";
+      } else if (error.message?.includes("User already registered")) {
+        errorMessage = "Este email já está registrado. Por favor, use a opção de recuperação de senha.";
+      }
+      
       toast({
         variant: "destructive",
         title: "Erro ao criar conta",
-        description: error.message || "Por favor, tente novamente mais tarde.",
+        description: errorMessage,
       });
     } finally {
       setIsLoading(false);

@@ -100,6 +100,7 @@ export async function fetchWhatsAppContacts(
  * @param minDelay Delay mínimo em segundos (padrão: 3 segundos)
  * @param maxDelay Delay máximo em segundos (padrão: 8 segundos)
  * @param token Token opcional da instância
+ * @returns Object com status de sucesso e detalhes dos envios
  */
 export async function sendBulkMessage(
   numbers: string[],
@@ -107,10 +108,11 @@ export async function sendBulkMessage(
   minDelay: number = 3, 
   maxDelay: number = 8,
   token?: string
-): Promise<any[]> {
+): Promise<{success: boolean, results: any[]}> {
   const apiUrl = getApiUrl();
   const instanceToken = token || getToken();
   const results = [];
+  let successCount = 0;
   
   for (const number of numbers) {
     try {
@@ -132,7 +134,10 @@ export async function sendBulkMessage(
       });
       
       const data = await response.json();
-      results.push({ number, success: response.ok, data });
+      const isSuccess = response.ok;
+      if (isSuccess) successCount++;
+      
+      results.push({ number, success: isSuccess, data });
       
     } catch (error) {
       console.error(`Erro ao enviar mensagem para ${number}:`, error);
@@ -140,7 +145,11 @@ export async function sendBulkMessage(
     }
   }
   
-  return results;
+  // Retorna um objeto com status geral e detalhes
+  return {
+    success: successCount > 0,
+    results
+  };
 }
 
 /**

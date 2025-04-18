@@ -5,56 +5,38 @@ import { Label } from "@/components/ui/label";
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { MarketingMessage } from "@/lib/marketingService";
 
-type MessageStatus = 'enviando' | 'aguardando' | 'pausada' | 'cancelada' | 'entregue' | 'falha';
+export type MessageStatus = 'enviando' | 'aguardando' | 'pausada' | 'cancelada' | 'entregue' | 'falha' | 'draft' | 'sent' | 'scheduled' | 'error';
 
 type Message = {
   id: string;
   titulo: string;
   mensagem: string;
-  destinatarios: number;
-  dataEnvio: string;
+  destinatarios?: number;
+  sucessos?: number;
+  falhas?: number;
+  dataEnvio?: string;
+  data?: string; // Pode ser a data formatada do componente parent
   status: MessageStatus;
-  canal: 'whatsapp' | 'email' | 'sms';
+  canal?: 'whatsapp' | 'email' | 'sms';
   agendamento?: string;
 };
 
-const messageHistory: Message[] = [
-  {
-    id: '1',
-    titulo: 'Promoção de Verão',
-    mensagem: 'Olá {nome}, temos ofertas especiais para você!',
-    destinatarios: 150,
-    dataEnvio: '2025-03-10T10:00:00',
-    status: 'entregue',
-    canal: 'whatsapp'
-  },
-  {
-    id: '2',
-    titulo: 'Lembrete de Aniversário',
-    mensagem: 'Feliz aniversário! Presente especial aguarda você.',
-    destinatarios: 45,
-    dataEnvio: '2025-03-10T11:30:00',
-    status: 'enviando',
-    canal: 'email',
-    agendamento: '2025-03-10T11:00:00'
-  },
-];
-
 interface MessageHistoryProps {
-  messages?: Message[];
+  messages: Message[];
 }
 
-export function MessageHistory({ messages = messageHistory }: MessageHistoryProps) {
+export function MessageHistory({ messages }: MessageHistoryProps) {
   const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
 
   const getStatusColor = (status: MessageStatus) => {
     switch (status) {
-      case 'entregue': return 'bg-green-500';
+      case 'entregue': case 'sent': return 'bg-green-500';
       case 'enviando': return 'bg-yellow-500';
-      case 'aguardando': return 'bg-blue-500';
-      case 'pausada': return 'bg-gray-500';
-      case 'cancelada': return 'bg-red-500';
+      case 'aguardando': case 'scheduled': return 'bg-blue-500';
+      case 'pausada': case 'draft': return 'bg-gray-500';
+      case 'cancelada': case 'error': case 'falha': return 'bg-red-500';
       default: return 'bg-gray-500';
     }
   };
@@ -65,42 +47,50 @@ export function MessageHistory({ messages = messageHistory }: MessageHistoryProp
         <CardTitle>Histórico de Mensagens</CardTitle>
       </CardHeader>
       <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Título</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Canal</TableHead>
-              <TableHead>Destinatários</TableHead>
-              <TableHead>Data Envio</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {messages.map((message) => (
-              <TableRow 
-                key={message.id} 
-                onClick={() => setSelectedMessage(message)}
-                className="cursor-pointer hover:bg-gray-50"
-              >
-                <TableCell className="font-medium">{message.titulo}</TableCell>
-                <TableCell>
-                  <Badge className={`${getStatusColor(message.status)} text-white`}>
-                    {message.status}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <Badge variant="outline">
-                    {message.canal}
-                  </Badge>
-                </TableCell>
-                <TableCell>{message.destinatarios}</TableCell>
-                <TableCell>
-                  {new Date(message.dataEnvio).toLocaleDateString()}
-                </TableCell>
+        {messages.length === 0 ? (
+          <div className="bg-pink-50/60 border border-pink-200 rounded-lg p-8 text-center">
+            <p className="text-pink-500 mt-2">
+              Nenhuma mensagem encontrada.
+            </p>
+          </div>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Título</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Canal</TableHead>
+                <TableHead>Destinatários</TableHead>
+                <TableHead>Data Envio</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {messages.map((message) => (
+                <TableRow 
+                  key={message.id} 
+                  onClick={() => setSelectedMessage(message)}
+                  className="cursor-pointer hover:bg-gray-50"
+                >
+                  <TableCell className="font-medium">{message.titulo}</TableCell>
+                  <TableCell>
+                    <Badge className={`${getStatusColor(message.status)} text-white`}>
+                      {message.status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="outline">
+                      {message.canal || 'whatsapp'}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>{message.destinatarios || 0}</TableCell>
+                  <TableCell>
+                    {message.data || (message.dataEnvio ? new Date(message.dataEnvio).toLocaleDateString() : '-')}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
 
         {/* Modal de Detalhes */}
         <Dialog open={!!selectedMessage} onOpenChange={() => setSelectedMessage(null)}>
@@ -125,15 +115,27 @@ export function MessageHistory({ messages = messageHistory }: MessageHistoryProp
                   </div>
                   <div>
                     <Label>Canal:</Label>
-                    <p>{selectedMessage.canal}</p>
+                    <p>{selectedMessage.canal || 'whatsapp'}</p>
                   </div>
                   <div>
                     <Label>Destinatários:</Label>
-                    <p>{selectedMessage.destinatarios}</p>
+                    <p>{selectedMessage.destinatarios || 0}</p>
                   </div>
+                  {selectedMessage.sucessos !== undefined && (
+                    <div>
+                      <Label>Enviados com sucesso:</Label>
+                      <p>{selectedMessage.sucessos}</p>
+                    </div>
+                  )}
+                  {selectedMessage.falhas !== undefined && (
+                    <div>
+                      <Label>Falhas de envio:</Label>
+                      <p>{selectedMessage.falhas}</p>
+                    </div>
+                  )}
                   <div>
                     <Label>Data de Envio:</Label>
-                    <p>{new Date(selectedMessage.dataEnvio).toLocaleString()}</p>
+                    <p>{selectedMessage.data || (selectedMessage.dataEnvio ? new Date(selectedMessage.dataEnvio).toLocaleString() : '-')}</p>
                   </div>
                   {selectedMessage.agendamento && (
                     <div>

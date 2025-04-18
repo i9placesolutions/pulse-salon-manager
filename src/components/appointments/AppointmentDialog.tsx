@@ -1,6 +1,9 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useClientManagement } from "@/hooks/useClientManagement";
+import { useServiceManagement } from "@/hooks/useServiceManagement";
+import { useProfessionalManagement } from "@/hooks/useProfessionalManagement";
 import { 
   Plus, 
   Calendar, 
@@ -36,7 +39,15 @@ import { Separator } from "@/components/ui/separator";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useToast } from "@/components/ui/use-toast";
-import type { Professional } from "@/types/appointment";
+// Definindo interface local para Professional com a propriedade schedule
+interface Professional {
+  id: number;
+  name: string;
+  specialties: string[];
+  schedule?: {
+    [key: string]: { start: string; end: string };
+  };
+}
 import { cn } from "@/lib/utils";
 
 interface Service {
@@ -141,32 +152,36 @@ export const AppointmentDialog = ({
     }
   }, [initialDate, initialTime]);
 
-  // Mock data - replace with API calls
-  const clients: Client[] = [
-    { id: 1, name: "João Silva", phone: "11999999999", email: "joao@email.com" },
-    { id: 2, name: "Maria Santos", phone: "11988888888", email: "maria@email.com" }
-  ];
+  // Buscar dados reais de clientes do Supabase
+  const { clients = [] } = useClientManagement();
 
-  const services: Service[] = [
-    { id: 1, name: "Corte Masculino", duration: 30, price: 50, professionals: [1, 2] },
-    { id: 2, name: "Coloração", duration: 120, price: 150, professionals: [1, 3] }
-  ];
+  // Buscar dados reais de serviços do Supabase
+  const { services = [] } = useServiceManagement();
 
-  const professionals: Professional[] = [
-    { 
-      id: 1, 
-      name: "Ana Silva",
-      specialties: ["Corte", "Coloração"],
-      schedule: {
+  // Buscar dados reais de profissionais do Supabase
+  const { professionals: dbProfessionals = [] } = useProfessionalManagement();
+  
+  // Converter profissionais para o formato esperado pelo componente
+  const professionals: Professional[] = dbProfessionals.map(prof => {
+    // Converter especialidades para string[] quando necessário
+    const specialtiesAsStrings: string[] = Array.isArray(prof.specialties) 
+      ? prof.specialties.map(spec => 
+          typeof spec === 'string' ? spec : (spec?.name || '')) 
+      : [];
+    
+    return {
+      id: typeof prof.id === 'string' ? parseInt(prof.id) : prof.id,
+      name: prof.name,
+      specialties: specialtiesAsStrings,
+      schedule: prof.schedule || {
         "1": { start: "09:00", end: "18:00" },
         "2": { start: "09:00", end: "18:00" },
         "3": { start: "09:00", end: "18:00" },
         "4": { start: "09:00", end: "18:00" },
-        "5": { start: "09:00", end: "18:00" },
-        "6": { start: "09:00", end: "14:00" }
+        "5": { start: "09:00", end: "18:00" }
       }
-    }
-  ];
+    };
+  });
 
   // Filtragem de clientes baseada na busca
   const filteredClients = clients.filter(client =>

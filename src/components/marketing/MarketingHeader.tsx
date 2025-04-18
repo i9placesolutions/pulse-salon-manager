@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { MessageSquare, Target } from "lucide-react";
 
 interface MarketingHeaderProps {
-  onNewMessage: () => void;
+  onNewMessage?: () => void;
 }
 
 export function MarketingHeader({ onNewMessage }: MarketingHeaderProps) {
@@ -23,13 +23,15 @@ export function MarketingHeader({ onNewMessage }: MarketingHeaderProps) {
           </div>
         </div>
         
-        <Button 
-          className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700" 
-          onClick={onNewMessage}
-        >
-          <MessageSquare className="mr-2 h-4 w-4" />
-          Nova Mensagem
-        </Button>
+        {onNewMessage && (
+          <Button 
+            className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700" 
+            onClick={onNewMessage}
+          >
+            <MessageSquare className="mr-2 h-4 w-4" />
+            Nova Mensagem
+          </Button>
+        )}
       </div>
     </div>
   );

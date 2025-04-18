@@ -29,6 +29,7 @@ import { BarChart3, Download, Search, Users, Calendar, Clock, Percent, Gift, Sta
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "@/components/ui/use-toast";
 import { exportCampaignReport, downloadCSV, exportCampaignToPDF } from "@/utils/exportUtils";
+import { fetchMarketingCampaigns, fetchCampaignsByType, MarketingCampaign } from "@/lib/marketingService";
 
 // Tipos de dados para o histórico de campanhas
 type CampaignUsage = {
@@ -52,149 +53,149 @@ type CampaignMetrics = {
   redemptionRate: number;
 };
 
+// Definindo a interface de campanha para o componente
 interface CampaignData {
   id: string;
+  title: string;
+  campaign_type?: string;
+  description?: string;
+  recipients_type?: string;
+  recipients_count?: number;
+  created_at?: string;
+  updated_at?: string;
+  // Propriedades para compatibilidade com o componente
   name: string;
   type: 'discount' | 'coupon' | 'cashback' | 'vip';
   startDate: string;
   endDate?: string;
-  status: 'active' | 'scheduled' | 'completed' | 'draft';
+  status: 'active' | 'scheduled' | 'completed' | 'draft' | 'sent' | 'canceled';
   metrics: CampaignMetrics;
   usage: CampaignUsage[];
 }
 
-// Dados mockados para demonstração
-const mockCampaigns: CampaignData[] = [
-  {
-    id: "camp1",
-    name: "Desconto de Verão",
-    type: "discount",
-    startDate: "2025-01-01",
-    endDate: "2025-03-31",
-    status: "active",
-    metrics: {
-      totalUses: 124,
-      totalCustomers: 87,
-      conversionRate: 18.5,
-      averageSpend: 180.5,
-      totalRevenue: 22382,
-      redemptionRate: 62.3
-    },
-    usage: [
-      { id: "use1", customer: { id: "cust1", name: "Maria Silva", avatar: "/avatars/maria.jpg" }, date: "2025-03-05", amount: 150, serviceOrProduct: "Corte e Coloração" },
-      { id: "use2", customer: { id: "cust2", name: "João Santos", avatar: "/avatars/joao.jpg" }, date: "2025-03-02", amount: 200, serviceOrProduct: "Barba e Cabelo" },
-      { id: "use3", customer: { id: "cust3", name: "Ana Oliveira" }, date: "2025-02-28", amount: 180, serviceOrProduct: "Manicure e Pedicure" },
-      { id: "use4", customer: { id: "cust4", name: "Carlos Mendes" }, date: "2025-02-25", amount: 120, serviceOrProduct: "Corte Masculino" },
-    ]
-  },
-  {
-    id: "camp2",
-    name: "Cupom BEMVINDO10",
-    type: "coupon",
-    startDate: "2025-02-15",
-    status: "active",
-    metrics: {
-      totalUses: 45,
-      totalCustomers: 45,
-      conversionRate: 22.8,
-      averageSpend: 150.2,
-      totalRevenue: 6759,
-      redemptionRate: 45.0
-    },
-    usage: [
-      { id: "use5", customer: { id: "cust5", name: "Renata Lima" }, date: "2025-03-07", amount: 180, serviceOrProduct: "Hidratação e Corte" },
-      { id: "use6", customer: { id: "cust6", name: "Marcos Pereira" }, date: "2025-03-03", amount: 150, serviceOrProduct: "Barba Completa" },
-    ]
-  },
-  {
-    id: "camp3",
-    name: "Cashback 5%",
-    type: "cashback",
-    startDate: "2025-02-01",
-    endDate: "2025-04-30",
-    status: "active",
-    metrics: {
-      totalUses: 87,
-      totalCustomers: 65,
-      conversionRate: 15.2,
-      averageSpend: 220.5,
-      totalRevenue: 19183.5,
-      redemptionRate: 58.4
-    },
-    usage: [
-      { id: "use7", customer: { id: "cust7", name: "Fernanda Costa" }, date: "2025-03-08", amount: 250, serviceOrProduct: "Tratamento Capilar" },
-      { id: "use8", customer: { id: "cust8", name: "Roberto Alves" }, date: "2025-03-05", amount: 180, serviceOrProduct: "Corte e Barba" },
-      { id: "use9", customer: { id: "cust9", name: "Juliana Martins" }, date: "2025-03-02", amount: 300, serviceOrProduct: "Coloração Completa" },
-    ]
-  },
-  {
-    id: "camp4",
-    name: "Clube VIP Pulse",
-    type: "vip",
-    startDate: "2025-01-15",
-    status: "active",
-    metrics: {
-      totalUses: 156,
-      totalCustomers: 22,
-      conversionRate: 95.8,
-      averageSpend: 350.8,
-      totalRevenue: 54724.8,
-      redemptionRate: 87.2
-    },
-    usage: [
-      { id: "use10", customer: { id: "cust10", name: "Amanda Souza", avatar: "/avatars/amanda.jpg" }, date: "2025-03-09", amount: 420, serviceOrProduct: "Pacote Completo" },
-      { id: "use11", customer: { id: "cust11", name: "Paulo Ribeiro" }, date: "2025-03-07", amount: 380, serviceOrProduct: "Tratamento Premium" },
-      { id: "use12", customer: { id: "cust12", name: "Luciana Gomes" }, date: "2025-03-04", amount: 450, serviceOrProduct: "Dia de Spa" },
-    ]
-  }
-];
-
-// Função para retornar o ícone de acordo com o tipo de campanha
-function getCampaignTypeIcon(type: string) {
-  switch (type) {
-    case 'discount':
-      return <Percent className="h-4 w-4" />;
-    case 'coupon':
-      return <Gift className="h-4 w-4" />;
-    case 'cashback':
-      return <Star className="h-4 w-4" />;
-    case 'vip':
-      return <Crown className="h-4 w-4" />;
-    default:
-      return <Percent className="h-4 w-4" />;
-  }
-}
-
 interface CampaignHistoryProps {
   selectedCampaignType: string | null;
+  onCampaignSelected?: (campaignId: string) => void;
+  refreshTrigger?: number; // Propriedade para forçar atualização
 }
 
 // Componente para o histórico de campanhas
-export function CampaignHistory({ selectedCampaignType }: CampaignHistoryProps) {
+export function CampaignHistory({ 
+  selectedCampaignType,
+  onCampaignSelected,
+  refreshTrigger = 0
+}: CampaignHistoryProps) {
+  const [searchValue, setSearchValue] = useState("");
+  const [campaigns, setCampaigns] = useState<CampaignData[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedCampaignId, setSelectedCampaignId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState("overview");
+  const [selectedCampaignData, setSelectedCampaignData] = useState<CampaignData | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  
-  // Filtra as campanhas com base no tipo selecionado, se houver
-  const filteredCampaigns = selectedCampaignType 
-    ? mockCampaigns.filter(campaign => campaign.type === selectedCampaignType)
-    : mockCampaigns;
-  
-  // Atualiza a campanha selecionada quando o tipo de campanha mudar
-  const [selectedCampaign, setSelectedCampaign] = useState<string>(
-    filteredCampaigns.length > 0 ? filteredCampaigns[0].id : ""
-  );
-  
-  // Atualiza o ID da campanha selecionada quando filteredCampaigns muda
-  useEffect(() => {
-    if (filteredCampaigns.length > 0) {
-      setSelectedCampaign(filteredCampaigns[0].id);
-    } else {
-      setSelectedCampaign("");
-    }
-  }, [selectedCampaignType]);
+  const [filteredUsage, setFilteredUsage] = useState<CampaignUsage[]>([]);
+  const [exportFormat, setExportFormat] = useState<"csv" | "pdf">("csv");
 
-  // Filtrar a campanha selecionada
-  const selectedCampaignData = filteredCampaigns.find(camp => camp.id === selectedCampaign);
-  
+  // Função para buscar campanhas do Supabase
+  const fetchCampaigns = async () => {
+    setLoading(true);
+    try {
+      let campaignsData: MarketingCampaign[];
+      
+      if (selectedCampaignType) {
+        campaignsData = await fetchCampaignsByType(selectedCampaignType);
+      } else {
+        campaignsData = await fetchMarketingCampaigns();
+      }
+      
+      // Transformar os dados do Supabase para o formato esperado pelo componente
+      const formattedCampaigns: CampaignData[] = campaignsData.map(campaign => ({
+        id: campaign.id || `campaign-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+        title: campaign.title,
+        name: campaign.title,
+        campaign_type: campaign.campaign_type,
+        description: campaign.description,
+        recipients_type: campaign.recipients_type,
+        recipients_count: campaign.recipients_count,
+        created_at: campaign.created_at,
+        updated_at: campaign.updated_at,
+        // Mapear campos do Supabase para o formato esperado pelo componente
+        type: (campaign.campaign_type as 'discount' | 'coupon' | 'cashback' | 'vip') || 'discount',
+        startDate: campaign.scheduled_date || new Date().toISOString().split('T')[0],
+        endDate: campaign.sent_date,
+        status: campaign.status === 'draft' ? 'draft' :
+               campaign.status === 'scheduled' ? 'scheduled' :
+               campaign.status === 'sent' ? 'completed' : 'active',
+        metrics: {
+          totalUses: campaign.recipients_count || 0,
+          totalCustomers: campaign.recipients_count || 0,
+          conversionRate: 0,
+          averageSpend: 0,
+          totalRevenue: 0,
+          redemptionRate: 0
+        },
+        usage: []
+      }));
+      
+      setCampaigns(formattedCampaigns);
+    } catch (error) {
+      console.error("Erro ao buscar campanhas:", error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível carregar as campanhas.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Buscar campanhas quando o componente for montado ou o tipo selecionado mudar
+  useEffect(() => {
+    fetchCampaigns();
+  }, [selectedCampaignType, refreshTrigger]);
+
+  // Atualizar dados da campanha selecionada
+  useEffect(() => {
+    if (selectedCampaignId) {
+      const campaign = campaigns.find(c => c.id === selectedCampaignId);
+      if (campaign) {
+        setSelectedCampaignData(campaign);
+        setFilteredUsage(campaign.usage);
+      }
+    }
+  }, [selectedCampaignId, campaigns]);
+
+  // Filtrar campanhas com base na pesquisa
+  useEffect(() => {
+    if (selectedCampaignData && searchQuery) {
+      const query = searchQuery.toLowerCase();
+      const filtered = selectedCampaignData.usage.filter(
+        usage => 
+          usage.customer.name.toLowerCase().includes(query) ||
+          usage.serviceOrProduct.toLowerCase().includes(query)
+      );
+      setFilteredUsage(filtered);
+    } else if (selectedCampaignData) {
+      setFilteredUsage(selectedCampaignData.usage);
+    }
+  }, [searchQuery, selectedCampaignData]);
+
+  // Função para retornar o ícone de acordo com o tipo de campanha
+  function getCampaignTypeIcon(type: string) {
+    switch (type) {
+      case 'discount':
+        return <Percent className="h-4 w-4" />;
+      case 'coupon':
+        return <Gift className="h-4 w-4" />;
+      case 'cashback':
+        return <Star className="h-4 w-4" />;
+      case 'vip':
+        return <Crown className="h-4 w-4" />;
+      default:
+        return <Percent className="h-4 w-4" />;
+    }
+  }
+
   // Obter as cores com base no tipo da campanha selecionada
   const campaignTypeColors: Record<string, {
     border: string,
@@ -242,35 +243,19 @@ export function CampaignHistory({ selectedCampaignType }: CampaignHistoryProps) 
       tableBg: 'bg-amber-50'
     }
   };
-  
+
   // Definir as cores padrão ou com base no tipo selecionado
   const defaultColors = campaignTypeColors.discount;
   const colors = selectedCampaignData 
     ? campaignTypeColors[selectedCampaignData.type] || defaultColors
     : defaultColors;
-  
-  // Filtrar os usos com base na pesquisa
-  const filteredUsage = selectedCampaignData?.usage.filter(usage => 
-    usage.customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    usage.serviceOrProduct.toLowerCase().includes(searchQuery.toLowerCase())
-  ) || [];
-
-  const handleExportCampaign = () => {
-    if (selectedCampaignData) {
-      // Simulação de exportação
-      toast({
-        title: "Relatório exportado",
-        description: `O relatório da campanha "${selectedCampaignData.name}" foi exportado com sucesso.`,
-      });
-    }
-  };
 
   // Função para obter as cores de botão com base no tipo de campanha
   const getButtonVariant = (campaignId: string) => {
-    const campaign = filteredCampaigns.find(c => c.id === campaignId);
+    const campaign = campaigns.find(c => c.id === campaignId);
     if (!campaign) return "default";
     
-    if (selectedCampaign === campaignId) {
+    if (selectedCampaignId === campaignId) {
       return `bg-${campaign.type === 'discount' ? 'blue' : 
               campaign.type === 'coupon' ? 'purple' : 
               campaign.type === 'cashback' ? 'pink' : 'amber'}-600 hover:bg-${
@@ -288,6 +273,16 @@ export function CampaignHistory({ selectedCampaignType }: CampaignHistoryProps) 
             campaign.type === 'discount' ? 'blue' : 
             campaign.type === 'coupon' ? 'purple' : 
             campaign.type === 'cashback' ? 'pink' : 'amber'}-300`;
+  };
+
+  const handleExportCampaign = () => {
+    if (selectedCampaignData) {
+      // Simulação de exportação
+      toast({
+        title: "Relatório exportado",
+        description: `O relatório da campanha "${selectedCampaignData.name}" foi exportado com sucesso.`,
+      });
+    }
   };
 
   return (
@@ -319,7 +314,15 @@ export function CampaignHistory({ selectedCampaignType }: CampaignHistoryProps) 
         </div>
       </CardHeader>
       <CardContent className="p-0">
-        {filteredCampaigns.length === 0 ? (
+        {loading ? (
+          <div className="p-8 text-center">
+            <BarChart3 className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+            <h3 className="text-lg font-medium text-gray-700 mb-2">Carregando...</h3>
+            <p className="text-gray-500 max-w-md mx-auto">
+              Aguarde enquanto carregamos as campanhas.
+            </p>
+          </div>
+        ) : campaigns.length === 0 ? (
           <div className="p-8 text-center">
             <BarChart3 className="h-12 w-12 mx-auto text-gray-400 mb-4" />
             <h3 className="text-lg font-medium text-gray-700 mb-2">Nenhuma campanha encontrada</h3>
@@ -333,14 +336,14 @@ export function CampaignHistory({ selectedCampaignType }: CampaignHistoryProps) 
           <div>
             <div className="border-b border-gray-200">
               <div className="px-4 py-3 flex items-center gap-2 overflow-x-auto scrollbar-hide">
-                {filteredCampaigns.map((campaign) => (
+                {campaigns.map((campaign) => (
                   <Button
                     key={campaign.id}
                     variant="ghost"
                     size="sm"
-                    onClick={() => setSelectedCampaign(campaign.id)}
+                    onClick={() => setSelectedCampaignId(campaign.id)}
                     className={`whitespace-nowrap ${
-                      selectedCampaign === campaign.id 
+                      selectedCampaignId === campaign.id 
                         ? `bg-${campaign.type === 'discount' ? 'blue' : 
                            campaign.type === 'coupon' ? 'purple' : 
                            campaign.type === 'cashback' ? 'pink' : 'amber'}-600 text-white` 

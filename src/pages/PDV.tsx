@@ -8,6 +8,7 @@ import { AberturaCaixaModal } from "@/components/pdv/AberturaCaixaModal";
 import { FechamentoCaixaModal } from "@/components/pdv/FechamentoCaixaModal";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
+import { usePDVManagement } from "@/hooks/usePDVManagement";
 
 // Componente de carregamento
 const LoadingFallback = () => (
@@ -20,21 +21,25 @@ const LoadingFallback = () => (
 export default function PDV() {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("terminal");
-  const [caixaAberto, setCaixaAberto] = useState(false);
   const [showAberturaCaixa, setShowAberturaCaixa] = useState(false);
   const [showFechamentoCaixa, setShowFechamentoCaixa] = useState(false);
-  const [horarioAbertura, setHorarioAbertura] = useState<Date | null>(null);
-  const [responsavelAbertura, setResponsavelAbertura] = useState("João Silva");
+  
+  // Usar o hook de gerenciamento do PDV
+  const {
+    loading,
+    error,
+    caixaStatus,
+    caixaPendente,
+    abrirCaixa,
+    fecharCaixa
+  } = usePDVManagement();
 
   // Verifica status do caixa ao carregar a página
   useEffect(() => {
-    // Simulação: verificar se existe caixa fechado no dia anterior
-    const caixaAnteriorPendente = false;
-    
     // Se não houver caixa anterior pendente e o caixa ainda não estiver aberto
-    if (!caixaAnteriorPendente && !caixaAberto) {
+    if (!caixaPendente && !caixaStatus.aberto) {
       setShowAberturaCaixa(true);
-    } else if (caixaAnteriorPendente) {
+    } else if (caixaPendente) {
       // Aviso sobre caixa pendente
       toast({
         variant: "destructive",
@@ -42,37 +47,40 @@ export default function PDV() {
         description: "Existe um fechamento de caixa pendente do dia anterior. Resolva antes de abrir um novo caixa.",
       });
     }
-  }, []);
+  }, [caixaPendente, caixaStatus.aberto, toast]);
 
-  const handleAbrirCaixa = (valorAbertura: number) => {
-    setCaixaAberto(true);
-    setHorarioAbertura(new Date());
-    setShowAberturaCaixa(false);
-    
-    toast({
-      title: "Caixa aberto com sucesso",
-      description: `Valor inicial: ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valorAbertura)}`,
-    });
+  const handleAbrirCaixa = async (valorAbertura: number) => {
+    const resultado = await abrirCaixa(valorAbertura);
+    if (resultado) {
+      setShowAberturaCaixa(false);
+    }
   };
 
   const handleFecharCaixa = () => {
     setShowFechamentoCaixa(true);
   };
 
-  const handleConfirmarFechamento = (valorFinal: number, justificativa?: string) => {
-    setCaixaAberto(false);
-    setHorarioAbertura(null);
-    setShowFechamentoCaixa(false);
-    
-    toast({
-      title: "Caixa fechado com sucesso",
-      description: "O relatório de fechamento está disponível para consulta.",
-    });
+  const handleConfirmarFechamento = async (valorFinal: number, justificativa?: string) => {
+    const resultado = await fecharCaixa(valorFinal, justificativa);
+    if (resultado) {
+      setShowFechamentoCaixa(false);
+    }
   };
 
   const handleTabChange = (value: string) => {
     setActiveTab(value);
   };
+  
+  // Exibir toast de erro quando o erro mudar
+  useEffect(() => {
+    if (error) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao carregar PDV",
+        description: error,
+      });
+    }
+  }, [error, toast]);
 
   return (
     <div className="space-y-6">
@@ -97,12 +105,17 @@ export default function PDV() {
           </div>
         </div>
         <div className="flex flex-wrap gap-2 items-center">
-          {caixaAberto ? (
+          {loading ? (
+            <div className="flex items-center bg-blue-50 rounded-lg border border-blue-200 px-3 py-1.5 text-sm text-blue-700">
+              <Loader2 className="h-4 w-4 mr-2 text-blue-500 animate-spin" />
+              <span>Carregando status do caixa...</span>
+            </div>
+          ) : caixaStatus.aberto ? (
             <>
               <div className="flex items-center bg-white rounded-lg border border-emerald-200 px-3 py-1.5 text-sm text-emerald-700">
                 <Clock className="h-4 w-4 mr-2 text-emerald-500" />
                 <span>
-                  Aberto às {horarioAbertura?.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} por {responsavelAbertura}
+                  Aberto às {caixaStatus.dataAbertura?.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} por {caixaStatus.responsavelAbertura}
                 </span>
               </div>
               <Button 
@@ -136,7 +149,12 @@ export default function PDV() {
         </TabsList>
         
         <TabsContent value="terminal" className="space-y-4">
-          {caixaAberto ? (
+          {loading ? (
+            <div className="flex flex-col items-center justify-center h-64 bg-gray-50 rounded-lg border border-gray-200 p-6">
+              <Loader2 className="h-12 w-12 text-emerald-500 animate-spin mb-4" />
+              <p className="text-gray-500">Carregando terminal...</p>
+            </div>
+          ) : caixaStatus.aberto ? (
             <Terminal />
           ) : (
             <div className="flex flex-col items-center justify-center h-64 bg-gray-50 rounded-lg border border-gray-200 p-6">

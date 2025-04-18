@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
+import { usePDVManagement } from "@/hooks/usePDVManagement";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -35,115 +36,8 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { RelatorioModal } from "./RelatorioModal";
 
-// Definição de tipos
-interface Pedido {
-  id: string;
-  data: Date;
-  cliente: {
-    id: string;
-    nome: string;
-  };
-  itens: {
-    id: string;
-    nome: string;
-    quantidade: number;
-    preco: number;
-  }[];
-  formaPagamento: string;
-  status: "pago" | "pendente" | "cancelado" | "salvo";
-  total: number;
-}
-
-// Dados mockados para simulação
-const pedidosMock: Pedido[] = [
-  {
-    id: "PDV-20240326-1234",
-    data: new Date(2024, 2, 26, 10, 30),
-    cliente: {
-      id: "c1",
-      nome: "Maria Silva"
-    },
-    itens: [
-      { id: "s1", nome: "Corte Feminino", quantidade: 1, preco: 80 },
-      { id: "p1", nome: "Shampoo Profissional", quantidade: 1, preco: 75 }
-    ],
-    formaPagamento: "cartão",
-    status: "pago",
-    total: 155
-  },
-  {
-    id: "PDV-20240326-2345",
-    data: new Date(2024, 2, 26, 14, 15),
-    cliente: {
-      id: "c2",
-      nome: "João Pereira"
-    },
-    itens: [
-      { id: "s2", nome: "Corte Masculino", quantidade: 1, preco: 50 }
-    ],
-    formaPagamento: "dinheiro",
-    status: "pago",
-    total: 50
-  },
-  {
-    id: "PDV-20240326-3456",
-    data: new Date(2024, 2, 26, 16, 0),
-    cliente: {
-      id: "c3",
-      nome: "Ana Souza"
-    },
-    itens: [
-      { id: "s3", nome: "Coloração", quantidade: 1, preco: 150 },
-      { id: "s4", nome: "Escova", quantidade: 1, preco: 60 }
-    ],
-    formaPagamento: "pix",
-    status: "pendente",
-    total: 210
-  },
-  {
-    id: "PDV-20240325-4567",
-    data: new Date(2024, 2, 25, 11, 45),
-    cliente: {
-      id: "c4",
-      nome: "Carlos Oliveira"
-    },
-    itens: [
-      { id: "s2", nome: "Corte Masculino", quantidade: 1, preco: 50 },
-      { id: "p2", nome: "Condicionador", quantidade: 1, preco: 65 }
-    ],
-    formaPagamento: "cartão",
-    status: "pago",
-    total: 115
-  },
-  {
-    id: "PDV-20240325-5678",
-    data: new Date(2024, 2, 25, 17, 30),
-    cliente: {
-      id: "c5",
-      nome: "Amanda Costa"
-    },
-    itens: [
-      { id: "s5", nome: "Manicure", quantidade: 1, preco: 40 }
-    ],
-    formaPagamento: "pendente",
-    status: "salvo",
-    total: 40
-  },
-  {
-    id: "PDV-20240324-6789",
-    data: new Date(2024, 2, 24, 9, 15),
-    cliente: {
-      id: "c6",
-      nome: "Paulo Santos"
-    },
-    itens: [
-      { id: "s3", nome: "Coloração", quantidade: 1, preco: 150 }
-    ],
-    formaPagamento: "dinheiro",
-    status: "cancelado",
-    total: 150
-  }
-];
+// Utilizando o tipo do hook
+import { Pedido } from "@/hooks/usePDVManagement";
 
 // Componente de carregamento
 const LoadingState = () => (
@@ -156,68 +50,79 @@ const LoadingState = () => (
 export function ListaPedidos() {
   const [data, setData] = useState<Date | undefined>(new Date());
   const [status, setStatus] = useState<string>("");
-  const [formaPagamento, setFormaPagamento] = useState<string>("");
-  const [searchTerm, setSearchTerm] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
+  const [termoBusca, setTermoBusca] = useState<string>("");
   const [showRelatorioModal, setShowRelatorioModal] = useState(false);
   
-  // Simulando carregamento dos dados
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        // Simula um atraso na carga para garantir que a interface renderize corretamente
-        await new Promise(resolve => setTimeout(resolve, 300));
-        setLoading(false);
-      } catch (e) {
-        console.error("Erro ao carregar pedidos:", e);
-        setError(true);
-        setLoading(false);
-      }
-    };
-    
-    loadData();
-  }, []);
+  // Hook para gerenciamento do PDV
+  const {
+    loading,
+    pedidos,
+    buscarPedidos
+  } = usePDVManagement();
   
-  // Filtragem de pedidos - agora com tratamento de erro
-  const pedidosFiltrados = useCallback(() => {
-    try {
-      return pedidosMock.filter(pedido => {
-        const matchesDate = !data || 
-          (pedido.data.getDate() === data.getDate() && 
-           pedido.data.getMonth() === data.getMonth() && 
-           pedido.data.getFullYear() === data.getFullYear());
-        
-        const matchesStatus = !status || status === "todos" || pedido.status === status;
-        const matchesPayment = !formaPagamento || formaPagamento === "todas" || pedido.formaPagamento === formaPagamento;
-        const matchesSearch = !searchTerm || 
-          pedido.cliente.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          pedido.id.toLowerCase().includes(searchTerm.toLowerCase());
-        
-        return matchesDate && matchesStatus && matchesPayment && matchesSearch;
-      });
-    } catch (e) {
-      console.error("Erro ao filtrar pedidos:", e);
-      setError(true);
-      return [];
-    }
-  }, [data, status, formaPagamento, searchTerm]);
+  // Simulando carregamento dos dados
+  const loadData = useCallback(async () => {
+    await buscarPedidos(data, status !== "todos" ? status : undefined);
+  }, [buscarPedidos, data, status]);
 
-  // Lista filtrada
-  const listaFiltrada = useMemo(() => pedidosFiltrados(), [pedidosFiltrados]);
-
-  // Calculando o total dos pedidos exibidos
-  const totalVendas = listaFiltrada
-    .filter(p => p.status === "pago")
-    .reduce((sum, pedido) => sum + pedido.total, 0);
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+  
+  // Filtrando a lista com base nos filtros e termo de busca
+  const listaFiltrada = useMemo(() => {
+    return pedidos.filter(pedido => {
+      // Filtro por data (se selecionada)
+      if (data) {
+        const pedidoData = new Date(pedido.data);
+        const filtroData = new Date(data);
+        
+        if (
+          pedidoData.getDate() !== filtroData.getDate() ||
+          pedidoData.getMonth() !== filtroData.getMonth() ||
+          pedidoData.getFullYear() !== filtroData.getFullYear()
+        ) {
+          return false;
+        }
+      }
+      
+      // Filtro por status (se selecionado)
+      if (status && status !== 'todos' && pedido.status !== status) {
+        return false;
+      }
+      
+      // Filtro por termo de busca
+      if (termoBusca) {
+        const termo = termoBusca.toLowerCase();
+        const matchID = pedido.id.toLowerCase().includes(termo);
+        const matchCliente = pedido.cliente.nome.toLowerCase().includes(termo);
+        const matchItens = pedido.itens.some(item => 
+          item.nome.toLowerCase().includes(termo)
+        );
+        
+        if (!matchID && !matchCliente && !matchItens) {
+          return false;
+        }
+      }
+      
+      return true;
+    });
+  }, [pedidos, data, status, termoBusca]);
+  
+  // Calculando o total de vendas realizadas
+  const totalVendas = useMemo(() => {
+    return listaFiltrada
+      .filter(p => p.status === "pago")
+      .reduce((total, pedido) => total + pedido.total, 0);
+  }, [listaFiltrada]);
 
   // Formatando valores como moeda brasileira
-  const formatCurrency = (value: number) => {
+  const formatCurrency = useCallback((value: number) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
-      currency: 'BRL',
+      currency: 'BRL'
     }).format(value);
-  };
+  }, []);
 
   // Renderiza badges para status
   const renderStatusBadge = (status: string) => {
@@ -239,16 +144,6 @@ export function ListaPedidos() {
   const gerarRelatorio = () => {
     setShowRelatorioModal(true);
   };
-
-  // Mostrar mensagem de erro
-  if (error) {
-    return (
-      <div className="p-8 text-center">
-        <p className="text-red-500 mb-4">Ocorreu um erro ao carregar os pedidos.</p>
-        <Button onClick={() => window.location.reload()}>Tentar novamente</Button>
-      </div>
-    );
-  }
 
   // Mostrar carregamento
   if (loading) {
@@ -318,30 +213,14 @@ export function ListaPedidos() {
             </div>
             
             <div className="space-y-2">
-              <label className="text-sm font-medium">Forma de Pagamento</label>
-              <Select value={formaPagamento} onValueChange={setFormaPagamento}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Todas" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todas">Todas</SelectItem>
-                  <SelectItem value="dinheiro">Dinheiro</SelectItem>
-                  <SelectItem value="cartão">Cartão</SelectItem>
-                  <SelectItem value="pix">PIX</SelectItem>
-                  <SelectItem value="pendente">Pendente</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="space-y-2">
               <label className="text-sm font-medium">Buscar</label>
               <div className="relative">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                 <Input
                   placeholder="Cliente ou número do pedido..."
                   className="pl-10"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  value={termoBusca}
+                  onChange={(e) => setTermoBusca(e.target.value)}
                 />
               </div>
             </div>
@@ -418,7 +297,7 @@ export function ListaPedidos() {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                            <DropdownMenuItem onClick={() => console.log(`Ver detalhes do pedido ${pedido.id}`)}>
+                            <DropdownMenuItem onClick={() => window.open(`/pdv/detalhes/${pedido.id}`, '_blank')}>
                               <Eye className="h-4 w-4 mr-2" />
                               Ver Detalhes
                             </DropdownMenuItem>

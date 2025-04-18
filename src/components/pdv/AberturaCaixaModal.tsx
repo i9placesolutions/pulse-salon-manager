@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -67,6 +67,9 @@ export function AberturaCaixaModal({ isOpen, onClose, onConfirm }: AberturaCaixa
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="text-xl">Abertura de Caixa</DialogTitle>
+          <DialogDescription>
+            Informe o valor inicial para começar as operações do caixa
+          </DialogDescription>
         </DialogHeader>
         
         <div className="space-y-6 py-4">

@@ -1,0 +1,376 @@
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { supabase } from '@/lib/supabaseClient';
+import { useToast } from '@/components/ui/use-toast';
+
+// Tipos
+export interface Item {
+  id: string;
+  nome: string;
+  tipo: "produto" | "servico";
+  preco: number;
+  quantidade: number;
+}
+
+export interface Cliente {
+  id: string;
+  nome: string;
+  telefone?: string;
+  email?: string;
+  cashbackDisponivel?: number;
+  cashback?: any[];
+  cupons?: any[];
+  ultimaVisita?: string;
+}
+
+export interface Beneficio {
+  tipo: "cashback" | "cupom" | "desconto";
+  valor: number;
+  motivo?: string;
+  cupomId?: string;
+}
+
+export interface Pedido {
+  id: string;
+  created_at: string;
+  cliente_id: string;
+  cliente?: {
+    id: string;
+    nome: string;
+  } | null;
+  itens?: {
+    id: string;
+    produto_id: string;
+    nome: string;
+    quantidade: number;
+    preco: number;
+  }[];
+  forma_pagamento: string;
+  status: string;
+  valor_total: number;
+}
+
+export interface CaixaStatus {
+  id: string; // UUID
+  data_abertura: string | null;
+  hora_abertura: string | null;
+  responsavel_abertura: string | null;
+  valor_inicial: number | null;
+  data_fechamento: string | null;
+  hora_fechamento: string | null;
+  valor_final: number | null;
+  total_vendas: number | null;
+  diferenca: number | null;
+  justificativa: string | null;
+  usuario_id: string | null;
+  created_at: string | null;
+}
+
+export function usePDVManagement() {
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  
+  // Estado do caixa
+  const [caixaStatus, setCaixaStatus] = useState<CaixaStatus | null>(null);
+  const [caixaPendente, setCaixaPendente] = useState(false);
+  
+  // Estados para pedidos
+  const [pedidos, setPedidos] = useState<Pedido[]>([]);
+  
+  // Estados para produtos e serviços
+  const [produtosServicos, setProdutosServicos] = useState<any[]>([]);
+  
+  // Estados para clientes
+  const [clientes, setClientes] = useState<Cliente[]>([]);
+  
+  // Estado para totais
+  const [totais, setTotais] = useState({
+    totalVendas: 0,
+    totalSangrias: 0
+  });
+  
+  // Referência para armazenar o último timestamp de carregamento dos dados
+  const lastDataLoad = useRef(new Date());
+
+  // Buscar status do caixa
+  const buscarStatusCaixa = useCallback(async () => {
+    try {
+      setLoading(true);
+      
+      // Usando a tabela 'caixas' enquanto não migramos para 'cash_registers' (em inglês)
+      const { data: todosCaixas, error: caixaError } = await supabase
+        .from('caixas')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (caixaError) {
+        throw caixaError;
+      }
+      
+      // Filtramos para encontrar o caixa do dia atual
+      const dataAtual = new Date().toISOString().split('T')[0];
+      const caixaAtual = todosCaixas?.find(caixa => 
+        caixa.data_abertura === dataAtual
+      );
+
+      if (caixaError && caixaError.code !== 'PGRST116') {
+        // PGRST116 é o código para "Nenhum resultado encontrado"
+        throw caixaError;
+      }
+
+      // Verificar caixas pendentes de dias anteriores (filtrado no cliente)
+      const caixasPendentes = todosCaixas?.filter(caixa => 
+        caixa.data_abertura < dataAtual && caixa.data_fechamento === null
+      ) || [];
+
+      setCaixaPendente(caixasPendentes.length > 0);
+      
+      if (caixaAtual) {
+        setCaixaStatus(caixaAtual);
+      } else {
+        setCaixaStatus(null);
+      }
+    } catch (error) {
+      console.error('Erro ao buscar status do caixa:', error);
+      setError('Falha ao verificar status do caixa');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // Abrir caixa
+  const abrirCaixa = useCallback(async (valorAbertura: number) => {
+    try {
+      setLoading(true);
+      
+      const agora = new Date();
+      const dataAtual = agora.toISOString().split('T')[0];
+      const horaAtual = agora.toTimeString().split(' ')[0];
+      const responsavel = 'João Silva'; // Ideal: obter do contexto de autenticação
+      
+      const { data, error } = await supabase
+        .from('caixas')
+        .insert([{
+          data_abertura: dataAtual,
+          hora_abertura: horaAtual,
+          responsavel_abertura: responsavel,
+          valor_inicial: valorAbertura
+        }])
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
+      setCaixaStatus(data);
+      
+      toast({
+        title: "Caixa aberto com sucesso",
+        description: `Valor inicial: ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valorAbertura)}`,
+      });
+      
+      return data;
+    } catch (error) {
+      console.error('Erro ao abrir caixa:', error);
+      setError('Falha ao abrir o caixa');
+      
+      toast({
+        variant: "destructive",
+        title: "Erro ao abrir caixa",
+        description: "Ocorreu um erro ao tentar abrir o caixa.",
+      });
+      
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  }, [toast]);
+
+  // Fechar caixa
+  const fecharCaixa = useCallback(async (valorFinal: number, justificativa?: string) => {
+    if (!caixaStatus || !caixaStatus.id) {
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Não há caixa aberto para fechar.",
+      });
+      return null;
+    }
+    
+    try {
+      setLoading(true);
+      
+      const agora = new Date();
+      const dataAtual = agora.toISOString().split('T')[0];
+      const horaAtual = agora.toTimeString().split(' ')[0];
+      
+      // Calcular diferença entre valor_final e valor_inicial
+      const valorInicial = caixaStatus.valor_inicial || 0;
+      const diferenca = valorFinal - valorInicial;
+      
+      const { data, error } = await supabase
+        .from('caixas')
+        .update({
+          data_fechamento: dataAtual,
+          hora_fechamento: horaAtual,
+          valor_final: valorFinal,
+          diferenca: diferenca,
+          justificativa: justificativa || null
+        })
+        .eq('id', caixaStatus.id)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
+      setCaixaStatus(data);
+      
+      toast({
+        title: "Caixa fechado com sucesso",
+        description: "O relatório de fechamento está disponível para consulta.",
+      });
+      
+      return data;
+    } catch (error) {
+      console.error('Erro ao fechar caixa:', error);
+      setError('Falha ao fechar o caixa');
+      
+      toast({
+        variant: "destructive",
+        title: "Erro ao fechar caixa",
+        description: "Ocorreu um erro ao tentar fechar o caixa.",
+      });
+      
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  }, [caixaStatus, toast]);
+      
+      const { error: itensError } = await supabase
+        .from('order_items')
+        .insert(itensParaInserir);
+      
+      if (itensError) throw itensError;
+    }
+    
+    // Também inserir na tabela 'pedidos' em português para manter compatibilidade
+    await supabase
+      .from('pedidos')
+      .insert({
+        id: novoPedido.id, // Usar o mesmo ID para consistência
+        cliente_id: pedido.cliente_id,
+        caixa_id: caixaStatus.id,
+        subtotal: pedido.subtotal,
+        desconto: pedido.beneficio ? pedido.beneficio.valor : 0,
+        valor_total: pedido.total,
+        status: 'pendente',
+        beneficio_tipo: pedido.beneficio?.tipo,
+        beneficio_valor: pedido.beneficio?.valor,
+        beneficio_motivo: pedido.beneficio?.motivo,
+        cupom_id: pedido.beneficio?.cupomId
+      });
+    
+    // Inserir os itens também na tabela em português para manter compatibilidade
+    if (pedido.itens && pedido.itens.length > 0) {
+      const itensPtParaInserir = pedido.itens.map(item => ({
+        pedido_id: novoPedido.id,
+        nome: item.nome,
+        quantidade: item.quantidade,
+        preco: item.preco,
+        tipo: item.tipo,
+        produto_id: item.tipo === 'produto' ? item.id : null,
+        servico_id: item.tipo === 'servico' ? item.id : null
+      }));
+      
+      await supabase
+        .from('pedidos_itens')
+        .insert(itensPtParaInserir);
+    }
+    
+    // Se o benefício for do tipo cupom, atualizar o cupom como utilizado
+    if (pedido.beneficio?.tipo === 'cupom' && pedido.beneficio?.cupomId) {
+      await supabase
+        .from('vouchers')
+        .update({ is_used: true, used_date: new Date().toISOString(), order_id: novoPedido.id })
+        .eq('id', pedido.beneficio.cupomId);
+    }
+    
+    // Se o benefício for do tipo cashback, diminuir o valor do cashback do cliente
+    if (pedido.beneficio?.tipo === 'cashback' && pedido.cliente_id) {
+      const { data: clienteData } = await supabase
+        .from('clients')
+        .select('cashback')
+        .eq('id', pedido.cliente_id)
+        .single();
+      
+      if (clienteData && clienteData.cashback) {
+        const novoCashback = Math.max(0, Number(clienteData.cashback) - pedido.beneficio.valor);
+        await supabase
+          .from('clients')
+          .update({ cashback: novoCashback })
+          .eq('id', pedido.cliente_id);
+      }
+    }
+  }, [caixaStatus, toast, buscarPedidosPorData, buscarTotaisDia]);
+
+  // Inicializar os dados ao montar o componente e configurar atualização periódica
+  useEffect(() => {
+    // Carregar dados iniciais
+    const carregarDados = async () => {
+      try {
+        setLoading(true);
+        await buscarStatusCaixa();
+        await buscarProdutosServicos();
+        await buscarPedidosPorData();
+        await buscarClientes();
+        await buscarTotaisDia();
+      } catch (error) {
+        console.error('Erro ao carregar dados iniciais:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    // Carregar dados inicialmente
+    carregarDados();
+    
+    // Configurar atualização periódica a cada 15 segundos
+    const intervalId = setInterval(() => {
+      buscarStatusCaixa();
+      buscarPedidosPorData();
+      buscarTotaisDia();
+    }, 15000); // 15 segundos
+    
+    // Limpeza ao desmontar o componente
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [buscarStatusCaixa, buscarProdutosServicos, buscarPedidosPorData, buscarClientes, buscarTotaisDia]);
+
+  return {
+    loading,
+    error,
+    caixaStatus: {
+      aberto: caixaStatus?.data_fechamento === null,
+      dataAbertura: caixaStatus?.data_abertura ? new Date(caixaStatus.data_abertura) : null,
+      valorAbertura: caixaStatus?.valor_inicial || 0,
+      responsavelAbertura: caixaStatus?.responsavel_abertura || '',
+    },
+    caixaPendente,
+    pedidos,
+    produtosServicos,
+    clientes,
+    totais,
+    abrirCaixa,
+    fecharCaixa,
+    buscarPedidos: buscarPedidosPorData, // Alias para manter compatibilidade
+    buscarStatusCaixa,
+    buscarProdutosServicos,
+    buscarClientes,
+    buscarCashbackDisponivel,
+    buscarCuponsDisponiveis,
+    buscarTotaisDia,
+    salvarPedido,
+    processarPagamento
+  };
+}
