@@ -363,61 +363,45 @@ export const EstablishmentWhatsApp: React.FC = () => {
       // URL completa do webhook com o token da instância
       const webhookUrl = `${baseUrl}/${token}`;
       
-      console.log(`Configurando webhook para URL: ${webhookUrl}`);
-      
-      // Importar serviço WhatsApp IA para configurar webhook
-      // Precisamos importar dinamicamente para evitar problemas com execução no servidor
-      const WhatsAppIAService = await import("../../services/whatsapp/whatsappIAService").then(module => module.default);
-      const whatsappService = new WhatsAppIAService(userId);
-      await whatsappService.initialize();
-      
-      // Configurações avançadas para o webhook
-      const webhookOptions = {
-        events: [
-          "connection", 
-          "messages", 
-          "messages_update", 
-          "status",
-          "call",
-          "contacts",
-          "groups"
-        ],
-        excludeMessages: ["wasSentByApi"],
-        addUrlEvents: true,
-        addUrlTypesMessages: true
-      };
-      
-      // Usar o UazapiService para configurar webhook
-      const result = await whatsappService.configureWebhook(webhookUrl);
-      
-      if (result) {
-        console.log("Webhook configurado automaticamente com sucesso");
+      // Configurar o endpoint no banco de dados
+      const { data, error } = await supabase
+        .from('establishment_config')
+        .update({
+          webhook_url: webhookUrl
+        })
+        .eq('establishment_id', userId);
         
-        // Atualizar status do webhook na IA WhatsApp
-        try {
-          const { error } = await supabase
-            .from('whatsapp_ia_config')
-            .update({ webhook_configured: true })
-            .eq('establishment_id', userId);
-            
-          if (error) {
-            console.error("Erro ao atualizar status do webhook:", error);
-          } else {
-            console.log("Status do webhook atualizado com sucesso");
-          }
-        } catch (updateError) {
-          console.error("Erro ao atualizar status do webhook:", updateError);
-        }
-        
-        toast({
-          title: "Webhook configurado",
-          description: "Webhook configurado automaticamente para receber mensagens do WhatsApp.",
-          variant: "default",
-          className: "bg-green-50 border-green-200 text-green-800",
-        });
-      } else {
-        console.error("Falha ao configurar webhook automaticamente");
+      if (error) {
+        console.error("Erro ao salvar webhook URL:", error);
+        return;
       }
+      
+      console.log("Webhook URL salva com sucesso:", webhookUrl);
+      
+      // Criar ou atualizar a configuração do WhatsApp IA no banco de dados
+      const { data: configData, error: configError } = await supabase
+        .from('whatsapp_config')
+        .upsert({
+          establishment_id: userId,
+          is_active: true,
+          instance_token: token,
+          webhook_url: webhookUrl,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .select();
+        
+      if (configError) {
+        console.error("Erro ao salvar configuração do WhatsApp:", configError);
+        return;
+      }
+      
+      toast({
+        title: "Webhook configurado",
+        description: "Webhook configurado automaticamente para receber mensagens do WhatsApp.",
+        variant: "default",
+        className: "bg-green-50 border-green-200 text-green-800",
+      });
     } catch (error) {
       console.error("Erro ao configurar webhook automaticamente:", error);
     }
