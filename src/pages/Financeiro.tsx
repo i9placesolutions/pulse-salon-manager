@@ -295,7 +295,7 @@ const Financeiro = () => {
                     variant: "destructive"
                   });
                 }
-              }}
+              }}  
             />
             <CostControlPanel expenses={expenses} />
           </div>

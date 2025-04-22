@@ -118,7 +118,7 @@ export function CashFlowPanel({ data, onUpdateData }: CashFlowPanelProps) {
     });
   };
 
-  const exportCashFlowData = (format: 'excel' | 'csv' | 'pdf') => {
+  const exportCashFlowData = async (format: 'excel' | 'csv' | 'pdf') => {
     try {
       // Preparar dados para exportação
       const dataToExport = filteredData.map(item => ({
@@ -130,9 +130,9 @@ export function CashFlowPanel({ data, onUpdateData }: CashFlowPanelProps) {
         Status: item.status === 'realizado' ? 'Realizado' : 'Previsto'
       }));
       
-      // Exportar usando a função global
+      // Exportar usando a função global (agora assíncrona)
       const titulo = "Relatório de Fluxo de Caixa";
-      exportData(dataToExport, format, "fluxo-de-caixa", titulo);
+      await exportData(dataToExport, format, "fluxo-de-caixa", titulo);
       
       toast({
         title: "Exportação concluída",
@@ -278,21 +278,21 @@ export function CashFlowPanel({ data, onUpdateData }: CashFlowPanelProps) {
                       <Button 
                         variant="ghost" 
                         className="justify-start" 
-                        onClick={() => exportCashFlowData('excel')}
+                        onClick={async () => await exportCashFlowData('excel')}
                       >
                         Excel
                       </Button>
                       <Button 
                         variant="ghost" 
                         className="justify-start" 
-                        onClick={() => exportCashFlowData('csv')}
+                        onClick={async () => await exportCashFlowData('csv')}
                       >
                         CSV
                       </Button>
                       <Button 
                         variant="ghost" 
                         className="justify-start" 
-                        onClick={() => exportCashFlowData('pdf')}
+                        onClick={async () => await exportCashFlowData('pdf')}
                       >
                         PDF
                       </Button>

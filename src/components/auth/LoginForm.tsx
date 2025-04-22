@@ -63,13 +63,27 @@ const LoginForm = () => {
     setIsLoading(true);
 
     try {
+      if (!email || !password) {
+        throw new Error("Email e senha são obrigatórios");
+      }
+
+      // Validação básica de email
+      if (!/\S+@\S+\.\S+/.test(email)) {
+        throw new Error("Formato de email inválido");
+      }
+      
+      console.log(`Tentando login com email: ${email.substring(0, 3)}...`);
+      
       // Autenticação com Supabase
       const { data, error } = await supabase.auth.signInWithPassword({
-        email: email,
+        email: email.trim(),
         password: password,
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Erro de autenticação:", error.message);
+        throw error;
+      }
 
       if (data && data.user) {
         toast({
@@ -78,8 +92,13 @@ const LoginForm = () => {
           variant: "success"
         });
         
-        // Enviar notificação de login via WhatsApp
-        sendLoginAlert(data.user.id);
+        // Enviar notificação de login via WhatsApp de forma assíncrona
+        // para não bloquear o fluxo principal
+        setTimeout(() => {
+          sendLoginAlert(data.user.id).catch(err => {
+            console.error("Erro ao enviar alerta de login:", err);
+          });
+        }, 100);
         
         // Redirecionar para o dashboard
         setTimeout(() => {
@@ -87,10 +106,22 @@ const LoginForm = () => {
         }, 1000);
       }
     } catch (error) {
+      let mensagem = "Por favor, verifique suas credenciais e tente novamente.";
+      
+      if (error.message) {
+        if (error.message.includes("Invalid login credentials")) {
+          mensagem = "Credenciais inválidas. Verifique seu email e senha.";
+        } else if (error.message.includes("Email")) {
+          mensagem = error.message;
+        } else if (error.message.includes("rate limited")) {
+          mensagem = "Muitas tentativas de login. Tente novamente mais tarde.";
+        }
+      }
+      
       toast({
         variant: "destructive",
         title: "Erro ao fazer login",
-        description: "Por favor, verifique suas credenciais e tente novamente.",
+        description: mensagem,
         className: "shadow-xl"
       });
     } finally {

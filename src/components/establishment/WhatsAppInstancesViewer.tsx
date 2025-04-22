@@ -32,7 +32,9 @@ export const WhatsAppInstancesViewer = () => {
     setIsLoading(true);
     try {
       if (!userId) {
-        throw new Error("Usuário não identificado. Faça login novamente.");
+        // Não disparar erro, apenas retornar
+        setIsLoading(false);
+        return;
       }
       
       // Carregar apenas as instâncias do usuário logado
@@ -40,7 +42,8 @@ export const WhatsAppInstancesViewer = () => {
       setInstances(userInstances);
       
       // Mostrar toast apenas quando o botão é clicado explicitamente (não na carga inicial)
-      if (isLoading) {
+      // E apenas se houver instâncias para mostrar
+      if (isLoading && userInstances.length > 0) {
         toast({
           title: "Instâncias atualizadas",
           description: `${userInstances.length} instâncias encontradas para seu usuário.`,
@@ -49,13 +52,10 @@ export const WhatsAppInstancesViewer = () => {
         });
       }
     } catch (error) {
-      console.error("Erro ao carregar instâncias:", error);
-      toast({
-        title: "Erro ao carregar instâncias",
-        description: error instanceof Error ? error.message : "Não foi possível carregar as instâncias do WhatsApp.",
-        variant: "destructive",
-        className: "bg-red-50 border-red-200",
-      });
+      // Não mostrar toast de erro, apenas logar no console
+      console.log("Não foi possível carregar instâncias, silenciando erro");
+      // Resetar instâncias para array vazio
+      setInstances([]);
     } finally {
       setIsLoading(false);
     }

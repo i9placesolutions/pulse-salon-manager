@@ -241,9 +241,42 @@ export const EstablishmentWhatsApp: React.FC = () => {
           ...whatsAppConfig,
           status: "connected",
           instanceName: statusResult.instance.name || instanceName,
+          instanceToken: instanceToken
         };
         
         await saveWhatsAppConfig(updatedConfig);
+        
+        // Salvar o token no Supabase MCP pulsedados
+        try {
+          const { data: userData } = await supabase.auth.getUser();
+          const userId = userData?.user?.id;
+          
+          if (userId) {
+            const { error } = await supabase
+              .from('mcp_whatsapp_tokens')
+              .upsert(
+                { 
+                  establishment_id: userId,
+                  instance_token: instanceToken,
+                  instance_name: statusResult.instance.name || instanceName,
+                  status: "connected",
+                  updated_at: new Date().toISOString()
+                },
+                { onConflict: 'establishment_id' }
+              );
+              
+            if (error) {
+              console.error("Erro ao salvar token no MCP:", error);
+            } else {
+              console.log("Token salvo com sucesso no MCP pulsedados");
+              
+              // Configurar webhook automaticamente
+              await configureWebhookAutomatically(instanceToken, userId);
+            }
+          }
+        } catch (mcpError) {
+          console.error("Erro ao salvar no MCP pulsedados:", mcpError);
+        }
         
         toast({
           title: "WhatsApp conectado",
@@ -253,6 +286,27 @@ export const EstablishmentWhatsApp: React.FC = () => {
         });
       } else {
         setStatus("disconnected");
+        
+        // Remover token do MCP se desconectado
+        try {
+          const { data: userData } = await supabase.auth.getUser();
+          const userId = userData?.user?.id;
+          
+          if (userId) {
+            const { error } = await supabase
+              .from('mcp_whatsapp_tokens')
+              .delete()
+              .eq('establishment_id', userId);
+              
+            if (error) {
+              console.error("Erro ao remover token do MCP:", error);
+            } else {
+              console.log("Token removido com sucesso do MCP pulsedados");
+            }
+          }
+        } catch (mcpError) {
+          console.error("Erro ao remover token do MCP pulsedados:", mcpError);
+        }
         
         toast({
           title: "WhatsApp desconectado",
@@ -266,12 +320,106 @@ export const EstablishmentWhatsApp: React.FC = () => {
       console.error("Erro ao verificar status:", error);
       setStatus("disconnected");
       
+      // Remover token do MCP em caso de erro
+      try {
+        const { data: userData } = await supabase.auth.getUser();
+        const userId = userData?.user?.id;
+        
+        if (userId) {
+          const { error } = await supabase
+            .from('mcp_whatsapp_tokens')
+            .delete()
+            .eq('establishment_id', userId);
+            
+          if (error) {
+            console.error("Erro ao remover token do MCP:", error);
+          } else {
+            console.log("Token removido com sucesso do MCP pulsedados após erro");
+          }
+        }
+      } catch (mcpError) {
+        console.error("Erro ao remover token do MCP pulsedados:", mcpError);
+      }
+      
       toast({
         title: "Erro ao verificar status",
         description: "Não foi possível verificar o status da conexão",
         variant: "destructive",
         className: "bg-red-50 border-red-200",
       });
+    }
+  };
+  
+  // Função para configurar webhook automaticamente quando o WhatsApp for conectado
+  const configureWebhookAutomatically = async (token: string, userId: string) => {
+    try {
+      console.log("Configurando webhook automaticamente...");
+      
+      // URL base do webhook
+      const baseUrl = window.location.hostname === 'localhost' 
+        ? 'https://api.pulsesalonmanager.com.br/webhook'
+        : `${window.location.origin}/webhook`;
+        
+      // URL completa do webhook com o token da instância
+      const webhookUrl = `${baseUrl}/${token}`;
+      
+      console.log(`Configurando webhook para URL: ${webhookUrl}`);
+      
+      // Importar serviço WhatsApp IA para configurar webhook
+      // Precisamos importar dinamicamente para evitar problemas com execução no servidor
+      const WhatsAppIAService = await import("../../services/whatsapp/whatsappIAService").then(module => module.default);
+      const whatsappService = new WhatsAppIAService(userId);
+      await whatsappService.initialize();
+      
+      // Configurações avançadas para o webhook
+      const webhookOptions = {
+        events: [
+          "connection", 
+          "messages", 
+          "messages_update", 
+          "status",
+          "call",
+          "contacts",
+          "groups"
+        ],
+        excludeMessages: ["wasSentByApi"],
+        addUrlEvents: true,
+        addUrlTypesMessages: true
+      };
+      
+      // Usar o UazapiService para configurar webhook
+      const result = await whatsappService.configureWebhook(webhookUrl);
+      
+      if (result) {
+        console.log("Webhook configurado automaticamente com sucesso");
+        
+        // Atualizar status do webhook na IA WhatsApp
+        try {
+          const { error } = await supabase
+            .from('whatsapp_ia_config')
+            .update({ webhook_configured: true })
+            .eq('establishment_id', userId);
+            
+          if (error) {
+            console.error("Erro ao atualizar status do webhook:", error);
+          } else {
+            console.log("Status do webhook atualizado com sucesso");
+          }
+        } catch (updateError) {
+          console.error("Erro ao atualizar status do webhook:", updateError);
+        }
+        
+        toast({
+          title: "Webhook configurado",
+          description: "Webhook configurado automaticamente para receber mensagens do WhatsApp.",
+          variant: "default",
+          className: "bg-green-50 border-green-200 text-green-800",
+        });
+      } else {
+        console.error("Falha ao configurar webhook automaticamente");
+      }
+    } catch (error) {
+      console.error("Erro ao configurar webhook automaticamente:", error);
     }
   };
   
@@ -293,6 +441,27 @@ export const EstablishmentWhatsApp: React.FC = () => {
       };
       
       await saveWhatsAppConfig(updatedConfig);
+      
+      // Remover token do MCP ao desconectar
+      try {
+        const { data: userData } = await supabase.auth.getUser();
+        const userId = userData?.user?.id;
+        
+        if (userId) {
+          const { error } = await supabase
+            .from('mcp_whatsapp_tokens')
+            .delete()
+            .eq('establishment_id', userId);
+            
+          if (error) {
+            console.error("Erro ao remover token do MCP:", error);
+          } else {
+            console.log("Token removido com sucesso do MCP pulsedados");
+          }
+        }
+      } catch (mcpError) {
+        console.error("Erro ao remover token do MCP pulsedados:", mcpError);
+      }
       
       toast({
         title: "WhatsApp desconectado",

@@ -17,6 +17,7 @@
     }
   ],
   "rewrites": [
+    { "source": "/api/webhook/whatsapp", "destination": "/api/webhook/whatsapp" },
     { "source": "/api/ia-whatsapp/(.*)", "destination": "/api/ia-whatsapp/$1" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]

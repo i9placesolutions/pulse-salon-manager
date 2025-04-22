@@ -1,5 +1,5 @@
 
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { saveAs } from 'file-saver';
@@ -171,21 +171,46 @@ export const prepareExportData = (clients: Client[], options: ClientExportOption
 };
 
 // Exportar para Excel
-export const exportToExcel = (clients: Client[], options: ClientExportOptions) => {
+export const exportToExcel = async (clients: Client[], options: ClientExportOptions) => {
   const { data, reportTitle } = prepareExportData(clients, options);
   
   // Criar workbook e worksheet
-  const wb = XLSX.utils.book_new();
-  const ws = XLSX.utils.json_to_sheet(data);
+  const workbook = new ExcelJS.Workbook();
+  const worksheet = workbook.addWorksheet('Clientes');
   
-  // Adicionar worksheet ao workbook
-  XLSX.utils.book_append_sheet(wb, ws, 'Clientes');
+  if (data.length > 0) {
+    // Adiciona cabeçalhos
+    const headers = Object.keys(data[0]);
+    worksheet.addRow(headers);
+    
+    // Adiciona dados
+    data.forEach(row => {
+      const rowValues = headers.map(header => row[header]);
+      worksheet.addRow(rowValues);
+    });
+    
+    // Estiliza cabeçalhos
+    const headerRow = worksheet.getRow(1);
+    headerRow.font = { bold: true };
+    headerRow.eachCell(cell => {
+      cell.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FFE0E0E0' }
+      };
+    });
+    
+    // Ajusta largura das colunas
+    worksheet.columns.forEach(column => {
+      column.width = 20;
+    });
+  }
   
   // Gerar arquivo binário
-  const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+  const buffer = await workbook.xlsx.writeBuffer();
   
   // Criar Blob e salvar arquivo
-  const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
   saveAs(blob, `${reportTitle}.xlsx`);
 };
 
@@ -229,11 +254,11 @@ export const exportToPDF = (clients: Client[], options: ClientExportOptions) => 
 };
 
 // Função principal para exportar relatório
-export const exportClientReport = (clients: Client[], options: ClientExportOptions) => {
+export const exportClientReport = async (clients: Client[], options: ClientExportOptions) => {
   const { format } = options;
   
   if (format === 'excel') {
-    exportToExcel(clients, options);
+    await exportToExcel(clients, options);
   } else if (format === 'pdf') {
     exportToPDF(clients, options);
   }

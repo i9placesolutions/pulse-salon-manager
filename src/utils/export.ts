@@ -1,4 +1,4 @@
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
 import { format as formatDate } from 'date-fns';
 import jsPDF from 'jspdf';
@@ -10,21 +10,46 @@ import 'jspdf-autotable';
  * @param filename Nome do arquivo sem extensão
  * @param sheetName Nome da planilha
  */
-export function exportToExcel(data: Record<string, any>[], filename: string, sheetName: string = 'Dados') {
+export async function exportToExcel(data: Record<string, any>[], filename: string, sheetName: string = 'Dados') {
   try {
-    // Cria uma nova planilha
-    const worksheet = XLSX.utils.json_to_sheet(data);
+    // Cria um novo workbook
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet(sheetName);
     
-    // Cria um novo workbook e adiciona a planilha
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
+    if (data.length > 0) {
+      // Adiciona cabeçalhos
+      const headers = Object.keys(data[0]);
+      worksheet.addRow(headers);
+      
+      // Adiciona dados
+      data.forEach(row => {
+        const rowValues = headers.map(header => row[header]);
+        worksheet.addRow(rowValues);
+      });
+      
+      // Estiliza cabeçalhos
+      const headerRow = worksheet.getRow(1);
+      headerRow.font = { bold: true };
+      headerRow.eachCell(cell => {
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFE0E0E0' }
+        };
+      });
+      
+      // Ajusta largura das colunas
+      worksheet.columns.forEach(column => {
+        column.width = 15;
+      });
+    }
     
     // Gera o arquivo Excel
-    const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+    const buffer = await workbook.xlsx.writeBuffer();
     
     // Converte o buffer para Blob
-    const blob = new Blob([excelBuffer], { 
-      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+    const blob = new Blob([buffer], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     });
     
     // Faz o download do arquivo
@@ -40,16 +65,29 @@ export function exportToExcel(data: Record<string, any>[], filename: string, she
  * @param data Array de objetos com os dados a serem exportados
  * @param filename Nome do arquivo sem extensão
  */
-export function exportToCSV(data: Record<string, any>[], filename: string) {
+export async function exportToCSV(data: Record<string, any>[], filename: string) {
   try {
-    // Converte para planilha
-    const worksheet = XLSX.utils.json_to_sheet(data);
+    // Cria um novo workbook
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Sheet1');
     
-    // Gera o arquivo CSV
-    const csvContent = XLSX.utils.sheet_to_csv(worksheet);
+    if (data.length > 0) {
+      // Adiciona cabeçalhos
+      const headers = Object.keys(data[0]);
+      worksheet.addRow(headers);
+      
+      // Adiciona dados
+      data.forEach(row => {
+        const rowValues = headers.map(header => row[header]);
+        worksheet.addRow(rowValues);
+      });
+    }
     
-    // Converte o CSV para Blob
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    // Gera o CSV como string
+    const csvBuffer = await workbook.csv.writeBuffer();
+    
+    // Converte o buffer para Blob
+    const blob = new Blob([csvBuffer], { type: 'text/csv;charset=utf-8;' });
     
     // Faz o download do arquivo
     saveAs(blob, `${filename}.csv`);
@@ -122,7 +160,7 @@ export function exportToPDF(data: Record<string, any>[], filename: string, title
  * @param filename Nome do arquivo (sem extensão)
  * @param title Título para documentos PDF
  */
-export function exportData(
+export async function exportData(
   data: Record<string, any>[], 
   format: 'excel' | 'csv' | 'pdf', 
   filename: string,
@@ -133,9 +171,9 @@ export function exportData(
     const fullFilename = `${filename}_${dateStr}`;
     
     if (format === 'excel') {
-      exportToExcel(data, fullFilename);
+      await exportToExcel(data, fullFilename);
     } else if (format === 'csv') {
-      exportToCSV(data, fullFilename);
+      await exportToCSV(data, fullFilename);
     } else if (format === 'pdf') {
       exportToPDF(data, fullFilename, title || filename);
     }

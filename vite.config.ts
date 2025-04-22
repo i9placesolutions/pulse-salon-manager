@@ -13,7 +13,7 @@ export default defineConfig(({ mode }) => ({
       'X-Content-Type-Options': 'nosniff',
       'X-Frame-Options': 'DENY',
       'X-XSS-Protection': '1; mode=block',
-      'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; connect-src 'self' https://wtpmedifsfbxctlssefd.supabase.co https://*.supabase.co; img-src 'self' data: blob: https://wtpmedifsfbxctlssefd.supabase.co https://*.supabase.co; style-src 'self' 'unsafe-inline'; font-src 'self'; frame-src 'none'",
+      'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; connect-src 'self' https://wtpmedifsfbxctlssefd.supabase.co https://*.supabase.co wss://wtpmedifsfbxctlssefd.supabase.co wss://*.supabase.co https://i9place3.uazapi.com; img-src 'self' data: blob: https://wtpmedifsfbxctlssefd.supabase.co https://*.supabase.co; style-src 'self' 'unsafe-inline'; font-src 'self'; frame-src 'none'",
       'Referrer-Policy': 'strict-origin-when-cross-origin',
       'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload',
       'Permissions-Policy': 'geolocation=(), camera=(), microphone=()',

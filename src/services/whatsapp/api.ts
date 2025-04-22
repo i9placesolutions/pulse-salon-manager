@@ -268,9 +268,9 @@ export interface WhatsAppInstance {
  */
 export const listAllInstances = async (): Promise<WhatsAppInstance[]> => {
   try {
-    console.log('Listando todas as instâncias com admintoken');
+    console.log('Listando todas as instâncias');
     
-    const response = await axios.get<WhatsAppInstance[]>(
+    const response = await axios.get(
       `${BASE_URL}/instance/all`,
       {
         headers: {
@@ -281,15 +281,18 @@ export const listAllInstances = async (): Promise<WhatsAppInstance[]> => {
       }
     );
     
-    return response.data;
-  } catch (error) {
-    if (axios.isAxiosError(error)) {
-      console.error('Erro ao listar instâncias:', JSON.stringify(error.response?.data));
-      throw new Error(`Erro ao listar instâncias: ${JSON.stringify(error.response?.data) || error.message}`);
+    // Verificar se a resposta é válida e tem o formato esperado
+    if (response.data && Array.isArray(response.data)) {
+      console.log(`${response.data.length} instâncias encontradas`);
+      return response.data;
     }
     
-    console.error('Erro desconhecido ao listar instâncias:', error);
-    throw new Error('Erro desconhecido ao listar instâncias');
+    console.log('Formato de resposta inesperado na listagem de instâncias');
+    return [];
+  } catch (error) {
+    // Silenciar erros de rede e retornar array vazio
+    console.log("Não foi possível conectar ao servidor de instâncias, retornando lista vazia");
+    return [];
   }
 };
 
@@ -301,19 +304,22 @@ export const listAllInstances = async (): Promise<WhatsAppInstance[]> => {
  */
 export const listUserInstances = async (userId: string): Promise<WhatsAppInstance[]> => {
   try {
-    // Buscar todas as instâncias
+    console.log(`Listando instâncias para o usuário: ${userId}`);
+    
+    // Primeiro, obter todas as instâncias
     const allInstances = await listAllInstances();
     
-    // Filtrar apenas as instâncias do usuário atual (comparando o adminField01 com o userId)
-    const userInstances = allInstances.filter(instance => {
-      return instance.adminField01 === userId;
-    });
+    // Filtrar por instâncias que correspondem ao adminField01 (userID) do usuário atual
+    const userInstances = allInstances.filter(instance => 
+      instance.adminField01 === userId
+    );
     
-    console.log(`Encontradas ${userInstances.length} instâncias para o usuário ${userId}`);
+    console.log(`${userInstances.length} instâncias encontradas para o usuário ${userId}`);
     return userInstances;
   } catch (error) {
-    console.error('Erro ao listar instâncias do usuário:', error);
-    throw error;
+    // Silenciar erros e retornar array vazio
+    console.log(`Não foi possível obter instâncias para o usuário ${userId}, retornando lista vazia`);
+    return [];
   }
 };
 

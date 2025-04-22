@@ -180,10 +180,10 @@ export const useFinancialManagement = () => {
       const formattedData = data?.map(item => ({
         date: new Date(item.date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
         revenue: item.revenue,
-        expenses: item.expenses,
-        forecast: item.forecast_revenue && item.forecast_expenses ? {
+        expenses: 0, // Definindo expenses como 0 já que a coluna não existe
+        forecast: item.forecast_revenue ? {
           revenue: item.forecast_revenue,
-          expenses: item.forecast_expenses
+          expenses: 0 // Definindo expenses como 0 já que a coluna não existe
         } : undefined
       })) || [];
       
