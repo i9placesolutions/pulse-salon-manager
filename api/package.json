@@ -1,0 +1,10 @@
+{
+  "name": "pulse-salon-api",
+  "version": "1.0.0",
+  "description": "API para o webhook do WhatsApp IA Pulse Salon Manager",
+  "main": "index.js",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.3",
+    "node-fetch": "^3.3.2"
+  }
+}
