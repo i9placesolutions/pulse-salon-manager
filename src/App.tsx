@@ -38,7 +38,8 @@ const EstablishmentProfile = lazy(() => import("./pages/EstablishmentProfile"));
 const Usuarios = lazy(() => import("./pages/Usuarios"));
 const PDV = lazy(() => import("./pages/PDV"));
 const PublicBooking = lazy(() => import("./pages/PublicBooking"));
-const MessagingPage = lazy(() => import("./pages/MessagingPage"));
+const Relatorios = lazy(() => import("./pages/Relatorios"));
+const IAWhatsapp = lazy(() => import("./pages/IAWhatsapp"));
 
 const queryClient = new QueryClient();
 
@@ -147,6 +148,13 @@ const App = () => {
                     </Suspense>
                   </AppLayout>
                 } />
+                <Route path="/relatorios" element={
+                  <AppLayout>
+                    <Suspense fallback={<Loading />}>
+                      <Relatorios />
+                    </Suspense>
+                  </AppLayout>
+                } />
                 <Route path="/mensalidade" element={
                   <AppLayout>
                     <Suspense fallback={<Loading />}>
@@ -168,10 +176,10 @@ const App = () => {
                     </Suspense>
                   </AppLayout>
                 } />
-                <Route path="/messaging" element={
+                <Route path="/iawhatsapp" element={
                   <AppLayout>
                     <Suspense fallback={<Loading />}>
-                      <MessagingPage />
+                      <IAWhatsapp />
                     </Suspense>
                   </AppLayout>
                 } />
