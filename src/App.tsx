@@ -31,15 +31,14 @@ const Clientes = lazy(() => import("./pages/Clientes"));
 const Marketing = lazy(() => import("./pages/Marketing"));
 const Servicos = lazy(() => import("./pages/Servicos"));
 const Profissionais = lazy(() => import("./pages/Profissionais"));
+const Usuarios = lazy(() => import("./pages/Usuarios"));
 const Mensalidade = lazy(() => import("./pages/Mensalidade"));
 const ProfissionalDashboard = lazy(() => import("./pages/ProfissionalDashboard"));
 const ProfissionalProfile = lazy(() => import("./pages/ProfissionalProfile"));
 const EstablishmentProfile = lazy(() => import("./pages/EstablishmentProfile"));
-const Usuarios = lazy(() => import("./pages/Usuarios"));
 const PDV = lazy(() => import("./pages/PDV"));
 const PublicBooking = lazy(() => import("./pages/PublicBooking"));
 const Relatorios = lazy(() => import("./pages/Relatorios"));
-const IAWhatsapp = lazy(() => import("./pages/IAWhatsapp"));
 
 const queryClient = new QueryClient();
 
@@ -176,15 +175,7 @@ const App = () => {
                     </Suspense>
                   </AppLayout>
                 } />
-                <Route path="/iawhatsapp" element={
-                  <AppLayout>
-                    <Suspense fallback={<Loading />}>
-                      <IAWhatsapp />
-                    </Suspense>
-                  </AppLayout>
-                } />
-                
-                {/* Catch all */}
+                {/* Página Not Found */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </BrowserRouter>
