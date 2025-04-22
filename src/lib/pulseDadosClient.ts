@@ -61,6 +61,184 @@ export interface AppointmentService {
   price: number;
 }
 
+// Interface para filtros de relatório
+export interface ReportFilters {
+  professional?: string;
+  service?: string;
+  status?: string;
+  [key: string]: string | undefined;
+}
+
+// Interfaces para retornos das funções de relatório
+export interface FinancialReportData {
+  overview: {
+    totalRevenue: number;
+    totalExpenses: number;
+    totalCommissions: number;
+    profit: number;
+    marginPercent: number;
+    profitability: number;
+    profitMargin: number;
+    growthRate: number;
+    period: {
+      start: string;
+      end: string;
+    };
+  };
+  revenueByDay: Array<{
+    date: string;
+    value: number;
+  }>;
+  revenueByPaymentMethod: Array<{
+    method: string;
+    amount: number;
+    count: number;
+  }>;
+  expensesByCategory: Array<{
+    category: string;
+    amount: number;
+    count: number;
+  }>;
+  transactions: Array<{
+    id: string;
+    date: string;
+    description: string;
+    value: number;
+    type: string;
+  }>;
+  paymentMethods: Array<{
+    method: string;
+    value: number;
+    percentage: number;
+  }>;
+  expenseCategories: Array<{
+    category: string;
+    value: number;
+    percentage: number;
+  }>;
+  cashFlow: Array<{
+    date: string;
+    income: number;
+    expense: number;
+    balance: number;
+  }>;
+  commissions: Array<{
+    professional_id: string;
+    professional_name: string;
+    service_count: number;
+    total_value: number;
+    commission_value: number;
+  }>;
+  rawData: {
+    payments: any[];
+    expenses: any[];
+  };
+}
+
+export interface OperationalReportData {
+  overview: {
+    totalAppointments: number;
+    completedRate: number;
+    cancelationRate: number;
+    averageServiceTime: number;
+    capacityUtilization: number;
+  };
+  professionalEfficiency: Array<{
+    id: string | number;
+    name: string;
+    totalAppointments: number;
+    completedAppointments: number;
+    canceledAppointments: number;
+    totalServiceTime: number;
+    occupancyRate: number;
+  }>;
+  servicePerformance: Array<{
+    id: string | number;
+    name: string;
+    count: number;
+    totalDuration: number;
+    totalRevenue: number;
+    averageDuration: number;
+  }>;
+  rawData: any[];
+}
+
+export interface MarketingReportData {
+  overview: {
+    totalCampaigns: number;
+    totalInvestment: number;
+    newClients: number;
+    averageCostPerAcquisition: number;
+  };
+  channelPerformance: Array<{
+    channel: string;
+    clientCount: number;
+    conversionRate: number;
+    costPerAcquisition: number;
+  }>;
+  campaignPerformance: Array<{
+    id: string | number;
+    name: string;
+    channel: string;
+    startDate: string;
+    endDate: string;
+    budget: number;
+    clientsAcquired: number;
+    roi: number;
+  }> | undefined;
+  retentionData: {
+    newClients: number;
+    returningClientsCount: number;
+    retentionRate: number;
+  };
+  rawData: {
+    campaigns: any[];
+    clientSources: any[];
+  };
+}
+
+export interface InventoryReportData {
+  overview: {
+    totalProducts: number;
+    lowStockCount: number;
+    totalStockValue: number;
+    totalConsumption: number;
+    totalPurchases: number;
+  };
+  stockStatus: Array<{
+    id: string | number;
+    name: string;
+    category: string;
+    currentStock: number;
+    minStock: number;
+    stockStatus: string;
+    turnoverRate: number;
+    value: number;
+  }>;
+  consumption: Array<{
+    id: string | number;
+    name: string;
+    category: string;
+    totalQuantity: number;
+    totalValue: number;
+  }>;
+  purchases: Array<{
+    id: string | number;
+    date: string;
+    productId: string | number;
+    productName: string;
+    supplier: string;
+    quantity: number;
+    unitCost: number;
+    totalCost: number;
+  }>;
+  rawData: {
+    products: any[];
+    movements: any[];
+    purchases: any[];
+  };
+}
+
 /**
  * Autenticar cliente com telefone e data de nascimento
  */
@@ -849,52 +1027,211 @@ export async function getPaymentMethods() {
 
 // Funções para o módulo de relatórios
 export async function getServicePerformance(startDate, endDate) {
-  const { data, error } = await supabase
-    .from('service_performance')
-    .select('*')
-    .gte('date', startDate)
-    .lte('date', endDate);
+  try {
+    // Buscar apenas dados reais do Supabase
+    const { data, error } = await supabase
+      .from('service_performance')
+      .select('*')
+      .gte('date', startDate)
+      .lte('date', endDate);
 
-  if (error) {
-    console.error('Erro ao buscar desempenho de serviços:', error);
+    if (error) {
+      console.error('Erro ao buscar desempenho de serviços:', error);
+      return [];
+    }
+
+    // Buscar dados das tabelas principais se a view estiver vazia
+    if (!data || data.length === 0) {
+      const { data: ordersData, error: ordersError } = await supabase
+        .from('orders')
+        .select(`
+          id,
+          created_at,
+          valor_total,
+          order_items!inner(
+            id,
+            nome,
+            preco,
+            quantidade,
+            tipo
+          )
+        `)
+        .gte('created_at', startDate)
+        .lte('created_at', endDate)
+        .eq('order_items.tipo', 'servico');
+
+      if (ordersError) {
+        console.error('Erro ao buscar dados de serviços:', ordersError);
+        return [];
+      }
+
+      // Transformar dados das tabelas em estatísticas de serviços
+      const serviceStats = {};
+      
+      ordersData.forEach(order => {
+        order.order_items.forEach(item => {
+          if (!serviceStats[item.nome]) {
+            serviceStats[item.nome] = {
+              service_name: item.nome,
+              service_count: 0,
+              total_revenue: 0,
+              average_duration: 45, // Duração padrão
+              date: order.created_at
+            };
+          }
+          
+          serviceStats[item.nome].service_count += item.quantidade;
+          serviceStats[item.nome].total_revenue += (item.preco * item.quantidade);
+        });
+      });
+      
+      return Object.values(serviceStats);
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Erro geral ao buscar dados de serviços:', error);
     return [];
   }
-
-  return data || [];
 }
 
 export async function getProfessionalPerformance(startDate, endDate) {
-  const { data, error } = await supabase
-    .from('professional_appointments')
-    .select(`
-      *,
-      professionals(id, name)
-    `)
-    .gte('date', startDate)
-    .lte('date', endDate);
+  try {
+    // Buscar apenas dados reais do Supabase
+    const { data, error } = await supabase
+      .from('professional_appointments')
+      .select(`
+        *,
+        professionals(id, name)
+      `)
+      .gte('date', startDate)
+      .lte('date', endDate);
 
-  if (error) {
-    console.error('Erro ao buscar desempenho de profissionais:', error);
+    if (error) {
+      console.error('Erro ao buscar desempenho de profissionais:', error);
+      return [];
+    }
+
+    // Buscar dados das tabelas principais se a view estiver vazia
+    if (!data || data.length === 0) {
+      const { data: appointmentsData, error: appointmentsError } = await supabase
+        .from('appointments')
+        .select(`
+          id,
+          professional_id,
+          professional_name,
+          date,
+          total_value
+        `)
+        .gte('date', startDate)
+        .lte('date', endDate);
+
+      if (appointmentsError) {
+        console.error('Erro ao buscar dados de profissionais:', appointmentsError);
+        return [];
+      }
+
+      // Transformar dados das tabelas em estatísticas de profissionais
+      const professionalStats = {};
+      
+      appointmentsData.forEach(appointment => {
+        const profId = appointment.professional_id;
+        const profName = appointment.professional_name;
+        
+        if (!professionalStats[profId]) {
+          professionalStats[profId] = {
+            professional_id: profId,
+            professional_name: profName || `Profissional #${profId}`,
+            appointment_count: 0,
+            total_commission: 0,
+            date: appointment.date
+          };
+        }
+        
+        professionalStats[profId].appointment_count += 1;
+        professionalStats[profId].total_commission += appointment.total_value * 0.3; // Comissão estimada de 30%
+      });
+      
+      return Object.values(professionalStats);
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Erro geral ao buscar dados de profissionais:', error);
     return [];
   }
-
-  return data || [];
 }
 
 export async function getRevenueData(startDate, endDate) {
-  const { data, error } = await supabase
-    .from('revenue_data')
-    .select('*')
-    .gte('date', startDate)
-    .lte('date', endDate)
-    .order('date');
+  try {
+    // Buscar apenas dados reais do Supabase
+    const { data, error } = await supabase
+      .from('revenue_data')
+      .select('*')
+      .gte('date', startDate)
+      .lte('date', endDate)
+      .order('date');
 
-  if (error) {
-    console.error('Erro ao buscar dados de receita:', error);
+    if (error) {
+      console.error('Erro ao buscar dados de receita:', error);
+      return [];
+    }
+
+    // Buscar dados das tabelas principais se a view estiver vazia
+    if (!data || data.length === 0) {
+      const { data: ordersData, error: ordersError } = await supabase
+        .from('orders')
+        .select('id, created_at, valor_total')
+        .gte('created_at', startDate)
+        .lte('created_at', endDate);
+
+      if (ordersError) {
+        console.error('Erro ao buscar dados de receita:', ordersError);
+        return [];
+      }
+
+      // Agrupar dados por mês
+      const revenueByMonth: Record<string, {
+        date: string;
+        revenue: number;
+        transaction_count: number;
+        average_ticket: number;
+      }> = {};
+      
+      ordersData.forEach(order => {
+        const monthKey = new Date(order.created_at).toISOString().substring(0, 7); // formato YYYY-MM
+        
+        if (!revenueByMonth[monthKey]) {
+          revenueByMonth[monthKey] = {
+            date: `${monthKey}-01`,  // Primeiro dia do mês
+            revenue: 0,
+            transaction_count: 0,
+            average_ticket: 0
+          };
+        }
+        
+        revenueByMonth[monthKey].revenue += parseFloat(order.valor_total || 0);
+        revenueByMonth[monthKey].transaction_count += 1;
+      });
+      
+      // Calcular ticket médio e ordenar por data
+      const result = Object.values(revenueByMonth).map(month => {
+        return {
+          date: month.date,
+          revenue: month.revenue,
+          transaction_count: month.transaction_count,
+          average_ticket: month.transaction_count > 0 ? month.revenue / month.transaction_count : 0
+        };
+      }).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+      
+      return result.length > 0 ? result : [];
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Erro geral ao buscar dados de receita:', error);
     return [];
   }
-
-  return data || [];
 }
 
 // Funções de configuração de estabelecimento
@@ -999,4 +1336,891 @@ export function useRealtime(tableName) {
   }, [tableName]);
   
   return { data, loading, error };
+}
+
+/**
+ * Busca dados financeiros detalhados para relatórios
+ * @param startDate Data inicial no formato YYYY-MM-DD
+ * @param endDate Data final no formato YYYY-MM-DD
+ * @param filters Filtros adicionais
+ */
+export async function getFinancialReportData(startDate: string, endDate: string, filters: ReportFilters = {}): Promise<FinancialReportData> {
+  try {
+    const { professional = 'todos', service = 'todos' } = filters;
+    
+    // Buscar pagamentos (receitas)
+    const { data: payments, error: paymentsError } = await pulseDadosClient
+      .from('payments')
+      .select('*')
+      .gte('date', startDate)
+      .lte('date', endDate);
+      
+    if (paymentsError) throw paymentsError;
+    
+    // Buscar despesas
+    const { data: expenses, error: expensesError } = await pulseDadosClient
+      .from('expenses')
+      .select('*')
+      .gte('date', startDate)
+      .lte('date', endDate);
+    
+    if (expensesError) throw expensesError;
+    
+    // Calcular totais
+    const totalRevenue = payments?.reduce((sum, payment) => sum + parseFloat(payment.valor || 0), 0) || 0;
+    const totalExpenses = expenses?.reduce((sum, expense) => sum + parseFloat(expense.amount || 0), 0) || 0;
+    
+    // Agrupar por dia para gráficos de tendência
+    const revenueByDay: Array<{ date: string; value: number }> = [];
+    const expensesByDay: { [key: string]: number } = {};
+    const dateRange = new Map<string, boolean>();
+    
+    // Processar período
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    let currentDate = new Date(start);
+    
+    // Inicializar todas as datas no período
+    while (currentDate <= end) {
+      const dateStr = currentDate.toISOString().split('T')[0];
+      dateRange.set(dateStr, true);
+      revenueByDay.push({ date: dateStr, value: 0 });
+      expensesByDay[dateStr] = 0;
+      
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+    
+    // Agregar receitas por dia
+    payments?.forEach(payment => {
+      const paymentDate = payment.date.split('T')[0];
+      const revenueData = revenueByDay.find(item => item.date === paymentDate);
+      if (revenueData) {
+        revenueData.value += parseFloat(payment.valor || 0);
+      }
+    });
+    
+    // Agregar despesas por dia
+    expenses?.forEach(expense => {
+      const expenseDate = expense.date.split('T')[0];
+      if (expensesByDay[expenseDate] !== undefined) {
+        expensesByDay[expenseDate] += parseFloat(expense.amount || 0);
+      }
+    });
+    
+    // Calcular fluxo de caixa
+    const cashFlow = Object.keys(expensesByDay).map(date => {
+      const revenueForDay = revenueByDay.find(item => item.date === date)?.value || 0;
+      return {
+        date,
+        income: revenueForDay,
+        expense: expensesByDay[date],
+        balance: revenueForDay - expensesByDay[date]
+      };
+    }).sort((a, b) => a.date.localeCompare(b.date));
+    
+    // Processar métodos de pagamento
+    const revenueByPaymentMethod: { [key: string]: { method: string; amount: number; count: number } } = {};
+    
+    // Agrupar pagamentos por método
+    payments?.forEach(payment => {
+      const method = payment.payment_method || 'Outros';
+      
+      if (!revenueByPaymentMethod[method]) {
+        revenueByPaymentMethod[method] = { method, amount: 0, count: 0 };
+      }
+      
+      revenueByPaymentMethod[method].amount += parseFloat(payment.valor || 0);
+      revenueByPaymentMethod[method].count += 1;
+    });
+    
+    // Processar categorias de despesas
+    const expensesByCategory: { [key: string]: { category: string; amount: number; count: number } } = {};
+    
+    // Agrupar despesas por categoria
+    expenses?.forEach(expense => {
+      const category = expense.category || 'Outros';
+      
+      if (!expensesByCategory[category]) {
+        expensesByCategory[category] = { category, amount: 0, count: 0 };
+      }
+      
+      expensesByCategory[category].amount += parseFloat(expense.amount || 0);
+      expensesByCategory[category].count += 1;
+    });
+    
+    // Calcular comissões
+    const { data: commissions, error: commError } = await pulseDadosClient
+      .from('professional_commissions')
+      .select('*')
+      .gte('date', startDate)
+      .lte('date', endDate);
+    
+    if (commError) throw commError;
+    
+    // Formatar dados de comissões
+    const formattedCommissions = commissions?.map(comm => ({
+      professional_id: comm.professional_id,
+      professional_name: comm.professional_name,
+      service_count: parseInt(comm.service_count || '0', 10),
+      total_value: parseFloat(comm.total_value || '0'),
+      commission_value: parseFloat(comm.commission_value || '0')
+    })) || [];
+    
+    // Calcular total de comissões
+    const totalCommissions = formattedCommissions.reduce((sum, comm) => sum + comm.commission_value, 0);
+    
+    // Transformar dados para métodos de pagamento para o formato necessário
+    const paymentMethods = Object.values(revenueByPaymentMethod).map(method => ({
+      method: method.method,
+      value: method.amount,
+      percentage: totalRevenue > 0 ? (method.amount / totalRevenue) * 100 : 0
+    }));
+    
+    // Transformar dados de categorias de despesas para o formato necessário
+    const expenseCategories = Object.values(expensesByCategory).map(category => ({
+      category: category.category,
+      value: category.amount,
+      percentage: totalExpenses > 0 ? (category.amount / totalExpenses) * 100 : 0
+    }));
+    
+    // Formatar transações
+    const transactions = [
+      ...(payments?.map(payment => ({
+        id: payment.id,
+        date: payment.date,
+        description: payment.description || 'Pagamento',
+        value: parseFloat(payment.valor || '0'),
+        type: 'receita'
+      })) || []),
+      ...(expenses?.map(expense => ({
+        id: expense.id,
+        date: expense.date,
+        description: expense.description || 'Despesa',
+        value: parseFloat(expense.amount || '0'),
+        type: 'despesa'
+      })) || [])
+    ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    
+    // Lucro e margem
+    const profit = totalRevenue - totalExpenses - totalCommissions;
+    const marginPercent = totalRevenue > 0 ? (profit / totalRevenue) * 100 : 0;
+    
+    // Calcular crescimento (comparando com período anterior)
+    const previousPeriodStart = new Date(start);
+    previousPeriodStart.setDate(previousPeriodStart.getDate() - (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+    const previousPeriodEnd = new Date(start);
+    previousPeriodEnd.setDate(previousPeriodEnd.getDate() - 1);
+    
+    const { data: prevPayments } = await pulseDadosClient
+      .from('payments')
+      .select('valor')
+      .gte('date', previousPeriodStart.toISOString().split('T')[0])
+      .lte('date', previousPeriodEnd.toISOString().split('T')[0]);
+    
+    const prevRevenue = prevPayments?.reduce((sum, payment) => sum + parseFloat(payment.valor || 0), 0) || 0;
+    const growthRate = prevRevenue > 0 ? ((totalRevenue - prevRevenue) / prevRevenue) * 100 : 0;
+    
+    return {
+      overview: {
+        totalRevenue,
+        totalExpenses,
+        totalCommissions,
+        profit,
+        marginPercent,
+        profitability: profit > 0 ? profit / totalExpenses * 100 : 0,
+        profitMargin: marginPercent,
+        growthRate,
+        period: {
+          start: startDate,
+          end: endDate
+        }
+      },
+      revenueByDay,
+      revenueByPaymentMethod: Object.values(revenueByPaymentMethod),
+      expensesByCategory: Object.values(expensesByCategory),
+      transactions,
+      paymentMethods,
+      expenseCategories,
+      cashFlow,
+      commissions: formattedCommissions,
+      rawData: {
+        payments: payments || [],
+        expenses: expenses || []
+      }
+    };
+  } catch (error) {
+    console.error('Erro ao buscar dados financeiros:', error);
+    return {
+      overview: {
+        totalRevenue: 0,
+        totalExpenses: 0,
+        totalCommissions: 0,
+        profit: 0,
+        marginPercent: 0,
+        profitability: 0,
+        profitMargin: 0,
+        growthRate: 0,
+        period: {
+          start: startDate,
+          end: endDate
+        }
+      },
+      revenueByDay: [],
+      revenueByPaymentMethod: [],
+      expensesByCategory: [],
+      transactions: [],
+      paymentMethods: [],
+      expenseCategories: [],
+      cashFlow: [],
+      commissions: [],
+      rawData: {
+        payments: [],
+        expenses: []
+      }
+    };
+  }
+}
+
+/**
+ * Busca dados de clientes para relatórios
+ * @param startDate Data inicial no formato YYYY-MM-DD
+ * @param endDate Data final no formato YYYY-MM-DD
+ * @param filters Filtros adicionais
+ */
+export async function getClientReportData(startDate: string, endDate: string, filters: ReportFilters = {}): Promise<any> {
+  try {
+    // Busca clientes, agendamentos e transações no período
+    const [clientsPromise, appointmentsPromise, ordersPromise] = await Promise.allSettled([
+      // Clientes existentes
+      supabase
+        .from('clients')
+        .select('*'),
+      
+      // Agendamentos no período
+      supabase
+        .from('appointments')
+        .select('*, appointment_services(*)')
+        .gte('date', startDate)
+        .lte('date', endDate),
+      
+      // Transações/pedidos no período
+      supabase
+        .from('orders')
+        .select('*')
+        .gte('data_hora', startDate)
+        .lte('data_hora', endDate)
+    ]);
+    
+    // Processar resultados
+    const clients = clientsPromise.status === 'fulfilled' && !clientsPromise.value.error ? clientsPromise.value.data || [] : [];
+    const appointments = appointmentsPromise.status === 'fulfilled' && !appointmentsPromise.value.error ? appointmentsPromise.value.data || [] : [];
+    const orders = ordersPromise.status === 'fulfilled' && !ordersPromise.value.error ? ordersPromise.value.data || [] : [];
+    
+    // Contagem de novos clientes no período
+    const newClients = clients.filter(client => {
+      const createdAt = new Date(client.created_at);
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      end.setHours(23, 59, 59, 999); // Ajustar para final do dia
+      
+      return createdAt >= start && createdAt <= end;
+    }).length;
+    
+    // Conjunto de clientes ativos no período
+    const activeClientsInPeriod = new Set<string>();
+    
+    // Mapear serviços por cliente
+    const servicesPerClient: Record<string, {
+      clientId: string;
+      clientName: string;
+      serviceCount: number;
+      services: Record<string, {
+        serviceId: string;
+        serviceName: string;
+        count: number;
+        revenue: number;
+      }>;
+    }> = {};
+    
+    // Mapear ticket médio por cliente
+    const ticketByClient: Record<string, {
+      clientId: string;
+      clientName: string;
+      orderCount: number;
+      totalSpent: number;
+    }> = {};
+    
+    // Processar agendamentos
+    appointments.forEach(app => {
+      const clientId = app.client_id;
+      if (clientId) {
+        activeClientsInPeriod.add(clientId);
+        
+        if (!servicesPerClient[clientId]) {
+          servicesPerClient[clientId] = {
+            clientId,
+            clientName: app.client_name || 'Cliente não identificado',
+            serviceCount: 0,
+            services: {}
+          };
+        }
+        
+        const serviceCount = app.appointment_services?.length || 0;
+        servicesPerClient[clientId].serviceCount += serviceCount;
+        
+        // Contabilizar serviços específicos
+        app.appointment_services?.forEach(service => {
+          const serviceId = service.service_id;
+          if (!servicesPerClient[clientId].services[serviceId]) {
+            servicesPerClient[clientId].services[serviceId] = {
+              serviceId,
+              serviceName: service.service_name,
+              count: 0,
+              revenue: 0
+            };
+          }
+          servicesPerClient[clientId].services[serviceId].count += 1;
+          servicesPerClient[clientId].services[serviceId].revenue += parseFloat(service.price || 0);
+        });
+      }
+    });
+    
+    // Processar pedidos/transações
+    orders.forEach(order => {
+      const clientId = order.client_id;
+      if (clientId) {
+        activeClientsInPeriod.add(clientId);
+        
+        if (!ticketByClient[clientId]) {
+          ticketByClient[clientId] = {
+            clientId,
+            clientName: order.client_nome || 'Cliente não identificado',
+            orderCount: 0,
+            totalSpent: 0
+          };
+        }
+        
+        ticketByClient[clientId].orderCount += 1;
+        ticketByClient[clientId].totalSpent += parseFloat(order.valor_total || 0);
+      }
+    });
+    
+    // Calcular estatísticas
+    const activeClientCount = activeClientsInPeriod.size;
+    const servicesData = Object.values(servicesPerClient);
+    const ticketData = Object.values(ticketByClient).map(client => ({
+      ...client,
+      avgTicket: client.orderCount > 0 ? client.totalSpent / client.orderCount : 0
+    }));
+    
+    // Calcular frequência dos clientes (clientes recorrentes)
+    const clientFrequency: Record<string, {
+      clientId: string;
+      clientName: string;
+      visitCount: number;
+      lastVisit: string | null;
+    }> = {};
+    
+    appointments.forEach(app => {
+      if (!clientFrequency[app.client_id]) {
+        clientFrequency[app.client_id] = {
+          clientId: app.client_id,
+          clientName: app.client_name,
+          visitCount: 0,
+          lastVisit: null
+        };
+      }
+      
+      clientFrequency[app.client_id].visitCount += 1;
+      const appDate = new Date(app.date);
+      if (!clientFrequency[app.client_id].lastVisit || appDate > new Date(clientFrequency[app.client_id].lastVisit!)) {
+        clientFrequency[app.client_id].lastVisit = app.date;
+      }
+    });
+    
+    // Segmentação de clientes
+    const segments = {
+      new: 0, // Novos clientes no período
+      recurrent: 0, // Mais de uma visita no período
+      oneTime: 0, // Apenas uma visita no período
+      inactive: clients.length - activeClientCount // Total - ativos
+    };
+    
+    Object.values(clientFrequency).forEach(client => {
+      if (client.visitCount > 1) {
+        segments.recurrent += 1;
+      } else {
+        segments.oneTime += 1;
+      }
+    });
+    
+    segments.new = newClients;
+    
+    return {
+      overview: {
+        totalClients: clients.length,
+        activeClients: activeClientCount,
+        newClients,
+        avgServicesPerClient: activeClientCount > 0 ? appointments.length / activeClientCount : 0,
+        avgTicket: orders.length > 0 ? orders.reduce((sum, order) => sum + parseFloat(order.valor_total || 0), 0) / orders.length : 0
+      },
+      segments,
+      servicesData,
+      ticketData,
+      clientFrequency: Object.values(clientFrequency),
+      rawData: {
+        clients,
+        appointments,
+        orders
+      }
+    };
+  } catch (error) {
+    console.error('Erro ao buscar dados de clientes para relatório:', error);
+    return {
+      overview: {
+        totalClients: 0,
+        activeClients: 0,
+        newClients: 0,
+        avgServicesPerClient: 0,
+        avgTicket: 0
+      },
+      segments: {
+        new: 0,
+        recurrent: 0,
+        oneTime: 0,
+        inactive: 0
+      },
+      servicesData: [],
+      ticketData: [],
+      clientFrequency: [],
+      rawData: {
+        clients: [],
+        appointments: [],
+        orders: []
+      }
+    };
+  }
+}
+
+// Busca dados operacionais para relatórios
+// @param startDate Data inicial no formato YYYY-MM-DD
+// @param endDate Data final no formato YYYY-MM-DD
+// @param filters Filtros adicionais
+export async function getOperationalReportData(startDate: string, endDate: string, filters: ReportFilters = {}): Promise<OperationalReportData> {
+  try {
+    // Busca agendamentos no período
+    const { data: appointments, error: appointmentError } = await pulseDadosClient
+      .from('appointments')
+      .select(`
+        *,
+        appointment_services(*)
+      `)
+      .gte('date', startDate)
+      .lte('date', endDate);
+    
+    if (appointmentError) throw appointmentError;
+    
+    // Aplicar filtros caso existam
+    const filteredAppointments = appointments.filter(appointment => {
+      let passesFilter = true;
+      
+      if (filters.professional && filters.professional !== 'todos') {
+        passesFilter = passesFilter && appointment.professional_id.toString() === filters.professional;
+      }
+      
+      if (filters.status && filters.status !== 'todos') {
+        passesFilter = passesFilter && appointment.status === filters.status;
+      }
+      
+      return passesFilter;
+    });
+    
+    // Cálculos de eficiência
+    const totalSlots = filteredAppointments.length;
+    const completedAppointments = filteredAppointments.filter(a => a.status === 'concluido').length;
+    const canceledAppointments = filteredAppointments.filter(a => a.status === 'cancelado').length;
+    
+    // Tempo total de serviços e ociosidade
+    let totalServiceTime = 0;
+    
+    // Análise de eficiência por profissional
+    const professionalStats: Record<string, {
+      id: string | number;
+      name: string;
+      totalAppointments: number;
+      completedAppointments: number;
+      canceledAppointments: number;
+      totalServiceTime: number;
+      occupancyRate: number;
+    }> = {};
+    
+    filteredAppointments.forEach(appointment => {
+      const profId = appointment.professional_id;
+      
+      if (!professionalStats[profId]) {
+        professionalStats[profId] = {
+          id: profId,
+          name: appointment.professional_name,
+          totalAppointments: 0,
+          completedAppointments: 0,
+          canceledAppointments: 0,
+          totalServiceTime: 0,
+          occupancyRate: 0
+        };
+      }
+      
+      professionalStats[profId].totalAppointments += 1;
+      
+      if (appointment.status === 'concluido') {
+        professionalStats[profId].completedAppointments += 1;
+        professionalStats[profId].totalServiceTime += appointment.duration || 0;
+        totalServiceTime += appointment.duration || 0;
+      } else if (appointment.status === 'cancelado') {
+        professionalStats[profId].canceledAppointments += 1;
+      }
+    });
+    
+    // Análise de serviços
+    const serviceStats: Record<string, {
+      id: string | number;
+      name: string;
+      count: number;
+      totalDuration: number;
+      totalRevenue: number;
+      averageDuration: number;
+    }> = {};
+    
+    filteredAppointments.forEach(appointment => {
+      appointment.appointment_services?.forEach(service => {
+        const serviceId = service.service_id;
+        
+        if (!serviceStats[serviceId]) {
+          serviceStats[serviceId] = {
+            id: serviceId,
+            name: service.service_name,
+            count: 0,
+            totalDuration: 0,
+            totalRevenue: 0,
+            averageDuration: 0
+          };
+        }
+        
+        serviceStats[serviceId].count += 1;
+        serviceStats[serviceId].totalDuration += service.duration || 0;
+        serviceStats[serviceId].totalRevenue += parseFloat(service.price || 0);
+      });
+    });
+    
+    // Calcular médias
+    Object.values(serviceStats).forEach(service => {
+      service.averageDuration = service.count > 0 ? service.totalDuration / service.count : 0;
+    });
+    
+    // Calcular ocupação por profissional
+    Object.values(professionalStats).forEach(prof => {
+      // Considerando 8h de trabalho por dia útil no período
+      const startDateObj = new Date(startDate);
+      const endDateObj = new Date(endDate);
+      const diffTime = Math.abs(endDateObj.getTime() - startDateObj.getTime());
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      const workingDays = Math.max(1, diffDays * 0.7); // Aproximadamente 70% dos dias são úteis
+      const availableMinutes = workingDays * 8 * 60; // 8 horas em minutos
+      
+      prof.occupancyRate = (prof.totalServiceTime / availableMinutes) * 100;
+    });
+    
+    return {
+      overview: {
+        totalAppointments: totalSlots,
+        completedRate: totalSlots > 0 ? (completedAppointments / totalSlots) * 100 : 0,
+        cancelationRate: totalSlots > 0 ? (canceledAppointments / totalSlots) * 100 : 0,
+        averageServiceTime: completedAppointments > 0 ? totalServiceTime / completedAppointments : 0,
+        capacityUtilization: Object.keys(professionalStats).length > 0 ? 
+          Object.values(professionalStats).reduce((sum, prof) => sum + prof.occupancyRate, 0) / Object.keys(professionalStats).length : 0
+      },
+      professionalEfficiency: Object.values(professionalStats),
+      servicePerformance: Object.values(serviceStats),
+      rawData: filteredAppointments
+    };
+  } catch (error) {
+    console.error('Erro ao buscar dados operacionais para relatório:', error);
+    return {
+      overview: {
+        totalAppointments: 0,
+        completedRate: 0,
+        cancelationRate: 0,
+        averageServiceTime: 0,
+        capacityUtilization: 0
+      },
+      professionalEfficiency: [],
+      servicePerformance: [],
+      rawData: []
+    };
+  }
+}
+
+// Busca dados de estoque para relatórios
+// @param startDate Data inicial no formato YYYY-MM-DD
+// @param endDate Data final no formato YYYY-MM-DD
+// @param filters Filtros adicionais
+export async function getInventoryReportData(startDate: string, endDate: string, filters: ReportFilters = {}): Promise<InventoryReportData> {
+  try {
+    // Buscar produtos
+    const { data: products, error: productsError } = await pulseDadosClient
+      .from('products')
+      .select('*');
+    
+    if (productsError) throw productsError;
+    
+    // Buscar movimentações de estoque
+    const { data: movements, error: movementsError } = await pulseDadosClient
+      .from('stock_movements')
+      .select('*')
+      .gte('date', startDate)
+      .lte('date', endDate);
+    
+    if (movementsError) throw movementsError;
+    
+    // Tratar caso não existam os dados ainda
+    const productsArray = products || [];
+    const movementsArray = movements || [];
+    
+    // Análise de estoque atual
+    const stockStatus = productsArray.map(product => {
+      // Calcular estoque atual baseado em movimentações
+      const productMovements = movementsArray.filter(m => m.product_id === product.id) || [];
+      
+      let currentStock = parseInt(product.quantity || 0);
+      productMovements.forEach(movement => {
+        if (movement.type === 'entrada') {
+          currentStock += parseInt(movement.quantity || 0);
+        } else if (movement.type === 'saida') {
+          currentStock -= parseInt(movement.quantity || 0);
+        }
+      });
+      
+      // Calcular taxa de rotatividade
+      const totalOut = productMovements
+        .filter(m => m.type === 'saida')
+        .reduce((sum, m) => sum + parseInt(m.quantity || 0), 0);
+      
+      const turnoverRate = currentStock > 0 ? totalOut / currentStock : 0;
+      
+      return {
+        id: product.id,
+        name: product.name,
+        category: product.category,
+        currentStock,
+        minStock: parseInt(product.min_quantity || 0),
+        stockStatus: currentStock <= parseInt(product.min_quantity || 0) ? 'baixo' : 
+                    currentStock <= parseInt(product.min_quantity || 0) * 1.5 ? 'médio' : 'adequado',
+        turnoverRate,
+        value: currentStock * parseFloat(product.sale_price || 0)
+      };
+    });
+    
+    // Análise de consumo
+    const consumptionAnalysis: Record<string, {
+      id: string | number;
+      name: string;
+      category: string;
+      totalQuantity: number;
+      totalValue: number;
+    }> = {};
+    
+    movementsArray.forEach(movement => {
+      if (movement.type === 'saida') {
+        const productId = movement.product_id;
+        const product = productsArray.find(p => p.id === productId);
+        
+        if (!product) return;
+        
+        if (!consumptionAnalysis[productId]) {
+          consumptionAnalysis[productId] = {
+            id: productId,
+            name: product.name,
+            category: product.category,
+            totalQuantity: 0,
+            totalValue: 0
+          };
+        }
+        
+        const quantity = parseInt(movement.quantity || 0);
+        consumptionAnalysis[productId].totalQuantity += quantity;
+        consumptionAnalysis[productId].totalValue += quantity * parseFloat(product.sale_price || 0);
+      }
+    });
+    
+    // Simplificando para evitar erros de tipagem com tabelas que ainda não existem
+    const purchases: Array<{
+      id: string | number;
+      date: string;
+      productId: string | number;
+      productName: string;
+      supplier: string;
+      quantity: number;
+      unitCost: number;
+      totalCost: number;
+    }> = [];
+    
+    return {
+      overview: {
+        totalProducts: productsArray.length,
+        lowStockCount: stockStatus.filter(p => p.stockStatus === 'baixo').length,
+        totalStockValue: stockStatus.reduce((sum, p) => sum + p.value, 0),
+        totalConsumption: Object.values(consumptionAnalysis).reduce((sum, p) => sum + p.totalValue, 0),
+        totalPurchases: purchases.reduce((sum, p) => sum + p.totalCost, 0)
+      },
+      stockStatus,
+      consumption: Object.values(consumptionAnalysis),
+      purchases,
+      rawData: {
+        products: productsArray,
+        movements: movementsArray,
+        purchases: []
+      }
+    };
+  } catch (error) {
+    console.error('Erro ao buscar dados de estoque para relatório:', error);
+    return {
+      overview: {
+        totalProducts: 0,
+        lowStockCount: 0,
+        totalStockValue: 0,
+        totalConsumption: 0,
+        totalPurchases: 0
+      },
+      stockStatus: [],
+      consumption: [],
+      purchases: [],
+      rawData: {
+        products: [],
+        movements: [],
+        purchases: []
+      }
+    };
+  }
+}
+
+// Busca dados de marketing para relatórios
+// @param startDate Data inicial no formato YYYY-MM-DD
+// @param endDate Data final no formato YYYY-MM-DD
+// @param filters Filtros adicionais
+export async function getMarketingReportData(startDate: string, endDate: string, filters: ReportFilters = {}): Promise<MarketingReportData> {
+  try {
+    // Buscar dados de campanhas de marketing
+    const { data: campaigns, error: campaignsError } = await pulseDadosClient
+      .from('marketing_campaigns')
+      .select('*')
+      .gte('date', startDate)
+      .lte('date', endDate);
+    
+    if (campaignsError) throw campaignsError;
+    
+    // Buscar dados de clientes no período
+    const { data: clients, error: clientsError } = await pulseDadosClient
+      .from('clients')
+      .select('*')
+      .gte('created_at', startDate)
+      .lte('created_at', endDate);
+    
+    if (clientsError) throw clientsError;
+    
+    // Buscar dados de origem dos clientes
+    const { data: clientSources, error: sourcesError } = await pulseDadosClient
+      .from('client_acquisition')
+      .select('*')
+      .gte('date', startDate)
+      .lte('date', endDate);
+    
+    if (sourcesError) throw sourcesError;
+    
+    // Análise de canais de aquisição
+    const channelPerformance = {};
+    
+    clientSources?.forEach(source => {
+      const channel = source.source || 'Desconhecido';
+      
+      if (!channelPerformance[channel]) {
+        channelPerformance[channel] = {
+          channel,
+          clientCount: 0,
+          conversionRate: 0,
+          costPerAcquisition: 0
+        };
+      }
+      
+      channelPerformance[channel].clientCount += source.count || 1;
+    });
+    
+    // Calcular custo por aquisição por canal
+    campaigns?.forEach(campaign => {
+      const channel = campaign.channel;
+      if (channelPerformance[channel]) {
+        const cost = parseFloat(campaign.cost || 0);
+        const count = channelPerformance[channel].clientCount;
+        channelPerformance[channel].costPerAcquisition = count > 0 ? cost / count : 0;
+      }
+    });
+    
+    // Análise de campanhas
+    const campaignPerformance = campaigns?.map(campaign => {
+      const relatedChannel = channelPerformance[campaign.channel];
+      return {
+        id: campaign.id,
+        name: campaign.name,
+        channel: campaign.channel,
+        startDate: campaign.date,
+        endDate: campaign.end_date,
+        budget: parseFloat(campaign.cost || 0),
+        clientsAcquired: relatedChannel?.clientCount || 0,
+        roi: relatedChannel ? (relatedChannel.clientCount * parseFloat(campaign.average_client_value || 0)) / parseFloat(campaign.cost || 1) : 0
+      };
+    });
+    
+    // Análise de retenção de clientes
+    const retentionData = {
+      newClients: clients?.length || 0,
+      returningClientsCount: 0,
+      retentionRate: 0
+    };
+    
+    return {
+      overview: {
+        totalCampaigns: campaigns?.length || 0,
+        totalInvestment: campaigns?.reduce((sum, campaign) => sum + parseFloat(campaign.cost || 0), 0) || 0,
+        newClients: retentionData.newClients,
+        averageCostPerAcquisition: retentionData.newClients > 0 ? 
+          (campaigns?.reduce((sum, campaign) => sum + parseFloat(campaign.cost || 0), 0) || 0) / retentionData.newClients : 0
+      },
+      channelPerformance: Object.values(channelPerformance),
+      campaignPerformance,
+      retentionData,
+      rawData: {
+        campaigns: campaigns || [],
+        clientSources: clientSources || []
+      }
+    };
+  } catch (error) {
+    console.error('Erro ao buscar dados de marketing para relatório:', error);
+    return {
+      overview: {
+        totalCampaigns: 0,
+        totalInvestment: 0,
+        newClients: 0,
+        averageCostPerAcquisition: 0
+      },
+      channelPerformance: [],
+      campaignPerformance: [],
+      retentionData: {
+        newClients: 0,
+        returningClientsCount: 0,
+        retentionRate: 0
+      },
+      rawData: {
+        campaigns: [],
+        clientSources: []
+      }
+    };
+  }
 }
