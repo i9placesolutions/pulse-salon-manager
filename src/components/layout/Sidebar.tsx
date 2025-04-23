@@ -22,6 +22,7 @@ import {
   FileText,
   PieChart,
   PackageOpen,
+  BrainCircuit,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -47,6 +48,7 @@ const menuItems: MenuItem[] = [
   { icon: Store, label: "PDV", path: "/pdv", category: "principal" },
   { icon: PieChart, label: "Relatórios", path: "/relatorios", category: "principal" },
   { icon: BarChart, label: "Marketing", path: "/marketing", category: "principal" },
+  { icon: BrainCircuit, label: "IA WhatsApp", path: "/ia", category: "principal" },
   { icon: Building, label: "Estabelecimento", path: "/establishment-profile", category: "configuracoes" },
   { icon: User, label: "Usuários", path: "/usuarios", category: "configuracoes" },
   { icon: CreditCard, label: "Mensalidade", path: "/mensalidade", category: "configuracoes" },
@@ -64,6 +66,7 @@ const menuItemColors = {
   "/pdv": { color: "text-cyan-600", bg: "bg-cyan-100", hover: "hover:bg-cyan-100" },
   "/relatorios": { color: "text-amber-600", bg: "bg-amber-100", hover: "hover:bg-amber-100" },
   "/marketing": { color: "text-amber-600", bg: "bg-amber-100", hover: "hover:bg-amber-100" },
+  "/ia": { color: "text-purple-600", bg: "bg-purple-100", hover: "hover:bg-purple-100" },
   "/establishment-profile": { color: "text-violet-600", bg: "bg-violet-100", hover: "hover:bg-violet-100" },
   "/usuarios": { color: "text-indigo-600", bg: "bg-indigo-100", hover: "hover:bg-indigo-100" },
   "/mensalidade": { color: "text-orange-600", bg: "bg-orange-100", hover: "hover:bg-orange-100" },

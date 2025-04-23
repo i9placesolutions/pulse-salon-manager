@@ -39,6 +39,7 @@ const EstablishmentProfile = lazy(() => import("./pages/EstablishmentProfile"));
 const PDV = lazy(() => import("./pages/PDV"));
 const PublicBooking = lazy(() => import("./pages/PublicBooking"));
 const Relatorios = lazy(() => import("./pages/Relatorios"));
+const IA = lazy(() => import("./pages/IA"));
 
 const queryClient = new QueryClient();
 
@@ -151,6 +152,13 @@ const App = () => {
                   <AppLayout>
                     <Suspense fallback={<Loading />}>
                       <Relatorios />
+                    </Suspense>
+                  </AppLayout>
+                } />
+                <Route path="/ia" element={
+                  <AppLayout>
+                    <Suspense fallback={<Loading />}>
+                      <IA />
                     </Suspense>
                   </AppLayout>
                 } />

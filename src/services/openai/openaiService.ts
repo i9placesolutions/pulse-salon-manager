@@ -32,6 +32,37 @@ class OpenAIService {
     this.apiKey = apiKey;
   }
   
+  // Método para testar a conexão com a API
+  async testConnection(): Promise<boolean> {
+    try {
+      const response = await axios.post(
+        'https://api.openai.com/v1/chat/completions',
+        {
+          model: 'gpt-3.5-turbo',
+          messages: [
+            { role: 'system', content: 'Você é um assistente útil.' },
+            { role: 'user', content: 'Teste de conexão. Responda apenas com "OK".' }
+          ],
+          temperature: 0.7,
+          max_tokens: 5
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${this.apiKey}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+      
+      return true;
+    } catch (error) {
+      console.error('Erro ao testar conexão com OpenAI:', error);
+      const err = error as OpenAIError;
+      const errorMessage = err.response?.data?.error?.message || err.message;
+      throw new Error(`Falha na conexão: ${errorMessage}`);
+    }
+  }
+  
   // Método para processar mensagens de texto usando o ChatGPT
   async processMessage(
     message: string, 

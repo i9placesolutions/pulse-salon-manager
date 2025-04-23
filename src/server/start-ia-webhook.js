@@ -1,15 +1,15 @@
-// Script para iniciar o servidor de webhook
+// Script para iniciar o servidor de webhook do WhatsApp IA
 const { spawn } = require('child_process');
 const path = require('path');
 
 // Caminho para o arquivo do servidor
-const serverPath = path.join(__dirname, 'src', 'server', 'webhook-server.js');
+const serverPath = path.join(__dirname, 'ia-whatsapp', 'server.ts');
 
-console.log('Iniciando servidor de webhook...');
+console.log('Iniciando servidor de webhook do WhatsApp IA...');
 console.log(`Caminho do servidor: ${serverPath}`);
 
-// Iniciar o processo do servidor
-const server = spawn('node', [serverPath], {
+// Iniciar o processo do servidor com ts-node
+const server = spawn('npx', ['ts-node', serverPath], {
   env: { ...process.env },
   stdio: 'inherit'
 });

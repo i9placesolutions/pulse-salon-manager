@@ -9,7 +9,8 @@
     "build:dev": "vite build --mode development",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
-    "webhook": "node start-webhook-server.js"
+    "webhook": "node start-webhook-server.js",
+    "ia-webhook": "node src/server/start-ia-webhook.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
@@ -79,8 +80,10 @@
     "tailwind-merge": "^2.5.2",
     "tailwindcss-animate": "^1.0.7",
     "typescript": "^5.5.3",
+    "twilio": "^3.83.1",
     "uuid": "^11.1.0",
     "vaul": "^0.9.3",
+    "whatsapp-web.js": "^4.0.0",
     "xlsx": "^0.18.5",
     "zod": "^3.23.8",
     "zustand": "^5.0.3"
