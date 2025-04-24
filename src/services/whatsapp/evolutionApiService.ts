@@ -81,29 +81,20 @@ export class EvolutionAPIService {
    */
   async setWebhook(url: string): Promise<EvolutionApiResponse> {
     try {
-      // Verificar se a instância existe antes de configurar o webhook
-      try {
-        await this.getInstanceStatus();
-      } catch (err) {
-        // Se a instância não existir, tenta criar
-        console.log("Instância não encontrada, tentando criar...");
-        await this.createInstance();
-      }
-      
-      // Configurar webhook com autenticação adequada
+      // Configurar webhook diretamente, pois a instância já existe
       const response = await axios.post(
         `${this.baseUrl}/webhook/set/${this.instance}`,
         {
           url: url,
           enabled: true,
-          webhookEvents: {
-            allMessages: true,
-            presences: false,
-            statuses: true
-          }
+          events: ['message', 'message.any', 'status']
         },
         {
-          headers: this.getHeaders()
+          headers: {
+            'Content-Type': 'application/json',
+            'ApiKey': this.token,
+            'Authorization': `Bearer ${this.token}`
+          }
         }
       );
       
