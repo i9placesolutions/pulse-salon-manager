@@ -54,7 +54,7 @@ const IA = () => {
         setLoading(true);
         
         // Definir o ID do estabelecimento atual
-        const estabelecimentoId = "wtpmedifsfbxctlssefd";
+        const estabelecimentoId = "f99712db-5da1-4c3e-a9c6-887b0809a6b2"; // UUID válido do estabelecimento
         setEstablishmentId(estabelecimentoId);
         
         // Obter configurações salvas
