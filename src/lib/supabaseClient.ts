@@ -90,6 +90,3 @@ export async function checkUserPermissions(userId: string, action: string, resou
   
   return !!data;
 }
-
-// Exportando também as interfaces e funções do pulseDadosClient
-export * from './pulseDadosClient';
