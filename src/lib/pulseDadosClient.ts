@@ -1,14 +1,11 @@
-import { createClient } from '@supabase/supabase-js';
 import { useState, useEffect } from 'react';
 import { addCSRFToken, verifyCSRFToken } from './csrfProtection';
 import { validateData, Validators } from './dataValidation';
 import { SecurityEventType, logSecurityEvent, monitorLoginAttempt, clearLoginAttempts } from '@/utils/securityMonitor';
+import { supabase as supabaseClient } from './supabaseClient';
 
-// Configuração do cliente Supabase para o banco pulsedados
-const pulseDadosUrl = import.meta.env.VITE_SUPABASE_URL || 'https://wtpmedifsfbxctlssefd.supabase.co';
-const pulseDadosAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind0cG1lZGlmc2ZieGN0bHNzZWZkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQzMTMwNzUsImV4cCI6MjA1OTg4OTA3NX0.Mmro8vKbusSP_HNCqX9f5XlrotRbeA8-HIGvQE07mwU';
-
-export const pulseDadosClient = createClient(pulseDadosUrl, pulseDadosAnonKey);
+// Usar o cliente já configurado no supabaseClient.ts
+export const pulseDadosClient = supabaseClient;
 // Alias para compatibilidade com código existente
 export const supabase = pulseDadosClient;
 

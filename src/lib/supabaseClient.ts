@@ -33,5 +33,63 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   }
 });
 
+// Função para realizar login com email e senha
+export async function signInWithEmail(email: string, password: string) {
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password
+  });
+  return { data, error };
+}
+
+// Função para realizar logout
+export async function signOut() {
+  const { error } = await supabase.auth.signOut();
+  return { error };
+}
+
+// Função para verificar a sessão atual
+export async function getCurrentUser() {
+  const { data: { session }, error } = await supabase.auth.getSession();
+  if (session && session.user) {
+    return { user: session.user, error: null };
+  }
+  return { user: null, error };
+}
+
+// Função para recuperar senha
+export async function resetPassword(email: string) {
+  const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${window.location.origin}/redefinir-senha`,
+  });
+  return { data, error };
+}
+
+// Função para atualizar senha
+export async function updateUserPassword(password: string) {
+  const { data, error } = await supabase.auth.updateUser({
+    password
+  });
+  return { data, error };
+}
+
+// Função para verificar permissões do usuário
+export async function checkUserPermissions(userId: string, action: string, resource: string) {
+  const { data, error } = await supabase
+    .from('user_permissions')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('action', action)
+    .eq('resource', resource)
+    .single();
+  
+  if (error && error.code !== 'PGRST116') {
+    console.error('Erro ao verificar permissões:', error);
+    return false;
+  }
+  
+  return !!data;
+}
+
 // Exportando também as interfaces e funções do pulseDadosClient
 export * from './pulseDadosClient';

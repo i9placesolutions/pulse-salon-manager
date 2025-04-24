@@ -264,36 +264,95 @@ export default function Usuarios() {
   const handleSaveUser = async () => {
     if (!formName || !formEmail || !formRole) {
       // Exibir mensagem de erro
+      toast({
+        variant: "destructive",
+        title: "Erro ao salvar usuário",
+        description: "Nome, e-mail e função são obrigatórios",
+        className: "shadow-xl"
+      });
       return;
     }
     
-    if (editingUser) {
-      // Editar usuário existente
-      await updateUserProfile(editingUser.id, {
-        name: formName,
-        email: formEmail,
-        role_id: parseInt(formRole),
-        status: formStatus,
-        is_professional: formIsProfessional,
-        phone: formPhone,
-        experience_level: formExperienceLevel,
-        hire_date: formHireDate,
-        specialties: formSelectedSpecialties.map(id => {
-          const specialty = specialties.find(s => s.id === id);
-          return {
-            id,
-            name: specialty?.name || "",
-            color: specialty?.color || "#000000"
-          };
-        })
+    try {
+      setIsUserModalOpen(false);
+      
+      if (editingUser) {
+        // Editar usuário existente
+        await updateUserProfile(editingUser.id, {
+          name: formName,
+          email: formEmail,
+          role_id: parseInt(formRole),
+          status: formStatus,
+          is_professional: formIsProfessional,
+          phone: formPhone,
+          experience_level: formExperienceLevel,
+          hire_date: formHireDate,
+          specialties: formSelectedSpecialties.map(id => {
+            const specialty = specialties.find(s => s.id === id);
+            return {
+              id,
+              name: specialty?.name || "",
+              color: specialty?.color || "#000000"
+            };
+          })
+        });
+        
+        toast({
+          title: "Usuário atualizado",
+          description: "Usuário atualizado com sucesso",
+          variant: "success"
+        });
+      } else {
+        // Criar novo usuário sem o Supabase Auth, apenas na tabela profiles
+        
+        // Gerar um ID UUID para o novo usuário
+        const userId = crypto.randomUUID();
+        
+        // Inserir diretamente na tabela profiles
+        const { error: profileError } = await supabase
+          .from("profiles")
+          .insert({
+            id: userId,
+            name: formName,
+            email: formEmail,
+            whatsapp: formPhone,
+            status: formStatus || "ativo",
+            is_professional: formIsProfessional,
+            experience_level: formExperienceLevel,
+            hire_date: formHireDate
+          });
+          
+        if (profileError) throw profileError;
+        
+        // Atribuir função ao usuário
+        await assignRoleToUser(userId, parseInt(formRole));
+        
+        // Atribuir especialidades ao usuário se for um profissional
+        if (formIsProfessional && formSelectedSpecialties.length > 0) {
+          await assignSpecialtiesToUser(
+            userId, 
+            formSelectedSpecialties
+          );
+        }
+        
+        // Recarregar lista de usuários
+        fetchUsers();
+        
+        toast({
+          title: "Usuário criado",
+          description: "Novo usuário criado com sucesso",
+          variant: "success"
+        });
+      }
+    } catch (error: any) {
+      console.error("Erro ao salvar usuário:", error.message);
+      toast({
+        variant: "destructive",
+        title: "Erro ao salvar usuário",
+        description: error.message || "Tente novamente mais tarde",
+        className: "shadow-xl"
       });
-    } else {
-      // Criar novo usuário (em uma aplicação real, isso seria feito via backend)
-      // Aqui apenas simulamos via updateUserProfile para demonstração
-      // Em produção, usar auth.signUp ou similar
     }
-    
-    setIsUserModalOpen(false);
   };
 
   // Função para salvar uma nova função

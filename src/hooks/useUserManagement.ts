@@ -429,56 +429,71 @@ export function useUserManagement() {
   // Atribuir uma função a um usuário
   const assignRoleToUser = async (userId: string, roleId: number) => {
     try {
-      setIsLoading(true);
+      console.log(`Atribuindo função ID ${roleId} ao usuário ID ${userId}`);
       
-      // Atualizar o campo role diretamente na tabela profiles se necessário
-      const selectedRole = roles.find(r => r.id === roleId);
-      if (selectedRole) {
-        const { error: profileError } = await supabase
-          .from("profiles")
-          .update({ role: selectedRole.name })
-          .match({ id: userId });
-          
-        if (profileError) {
-          console.error("Erro ao atualizar role no perfil:", profileError.message);
-        }
+      // Verificar se o usuário já tem uma função atribuída
+      const { data: existingAssignment, error: checkError } = await supabase
+        .from("user_role_assignments")
+        .select("*")
+        .eq("user_id", userId)
+        .maybeSingle();
+      
+      if (checkError && checkError.code !== 'PGRST116') {
+        console.error("Erro ao verificar atribuição de função:", checkError.message);
+        throw checkError;
       }
       
-      // Primeiro remover qualquer atribuição existente
-      const { error: deleteError } = await supabase
-        .from("user_role_assignments")
-        .delete()
-        .match({ user_id: userId });
-        
-      if (deleteError) throw deleteError;
+      let result;
       
-      // Adicionar nova atribuição
-      const { error } = await supabase
-        .from("user_role_assignments")
-        .insert([{ user_id: userId, role_id: roleId }]);
+      if (existingAssignment) {
+        // Atualizar atribuição existente
+        const { data, error } = await supabase
+          .from("user_role_assignments")
+          .update({ role_id: roleId, updated_at: new Date().toISOString() })
+          .eq("user_id", userId)
+          .select();
         
-      if (error) throw error;
-      
-      // Atualizar o usuário na lista
-      setUsers(users.map(user => {
-        if (user.id === userId) {
-          const selectedRole = roles.find(r => r.id === roleId);
-          return {
-            ...user,
+        if (error) throw error;
+        result = data;
+        console.log("Função atualizada:", result);
+      } else {
+        // Criar nova atribuição
+        const { data, error } = await supabase
+          .from("user_role_assignments")
+          .insert({
+            user_id: userId,
             role_id: roleId,
-            role: selectedRole?.name || user.role,
-            role_details: selectedRole || null
-          };
-        }
-        return user;
-      }));
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          })
+          .select();
+        
+        if (error) throw error;
+        result = data;
+        console.log("Função atribuída:", result);
+      }
       
-      toast({
-        title: "Função atribuída",
-        description: `Função atribuída com sucesso ao usuário`,
-        variant: "success"
-      });
-      return true;
+      // Também atualizar o campo role_id na tabela profiles para consistência
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .update({ role_id: roleId })
+        .match({ id: userId });
+        
+      if (profileError) {
+        console.error("Erro ao atualizar role_id no perfil:", profileError.message);
+        // Não lançar erro aqui, pois a atribuição principal já foi feita
+      }
+      
+      // Obter o nome da função para atualização local
+      const role = roles.find(r => r.id === roleId);
+      
+      // Atualizar o usuário na lista local após atribuição bem-sucedida
+      if (result) {
+        // Recarregar usuários para garantir dados atualizados
+        await fetchUsers();
+      }
+      
+      return result;
     } catch (error: any) {
       console.error("Erro ao atribuir função:", error.message);
       toast({
@@ -487,9 +502,7 @@ export function useUserManagement() {
         description: error.message || "Tente novamente mais tarde",
         className: "shadow-xl"
       });
-      return false;
-    } finally {
-      setIsLoading(false);
+      throw error;
     }
   };
 
@@ -593,6 +606,12 @@ export function useUserManagement() {
       if (otherUpdates.name !== undefined) profileUpdates.name = otherUpdates.name;
       if (otherUpdates.email !== undefined) profileUpdates.email = otherUpdates.email;
       if (otherUpdates.phone !== undefined) profileUpdates.whatsapp = otherUpdates.phone;
+      if (otherUpdates.status !== undefined) profileUpdates.status = otherUpdates.status;
+      if (is_professional !== undefined) profileUpdates.is_professional = is_professional;
+      if (otherUpdates.experience_level !== undefined) profileUpdates.experience_level = otherUpdates.experience_level;
+      if (otherUpdates.hire_date !== undefined) profileUpdates.hire_date = otherUpdates.hire_date;
+      
+      console.log("Atualizando perfil:", userId, profileUpdates);
       
       // Atualizar o perfil se houver campos a atualizar
       if (Object.keys(profileUpdates).length > 0) {
@@ -620,16 +639,8 @@ export function useUserManagement() {
         );
       }
       
-      // Atualizar o usuário na lista
-      setUsers(users.map(user => {
-        if (user.id === userId) {
-          return {
-            ...user,
-            ...updates
-          };
-        }
-        return user;
-      }));
+      // Recarregar usuários para garantir dados atualizados
+      await fetchUsers();
       
       toast({
         title: "Perfil atualizado",
