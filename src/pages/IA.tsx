@@ -9,7 +9,6 @@ import { PageHeader } from "@/components/shared/PageHeader";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/lib/supabaseClient";
 import { Server, Info, Loader } from "lucide-react";
-import { EvolutionAPIService } from "@/services/whatsapp/evolutionApiService";
 
 // Componente Spinner simples
 const Spinner = ({ size = "sm" }) => {
@@ -127,15 +126,7 @@ const IA = () => {
         
       if (error) throw error;
       
-      // Atualizar o webhook na Evolution API
-      const evolutionService = new EvolutionAPIService(
-        "https://evolution-evolution.ad2edf.easypanel.host",
-        evolutionToken,
-        evolutionInstance
-      );
-      
-      await evolutionService.setWebhook(webhookUrlToSave);
-      
+      // Webhook já configurado manualmente na Evolution API
       setWebhookUrl(webhookUrlToSave);
       
       toast({
