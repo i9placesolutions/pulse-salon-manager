@@ -9,8 +9,12 @@ export default async function handler(req, res) {
   }
 
   try {
-    const message = req.body.body?.message || req.body.message
+    console.log('Webhook recebido:', JSON.stringify(req.body))
+    
+    // Verificar diferentes formatos de mensagem
+    const message = req.body.body?.message || req.body.message || req.body
     if (!message) {
+      console.log('Formato de mensagem não reconhecido:', JSON.stringify(req.body))
       return res.status(400).json({ error: 'Formato de mensagem inválido' })
     }
 
@@ -32,14 +36,25 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: 'Falha ao obter configuração do WhatsApp IA' })
     }
 
+    // Extrair dados da mensagem suportando diferentes formatos
+    const sender = message.sender || message.from || message.key?.remoteJid
+    const messageType = message.type || (message.message?.audioMessage ? 'audio' : 
+                                        message.message?.conversation ? 'text' : 'unknown')
+    const messageContent = message.content || message.body || 
+                           message.message?.conversation || 
+                           message.message?.extendedTextMessage?.text || 
+                           'Conteúdo não identificado'
+    const messageId = message.messageid || message.id || message.key?.id
+
     // Registrar mensagem recebida
     const { data: interaction, error } = await supabase
       .from('whatsapp_ia_messages')
       .insert({
         establishment_id: configData.establishment_id,
-        client_phone: message.sender || message.from,
-        message_type: message.type,
-        message_content: message.content || message.body,
+        client_phone: sender,
+        message_type: messageType,
+        message_content: messageContent,
+        original_payload: JSON.stringify(req.body),
         is_from_client: true,
         created_at: new Date().toISOString(),
         processed: false,
@@ -54,20 +69,24 @@ export default async function handler(req, res) {
     }
 
     // Processar mensagem com base no tipo
-    if (message.type === 'media' || message.type === 'audio' || message.type === 'voice') {
+    if (messageType === 'media' || messageType === 'audio' || messageType === 'voice' || 
+        message.message?.audioMessage) {
+      console.log('Processando áudio, ID da mensagem:', messageId)
       // Iniciar processamento de áudio assincronamente
       processAudio({
         messageId: interaction.id,
-        mediaId: message.messageid || message.id,
-        sender: message.sender || message.from,
+        mediaId: messageId,
+        sender: sender,
         establishmentId: configData.establishment_id
       })
-    } else if (message.type === 'text') {
+    } else if (messageType === 'text' || message.message?.conversation || 
+              message.message?.extendedTextMessage) {
+      console.log('Processando texto:', messageContent)
       // Processar texto diretamente
       processIntent({
         interactionId: interaction.id,
-        text: message.content || message.body,
-        sender: message.sender || message.from,
+        text: messageContent,
+        sender: sender,
         establishmentId: configData.establishment_id
       })
     }

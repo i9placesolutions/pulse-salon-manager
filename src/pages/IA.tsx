@@ -183,6 +183,8 @@ const IA = () => {
       // Definir URL do webhook fixo
       const webhookUrlToSave = "https://n8n-n8n-start.ad2edf.easypanel.host/webhook/whatsapp-ia-pulse";
       
+      console.log('Salvando configuração com token:', evolutionToken);
+      
       const { data, error } = await supabase
         .from('whatsapp_ia_config')
         .upsert({
@@ -192,6 +194,7 @@ const IA = () => {
           webhook_url: webhookUrlToSave,
           auto_response_enabled: isAutoResponseEnabled,
           establishment_id: establishmentId,
+          instance_token: evolutionToken,
           updated_at: new Date().toISOString()
         });
       
@@ -635,6 +638,10 @@ const IA = () => {
                     value={evolutionToken}
                     onChange={(e) => setEvolutionToken(e.target.value)}
                   />
+                  <small className="form-text text-muted">
+                    Digite o token da sua instância Evolution API. 
+                    Valor atual: <code>{evolutionToken ? `${evolutionToken.substring(0, 10)}...` : 'Não configurado'}</code>
+                  </small>
                 </div>
                 
                 <div className="space-y-2">

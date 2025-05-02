@@ -5,10 +5,12 @@ import axios from 'axios'
 
 export async function processAudio({ messageId, mediaId, sender, establishmentId }) {
   try {
+    console.log(`Iniciando processamento de áudio: messageId=${messageId}, mediaId=${mediaId}`)
+    
     // Conectar ao Supabase
     const supabase = createClient(
       'https://wtpmedifsfbxctlssefd.supabase.co',
-      process.env.SUPABASE_SERVICE_KEY
+      process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_ANON_KEY
     )
 
     // Atualizar status para processando
@@ -20,7 +22,7 @@ export async function processAudio({ messageId, mediaId, sender, establishmentId
     // Obter configuração e tokens do WhatsApp
     const { data: config, error: configError } = await supabase
       .from('whatsapp_ia_config')
-      .select('openai_key, uazapi_token, evolution_token')
+      .select('openai_key, uazapi_token, evolution_token, instance_token')
       .eq('establishment_id', establishmentId)
       .single()
 
@@ -28,13 +30,17 @@ export async function processAudio({ messageId, mediaId, sender, establishmentId
       throw new Error(`Erro ao obter configuração: ${configError.message}`)
     }
 
-    // Determinar qual token usar (evolution ou uazapi)
-    const token = config.evolution_token || config.uazapi_token
+    // Determinar qual token usar (prioritizando instance_token)
+    const token = config.instance_token || config.uazapi_token || config.evolution_token || process.env.UAZAPI_TOKEN
+    console.log(`Token utilizado: ${token.substring(0, 10)}...`)
 
     // Baixar o áudio via API Uazapi/Evolution
+    const downloadUrl = 'https://api.uazapi.com/message/download'
+    console.log(`Solicitando download de áudio para: ${downloadUrl}`)
+    
     const downloadResponse = await axios({
       method: 'POST',
-      url: 'https://api.uazapi.com/message/download',
+      url: downloadUrl,
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
@@ -46,6 +52,8 @@ export async function processAudio({ messageId, mediaId, sender, establishmentId
         openai_apikey: config.openai_key || process.env.OPENAI_API_KEY
       }
     })
+
+    console.log('Resposta do download:', JSON.stringify(downloadResponse.data))
 
     if (!downloadResponse.data || !downloadResponse.data.transcription) {
       throw new Error('Falha ao transcrever áudio')
@@ -78,7 +86,7 @@ export async function processAudio({ messageId, mediaId, sender, establishmentId
     // Conectar ao Supabase
     const supabase = createClient(
       'https://wtpmedifsfbxctlssefd.supabase.co',
-      process.env.SUPABASE_SERVICE_KEY
+      process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_ANON_KEY
     )
 
     // Registrar erro
