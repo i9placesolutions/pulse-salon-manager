@@ -59,14 +59,14 @@ export function ClientAuthForm({ onAuthenticated }: ClientAuthFormProps) {
       const formattedDate = format(values.birthDate, "yyyy-MM-dd");
 
       // Tenta autenticar o cliente
-      const client = await authenticateClient(values.phone, formattedDate);
+      const result = await authenticateClient(values.phone, formattedDate);
 
-      if (client) {
+      if (result.data && !result.error) {
         toast({
           title: "Autenticação bem-sucedida",
-          description: `Bem-vindo(a) ${client.name}!`,
+          description: `Bem-vindo(a) ${result.data.name}!`,
         });
-        onAuthenticated(client.id);
+        onAuthenticated(result.data.id);
       } else {
         toast({
           title: "Falha na autenticação",

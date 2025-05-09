@@ -26,8 +26,13 @@ export function ClientAppointmentHistory({ clientId }: ClientAppointmentHistoryP
       try {
         setIsLoading(true);
         setError(null);
-        const history = await getClientAppointmentHistory(clientId);
-        setAppointments(history);
+        const { data, error } = await getClientAppointmentHistory(clientId);
+        
+        if (error) {
+          throw error;
+        }
+        
+        setAppointments(data || []);
       } catch (err) {
         console.error("Erro ao carregar histórico:", err);
         setError("Não foi possível carregar seu histórico de agendamentos. Tente novamente mais tarde.");

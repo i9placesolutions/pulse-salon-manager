@@ -33,6 +33,88 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   }
 });
 
+// Interface para representar um agendamento de cliente
+export interface ClientAppointment {
+  id: number;
+  client_id: string;
+  client_name: string;
+  professional_id: number;
+  professional_name: string;
+  date: string;
+  start_time: string;
+  end_time: string;
+  duration: number;
+  status: string;
+  payment_status: string;
+  total_value: number;
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+  services?: {
+    id: number;
+    service_name: string;
+    price: number;
+  }[];
+}
+
+// Função para obter o histórico de agendamentos de um cliente
+export async function getClientAppointmentHistory(clientId: string): Promise<{ data: ClientAppointment[] | null, error: any }> {
+  try {
+    // Buscar os agendamentos do cliente
+    const { data: appointments, error: appointmentsError } = await supabase
+      .from('appointments')
+      .select('*')
+      .eq('client_id', clientId)
+      .order('date', { ascending: false });
+    
+    if (appointmentsError) {
+      return { data: null, error: appointmentsError };
+    }
+    
+    // Para cada agendamento, buscar os serviços associados
+    if (appointments && appointments.length > 0) {
+      // Buscar na tabela appointment_services os serviços de cada agendamento
+      for (const appointment of appointments) {
+        const { data: services, error: servicesError } = await supabase
+          .from('appointment_services')
+          .select('*')
+          .eq('appointment_id', appointment.id);
+        
+        if (!servicesError && services) {
+          appointment.services = services;
+        }
+      }
+    }
+    
+    return { data: appointments, error: null };
+  } catch (error) {
+    console.error("Erro ao buscar histórico de agendamentos:", error);
+    return { data: null, error };
+  }
+}
+
+// Função para autenticar um cliente (login de cliente)
+export async function authenticateClient(phone: string, birthDate: string) {
+  try {
+    // Verificar se o cliente existe pelo telefone e data de nascimento
+    const { data: client, error: clientError } = await supabase
+      .from('clients')
+      .select('*')
+      .eq('phone', phone)
+      .eq('birth_date', birthDate)
+      .single();
+    
+    if (clientError) {
+      return { data: null, error: 'Cliente não encontrado' };
+    }
+    
+    // Retornar os dados do cliente se autenticado com sucesso
+    return { data: client, error: null };
+  } catch (error) {
+    return { data: null, error: 'Erro ao autenticar cliente' };
+  }
+}
+
 // Função para realizar login com email e senha
 export async function signInWithEmail(email: string, password: string) {
   const { data, error } = await supabase.auth.signInWithPassword({

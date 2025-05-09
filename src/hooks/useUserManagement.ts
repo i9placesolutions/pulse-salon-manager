@@ -68,10 +68,32 @@ export function useUserManagement() {
     try {
       setIsLoading(true);
       
-      // Buscar perfis da tabela profiles sem depender da API admin
+      // Obter usuário atual para determinar o estabelecimento
+      const { data: { session } } = await supabase.auth.getSession();
+      const currentUserId = session?.user?.id;
+      
+      if (!currentUserId) {
+        console.error("Usuário não autenticado");
+        return;
+      }
+      
+      // Buscar o perfil do usuário logado para obter o estabelecimento
+      const { data: currentUserProfile, error: currentUserError } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", currentUserId)
+        .single();
+      
+      if (currentUserError) {
+        console.error("Erro ao buscar perfil do usuário logado:", currentUserError.message);
+        throw currentUserError;
+      }
+      
+      // Buscar perfis da tabela profiles filtrado pelo estabelecimento do usuário logado
       const { data: profilesData, error: profilesError } = await supabase
         .from("profiles")
-        .select("*");
+        .select("*")
+        .eq("establishment", currentUserProfile.establishment);
         
       if (profilesError) {
         console.error("Erro ao buscar profiles:", profilesError.message);
