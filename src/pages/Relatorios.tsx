@@ -1,5 +1,6 @@
 import { PageLayout } from "@/components/shared/PageLayout";
 import { PageHeader } from "@/components/shared/PageHeader";
+import { FormCard } from "@/components/shared/FormCard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -298,7 +299,7 @@ const Relatorios = () => {
         }
       />
 
-      <div className="space-y-4 mx-auto max-w-7xl">
+      <FormCard variant="blue" className="mb-0" title="Relatórios e Análises">
         <Tabs 
           defaultValue="dashboard" 
           value={activeTab}
@@ -486,7 +487,7 @@ const Relatorios = () => {
             </>
           )}
         </Tabs>
-      </div>
+      </FormCard>
     </PageLayout>
   );
 };

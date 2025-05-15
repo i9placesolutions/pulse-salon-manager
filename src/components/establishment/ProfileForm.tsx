@@ -83,23 +83,6 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
               </div>
               
               <div>
-                <Label htmlFor="customUrl">URL Personalizada</Label>
-                <div className="relative">
-                  <Input
-                    id="customUrl"
-                    placeholder="meu-estabelecimento"
-                    value={profile.customUrl}
-                    onChange={(e) => handleChange('customUrl', e.target.value)}
-                    className="pl-10"
-                  />
-                  <Building2 className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-blue-500" />
-                </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  https://app.pulsesalon.com.br/p/<span className="font-medium">{profile.customUrl || "meu-estabelecimento"}</span>
-                </p>
-              </div>
-              
-              <div>
                 <Label htmlFor="description">Descrição</Label>
                 <Textarea 
                   id="description"

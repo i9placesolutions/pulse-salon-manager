@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
-import { Mail, Lock, Loader2, LogIn } from "lucide-react";
+import { Mail, Lock, Loader2, LogIn, Eye, EyeOff } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { sendLoginNotification } from "@/services/whatsapp/api";
 
@@ -12,6 +12,7 @@ const LoginForm = () => {
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -147,13 +148,25 @@ const LoginForm = () => {
         <div className="relative group">
           <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-pink-500 transition-colors duration-200" size={20} />
           <Input
-            type="password"
+            type={showPassword ? "text" : "password"}
             placeholder="Sua senha"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="pl-10 border-gray-200 focus:border-pink-500 focus:ring-pink-200 transition-all duration-300"
+            className="pl-10 pr-10 border-gray-200 focus:border-pink-500 focus:ring-pink-200 transition-all duration-300"
             required
           />
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-pink-500 transition-colors duration-200"
+            tabIndex={-1}
+          >
+            {showPassword ? (
+              <EyeOff size={20} />
+            ) : (
+              <Eye size={20} />
+            )}
+          </button>
         </div>
       </div>
 

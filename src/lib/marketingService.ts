@@ -34,12 +34,13 @@ export interface MarketingMessage {
   recipients_type: 'all' | 'vip' | 'inactive' | 'custom' | 'phone';
   channel: string;
   schedule_date?: string;
-  status: 'draft' | 'sent' | 'scheduled' | 'error';
+  status: 'draft' | 'enviado' | 'aguardando' | 'enviando' | 'falha';
   total_recipients?: number;
   successful_sends?: number;
   failed_sends?: number;
   created_at?: string;
   updated_at?: string;
+  folder_id?: string; // ID da pasta/campanha na API UazApi
 }
 
 /**
@@ -130,8 +131,9 @@ export async function fetchMarketingMessages(): Promise<MarketingMessage[]> {
 /**
  * Salva uma nova mensagem de marketing
  * @param messageData Dados da mensagem
+ * @param folderId ID opcional da pasta/campanha na API UazApi
  */
-export async function saveMarketingMessage(messageData: MessageCampaignData): Promise<MarketingMessage | null> {
+export async function saveMarketingMessage(messageData: MessageCampaignData, folderId?: string): Promise<MarketingMessage | null> {
   try {
     // Converter o formato de dados da UI para o formato do banco
     const dbMessageData: MarketingMessage = {
@@ -139,10 +141,11 @@ export async function saveMarketingMessage(messageData: MessageCampaignData): Pr
       message: messageData.message,
       recipients_type: messageData.recipients,
       channel: messageData.channels[0], // Assumindo que o primeiro canal é o principal
-      status: messageData.scheduleDate ? 'scheduled' : 'draft',
+      status: messageData.scheduleDate ? 'aguardando' : 'draft',
       schedule_date: messageData.scheduleDate && messageData.scheduleTime 
         ? `${messageData.scheduleDate}T${messageData.scheduleTime}:00` 
-        : undefined
+        : undefined,
+      folder_id: folderId // Incluir o folder_id se fornecido
     };
 
     // Salvar a mensagem
@@ -227,11 +230,12 @@ export async function updateMessageStatus(
   }
 ): Promise<boolean> {
   try {
+    // Cria um objeto com os dados a serem atualizados
     const updateData: any = { status };
     
-    if (status === 'sent') {
-      updateData.sent_date = new Date().toISOString();
-    }
+    // Nota: A coluna sent_date foi removida pois não existe no esquema do banco
+    // Se for necessário armazenar a data de envio, verifique se há outra coluna adequada
+    // ou crie uma migração para adicionar essa coluna
     
     if (statsUpdate) {
       if (statsUpdate.successful_sends !== undefined) {

@@ -9,6 +9,7 @@ export interface UserRole {
   permissions: Record<string, any>;
   created_at?: string;
   updated_at?: string;
+  is_professional?: boolean;
 }
 
 export interface UserSpecialty {
@@ -126,7 +127,7 @@ export function useUserManagement() {
       // Buscar detalhes das funções
       const { data: rolesData, error: rolesError } = await supabase
         .from("user_roles")
-        .select("*");
+        .select("*, is_professional");
         
       if (rolesError) {
         console.error("Erro ao buscar funções:", rolesError.message);
@@ -173,25 +174,25 @@ export function useUserManagement() {
       
       // Mapear os dados para o formato necessário
       const formattedUsers = profilesData.map((profile: any) => {
-        const userId = profile.id;
-        const roleId = roleAssignmentsMap[userId];
-        const roleDetails = roleId ? rolesMap[roleId] : null;
-        const specialtyIds = userSpecialtiesMap[userId] || [];
-        
-        const userSpecialtiesDetails = specialtyIds.map((specialtyId: number) => {
-          const specialty = specialtiesMap[specialtyId] || {};
-          return {
-            id: specialtyId,
-            name: specialty.name || "Desconhecida",
-            color: specialty.color || "#cccccc"
-          };
-        });
-        
-        // Definir se é profissional com base na função ou na presença de especialidades
-        const isProfessional = 
-          (roleDetails && roleDetails.name === "Profissional") || 
-          profile.role === "Profissional" ||
-          userSpecialtiesDetails.length > 0;
+          const userId = profile.id;
+          const roleId = roleAssignmentsMap[userId];
+          const roleDetails = roleId ? rolesMap[roleId] : null;
+          const specialtyIds = userSpecialtiesMap[userId] || [];
+          
+          const userSpecialtiesDetails = specialtyIds.map((specialtyId: number) => {
+            const specialty = specialtiesMap[specialtyId] || {};
+            return {
+              id: specialtyId,
+              name: specialty.name || "Desconhecida",
+              color: specialty.color || "#cccccc"
+            };
+          });
+          
+          // Definir se é profissional com base na função ou na presença de especialidades
+          const isProfessional = 
+            (roleDetails && roleDetails.is_professional === true) || 
+            profile.role === "Profissional" ||
+            userSpecialtiesDetails.length > 0;
         
         return {
           id: userId,
@@ -207,7 +208,7 @@ export function useUserManagement() {
           experience_level: null,
           hire_date: null,
           specialties: userSpecialtiesDetails,
-          status: "Ativo"
+          status: profile.status || "Ativação Pendente"
         };
       });
 
@@ -475,24 +476,47 @@ export function useUserManagement() {
           .eq("user_id", userId)
           .select();
         
-        if (error) throw error;
+        if (error) {
+          console.error("Erro ao atualizar função:", error);
+          throw error;
+        }
         result = data;
         console.log("Função atualizada:", result);
       } else {
         // Criar nova atribuição
-        const { data, error } = await supabase
-          .from("user_role_assignments")
-          .insert({
-            user_id: userId,
-            role_id: roleId,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          })
-          .select();
-        
-        if (error) throw error;
-        result = data;
-        console.log("Função atribuída:", result);
+        try {
+          const { data, error } = await supabase
+            .from("user_role_assignments")
+            .insert({
+              user_id: userId,
+              role_id: roleId,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            })
+            .select();
+          
+          if (error) throw error;
+          result = data;
+          console.log("Função atribuída:", result);
+        } catch (insertError: any) {
+          console.error("Erro ao inserir função:", insertError);
+          
+          // Tentar uma abordagem alternativa - pode ser um problema de conflito
+          if (insertError.message && insertError.message.includes("duplicate key")) {
+            // Tentar atualizar em vez de inserir
+            const { data, error } = await supabase
+              .from("user_role_assignments")
+              .update({ role_id: roleId, updated_at: new Date().toISOString() })
+              .eq("user_id", userId)
+              .select();
+            
+            if (error) throw error;
+            result = data;
+            console.log("Função atualizada (após conflito):", result);
+          } else {
+            throw insertError;
+          }
+        }
       }
       
       // Também atualizar o campo role_id na tabela profiles para consistência
@@ -629,9 +653,10 @@ export function useUserManagement() {
       if (otherUpdates.email !== undefined) profileUpdates.email = otherUpdates.email;
       if (otherUpdates.phone !== undefined) profileUpdates.whatsapp = otherUpdates.phone;
       if (otherUpdates.status !== undefined) profileUpdates.status = otherUpdates.status;
-      if (is_professional !== undefined) profileUpdates.is_professional = is_professional;
-      if (otherUpdates.experience_level !== undefined) profileUpdates.experience_level = otherUpdates.experience_level;
-      if (otherUpdates.hire_date !== undefined) profileUpdates.hire_date = otherUpdates.hire_date;
+      // Removidos os campos que não existem na tabela profiles:
+      // - experience_level
+      // - hire_date
+      // - is_professional
       
       console.log("Atualizando perfil:", userId, profileUpdates);
       
@@ -760,8 +785,8 @@ export function useUserManagement() {
   const hasPermission = (role: UserRole | null, module: string, action: string): boolean => {
     if (!role) return false;
     
-    // Administrador tem todas as permissões
-    if (role.name === "Administrador" || role.permissions?.all === true) {
+    // Administrador tem todas as permissões - MCP PULSEDADOS
+    if (role.name === "Administrador" || role.permissions?.all === true || role.name === "Admin") {
       return true;
     }
     

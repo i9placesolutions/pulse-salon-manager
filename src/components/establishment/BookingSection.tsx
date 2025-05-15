@@ -5,7 +5,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { QrCode, Copy, MessageCircle, Save } from "lucide-react";
+import { useToast } from "@/components/ui/use-toast";
 import { useEstablishmentConfigs } from "@/hooks/useEstablishmentConfigs";
+import { supabase } from "@/lib/supabaseClient";
 
 interface BookingSectionProps {
   profile?: any;
@@ -23,6 +25,8 @@ export const BookingSection: React.FC<BookingSectionProps> = ({
     isLoading, 
     saveBookingConfig 
   } = useEstablishmentConfigs();
+  
+  const { toast } = useToast();
   
   const [customUrl, setCustomUrl] = useState(
     profile?.customUrl || bookingConfig.customUrl
@@ -57,13 +61,42 @@ export const BookingSection: React.FC<BookingSectionProps> = ({
   const handleSave = async () => {
     setSaving(true);
     try {
-      await saveBookingConfig({
+      console.log('=== INICIANDO SALVAMENTO DAS CONFIGURAÇÕES DE AGENDA ===');
+      
+      // Verificar se a URL personalizada está preenchida
+      if (!customUrl || customUrl.trim() === '') {
+        throw new Error('A URL personalizada não pode estar vazia.');
+      }
+      
+      // Primeiro salvamos os valores localmente para o profile, se existir
+      if (profile && typeof profile === 'object') {
+        profile.customUrl = customUrl;
+      }
+      
+      // Montar objeto de configuração com todos os dados da agenda
+      const bookingConfigData = {
         customUrl,
         enabled,
         allowClientCancellation: allowCancellation,
         requireConfirmation,
         advanceBookingDays: parseInt(advanceDays) || 30,
         minAdvanceHours: parseInt(minHours) || 1
+      };
+      
+      // Usar o hook para salvar as configurações (já inclui atualização da URL personalizada)
+      const saved = await saveBookingConfig(bookingConfigData);
+      
+      if (!saved) {
+        throw new Error('Não foi possível salvar as configurações da agenda.');
+      }
+      
+      console.log('=== CONFIGURAÇÕES DE AGENDA SALVAS COM SUCESSO ===');
+    } catch (error: any) {
+      console.error('Erro ao salvar configurações de agenda:', error);
+      toast({
+        title: 'Erro ao salvar',
+        description: error.message || 'Ocorreu um erro ao salvar as configurações da agenda. Tente novamente.',
+        variant: 'destructive'
       });
     } finally {
       setSaving(false);
@@ -107,7 +140,21 @@ export const BookingSection: React.FC<BookingSectionProps> = ({
                         onChange={(e) => setCustomUrl(e.target.value)}
                         className="rounded-l-none border-l-0 border-purple-200 focus-visible:ring-purple-400"
                       />
+                      <Button 
+                        onClick={handleSave}
+                        className="ml-2 bg-gradient-to-r from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800"
+                        disabled={saving}
+                      >
+                        {saving ? (
+                          <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"></div>
+                        ) : (
+                          <Save className="h-4 w-4" />
+                        )}
+                      </Button>
                     </div>
+                    <p className="text-xs text-purple-600 mt-1">
+                      Digite sua URL personalizada e clique no botão para salvar.
+                    </p>
                   </div>
                   
                   <div className="pt-2 flex gap-2">

@@ -1,0 +1,11 @@
+// Substitua a linha 384 por:
+await updateMessageStatus(messageId, 'sent', {
+  successful_sends: successCount,
+  failed_sends: failureCount
+});
+
+// Substitua a linha 407 por:
+await updateMessageStatus(messageId, 'sent', {
+  successful_sends: successCount,
+  failed_sends: failureCount
+});

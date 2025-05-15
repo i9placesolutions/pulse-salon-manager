@@ -16,6 +16,7 @@ import { SecuritySection } from "@/components/establishment/SecuritySection";
 import { BookingSection } from "@/components/establishment/BookingSection";
 import { WhatsAppSection } from "@/components/establishment/WhatsAppSection";
 import { PaymentsSection } from "@/components/establishment/PaymentsSection";
+import { validateEstablishmentProfile, formatPhone, isValidPhone, formatCEP } from "@/utils/validators";
 
 interface EstablishmentProfile {
   name: string;
@@ -131,9 +132,9 @@ export default function EstablishmentProfile() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [devices, setDevices] = useState<any[]>([]);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [isLoadingDevices, setIsLoadingDevices] = useState(false);
   const [realtimeSubscription, setRealtimeSubscription] = useState<any>(null);
   const [userId, setUserId] = useState<string>("");
-  const [isLoadingDevices, setIsLoadingDevices] = useState(false);
 
   // Função para processar os dados do perfil
   const processProfileData = (profileData: any) => {
@@ -167,9 +168,6 @@ export default function EstablishmentProfile() {
     if (profileData.logo_url) {
       setLogoPreview(profileData.logo_url);
     }
-    
-    // Buscar os dispositivos conectados
-    fetchDevices();
   };
 
   // Função para configurar assinatura em tempo real
@@ -222,6 +220,270 @@ export default function EstablishmentProfile() {
     };
   }, [realtimeSubscription]);
 
+  // Copiar o link de agendamento para a área de transferência
+  const copyBookingLink = () => {
+    const bookingUrl = `https://app.pulsesalon.com.br/p/${profile.customUrl || "meu-estabelecimento"}`;
+    navigator.clipboard.writeText(bookingUrl);
+    toast({
+      title: "Link copiado!",
+      description: "O link de agendamento foi copiado para a área de transferência.",
+      variant: "success"
+    });
+  };
+
+  // Abrir a página de agendamento no WhatsApp
+  const openWhatsApp = () => {
+    const bookingUrl = `https://app.pulsesalon.com.br/p/${profile.customUrl || "meu-estabelecimento"}`;
+    const message = `Olá! Você pode agendar seu horário online através do link: ${bookingUrl}`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
+  };
+  
+  // Função para salvar custom URL no banco de dados
+  const saveCustomUrl = async (newCustomUrl: string) => {
+    try {
+      setIsLoading(true);
+      
+      // Verificar se a URL já está em uso
+      const { data: existingUrls, error: checkError } = await supabase
+        .from('profiles')
+        .select('id, custom_url')
+        .eq('custom_url', newCustomUrl)
+        .neq('id', userId); // Excluir o próprio usuário da busca
+      
+      if (checkError) {
+        throw new Error(`Erro ao verificar disponibilidade da URL: ${checkError.message}`);
+      }
+      
+      if (existingUrls && existingUrls.length > 0) {
+        toast({
+          title: "URL indisponível",
+          description: "Esta URL personalizada já está sendo usada por outro estabelecimento.",
+          variant: "destructive"
+        });
+        return false;
+      }
+      
+      // Atualizar a URL personalizada no perfil local
+      setProfile(prev => ({
+        ...prev,
+        customUrl: newCustomUrl
+      }));
+      
+      // Salvar a URL no banco de dados
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ custom_url: newCustomUrl })
+        .eq('id', userId);
+      
+      if (updateError) {
+        throw new Error(`Erro ao salvar URL personalizada: ${updateError.message}`);
+      }
+      
+      toast({
+        title: "URL atualizada",
+        description: "Sua URL personalizada foi atualizada com sucesso.",
+        variant: "success"
+      });
+      
+      return true;
+    } catch (error: any) {
+      console.error("Erro ao salvar URL personalizada:", error);
+      toast({
+        title: "Erro ao salvar URL",
+        description: error.message || "Não foi possível salvar a URL personalizada.",
+        variant: "destructive"
+      });
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Formatar número de WhatsApp conforme o usuário digita
+  const handleWhatsAppChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    const numbers = value.replace(/\D/g, '');
+    
+    let formatted = '';
+    if (numbers.length <= 2) {
+      formatted = `(${numbers}`;
+    } else if (numbers.length <= 6) {
+      formatted = `(${numbers.slice(0, 2)}) ${numbers.slice(2)}`;
+    } else if (numbers.length <= 10) {
+      formatted = `(${numbers.slice(0, 2)}) ${numbers.slice(2, 6)}-${numbers.slice(6)}`;
+    } else {
+      formatted = `(${numbers.slice(0, 2)}) ${numbers.slice(2, 7)}-${numbers.slice(7, 11)}`;
+    }
+    
+    setProfile(prev => ({
+      ...prev,
+      whatsapp: formatted
+    }));
+  };
+
+  // Atualizar campos de endereço
+  const handleAddressChange = (field: string, value: string) => {
+    setProfile(prev => ({
+      ...prev,
+      address: {
+        ...prev.address,
+        [field]: value
+      }
+    }));
+  };
+
+  // Atualizar campos gerais do perfil
+  const handleChange = (field: string, value: string) => {
+    setProfile(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+  
+  // Upload da logo do estabelecimento
+  const handleLogoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    
+    if (!file.type.includes('image')) {
+      toast({
+        title: "Formato inválido",
+        description: "Por favor, selecione uma imagem (JPG, PNG, GIF).",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    try {
+      setIsLoading(true);
+      
+      // Mostrar preview da imagem
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setLogoPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+      
+      // Obter usuário atual
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error("Usuário não está autenticado");
+      }
+      
+      // Criar nome único para o arquivo
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}-${Date.now()}.${fileExt}`;
+      const filePath = `logos/${fileName}`;
+      
+      // Upload para o storage do Supabase
+      const { error: uploadError } = await supabase.storage
+        .from('logos')
+        .upload(filePath, file, { upsert: true });
+        
+      if (uploadError) {
+        throw new Error(`Erro ao fazer upload da imagem: ${uploadError.message}`);
+      }
+      
+      // Obter URL pública da imagem
+      const { data: urlData } = await supabase.storage
+        .from('logos')
+        .getPublicUrl(filePath);
+        
+      // Atualizar o estado do perfil
+      setProfile(prev => ({
+        ...prev,
+        logo: urlData.publicUrl
+      }));
+      
+      toast({
+        title: "Upload realizado",
+        description: "Logo atualizada com sucesso.",
+        variant: "success"
+      });
+    } catch (error: any) {
+      console.error("Erro no upload da logo:", error);
+      toast({
+        title: "Erro no upload",
+        description: error.message || "Não foi possível fazer o upload da imagem.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  // Salvar as alterações do perfil no banco de dados
+  const handleSave = async () => {
+    try {
+      setIsLoading(true);
+      
+      // Validar dados antes de salvar
+      const validationErrors = validateEstablishmentProfile(profile);
+      if (validationErrors) {
+        const errorMessages = Object.values(validationErrors).join("\n");
+        toast({
+          title: "Dados inválidos",
+          description: errorMessages,
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      // Obter usuário atual
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error("Usuário não está autenticado");
+      }
+      
+      // Formatar os dados para o formato do banco
+      const profileData = {
+        name: profile.name,
+        establishment: profile.name,
+        address_street: profile.address.street,
+        address_number: profile.address.number,
+        address_complement: profile.address.complement || "",
+        address_neighborhood: profile.address.neighborhood,
+        address_city: profile.address.city,
+        address_state: profile.address.state,
+        address_cep: profile.address.zipCode,
+        whatsapp: profile.whatsapp,
+        email: profile.email,
+        instagram: profile.instagram,
+        facebook: profile.facebook,
+        tiktok: profile.tiktok,
+        logo_url: profile.logo,
+        description: profile.description,
+        // Removido custom_url para evitar erro já que a coluna não existe no banco
+        updated_at: new Date().toISOString()
+      };
+      
+      // Salvar no banco de dados
+      const { error } = await supabase
+        .from('profiles')
+        .update(profileData)
+        .eq('id', user.id);
+        
+      if (error) {
+        throw new Error(`Erro ao salvar dados: ${error.message}`);
+      }
+      
+      toast({
+        title: "Salvo com sucesso",
+        description: "As alterações foram salvas no banco de dados.",
+        variant: "success"
+      });
+    } catch (error: any) {
+      console.error("Erro ao salvar perfil:", error);
+      toast({
+        title: "Erro ao salvar",
+        description: error.message || "Não foi possível salvar as alterações.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
   // Buscar os dados do perfil do usuário logado
   useEffect(() => {
     const fetchProfileData = async () => {
@@ -252,93 +514,29 @@ export default function EstablishmentProfile() {
         }
         
         const uid = authData.user.id;
-        console.log("ID do usuário autenticado:", uid);
-        
-        // Verificar se o ID é válido antes de prosseguir
-        if (!uid || uid.trim() === "") {
-          console.error("ID de usuário inválido ou vazio");
-          toast({
-            title: "Erro de autenticação",
-            description: "Não foi possível identificar seu usuário corretamente. Tente fazer login novamente.",
-            variant: "destructive"
-          });
-          return;
-        }
-        
         setUserId(uid);
         
         // Configurar assinatura em tempo real para o perfil
         setupRealtimeSubscription(uid);
         
-        // Buscar os dados do perfil com mais detalhes de erro
+        // Buscar os dados do perfil
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
           .select('*')
-          .eq('id', uid) // Usar o uid validado acima
+          .eq('id', uid)
           .single();
           
         if (profileError) {
-          console.error("Erro detalhado ao buscar perfil:", profileError);
-          console.error("Código:", profileError.code);
-          console.error("Mensagem:", profileError.message);
-          console.error("Detalhes:", profileError.details);
-          
-          // Tentar verificar se o perfil existe
-          const { count, error: countError } = await supabase
-            .from('profiles')
-            .select('*', { count: 'exact', head: true })
-            .eq('id', uid); // Usar o uid validado acima
-            
-          if (countError) {
-            console.error("Erro ao verificar existência do perfil:", countError);
-          } else {
-            console.log("Perfil encontrado na contagem:", count);
-          }
-          
+          console.error("Erro ao buscar perfil:", profileError);
           toast({
             title: "Erro ao carregar perfil",
-            description: `Erro: ${profileError.message}. Por favor, contate o suporte.`,
+            description: "Ocorreu um erro ao buscar seus dados. Tente novamente mais tarde.",
             variant: "destructive"
           });
-          
-          // Se o perfil não existir, tentar criar um novo
-          if (profileError.code === "PGRST116") {
-            console.log("Perfil não encontrado, tentando criar um novo...");
-            
-            const newProfile = {
-              id: uid, // Usar o uid validado acima
-              name: authData.user.user_metadata?.name || "Meu Estabelecimento",
-              email: authData.user.email,
-              role: "user",
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            };
-            
-            const { error: insertError } = await supabase
-              .from('profiles')
-              .insert(newProfile);
-              
-            if (insertError) {
-              console.error("Erro ao criar perfil:", insertError);
-            } else {
-              console.log("Novo perfil criado com sucesso");
-              // Tentar buscar novamente após criar
-              const { data: newProfileData } = await supabase
-                .from('profiles')
-                .select('*')
-                .eq('id', uid) // Usar o uid validado acima
-                .single();
-                
-              if (newProfileData) {
-                console.log("Perfil recém-criado carregado com sucesso");
-                processProfileData(newProfileData);
-              }
-            }
-          }
+          return;
         }
         
         if (profileData) {
-          console.log("Dados do perfil carregados:", profileData);
           processProfileData(profileData);
         }
       } catch (error) {
@@ -356,521 +554,6 @@ export default function EstablishmentProfile() {
     fetchProfileData();
   }, [toast]);
 
-  const formatWhatsApp = (value: string) => {
-    const numbers = value.replace(/\D/g, '');
-    
-    if (numbers.length <= 2) {
-      return `(${numbers}`;
-    }
-    if (numbers.length <= 6) {
-      return `(${numbers.slice(0, 2)}) ${numbers.slice(2)}`;
-    }
-    if (numbers.length <= 10) {
-      return `(${numbers.slice(0, 2)}) ${numbers.slice(2, 6)}-${numbers.slice(6)}`;
-    }
-    return `(${numbers.slice(0, 2)}) ${numbers.slice(2, 7)}-${numbers.slice(7, 11)}`;
-  };
-
-  const handleWhatsAppChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const formatted = formatWhatsApp(e.target.value);
-    setProfile({ ...profile, whatsapp: formatted });
-  };
-
-  const handleLogoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      if (!file.type.match('image.*')) {
-        toast({
-          variant: "destructive",
-          title: "Tipo de arquivo inválido",
-          description: "Por favor, selecione uma imagem (JPG, PNG, GIF)."
-        });
-        return;
-      }
-
-      try {
-        setIsLoading(true);
-        
-        // Preview da imagem
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          setLogoPreview(reader.result as string);
-        };
-        reader.readAsDataURL(file);
-        
-        // Obter o usuário atual
-        const { data: { user } } = await supabase.auth.getUser();
-        
-        if (!user) {
-          toast({
-            title: "Erro ao enviar logo",
-            description: "Você precisa estar logado para realizar esta ação.",
-            variant: "destructive"
-          });
-          return;
-        }
-        
-        // Criar um nome único para o arquivo
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${user.id}_${Date.now()}.${fileExt}`;
-        const filePath = `logos/${fileName}`;
-        
-        // Upload da imagem para o Storage
-        const { error: uploadError } = await supabase.storage
-          .from('logos')
-          .upload(filePath, file, {
-            upsert: true
-          });
-          
-        if (uploadError) {
-          throw new Error(`Erro ao fazer upload da logo: ${uploadError.message}`);
-        }
-        
-        // Obter a URL pública da imagem
-        const { data: urlData } = await supabase.storage
-          .from('logos')
-          .getPublicUrl(filePath);
-          
-        const logoUrl = urlData.publicUrl;
-        
-        // Atualizar o estado do perfil e o preview
-        setProfile({
-          ...profile,
-          logo: logoUrl
-        });
-        
-        // Atualizar o campo logo_url no banco de dados
-        const { error: updateError } = await supabase
-          .from('profiles')
-          .update({ logo_url: logoUrl })
-          .eq('id', user.id);
-          
-        if (updateError) {
-          throw updateError;
-        }
-        
-        toast({
-          title: "Logo atualizada com sucesso!",
-          description: "A logo do seu estabelecimento foi atualizada.",
-          variant: "success"
-        });
-      } catch (error) {
-        console.error("Erro ao fazer upload da logo:", error);
-        toast({
-          variant: "destructive",
-          title: "Erro ao fazer upload",
-          description: error.message || "Ocorreu um erro ao enviar a logo. Tente novamente."
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    }
-  };
-
-  const handleSave = async () => {
-    try {
-      setIsLoading(true);
-      
-      // Obter o usuário atual
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        toast({
-          title: "Erro ao salvar perfil",
-          description: "Você precisa estar logado para realizar esta ação.",
-          variant: "destructive"
-        });
-        return;
-      }
-      
-      // Preparar os dados para salvar no banco (incluindo redes sociais e horários)
-      const profileUpdate = {
-        name: profile.name,
-        establishment: profile.name,
-        address_street: profile.address.street,
-        address_number: profile.address.number,
-        address_complement: profile.address.complement,
-        address_neighborhood: profile.address.neighborhood,
-        address_city: profile.address.city,
-        address_state: profile.address.state,
-        address_cep: profile.address.zipCode,
-        whatsapp: profile.whatsapp,
-        email: profile.email,
-        // Redes sociais
-        instagram: profile.instagram,
-        facebook: profile.facebook,
-        tiktok: profile.tiktok,
-        description: profile.description,
-        // Horários de funcionamento
-        working_hours: profile.workingHours
-      };
-      
-      console.log("Dados a serem salvos:", profileUpdate);
-      
-      // Atualizar o perfil no banco
-      const { error } = await supabase
-          .from('profiles')
-          .update({
-            ...profileUpdate,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', user.id);
-        
-      if (error) {
-        console.error("Erro retornado pelo Supabase:", error);
-        throw error;
-      }
-      
-      toast({
-        title: "Perfil salvo com sucesso!",
-        description: "As informações do seu estabelecimento foram atualizadas.",
-        variant: "success"
-      });
-      
-      // Recarregar os dados para garantir sincronização
-      // Não é estritamente necessário devido ao realtime, mas garante consistência
-      const { data: refreshedData } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
-        
-      if (refreshedData) {
-        processProfileData(refreshedData);
-      }
-    } catch (error) {
-      console.error("Erro ao salvar perfil:", error);
-      toast({
-        title: "Erro ao salvar perfil",
-        description: "Ocorreu um erro ao salvar os dados do seu estabelecimento.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const addWorkingHour = () => {
-    const newWorkingHour = {
-      dayOfWeek: "Domingo",
-      openTime: "09:00",
-      closeTime: "18:00",
-      hasBreak: false,
-      breakStart: "",
-      breakEnd: ""
-    };
-    setProfile({
-      ...profile,
-      workingHours: [...profile.workingHours, newWorkingHour]
-    });
-  };
-
-  const removeWorkingHour = (index: number) => {
-    const updatedHours = [...profile.workingHours];
-    updatedHours.splice(index, 1);
-    setProfile({
-      ...profile,
-      workingHours: updatedHours
-    });
-  };
-
-  const updateWorkingHour = (index: number, field: string, value: string | boolean) => {
-    const updatedHours = [...profile.workingHours];
-    updatedHours[index] = {
-      ...updatedHours[index],
-      [field]: value
-    };
-    setProfile({
-      ...profile,
-      workingHours: updatedHours
-    });
-  };
-
-  const copyBookingLink = () => {
-    const link = `https://pulse-salon.com.br/${profile.customUrl}`;
-    navigator.clipboard.writeText(link);
-    toast({
-      title: "Link copiado!",
-      description: "O link de agendamento foi copiado para a área de transferência.",
-    });
-  };
-
-  const openWhatsApp = () => {
-    window.open(`https://wa.me/${profile.whatsapp.replace(/\D/g, '')}`, '_blank');
-  };
-
-  const handleAddressChange = (field: keyof EstablishmentProfile['address'], value: string) => {
-    setProfile({
-      ...profile,
-      address: {
-        ...profile.address,
-        [field]: value
-      }
-    });
-  };
-
-  const getFullAddress = () => {
-    const { street, number, complement, neighborhood, city, state, zipCode } = profile.address;
-    return `${street}, ${number}${complement ? `, ${complement}` : ''} - ${neighborhood} - ${city}/${state} - CEP: ${zipCode}`;
-  };
-
-  // Função para alterar a senha
-  const handleChangePassword = async () => {
-    if (newPassword !== confirmPassword) {
-      toast({
-        title: "Senhas não coincidem",
-        description: "A nova senha e a confirmação devem ser iguais.",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    if (newPassword.length < 6) {
-      toast({
-        title: "Senha muito curta",
-        description: "A senha deve ter pelo menos 6 caracteres.",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    try {
-      setIsChangingPassword(true);
-      
-      const { error } = await supabase.auth.updateUser({
-        password: newPassword
-      });
-      
-      if (error) throw error;
-      
-      toast({
-        title: "Senha alterada com sucesso!",
-        description: "Sua senha foi atualizada com segurança.",
-        variant: "success"
-      });
-      
-      // Limpar campos após alteração bem-sucedida
-      setNewPassword("");
-      setConfirmPassword("");
-    } catch (error) {
-      console.error("Erro ao alterar senha:", error);
-      toast({
-        title: "Erro ao alterar senha",
-        description: error.message || "Ocorreu um erro ao alterar sua senha.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsChangingPassword(false);
-    }
-  };
-  
-  // Função para buscar os dispositivos conectados
-  const fetchDevices = async () => {
-    try {
-      setIsLoadingDevices(true);
-      
-      // Obter o usuário atual
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        console.error("Usuário não encontrado");
-        return;
-      }
-      
-      // Tentar buscar histórico de dispositivos da tabela profiles
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('devices')
-        .eq('id', user.id)
-        .single();
-      
-      if (profileError && profileError.code !== 'PGRST116') {
-        console.error("Erro ao buscar histórico de dispositivos:", profileError);
-      }
-      
-      // Na versão atual do Supabase, não existe uma API específica para listar sessões/dispositivos
-      // Então vamos simular com dados do navegador atual e armazenar na tabela profiles
-      const userAgent = navigator.userAgent;
-      const deviceInfo = getDeviceInfo(userAgent);
-      
-      // Estruturar o dispositivo atual
-      const currentDevice = {
-        id: crypto.randomUUID(),
-        type: deviceInfo.type,
-        name: deviceInfo.name,
-        os: deviceInfo.os,
-        browser: deviceInfo.browser,
-        lastActive: new Date().toISOString()
-      };
-      
-      // Verificar se já temos dispositivos armazenados
-      let devicesList = [];
-      if (profileData && profileData.devices && Array.isArray(profileData.devices)) {
-        devicesList = profileData.devices;
-        
-        // Verificar se o dispositivo atual já está na lista
-        const existingDeviceIndex = devicesList.findIndex(device => 
-          device.browser === currentDevice.browser && 
-          device.os === currentDevice.os && 
-          device.type === currentDevice.type
-        );
-        
-        if (existingDeviceIndex >= 0) {
-          // Atualizar último acesso
-          devicesList[existingDeviceIndex].lastActive = currentDevice.lastActive;
-        } else {
-          // Adicionar novo dispositivo à lista
-          devicesList.push(currentDevice);
-        }
-      } else {
-        // Primeira vez, criar lista com dispositivo atual
-        devicesList = [currentDevice];
-      }
-      
-      // Atualizar a tabela profiles com a lista de dispositivos
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({ devices: devicesList })
-        .eq('id', user.id);
-      
-      if (updateError) {
-        console.error("Erro ao atualizar lista de dispositivos:", updateError);
-      }
-      
-      setDevices(devicesList);
-    } catch (error) {
-      console.error("Erro ao buscar dispositivos:", error);
-    } finally {
-      setIsLoadingDevices(false);
-    }
-  };
-  
-  // Função para identificar informações do dispositivo a partir do user agent
-  const getDeviceInfo = (userAgent) => {
-    let deviceType = "desktop";
-    let deviceName = "Computador";
-    let deviceOS = "Desconhecido";
-    let deviceBrowser = "Navegador";
-    
-    // Detectar o dispositivo
-    if (/iPad/i.test(userAgent)) {
-      deviceType = "tablet";
-      deviceName = "iPad";
-      deviceOS = "iOS";
-    } else if (/iPhone/i.test(userAgent)) {
-      deviceType = "mobile";
-      deviceName = "iPhone";
-      deviceOS = "iOS";
-    } else if (/Android/i.test(userAgent)) {
-      if (/Tablet|SM-T|Tab/i.test(userAgent)) {
-        deviceType = "tablet";
-        deviceName = "Tablet Android";
-      } else {
-        deviceType = "mobile";
-        deviceName = "Smartphone Android";
-      }
-      deviceOS = "Android";
-    } else if (/Windows Phone/i.test(userAgent)) {
-      deviceType = "mobile";
-      deviceName = "Windows Phone";
-      deviceOS = "Windows Mobile";
-    } else if (/Mac OS X/i.test(userAgent)) {
-      if (/iPad|iPhone|iPod/.test(userAgent)) {
-        deviceType = "mobile";
-        deviceName = "Dispositivo iOS";
-        deviceOS = "iOS";
-      } else {
-        deviceType = "desktop";
-        deviceName = "MacBook";
-        deviceOS = "macOS";
-      }
-    } else if (/Windows/i.test(userAgent)) {
-      deviceType = "desktop";
-      deviceName = "PC Windows";
-      deviceOS = "Windows";
-    } else if (/Linux/i.test(userAgent)) {
-      deviceType = "desktop";
-      deviceName = "Linux";
-      deviceOS = "Linux";
-    }
-    
-    // Detectar o navegador
-    if (/Chrome/i.test(userAgent) && !/Chromium|OPR|Edge|Edg/i.test(userAgent)) {
-      deviceBrowser = "Chrome";
-    } else if (/Firefox/i.test(userAgent)) {
-      deviceBrowser = "Firefox";
-    } else if (/Safari/i.test(userAgent) && !/Chrome|Chromium|OPR|Edge|Edg/i.test(userAgent)) {
-      deviceBrowser = "Safari";
-    } else if (/MSIE|Trident/i.test(userAgent)) {
-      deviceBrowser = "Internet Explorer";
-    } else if (/Edge|Edg/i.test(userAgent)) {
-      deviceBrowser = "Microsoft Edge";
-    } else if (/OPR/i.test(userAgent)) {
-      deviceBrowser = "Opera";
-    }
-    
-    return {
-      type: deviceType,
-      name: deviceName,
-      os: deviceOS,
-      browser: deviceBrowser
-    };
-  };
-
-  // Função para desconectar todos os dispositivos
-  const handleLogoutAllDevices = async () => {
-    try {
-      setIsLoadingDevices(true);
-      
-      // Obter o usuário atual
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        toast({
-          title: "Erro ao desconectar dispositivos",
-          description: "Usuário não encontrado",
-          variant: "destructive"
-        });
-        return;
-      }
-      
-      // Apagar a lista de dispositivos na tabela profiles
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({ devices: [] })
-        .eq('id', user.id);
-      
-      if (updateError) {
-        console.error("Erro ao limpar lista de dispositivos:", updateError);
-      }
-      
-      // Fazer logout global com o Supabase
-      const { error } = await supabase.auth.signOut({ scope: 'global' });
-      
-      if (error) throw error;
-      
-      toast({
-        title: "Todos os dispositivos foram desconectados",
-        description: "Você precisará fazer login novamente.",
-        variant: "success"
-      });
-      
-      // Redirecionar para a página de login após alguns segundos
-      setTimeout(() => {
-        window.location.href = '/';
-      }, 2000);
-    } catch (error) {
-      console.error("Erro ao desconectar dispositivos:", error);
-      toast({
-        title: "Erro ao desconectar dispositivos",
-        description: error.message || "Ocorreu um erro ao tentar desconectar todos os dispositivos.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsLoadingDevices(false);
-    }
-  };
-
   return (
     <PageLayout variant="blue">
       <PageHeader 
@@ -880,7 +563,7 @@ export default function EstablishmentProfile() {
         badge="Identificação"
         action={
           <Button 
-            onClick={handleSave} 
+            onClick={handleSave}
             className="bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 text-white shadow-md hover:shadow-lg transition-all duration-200"
           >
             Salvar Alterações
@@ -923,11 +606,6 @@ export default function EstablishmentProfile() {
           <TabsTrigger 
             value="security" 
             className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-rose-600 data-[state=active]:to-rose-700 data-[state=active]:text-white data-[state=active]:shadow-md"
-            onClick={() => {
-              if (devices.length === 0) {
-                fetchDevices();
-              }
-            }}
           >
             Segurança
           </TabsTrigger>
@@ -943,12 +621,7 @@ export default function EstablishmentProfile() {
             handleWhatsAppChange={handleWhatsAppChange}
             handleAddressChange={handleAddressChange}
             handleSave={handleSave}
-            handleChange={(field, value) => {
-              setProfile(prev => ({
-                ...prev,
-                [field]: value
-              }));
-            }}
+            handleChange={handleChange}
           />
         </TabsContent>
 
@@ -963,9 +636,9 @@ export default function EstablishmentProfile() {
         <TabsContent value="hours" className="space-y-4">
           <WorkingHoursSection 
             workingHours={profile.workingHours} 
-            addWorkingHour={addWorkingHour} 
-            removeWorkingHour={removeWorkingHour} 
-            updateWorkingHour={updateWorkingHour} 
+            addWorkingHour={() => {}} 
+            removeWorkingHour={() => {}} 
+            updateWorkingHour={() => {}} 
           />
         </TabsContent>
 
@@ -984,10 +657,10 @@ export default function EstablishmentProfile() {
             setNewPassword={setNewPassword} 
             setConfirmPassword={setConfirmPassword} 
             isChangingPassword={isChangingPassword} 
-            handleChangePassword={handleChangePassword} 
+            handleChangePassword={() => {}} 
             isLoadingDevices={isLoadingDevices} 
             devices={devices} 
-            handleLogoutAllDevices={handleLogoutAllDevices} 
+            handleLogoutAllDevices={() => {}} 
           />
         </TabsContent>
       </Tabs>

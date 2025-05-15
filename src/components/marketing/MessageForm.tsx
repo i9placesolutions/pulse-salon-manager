@@ -44,22 +44,7 @@ export function MessageForm({ title, message, onChange }: MessageFormProps) {
         </p>
       </div>
 
-      <div className="grid gap-2">
-        <Label>Mídia</Label>
-        <div className="flex items-center gap-4">
-          <Button variant="outline" className="w-full" onClick={() => document.getElementById('file-upload')?.click()}>
-            <Upload className="mr-2 h-4 w-4" />
-            Adicionar Mídia
-          </Button>
-          <input
-            type="file"
-            id="file-upload"
-            className="hidden"
-            accept="image/*,video/*"
-            onChange={handleFileChange}
-          />
-        </div>
-      </div>
+      {/* Seção de mídia removida conforme solicitado */}
     </div>
   );
 }

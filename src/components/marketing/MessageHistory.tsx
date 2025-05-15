@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { MarketingMessage } from "@/lib/marketingService";
 
-export type MessageStatus = 'enviando' | 'aguardando' | 'pausada' | 'cancelada' | 'entregue' | 'falha' | 'draft' | 'sent' | 'scheduled' | 'error';
+export type MessageStatus = 'enviando' | 'aguardando' | 'enviado' | 'pausada' | 'cancelada' | 'falha' | 'draft' | 'sent' | 'scheduled' | 'error' | 'Scheduled' | 'Sent' | 'Failed';
 
 type Message = {
   id: string;
@@ -30,13 +30,31 @@ interface MessageHistoryProps {
 export function MessageHistory({ messages }: MessageHistoryProps) {
   const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
 
+  // Traduz o status da API em inglês para português
+  const translateStatus = (status: MessageStatus): string => {
+    switch (status) {
+      case 'sent': case 'Sent': return 'Enviado';
+      case 'draft': return 'Rascunho';
+      case 'scheduled': case 'Scheduled': return 'Aguardando';
+      case 'error': case 'Failed': return 'Falha';
+      // Mantém os status que já estão em português
+      case 'enviado': return 'Enviado';
+      case 'enviando': return 'Enviando';
+      case 'aguardando': return 'Aguardando';
+      case 'pausada': return 'Pausada';
+      case 'cancelada': return 'Cancelada';
+      case 'falha': return 'Falha';
+      default: return status;
+    }
+  };
+
   const getStatusColor = (status: MessageStatus) => {
     switch (status) {
-      case 'entregue': case 'sent': return 'bg-green-500';
+      case 'enviado': case 'sent': case 'Sent': return 'bg-green-500';
       case 'enviando': return 'bg-yellow-500';
-      case 'aguardando': case 'scheduled': return 'bg-blue-500';
+      case 'aguardando': case 'scheduled': case 'Scheduled': return 'bg-blue-500';
       case 'pausada': case 'draft': return 'bg-gray-500';
-      case 'cancelada': case 'error': case 'falha': return 'bg-red-500';
+      case 'cancelada': case 'error': case 'falha': case 'Failed': return 'bg-red-500';
       default: return 'bg-gray-500';
     }
   };
@@ -73,8 +91,11 @@ export function MessageHistory({ messages }: MessageHistoryProps) {
                 >
                   <TableCell className="font-medium">{message.titulo}</TableCell>
                   <TableCell>
-                    <Badge className={`${getStatusColor(message.status)} text-white`}>
-                      {message.status}
+                    <Badge className={`${getStatusColor(message.status)} text-white relative px-3 py-1`}>
+                      {message.status === 'enviando' && (
+                        <span className="absolute left-1 top-1/2 -translate-y-1/2 h-2 w-2 rounded-full bg-white animate-ping"></span>
+                      )}
+                      {translateStatus(message.status)}
                     </Badge>
                   </TableCell>
                   <TableCell>

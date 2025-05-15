@@ -365,13 +365,49 @@ export const whatsAppService = {
     }
   },
 
-  // Encontrar instância por usuário 
+  // Encontrar instância por usuário
   async findInstanceByUserId(userId: string): Promise<WhatsAppInstance | null> {
     try {
-      const instances = await this.getAllInstances();
-      // Encontra a instância correspondente ao ID do usuário (armazenado no adminField01)
-      const userInstance = instances.find(instance => instance.id.includes(userId));
-      return userInstance || null;
+      // Obter todas as instâncias usando a API de admin
+      const response = await fetch(`${API_URL}/instance/all`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "admintoken": ADMIN_TOKEN
+        }
+      });
+
+      if (!response.ok) {
+        console.error("Erro ao obter instâncias:", response.statusText);
+        return null;
+      }
+
+      const data = await response.json();
+      
+      if (!data || !Array.isArray(data)) {
+        console.error("Formato de resposta inesperado na listagem de instâncias");
+        return null;
+      }
+      
+      // Encontrar a instância onde adminField01 corresponde ao ID do usuário
+      const userInstance = data.find((instance: any) => instance.adminField01 === userId);
+      
+      if (!userInstance) {
+        console.log(`Nenhuma instância encontrada para o usuário com ID ${userId}`);
+        return null;
+      }
+      
+      return {
+        id: userInstance.id,
+        instanceName: userInstance.name || userInstance.instanceName,
+        status: userInstance.status,
+        token: userInstance.token || userInstance.id,
+        user: {
+          name: userInstance.user?.name,
+          id: userInstance.user?.id,
+          profilePictureUrl: userInstance.user?.profilePictureUrl
+        }
+      };
     } catch (error) {
       console.error("Erro ao buscar instância do usuário:", error);
       return null;
