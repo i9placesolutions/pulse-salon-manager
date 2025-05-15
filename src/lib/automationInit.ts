@@ -3,7 +3,7 @@
  * Configura automaticamente webhooks e ativa automações
  */
 
-import { autoConfigureWebhooks } from './webhookService';
+import { autoConfigureWebhooks, configureWebhook, WebhookConfig } from './webhookService';
 import { getAutomations, toggleAutomationStatus } from './automationService';
 import { whatsAppService, MAIN_INSTANCE_TOKEN } from './whatsappApi';
 import { toast } from '@/components/ui/use-toast';
@@ -15,24 +15,47 @@ export async function initializeAutomation(): Promise<boolean> {
   try {
     console.log('Inicializando configurações de automação...');
     
-    // Verificar se existe uma instância conectada
-    const instance = await whatsAppService.findInstanceByUserId(MAIN_INSTANCE_TOKEN);
+    // Lista de tokens de instância para verificar (incluindo o token específico fornecido)
+    const tokensToCheck = [
+      MAIN_INSTANCE_TOKEN,
+      '64c79c76-4f4d-4fb8-9a00-8160be3089ae' // Token específico da instância em produção
+    ];
     
-    if (!instance || instance.status !== 'connected') {
+    // Verificar cada token até encontrar uma instância conectada
+    let connectedInstance = null;
+    for (const token of tokensToCheck) {
+      const instance = await whatsAppService.findInstanceByUserId(token);
+      if (instance && (instance.status === 'connected' || instance.status === 'CONNECTED')) {
+        console.log(`Instância conectada encontrada com token: ${token}`);
+        connectedInstance = instance;
+        break;
+      }
+    }
+    
+    if (!connectedInstance) {
       console.warn('Nenhuma instância WhatsApp conectada encontrada');
       return false;
     }
     
-    // Configurar webhooks automaticamente
-    const webhookResults = await autoConfigureWebhooks();
+    // Configurar webhook especificamente para a instância conectada
+    const instanceToken = connectedInstance.token || connectedInstance.id;
     
-    if (webhookResults.length === 0) {
-      console.warn('Não foi possível configurar webhooks');
-      return false;
+    // Configuração de webhook específica para esta instância
+    const webhookConfig = {
+      instanceToken,
+      url: 'https://app.pulsesalon.com.br/api/webhook/uazapi',
+      events: ['message', 'status', 'connection'],
+      enabled: true
+    };
+    
+    // Configurar webhook para a instância conectada
+    try {
+      const webhookResult = await configureWebhook(webhookConfig);
+      console.log('Webhook configurado com sucesso para a instância:', connectedInstance.instanceName || connectedInstance.id);
+    } catch (error) {
+      console.error('Erro ao configurar webhook:', error);
+      // Continuar mesmo com erro na configuração do webhook para não bloquear outras funcionalidades
     }
-    
-    console.log('Webhooks configurados com sucesso para as instâncias:', 
-      webhookResults.map(r => r.instance.instanceName || r.instance.id).join(', '));
     
     // Verificar e ativar automações
     const automations = await getAutomations();

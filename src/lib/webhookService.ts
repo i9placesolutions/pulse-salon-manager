@@ -20,7 +20,30 @@ export interface WebhookConfig {
  */
 export async function autoConfigureWebhooks(): Promise<any[]> {
   try {
-    // Obter todas as instâncias disponíveis
+    // Lista de tokens de instância para verificar (incluindo o token específico fornecido)
+    const tokensToCheck = [
+      MAIN_INSTANCE_TOKEN, // Token padrão
+      '64c79c76-4f4d-4fb8-9a00-8160be3089ae' // Token específico da instância em produção
+    ];
+    
+    // Verificar diretamente a instância específica
+    const specificInstance = await whatsAppService.findInstanceByUserId('64c79c76-4f4d-4fb8-9a00-8160be3089ae');
+    if (specificInstance) {
+      console.log('Instância específica encontrada:', specificInstance.instanceName || specificInstance.id);
+      const token = specificInstance.token || specificInstance.id;
+      
+      // Configurar webhook para esta instância específica
+      const result = await configureWebhook({
+        instanceToken: token,
+        url: 'https://app.pulsesalon.com.br/api/webhook/uazapi',
+        events: ['message', 'status', 'connection'],
+        enabled: true
+      });
+      
+      return [{ instance: specificInstance, result }];
+    }
+    
+    // Obter todas as instâncias disponíveis como backup
     const instances = await whatsAppService.getAllInstances();
     
     // Filtrar apenas instâncias conectadas
