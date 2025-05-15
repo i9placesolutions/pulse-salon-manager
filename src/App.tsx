@@ -14,7 +14,7 @@ import { SpecialtiesProvider } from "./contexts/SpecialtiesContext";
 import { AppStateProvider } from "./contexts/AppStateContext";
 import { startBirthdayService } from "./lib/birthdayService";
 import { GlobalNotifications } from "./components/shared/GlobalNotifications";
-import { setupAutomationSystem } from "./lib/automationInit";
+
 
 // Componente de carregamento
 const Loading = () => (
@@ -47,9 +47,6 @@ const App = () => {
   useEffect(() => {
     // Iniciar serviço de aniversário
     startBirthdayService();
-    
-    // Iniciar sistema de automação de marketing
-    setupAutomationSystem();
   }, []);
 
   return (

@@ -1,6 +1,4 @@
 import { useState, useEffect } from "react";
-import { PRODUCTION_INSTANCE_TOKEN } from "@/lib/whatsAppTest";
-import { configureWebhook } from "@/lib/webhookService";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Target, Bell, Zap, BarChart, MessageSquare, History, Gift, Percent, Phone, User as UserIcon } from "lucide-react";
 import { MetricsCard } from "@/components/marketing/MetricsCard";
@@ -93,8 +91,7 @@ export default function Marketing() {
   // Estados para WhatsApp
   const [whatsappToken, setWhatsappToken] = useState<string>("");
   
-  // Estado para conexão com webhook
-  const [webhookConnected, setWebhookConnected] = useState(false);
+
   const [loadingWhatsAppContacts, setLoadingWhatsAppContacts] = useState(false);
   const [contactsExpanded, setContactsExpanded] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string>("");
@@ -243,49 +240,15 @@ export default function Marketing() {
     };
   }, [whatsappToken]); // Adicionar whatsappToken como dependência
   
-  // Função para configurar webhook com o token específico
-  const setupWebhookConfiguration = async () => {
-    try {
-      // Configurar webhook para a instância específica
-      const webhookResult = await configureWebhook({
-        instanceToken: PRODUCTION_INSTANCE_TOKEN,
-        url: 'https://app.pulsesalon.com.br/api/webhook/uazapi',
-        events: ['message', 'status', 'connection'],
-        enabled: true
-      });
-      
-      console.log('Webhook configurado com sucesso:', webhookResult);
-      setWebhookConnected(true);
-      
-      // Usar este token para operações subsequentes
-      setWhatsappToken(PRODUCTION_INSTANCE_TOKEN);
-      
-      // Carregar contatos usando este token específico
-      loadContacts(PRODUCTION_INSTANCE_TOKEN);
-      
-      return true;
-    } catch (error) {
-      console.error('Erro ao configurar webhook:', error);
-      return false;
-    }
-  };
+
 
   // Carregar configuração inicial ao montar o componente
   useEffect(() => {
     const init = async () => {
-      // Definir diretamente o token da instância específica
-      setWhatsappToken(PRODUCTION_INSTANCE_TOKEN);
-      
-      // Configurar webhook com token específico
-      await setupWebhookConfiguration(); 
-      
-      // Inicializar outros componentes
+      // Inicializar componentes
       setupRealTimeSubscriptions();
       loadMessages();
       loadMetrics();
-      
-      // Carregar contatos usando o token específico
-      loadContacts(PRODUCTION_INSTANCE_TOKEN);
     };
     
     init();
