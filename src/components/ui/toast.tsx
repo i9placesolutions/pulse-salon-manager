@@ -29,17 +29,17 @@ const toastVariants = cva(
       variant: {
         default: "bg-white border-gray-200 text-foreground p-6 pr-8 shadow-md",
         destructive:
-          "group border-l-8 border-l-red-600 bg-gradient-to-r from-red-100 to-white text-red-800 p-4 pl-4 pr-8 shadow-md",
+          "group border-l-8 border-l-red-600 bg-gradient-to-r from-red-50 to-white text-red-800 p-4 pl-4 pr-8 shadow-md",
         success:
-          "group border-l-8 border-l-green-600 bg-gradient-to-r from-green-100 to-white text-green-800 p-4 pl-4 pr-8 shadow-md",
+          "group border-l-8 border-l-green-600 bg-gradient-to-r from-green-50 to-white text-green-800 p-4 pl-4 pr-8 shadow-md",
         warning:
-          "group border-l-8 border-l-amber-600 bg-gradient-to-r from-amber-100 to-white text-amber-800 p-4 pl-4 pr-8 shadow-md",
+          "group border-l-8 border-l-amber-600 bg-gradient-to-r from-amber-50 to-white text-amber-800 p-4 pl-4 pr-8 shadow-md",
         info:
-          "group border-l-8 border-l-blue-600 bg-gradient-to-r from-blue-100 to-white text-blue-800 p-4 pl-4 pr-8 shadow-md",
+          "group border-l-8 border-l-blue-600 bg-gradient-to-r from-blue-50 to-white text-blue-800 p-4 pl-4 pr-8 shadow-md",
         primary:
-          "group border-l-8 border-l-pink-600 bg-gradient-to-r from-pink-100 to-white text-pink-800 p-4 pl-4 pr-8 shadow-md",
+          "group border-l-8 border-l-pink-600 bg-gradient-to-r from-pink-50 to-white text-pink-800 p-4 pl-4 pr-8 shadow-md",
         loading:
-          "group border-l-8 border-l-cyan-600 bg-gradient-to-r from-cyan-100 to-white text-cyan-800 p-4 pl-4 pr-8 shadow-md",
+          "group border-l-8 border-l-cyan-600 bg-gradient-to-r from-cyan-50 to-white text-cyan-800 p-4 pl-4 pr-8 shadow-md",
       },
     },
     defaultVariants: {

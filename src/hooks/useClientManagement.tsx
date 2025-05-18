@@ -51,6 +51,7 @@ export const useClientManagement = () => {
           lastVisit: client.last_visit || '',
           observations: client.observations || '',
           tags: client.tags || [],
+          updatedAt: client.updated_at || '',
         };
         
         return formattedClient;
@@ -247,8 +248,8 @@ export const useClientManagement = () => {
         name: clientData.name,
         email: clientData.email,
         phone: clientData.phone,
-        birth_date: clientData.birthDate,
-        first_visit: clientData.firstVisit,
+        birth_date: clientData.birthDate ? clientData.birthDate : null,
+        first_visit: clientData.firstVisit ? clientData.firstVisit : null,
         cpf: clientData.cpf,
         address: clientData.address,
         photo: clientData.photo,
@@ -257,7 +258,7 @@ export const useClientManagement = () => {
         cashback: clientData.cashback,
         total_spent: clientData.totalSpent,
         visits_count: clientData.visitsCount,
-        last_visit: clientData.lastVisit,
+        last_visit: clientData.lastVisit ? clientData.lastVisit : null,
         observations: clientData.observations,
         tags: clientData.tags,
       };
@@ -268,6 +269,11 @@ export const useClientManagement = () => {
           delete clientForUpdate[key as keyof typeof clientForUpdate];
         }
       });
+      
+      // Também converte string vazia para null em campos de data
+      if (clientForUpdate.birth_date === '') clientForUpdate.birth_date = null;
+      if (clientForUpdate.first_visit === '') clientForUpdate.first_visit = null;
+      if (clientForUpdate.last_visit === '') clientForUpdate.last_visit = null;
       
       // Atualizar no Supabase
       const { error } = await supabase

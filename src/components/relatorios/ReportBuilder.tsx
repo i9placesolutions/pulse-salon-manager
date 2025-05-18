@@ -25,7 +25,7 @@ interface ReportBuilderProps {
     to: Date;
   };
   filters: GlobalFilters;
-  data?: Record<string, any>;
+  data?: Record<string, any> | null;
   onExport?: (format: ExportFormat) => void;
 }
 
@@ -37,7 +37,7 @@ export function ReportBuilder({ date, filters, data, onExport }: ReportBuilderPr
   const [aggregateField, setAggregateField] = useState<string>("valor");
   const [reportTitle, setReportTitle] = useState<string>("Relatório Personalizado");
   
-  // Dados mockados para o construtor de relatórios
+  // Campos disponíveis para o construtor de relatórios
   const availableFields = [
     { id: "cliente", label: "Cliente" },
     { id: "data", label: "Data" },
@@ -50,21 +50,17 @@ export function ReportBuilder({ date, filters, data, onExport }: ReportBuilderPr
     { id: "duracao", label: "Duração" },
   ];
   
-  const mockData = data || [
-    { cliente: "Ana Silva", data: "10/04/2025", servico: "Corte", profissional: "João", valor: 120, status: "Concluído", categoria: "Cabelo", pagamento: "Crédito", duracao: 45 },
-    { cliente: "Bruno Costa", data: "10/04/2025", servico: "Coloração", profissional: "Maria", valor: 180, status: "Concluído", categoria: "Cabelo", pagamento: "Pix", duracao: 90 },
-    { cliente: "Carla Pereira", data: "11/04/2025", servico: "Manicure", profissional: "Ana", valor: 80, status: "Concluído", categoria: "Unhas", pagamento: "Dinheiro", duracao: 60 },
-    { cliente: "Diego Souza", data: "12/04/2025", servico: "Barba", profissional: "João", valor: 60, status: "Concluído", categoria: "Barba", pagamento: "Crédito", duracao: 30 },
-    { cliente: "Elisa Mendes", data: "12/04/2025", servico: "Corte", profissional: "Maria", valor: 120, status: "Cancelado", categoria: "Cabelo", pagamento: "Pix", duracao: 45 },
-    { cliente: "Fernando Lima", data: "13/04/2025", servico: "Hidratação", profissional: "Ana", valor: 150, status: "Pendente", categoria: "Cabelo", pagamento: "Dinheiro", duracao: 60 },
-    { cliente: "Gabriela Santos", data: "14/04/2025", servico: "Pedicure", profissional: "João", valor: 90, status: "Concluído", categoria: "Unhas", pagamento: "Crédito", duracao: 60 },
-    { cliente: "Henrique Alves", data: "15/04/2025", servico: "Corte", profissional: "Maria", valor: 120, status: "Concluído", categoria: "Cabelo", pagamento: "Débito", duracao: 45 },
-  ];
+  // Trata o caso onde data pode ser um objeto com uma propriedade que contém o array desejado
+  const reportData = Array.isArray(data)
+    ? data
+    : data && typeof data === 'object' && Object.values(data).some(Array.isArray)
+      ? Object.values(data).find(Array.isArray) || []
+      : [];
   
   // Função para gerar dados agregados com base nos campos selecionados
   const generateAggregatedData = () => {
     // Agrupa os dados pelo campo selecionado
-    const grouped = mockData.reduce((acc, item) => {
+    const grouped = reportData.reduce((acc, item) => {
       const key = item[groupByField];
       if (!acc[key]) {
         acc[key] = [];
@@ -145,7 +141,7 @@ export function ReportBuilder({ date, filters, data, onExport }: ReportBuilderPr
       onExport('excel');
     } else {
       // Garantir que os dados são um array antes de exportar
-      const dataToExport = Array.isArray(mockData) ? mockData : [mockData];
+      const dataToExport = Array.isArray(reportData) ? reportData : [reportData];
       exportData(dataToExport, 'excel', 'relatorio_personalizado', 'Relatório Personalizado');
     }
   };
@@ -311,7 +307,7 @@ export function ReportBuilder({ date, filters, data, onExport }: ReportBuilderPr
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {mockData.map((row, i) => (
+                    {reportData.map((row, i) => (
                       <TableRow key={i}>
                         {selectedColumns.map(column => (
                           <TableCell key={column}>

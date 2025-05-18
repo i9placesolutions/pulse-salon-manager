@@ -11,11 +11,14 @@ export interface Client {
   status: 'active' | 'vip' | 'inactive';
   points: number;
   cashback: number;
+  availableCashback?: number;
   totalSpent: number;
   visitsCount: number;
   lastVisit?: string;
+  lastService?: string;
   observations?: string;
   tags?: string[];
+  updatedAt?: string;
   benefits?: Array<{
     type: string;
     value: number;

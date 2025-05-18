@@ -34,21 +34,35 @@ interface ProductFormProps {
 
 export function ProductForm({ open, onOpenChange, onSubmit, product }: ProductFormProps) {
   const { toast } = useToast();
-  const [formData, setFormData] = useState<Partial<Product>>(
-    product || {
-      name: "",
-      description: "",
-      category: "",
-      measurementUnit: "unit",
-      purchasePrice: 0,
-      salePrice: 0,
-      quantity: 0,
-      minQuantity: 0,
-      commission: {
-        type: "percentage",
-        defaultValue: 0,
-      },
+  const defaultProduct: Partial<Product> = {
+    name: '',
+    description: '',
+    barcode: '',
+    category: '',
+    measurementUnit: 'unit',
+    measurementValue: 1,
+    supplierId: undefined, // Definido como undefined para evitar problemas no DB
+    purchasePrice: 0,
+    salePrice: 0,
+    quantity: 0,
+    minQuantity: 0,
+    expirationDate: undefined,
+    linkedServices: [],
+    commission: {
+      type: 'percentage',
+      defaultValue: 0
     }
+  };
+
+  const [formData, setFormData] = useState<Partial<Product>>(
+    product ? {
+      ...defaultProduct,
+      ...product,
+      commission: {
+        type: product.commission?.type || "percentage",
+        defaultValue: product.commission?.defaultValue || 0
+      }
+    } : defaultProduct
   );
   const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
   const [categories, setCategories] = useState<string[]>([
@@ -61,13 +75,37 @@ export function ProductForm({ open, onOpenChange, onSubmit, product }: ProductFo
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Garante que todos os campos obrigatórios estejam preenchidos
+    if (!formData.name || !formData.category) {
+      toast({
+        title: "Campos obrigatórios",
+        description: "Preencha todos os campos obrigatórios",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // Garante que o preço e a quantidade sejam números válidos
+    if (isNaN(Number(formData.purchasePrice)) || isNaN(Number(formData.salePrice)) || isNaN(Number(formData.quantity))) {
+      toast({
+        title: "Valores inválidos",
+        description: "Os valores de preço e quantidade devem ser números válidos",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    console.log('Enviando dados do produto:', formData);
     onSubmit(formData);
+    
     toast({
       title: product ? "Produto atualizado" : "Produto cadastrado",
       description: product
         ? "O produto foi atualizado com sucesso!"
         : "O novo produto foi cadastrado com sucesso!",
     });
+    
     onOpenChange(false);
   };
 

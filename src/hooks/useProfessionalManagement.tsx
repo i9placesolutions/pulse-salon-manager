@@ -23,10 +23,13 @@ export function useProfessionalManagement() {
       // Para cada profissional, buscar suas especialidades
       const professionalsWithDetails = await Promise.all(
         data.map(async (professional) => {
-          // Buscar especialidades
+          // Buscar especialidades com join na tabela specialties
           const { data: specialtiesData, error: specialtiesError } = await supabase
             .from('professional_specialties')
-            .select('*')
+            .select(`
+              specialty_id,
+              specialties:specialty_id(*)
+            `)
             .eq('professional_id', professional.id);
 
           if (specialtiesError) {
@@ -36,14 +39,33 @@ export function useProfessionalManagement() {
               specialties: []
             };
           }
+          
+          // Verificar dados de especialidades recebidos
+          console.log('Dados de especialidades recebidos:', specialtiesData);
 
-          // Mapear para o formato esperado pela interface
-          const specialties: ProfessionalSpecialty[] = specialtiesData.map(s => ({
-            id: s.specialty_id,
-            name: s.name,
-            color: s.color,
-            isActive: s.is_active
-          }));
+          // Buscar informações detalhadas das especialidades diretamente da tabela specialties
+          const specialtyIds = specialtiesData.map(s => s.specialty_id).filter(Boolean);
+          
+          let specialties: ProfessionalSpecialty[] = [];
+          
+          if (specialtyIds.length > 0) {
+            const { data: specialtiesDetails, error: detailsError } = await supabase
+              .from('specialties')
+              .select('id, name, color')
+              .in('id', specialtyIds);
+              
+            if (!detailsError && specialtiesDetails) {
+              // Mapear para o formato esperado pela interface
+              specialties = specialtiesDetails.map(s => ({
+                id: s.id.toString(),
+                name: s.name,
+                color: s.color || '#cccccc',
+                isActive: true
+              }));
+            } else {
+              console.error('Erro ao buscar detalhes das especialidades:', detailsError);
+            }
+          }
 
           // Buscar dias de trabalho
           const { data: workingDaysData, error: workingDaysError } = await supabase
@@ -332,18 +354,42 @@ export function useProfessionalManagement() {
       if (error) throw error;
       if (!data) return null;
 
-      // Buscar especialidades
-      const { data: specialtiesData } = await supabase
+      // Buscar especialidades com join na tabela specialties
+      const { data: specialtiesData, error: specialtiesError } = await supabase
         .from('professional_specialties')
-        .select('*')
+        .select(`
+          specialty_id,
+          specialties:specialty_id(*)
+        `)
         .eq('professional_id', id);
-
-      const specialties = specialtiesData?.map(s => ({
-        id: s.specialty_id,
-        name: s.name,
-        color: s.color,
-        isActive: s.is_active
-      })) || [];
+        
+      let specialties: ProfessionalSpecialty[] = [];
+      
+      if (!specialtiesError && specialtiesData) {
+        // Buscar informações detalhadas das especialidades
+        const specialtyIds = specialtiesData.map(s => s.specialty_id).filter(Boolean);
+        
+        if (specialtyIds.length > 0) {
+          const { data: specialtiesDetails, error: detailsError } = await supabase
+            .from('specialties')
+            .select('id, name, color')
+            .in('id', specialtyIds);
+            
+          if (!detailsError && specialtiesDetails) {
+            // Mapear para o formato esperado pela interface
+            specialties = specialtiesDetails.map(s => ({
+              id: s.id.toString(),
+              name: s.name,
+              color: s.color || '#cccccc',
+              isActive: true
+            }));
+          } else {
+            console.error('Erro ao buscar detalhes das especialidades:', detailsError);
+          }
+        }
+      } else {
+        console.error('Erro ao buscar relações de especialidades:', specialtiesError);
+      }
 
       // Buscar dias de trabalho
       const { data: workingDaysData } = await supabase

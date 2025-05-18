@@ -147,16 +147,16 @@ const Relatorios = () => {
                         Profissional
                       </label>
                       <Select
-                        value={globalFilters.professionalId || ""}
-                        onValueChange={(value) => setGlobalFilters({ ...globalFilters, professionalId: value })}
+                        value={globalFilters.professionalId || "all"}
+                        onValueChange={(value) => setGlobalFilters({ ...globalFilters, professionalId: value === "all" ? "" : value })}
                       >
                         <SelectTrigger id="professional">
                           <SelectValue placeholder="Todos os profissionais" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">Todos</SelectItem>
+                          <SelectItem value="all">Todos</SelectItem>
                           {isLoadingOptions ? (
-                            <SelectItem value="" disabled>Carregando...</SelectItem>
+                            <SelectItem value="loading" disabled>Carregando...</SelectItem>
                           ) : (
                             professionals.map((professional) => (
                               <SelectItem key={professional.id} value={professional.id}>
@@ -172,16 +172,16 @@ const Relatorios = () => {
                         Serviço
                       </label>
                       <Select
-                        value={globalFilters.serviceId || ""}
-                        onValueChange={(value) => setGlobalFilters({ ...globalFilters, serviceId: value })}
+                        value={globalFilters.serviceId || "all"}
+                        onValueChange={(value) => setGlobalFilters({ ...globalFilters, serviceId: value === "all" ? "" : value })}
                       >
                         <SelectTrigger id="service">
                           <SelectValue placeholder="Todos os serviços" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">Todos</SelectItem>
+                          <SelectItem value="all">Todos</SelectItem>
                           {isLoadingOptions ? (
-                            <SelectItem value="" disabled>Carregando...</SelectItem>
+                            <SelectItem value="loading" disabled>Carregando...</SelectItem>
                           ) : (
                             services.map((service) => (
                               <SelectItem key={service.id} value={service.id}>
@@ -197,14 +197,14 @@ const Relatorios = () => {
                         Status
                       </label>
                       <Select
-                        value={globalFilters.status}
-                        onValueChange={(value) => setGlobalFilters({ ...globalFilters, status: value })}
+                        value={globalFilters.status || "all"}
+                        onValueChange={(value) => setGlobalFilters({ ...globalFilters, status: value === "all" ? "" : value })}
                       >
                         <SelectTrigger id="status" className="h-8">
                           <SelectValue placeholder="Todos os status" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">Todos</SelectItem>
+                          <SelectItem value="all">Todos</SelectItem>
                           <SelectItem value="completed">Concluídos</SelectItem>
                           <SelectItem value="pending">Pendentes</SelectItem>
                           <SelectItem value="canceled">Cancelados</SelectItem>

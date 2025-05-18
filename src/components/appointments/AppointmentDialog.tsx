@@ -96,6 +96,7 @@ export const AppointmentDialog = ({
   onSubmit,
   onCancel
 }: AppointmentDialogProps) => {
+  console.log('[AppointmentDialog] Props recebidas:', { isOpen, initialDate, initialTime });
   const { toast } = useToast();
   const [formData, setFormData] = useState<AppointmentFormData>({
     clientId: 0,
@@ -109,10 +110,12 @@ export const AppointmentDialog = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [clientSearch, setClientSearch] = useState("");
   const [open, setOpen] = useState(isOpen || false);
+  console.log('[AppointmentDialog] Estado interno inicial open:', isOpen || false);
 
   // Sincronizar o estado open com a prop isOpen
   useEffect(() => {
     if (isOpen !== undefined) {
+      console.log('[AppointmentDialog] useEffect sincronizando estado open. Nova prop isOpen:', isOpen);
       setOpen(isOpen);
     }
   }, [isOpen]);
@@ -154,12 +157,15 @@ export const AppointmentDialog = ({
 
   // Buscar dados reais de clientes do Supabase
   const { clients = [] } = useClientManagement();
+  console.log('[AppointmentDialog] Clientes carregados:', clients);
 
   // Buscar dados reais de serviços do Supabase
   const { services = [] } = useServiceManagement();
+  console.log('[AppointmentDialog] Serviços carregados:', services);
 
   // Buscar dados reais de profissionais do Supabase
   const { professionals: dbProfessionals = [] } = useProfessionalManagement();
+  console.log('[AppointmentDialog] Profissionais (db) carregados:', dbProfessionals);
   
   // Converter profissionais para o formato esperado pelo componente
   const professionals: AppointmentProfessional[] = dbProfessionals.map(prof => {
@@ -367,6 +373,8 @@ export const AppointmentDialog = ({
     }
   };
 
+  console.log('[AppointmentDialog] Renderizando JSX principal...');
+  try {
   return (
     <div>
       <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -711,4 +719,8 @@ export const AppointmentDialog = ({
       </Dialog>
     </div>
   );
+  } catch (error) {
+    console.error('[AppointmentDialog] ERRO DURANTE A RENDERIZAÇÃO DO JSX PRINCIPAL:', error);
+    return <div style={{ padding: '20px', backgroundColor: 'lightpink', border: '2px solid red', color: 'red' }}>Ocorreu um erro crítico ao tentar renderizar o conteúdo do diálogo de agendamento. Por favor, verifique o console do navegador para detalhes técnicos do erro. Mensagem: {error instanceof Error ? error.message : String(error)}</div>;
+  }
 };

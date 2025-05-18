@@ -3,17 +3,17 @@ export interface Product {
   id: number;
   name: string;
   barcode?: string;
-  description: string;
+  description?: string; // Opcional conforme schema do banco
   category: string;
   measurementUnit: 'unit' | 'grams' | 'milliliters' | 'package';
   measurementValue?: number;
-  supplierId: number;
+  supplierId?: number; // Opcional conforme schema do banco
   purchasePrice: number;
   salePrice: number;
   quantity: number;
   minQuantity: number;
   expirationDate?: string;
-  lastUpdated: string;
+  lastUpdated?: string; // Opcional para permitir criação
   linkedServices?: number[];
   commission: {
     type: 'percentage' | 'fixed';

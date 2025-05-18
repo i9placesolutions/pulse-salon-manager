@@ -139,8 +139,23 @@ export function ClientList({
     setIsBirthdayMessageOpen(true);
   };
 
-  const toggleExpandClient = (clientId: number) => {
-    setExpandedClient(prev => prev === clientId ? null : clientId);
+  // Função para expandir/contrair os detalhes do cliente
+  const toggleExpandClient = (clientId: number | string) => {
+    // Converter para número e garantir que é válido
+    const id = Number(clientId);
+    if (isNaN(id)) {
+      console.error('ID de cliente inválido:', clientId);
+      return;
+    }
+    
+    console.log('Expandindo/contraindo cliente:', id);
+    
+    // Forçar uma mudança de estado para garantir a re-renderização
+    if (expandedClient === id) {
+      setExpandedClient(null);
+    } else {
+      setExpandedClient(id);
+    }
   };
 
   // Obter os serviços de um cliente específico
@@ -193,8 +208,11 @@ export function ClientList({
         try {
           const birthdayInfo = getBirthdayInfo(client);
           const isTodayBirthday = isBirthdayToday(client);
-          const clientServices = services && Array.isArray(services) ? getClientServices(Number(client.id)) : [];
-          const isExpanded = expandedClient === Number(client.id);
+          // Garantir que o ID do cliente seja um número válido
+          const clientId = client.id ? parseInt(client.id, 10) : null;
+          // Verificar se o ID é válido antes de usar
+          const clientServices = services && Array.isArray(services) && clientId ? getClientServices(clientId) : [];
+          const isExpanded = clientId && expandedClient === clientId;
           
           return (
             <Card 
@@ -210,7 +228,14 @@ export function ClientList({
                                 client.status === 'inactive' ? '#9CA3AF' : '#84cc16' 
               }}
             >
-              <CardContent className="p-0">
+              <CardContent 
+                className="p-0 cursor-pointer" 
+                onClick={() => {
+                  if (clientId) {
+                    toggleExpandClient(clientId);
+                  }
+                }}
+              >
                 <div className="p-4">
                   <div className="flex flex-col md:flex-row md:items-start gap-4">
                     <div className="flex items-center gap-4">
@@ -522,7 +547,15 @@ export function ClientList({
                     variant="ghost"
                     size="sm"
                     className="h-7 text-xs text-primary hover:bg-primary/10"
-                    onClick={() => toggleExpandClient(Number(client.id))}
+                    onClick={() => {
+                      // Garantir que o ID é um número válido
+                      const id = parseInt(client.id, 10);
+                      if (!isNaN(id)) {
+                        toggleExpandClient(id);
+                      } else {
+                        console.error('ID de cliente inválido:', client.id);
+                      }
+                    }}
                   >
                     {isExpanded ? (
                       <>
@@ -534,7 +567,7 @@ export function ClientList({
                         <ChevronDown className="h-3.5 w-3.5 mr-1" />
                         Mais detalhes
                       </>
-                    )}
+                    )}                    
                   </Button>
                 </div>
               </CardFooter>

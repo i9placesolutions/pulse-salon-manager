@@ -6,6 +6,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useState } from "react";
 import { Client } from "@/types/client";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { CalendarIcon } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 interface ClientFormProps {
   isOpen: boolean;
@@ -72,13 +78,42 @@ export const ClientForm = ({ isOpen, onClose, onSave, client }: ClientFormProps)
           </div>
           <div className="space-y-2">
             <Label htmlFor="birthDate">Data de Nascimento *</Label>
-            <Input
-              id="birthDate"
-              type="date"
-              value={formData.birthDate}
-              onChange={(e) => setFormData({ ...formData, birthDate: e.target.value })}
-              required
-            />
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "w-full justify-start text-left font-normal",
+                    !formData.birthDate && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {formData.birthDate ? (
+                    format(new Date(formData.birthDate), "PPP", { locale: ptBR })
+                  ) : (
+                    <span>Selecionar data</span>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  captionLayout="dropdown-buttons"
+                  fromYear={1920}
+                  toYear={2025}
+                  locale={ptBR}
+                  selected={formData.birthDate ? new Date(formData.birthDate) : undefined}
+                  onSelect={(date) => 
+                    setFormData({ 
+                      ...formData, 
+                      birthDate: date ? date.toISOString().split('T')[0] : "" 
+                    })
+                  }
+                  disabled={(date) => date > new Date()}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
           </div>
           <div className="space-y-2">
             <Label htmlFor="cpf">CPF</Label>

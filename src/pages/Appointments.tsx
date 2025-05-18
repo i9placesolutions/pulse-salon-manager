@@ -449,7 +449,11 @@ const Appointments = () => {
           <div className="flex items-center gap-2">
             <Button
               variant="appointments"
-              onClick={() => setNewAppointmentOpen(true)}
+              onClick={() => {
+              console.log('[Appointments.tsx] Botão Novo Agendamento clicado. newAppointmentOpen antes:', newAppointmentOpen);
+              setNewAppointmentOpen(true);
+              console.log('[Appointments.tsx] newAppointmentOpen depois de set:', true); // Log direto do valor que deveria ser
+            }}
             >
               <Plus className="h-4 w-4" />
               Novo Agendamento

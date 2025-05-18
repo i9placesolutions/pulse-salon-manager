@@ -9,10 +9,10 @@ import {
 } from "@/components/ui/toast"
 import { AlertCircle, CheckCircle, Info, AlertTriangle, Loader2, Bell } from "lucide-react"
 
-// Sistema de deduplicação para evitar toasts repetidos
+// Sistema avançado de deduplicação para evitar toasts repetidos
 const toastDisplayed = new Set<string>();
-// Armazenar o último toast mostrado para evitar duplicações
-let lastToastKey: string | null = null;
+// Armazenar os últimos toasts mostrados para evitar duplicações
+const recentToasts: {key: string, timestamp: number}[] = [];
 
 export function Toaster() {
   const { toasts } = useToast()
@@ -21,26 +21,33 @@ export function Toaster() {
     <ToastProvider>
       {toasts.map(function ({ id, title, description, variant, action, ...props }) {
         // Verificar se este toast já está sendo exibido
-        const toastKey = `${title}-${description}`;
+        const toastKey = `${variant}-${title}-${description}`;
         
-        // Se já estiver exibindo ou for igual ao último, ignorar
-        if (toastDisplayed.has(toastKey) || toastKey === lastToastKey) {
+        // Verificar se o toast foi mostrado recentemente (nos últimos 5 segundos)
+        const now = Date.now();
+        const recentDuplicate = recentToasts.find(
+          item => item.key === toastKey && (now - item.timestamp) < 5000
+        );
+        
+        // Se já estiver exibindo ou foi mostrado recentemente, ignorar
+        if (toastDisplayed.has(toastKey) || recentDuplicate) {
           return null;
         }
         
-        // Limpar todos os toasts anteriores para garantir apenas um por vez
-        toastDisplayed.clear();
-        
-        // Adicionar à lista de toasts exibidos e atualizar o último
+        // Adicionar à lista de toasts exibidos
         toastDisplayed.add(toastKey);
-        lastToastKey = toastKey;
+        
+        // Adicionar aos toasts recentes
+        recentToasts.push({ key: toastKey, timestamp: now });
+        
+        // Limitar o array de toasts recentes aos últimos 10
+        if (recentToasts.length > 10) {
+          recentToasts.shift();
+        }
         
         // Configurar para remover da lista após fechar
         setTimeout(() => {
           toastDisplayed.delete(toastKey);
-          if (lastToastKey === toastKey) {
-            lastToastKey = null;
-          }
         }, 5000); // Tempo médio de exibição de um toast
 
         // Determine which icon to show based on variant
