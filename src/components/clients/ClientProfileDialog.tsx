@@ -621,7 +621,7 @@ export function ClientProfileDialog({
                       </CardTitle>
                       
                       {isEditingMode ? (
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center space-x-2">
                           <Select
                             value={editedClient?.status || 'active'}
                             onValueChange={(value) => handleStatusChange(value as 'active' | 'vip' | 'inactive')}
@@ -968,59 +968,60 @@ export function ClientProfileDialog({
                         </div>
                         Histórico de Atendimentos
                       </CardTitle>
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button 
-                              ref={exportButtonRef}
-                              variant="outline" 
-                              size="sm"
-                              className="h-8 bg-primary/10 hover:bg-primary/20 text-primary border-primary/20 hover:border-primary/30 transition-all duration-200"
-                              onClick={handleGenerateOrderReport}
-                              disabled={isGeneratingReport || getFilteredOrders().length === 0}
-                            >
-                              {isGeneratingReport ? (
-                                <RefreshCw className="h-3.5 w-3.5 mr-1.5 animate-spin" />
-                              ) : (
-                                <FileDown className="h-3.5 w-3.5 mr-1.5" />
-                              )}
-                              {isGeneratingReport ? 'Exportando...' : 'Exportar'}
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent side="top">
-                            <p>Exportar dados para CSV</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="p-6">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 space-y-3 sm:space-y-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <Badge className="bg-primary/10 text-primary hover:bg-primary/20 border-0 px-3 py-1">
-                          <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
-                          {completedServices.length} concluídos
-                        </Badge>
-                        <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-200 border-0 px-3 py-1">
-                          <Clock className="h-3.5 w-3.5 mr-1" />
-                          {scheduledServices.length} agendados
-                        </Badge>
-                        <Badge className="bg-red-100 text-red-700 hover:bg-red-200 border-0 px-3 py-1">
-                          <X className="h-3.5 w-3.5 mr-1" />
-                          {canceledServices.length} cancelados
-                        </Badge>
-                      </div>
-                      
-                      <div className="flex items-center flex-wrap gap-2">
+                      <div className="flex items-center space-x-2">
                         <div className="relative">
                           <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-gray-400" />
                           <Input
                             placeholder="Buscar atendimentos"
-                            className="h-8 w-[180px] pl-8 text-sm"
+                            className="h-8 w-56 pl-8 text-sm rounded-md"
                             value={orderSearchTerm}
                             onChange={(e) => setOrderSearchTerm(e.target.value)}
                           />
                         </div>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button 
+                                ref={exportButtonRef}
+                                variant="outline" 
+                                size="sm"
+                                className="h-8 bg-primary/10 hover:bg-primary/20 text-primary border-primary/20 hover:border-primary/30 transition-all duration-200"
+                                onClick={handleGenerateOrderReport}
+                                disabled={isGeneratingReport || getFilteredOrders().length === 0}
+                              >
+                                {isGeneratingReport ? (
+                                  <RefreshCw className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                                ) : (
+                                  <FileDown className="h-3.5 w-3.5 mr-1.5" />
+                                )}
+                                {isGeneratingReport ? 'Exportando...' : 'Exportar'}
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent side="top">
+                              <p>Exportar dados para CSV</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-2">
+                        <button className="rounded-full bg-rose-50 px-3 py-1 flex items-center gap-1">
+                          <CheckCircle2 className="h-3.5 w-3.5 text-rose-500" />
+                          <span className="text-xs text-rose-500">{completedServices.length} concluídos</span>
+                        </button>
+                        <button className="rounded-full bg-blue-50 px-3 py-1 flex items-center gap-1">
+                          <Clock className="h-3.5 w-3.5 text-blue-500" />
+                          <span className="text-xs text-blue-500">{scheduledServices.length} agendados</span>
+                        </button>
+                        <button className="rounded-full bg-gray-50 px-3 py-1 flex items-center gap-1">
+                          <X className="h-3.5 w-3.5 text-gray-500" />
+                          <span className="text-xs text-gray-500">{canceledServices.length} cancelados</span>
+                        </button>
+                      </div>
+                      <div className="flex items-center space-x-2">
                         <Popover>
                           <PopoverTrigger asChild>
                             <Button variant="outline" size="sm" className="h-8 gap-1 border-slate-200 text-sm">
@@ -1345,34 +1346,34 @@ export function ClientProfileDialog({
                             <Star className="h-6 w-6 text-primary" />
                           </div>
                           <div>
-                            <h3 className="font-medium text-gray-700">Pontos Acumulados</h3>
-                            <p className="text-3xl font-bold text-primary">{client.points || 0}</p>
+                            <h3 className="font-medium text-gray-700">Status de Fidelidade</h3>
+                            <p className="text-xl font-bold text-primary">{client.status === 'vip' ? 'Cliente VIP' : 'Cliente Regular'}</p>
                           </div>
                         </div>
-                        <div className="h-3 w-full bg-slate-100 rounded-full overflow-hidden shadow-inner">
-                          <div 
-                            className="h-full bg-gradient-to-r from-primary to-primary/80 rounded-full transition-all duration-500 ease-in-out" 
-                            style={{ width: `${Math.min(((client.points || 0) / 100) * 100, 100)}%` }}
-                          ></div>
-                        </div>
-                        <div className="flex justify-between items-center text-xs text-gray-500">
-                          <span>Nível {Math.floor((client.points || 0) / 100) + 1}</span>
-                          <span>{100 - (client.points || 0) % 100} pontos para o próximo nível</span>
+                        <div className="mt-3 border-t border-slate-100 pt-3">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-sm text-slate-600">Status:</span>
+                            <Badge className={client.status === 'vip' ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-slate-50 text-slate-600 border-slate-200'}>
+                              {client.status === 'vip' ? 'VIP' : 'Regular'}
+                            </Badge>
+                          </div>
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-sm text-slate-600">Benefícios disponíveis:</span>
+                            <span className="text-sm font-medium">{client.status === 'vip' ? 'Sim' : 'Não'}</span>
+                          </div>
                         </div>
                         <div className="pt-2">
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button variant="outline" className="w-full bg-primary/5 hover:bg-primary/10 border-primary/10 text-primary">
-                                  <ChevronRight className="h-4 w-4 mr-1" />
-                                  Ver Benefícios do Programa
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent side="bottom">
-                                <p>Visualizar benefícios por nível</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
+                          {client.status !== 'vip' ? (
+                            <Button variant="outline" className="w-full bg-primary/5 hover:bg-primary/10 border-primary/10 text-primary" onClick={handlePromoteToVIP}>
+                              <Crown className="h-4 w-4 mr-1" />
+                              Promover para VIP
+                            </Button>
+                          ) : (
+                            <Button variant="outline" className="w-full bg-amber-50 hover:bg-amber-100 border-amber-200 text-amber-700">
+                              <Crown className="h-4 w-4 mr-1" />
+                              Ver Benefícios VIP
+                            </Button>
+                          )}
                         </div>
                       </div>
                       
