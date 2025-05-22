@@ -7,7 +7,8 @@ import { PackageHeader } from "./packages/PackageHeader";
 import { PackageFormFields } from "./packages/PackageFormFields";
 import { PackageTabContent } from "./packages/PackageTabContent";
 import { PackageFormFooter } from "./packages/PackageFormFooter";
-import { useMockServiceData } from "./packages/useMockServiceData";
+import { usePackageData } from "./packages/usePackageData";
+import { supabase } from "@/lib/supabaseClient";
 
 interface ServicePackageFormProps {
   open: boolean;
@@ -36,7 +37,13 @@ export function ServicePackageForm({
   servicePackage,
 }: ServicePackageFormProps) {
   const { toast } = useToast();
-  const { mockAvailableServices, mockAvailableProducts } = useMockServiceData();
+  const { 
+    availableServices, 
+    availableProducts, 
+    isLoadingServices, 
+    isLoadingProducts, 
+    error 
+  } = usePackageData();
   
   const [formData, setFormData] = useState<Partial<ServicePackage>>({
     name: "",
@@ -50,53 +57,102 @@ export function ServicePackageForm({
   const [selectedServices, setSelectedServices] = useState<PackageService[]>([]);
   const [selectedProducts, setSelectedProducts] = useState<PackageProduct[]>([]);
   const [activeTab, setActiveTab] = useState<string>("services");
+  const [isLoadingPackageData, setIsLoadingPackageData] = useState(false);
 
   useEffect(() => {
-    if (servicePackage) {
+    const loadPackageData = async () => {
+      if (!servicePackage) {
+        setFormData({
+          name: "",
+          description: "",
+          services: [],
+          products: [],
+          discount: 10,
+          status: "active",
+        });
+        setSelectedServices([]);
+        setSelectedProducts([]);
+        return;
+      }
+      
+      setIsLoadingPackageData(true);
       setFormData(servicePackage);
       
-      // Carrega serviços (em uma aplicação real, você buscaria os dados dos serviços)
-      const serviceDetails = servicePackage.services?.map(serviceId => {
-        const service = mockAvailableServices.find(s => s.id === serviceId);
-        return service ? {
-          id: service.id,
-          name: service.name,
-          price: service.price
-        } : null;
-      }).filter(Boolean) as PackageService[];
-      
-      setSelectedServices(serviceDetails || []);
-      
-      // Carrega produtos (em uma aplicação real, você buscaria os dados dos produtos)
-      const productDetails = servicePackage.products?.map(product => {
-        // Ensure product.productId is treated as a string
-        const productStringId = String(product.productId);
-        const productInfo = mockAvailableProducts.find(p => p.id === productStringId);
-        return productInfo ? {
-          id: productInfo.id,
-          name: productInfo.name,
-          price: productInfo.price,
-          quantity: product.quantity
-        } : null;
-      }).filter(Boolean) as PackageProduct[];
-      
-      setSelectedProducts(productDetails || []);
-    } else {
-      setFormData({
-        name: "",
-        description: "",
-        services: [],
-        products: [],
-        discount: 10,
-        status: "active",
-      });
-      setSelectedServices([]);
-      setSelectedProducts([]);
+      try {
+        // Carrega serviços do pacote a partir do Supabase
+        if (servicePackage.services && servicePackage.services.length > 0) {
+          const { data: servicesData, error: servicesError } = await supabase
+            .from('services')
+            .select('id, name, price')
+            .in('id', servicePackage.services);
+          
+          if (servicesError) {
+            console.error('Erro ao carregar serviços do pacote:', servicesError);
+            toast({
+              title: "Erro ao carregar serviços",
+              description: "Não foi possível carregar os serviços deste pacote.",
+              variant: "destructive",
+            });
+          } else if (servicesData) {
+            const serviceDetails = servicesData.map(service => ({
+              id: service.id,
+              name: service.name,
+              price: Number(service.price),
+            }));
+            
+            setSelectedServices(serviceDetails);
+          }
+        }
+        
+        // Carrega produtos do pacote a partir do Supabase
+        if (servicePackage.products && servicePackage.products.length > 0) {
+          const productIds = servicePackage.products.map(p => p.productId);
+          
+          const { data: productsData, error: productsError } = await supabase
+            .from('products')
+            .select('id, name, sale_price')
+            .in('id', productIds);
+          
+          if (productsError) {
+            console.error('Erro ao carregar produtos do pacote:', productsError);
+            toast({
+              title: "Erro ao carregar produtos",
+              description: "Não foi possível carregar os produtos deste pacote.",
+              variant: "destructive",
+            });
+          } else if (productsData) {
+            const productDetails = productsData.map(product => {
+              const packageProduct = servicePackage.products?.find(p => p.productId === product.id);
+              return {
+                id: product.id.toString(),
+                name: product.name,
+                price: Number(product.sale_price),
+                quantity: packageProduct?.quantity || 1
+              };
+            });
+            
+            setSelectedProducts(productDetails);
+          }
+        }
+      } catch (error) {
+        console.error('Erro ao carregar dados do pacote:', error);
+        toast({
+          title: "Erro",
+          description: "Ocorreu um erro ao carregar os dados do pacote.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoadingPackageData(false);
+      }
+    };
+    
+    if (open) {
+      loadPackageData();
     }
-  }, [servicePackage, open, mockAvailableServices, mockAvailableProducts]);
+  }, [servicePackage, open, toast]);
   
   const handleAddService = (serviceId: number) => {
-    const service = mockAvailableServices.find(s => s.id === serviceId);
+    const service = availableServices.find(s => s.id === serviceId);
     if (service) {
       const newService = {
         id: service.id,
@@ -121,7 +177,7 @@ export function ServicePackageForm({
   };
   
   const handleAddProduct = (productId: string, quantity: number) => {
-    const product = mockAvailableProducts.find(p => p.id === productId);
+    const product = availableProducts.find(p => p.id === productId);
     if (product) {
       const newProduct: PackageProduct = {
         id: product.id,
@@ -204,8 +260,8 @@ export function ServicePackageForm({
               setActiveTab={setActiveTab}
               selectedServices={selectedServices}
               selectedProducts={selectedProducts}
-              availableServices={mockAvailableServices}
-              availableProducts={mockAvailableProducts}
+              availableServices={availableServices}
+              availableProducts={availableProducts}
               handleAddService={handleAddService}
               handleRemoveService={handleRemoveService}
               handleAddProduct={handleAddProduct}
@@ -213,6 +269,9 @@ export function ServicePackageForm({
               calculateTotalPrice={calculateTotalPrice}
               calculateDiscountedPrice={calculateDiscountedPrice}
               discount={formData.discount || 0}
+              isLoadingServices={isLoadingServices}
+              isLoadingProducts={isLoadingProducts}
+              isLoadingPackageData={isLoadingPackageData}
             />
           </form>
         </div>

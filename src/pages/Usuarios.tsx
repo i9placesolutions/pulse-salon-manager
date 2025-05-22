@@ -890,6 +890,34 @@ export default function Usuarios() {
                 />
               </div>
             </div>
+            
+            {/* Campos de senha (apenas para novos usuários) */}
+            {!editingUser && (
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="password" className="text-sm font-medium text-indigo-700">
+                    Senha
+                  </Label>
+                  <Input 
+                    id="password" 
+                    type="password"
+                    placeholder="Digite a senha"
+                    className="border-indigo-200 focus-visible:ring-indigo-400"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="confirm-password" className="text-sm font-medium text-indigo-700">
+                    Confirmar Senha
+                  </Label>
+                  <Input 
+                    id="confirm-password" 
+                    type="password"
+                    placeholder="Confirme a senha"
+                    className="border-indigo-200 focus-visible:ring-indigo-400"
+                  />
+                </div>
+              </div>
+            )}
 
             {/* É profissional e Switch em uma linha */}
             <div className="border-t border-b border-indigo-100 py-3 px-2 bg-indigo-50/50 rounded-md">

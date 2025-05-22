@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { supabase } from "@/lib/supabaseClient";
 import { Client, ClientPreference, ClientService, ClientCoupon } from "@/types/client";
 import { Button } from "@/components/ui/button";
 import {
@@ -98,9 +99,6 @@ interface ClientProfileDialogProps {
   isOpen: boolean;
   onClose: () => void;
   client: Client | null;
-  services: ClientService[];
-  preferences?: ClientPreference[];
-  coupons?: ClientCoupon[];
   onUpdate?: (client: Client) => void;
   onDelete?: (clientId: string) => void;
 }
@@ -109,9 +107,6 @@ export function ClientProfileDialog({
   isOpen,
   onClose,
   client,
-  services,
-  preferences = [],
-  coupons = [],
   onUpdate,
   onDelete
 }: ClientProfileDialogProps) {
@@ -128,47 +123,146 @@ export function ClientProfileDialog({
   const [exportFormat, setExportFormat] = useState<"csv" | "pdf">("csv");
   const exportButtonRef = useRef<HTMLButtonElement>(null);
   
-  // Efeito para buscar os dados atualizados do cliente do Supabase
-  useEffect(() => {
-    if (client) {
-      // Forçar uma cópia limpa do objeto para garantir que não haja referências antigas
-      // Isso previne problemas de referência e garante que os dados estão atualizados
-      const clientData = JSON.parse(JSON.stringify(client));
-      
-      // Garantir que a data de nascimento esteja no formato correto
-      // Especialmente importante para o cliente Rafael Mendes (ID: 827641a1-155a-4473-a398-a78395385f19)
-      if (clientData.birthDate) {
-        const date = new Date(clientData.birthDate);
-        if (!isNaN(date.getTime())) {
-          // Formatar a data no formato ISO para garantir compatibilidade com o Supabase
-          const day = date.getDate().toString().padStart(2, '0');
-          const month = (date.getMonth() + 1).toString().padStart(2, '0');
-          const year = date.getFullYear();
-          clientData.birthDate = `${year}-${month}-${day}`;
-        }
+  // Estados para armazenar dados do banco
+  const [clientServices, setClientServices] = useState<ClientService[]>([]);
+  const [clientPreferences, setClientPreferences] = useState<ClientPreference[]>([]);
+  const [clientCoupons, setClientCoupons] = useState<ClientCoupon[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  // Função para buscar dados do cliente no Supabase
+  const fetchClientData = async () => {
+    if (!client?.id) return;
+    
+    setIsLoading(true);
+    try {
+      // Buscar dados atualizados do cliente
+      const { data: clientData, error: clientError } = await supabase
+        .from('clients')
+        .select('*')
+        .eq('id', client.id)
+        .single();
         
-        // Correção especial para o cliente Rafael Mendes
-        if (client.id === '827641a1-155a-4473-a398-a78395385f19') {
-          clientData.birthDate = '1990-08-10';
-        }
+      if (clientError) {
+        console.error('Erro ao buscar dados do cliente:', clientError);
+        toast({
+          title: "Erro",
+          description: "Não foi possível carregar os dados do cliente.",
+          variant: "destructive",
+        });
+        return;
       }
       
-      // Certifica que todos os campos numéricos estão corretamente tipados
-      clientData.points = Number(clientData.points) || 0;
-      clientData.cashback = Number(clientData.cashback) || 0;
-      clientData.totalSpent = Number(clientData.totalSpent) || 0;
-      clientData.visitsCount = Number(clientData.visitsCount) || 0;
-      clientData.availableCashback = Number(clientData.availableCashback) || 0;
+      // Adaptar os dados para o formato esperado pelo componente
+      const adaptedClient: Client = {
+        id: clientData.id,
+        name: clientData.name,
+        email: clientData.email || '',
+        phone: clientData.phone || '',
+        birthDate: clientData.birth_date || '',
+        address: clientData.address || '',
+        photo: clientData.photo || '',
+        status: clientData.status || 'active',
+        points: Number(clientData.points) || 0,
+        cashback: Number(clientData.cashback) || 0,
+        totalSpent: Number(clientData.total_spent) || 0,
+        visitsCount: Number(clientData.visits_count) || 0,
+        availableCashback: Number(clientData.cashback) || 0,
+        observations: clientData.observations || '',
+        lastVisit: clientData.last_visit || '',
+        lastService: clientData.last_service || '',
+        cpf: clientData.cpf || ''
+      };
       
-      setEditedClient(clientData);
+      setEditedClient(adaptedClient);
+      
+      // Buscar serviços do cliente
+      const { data: servicesData, error: servicesError } = await supabase
+        .from('client_services')
+        .select('*')
+        .eq('client_id', client.id)
+        .order('date', { ascending: false });
+        
+      if (servicesError) {
+        console.error('Erro ao buscar serviços do cliente:', servicesError);
+      } else {
+        // Adaptar os dados dos serviços
+        const adaptedServices: ClientService[] = servicesData.map((service: any) => ({
+          id: service.id.toString(),
+          clientId: service.client_id,
+          date: service.date,
+          professional: service.professional,
+          service: service.service,
+          value: Number(service.value),
+          paymentMethod: service.payment_method,
+          observations: service.observations || '',
+          status: service.status || 'completed',
+          cashbackGenerated: Number(service.cashback_generated) || 0,
+          pointsGenerated: Number(service.points_generated) || 0,
+          createdAt: service.created_at,
+          updatedAt: service.updated_at
+        }));
+        
+        setClientServices(adaptedServices);
+      }
+      
+      // Buscar preferências do cliente
+      const { data: preferencesData, error: preferencesError } = await supabase
+        .from('client_preferences')
+        .select('*')
+        .eq('client_id', client.id);
+        
+      if (preferencesError) {
+        console.error('Erro ao buscar preferências do cliente:', preferencesError);
+      } else {
+        // Adaptar os dados das preferências
+        const adaptedPreferences: ClientPreference[] = preferencesData.map((pref: any) => ({
+          id: pref.id.toString(),
+          clientId: pref.client_id,
+          category: pref.category,
+          description: pref.description
+        }));
+        
+        setClientPreferences(adaptedPreferences);
+      }
+      
+      // Buscar cupons do cliente
+      const { data: couponsData, error: couponsError } = await supabase
+        .from('client_coupons')
+        .select('*')
+        .eq('client_id', client.id);
+        
+      if (couponsError) {
+        console.error('Erro ao buscar cupons do cliente:', couponsError);
+      } else if (couponsData) {
+        // Adaptar os dados dos cupons
+        const adaptedCoupons: ClientCoupon[] = couponsData.map((coupon: any) => ({
+          id: coupon.id.toString(),
+          clientId: coupon.client_id,
+          code: coupon.code,
+          discount: Number(coupon.discount),
+          discountType: coupon.discount_type,
+          expirationDate: coupon.expiration_date,
+          isUsed: coupon.is_used,
+          service: coupon.service || null
+        }));
+        
+        setClientCoupons(adaptedCoupons);
+      }
+    } catch (error) {
+      console.error('Erro ao buscar dados:', error);
+    } finally {
+      setIsLoading(false);
     }
-  }, [client]);
+  };
+  
+  // Efeito para buscar os dados quando o modal é aberto
+  useEffect(() => {
+    if (isOpen && client) {
+      fetchClientData();
+    }
+  }, [isOpen, client]);
 
-  if (!client) return null;
-
-  const clientServices = services.filter(service => service.clientId === parseInt(client.id));
-  const clientPreferences = preferences.filter(pref => pref.clientId === parseInt(client.id));
-  const clientCoupons = coupons.filter(coupon => coupon.clientId === parseInt(client.id));
+  if (!client || !editedClient) return null;
 
   const completedServices = clientServices.filter(service => service.status === "completed");
   const scheduledServices = clientServices.filter(service => service.status === "scheduled");
@@ -299,7 +393,9 @@ export function ClientProfileDialog({
   };
 
   const handleWhatsApp = () => {
-    window.open(`https://wa.me/${client.phone.replace(/\D/g, "")}`, '_blank');
+    // Remover formatação do número para o link do WhatsApp
+    const phoneNumber = client?.phone?.replace(/\D/g, '') || '';
+    window.open(`https://wa.me/${phoneNumber}`, "_blank");
   };
 
   // Função melhorada para exportar relatórios em diferentes formatos
@@ -373,6 +469,7 @@ export function ClientProfileDialog({
     setOrderFilterDate(new Date());
     setOrderFilterStatus("all");
     setOrderSearchTerm("");
+    fetchClientData(); // Recarregar dados do cliente ao resetar filtros
   };
 
   // Funções para edição do cliente
@@ -398,55 +495,119 @@ export function ClientProfileDialog({
   
   // Removida a função duplicada handlePromoteToVIP
 
-  const handleSaveChanges = () => {
-    if (editedClient && onUpdate) {
+  const handleSaveChanges = async () => {
+    if (editedClient) {
       setIsSubmitting(true);
       
-      // Chamar diretamente a função onUpdate que atualiza os dados no Supabase
       try {
-        // Garantir que os campos sejam atualizados com os valores corretos
-        const updatedClient = {
-          ...editedClient,
-          // Certificando que a data de nascimento está no formato correto para o Supabase
-          birthDate: editedClient.birthDate,
-          // Adicionar updated_at para rastrear a última atualização
-          updatedAt: new Date().toISOString()
+        // Preparar os dados para atualização no formato do banco
+        const clientData = {
+          name: editedClient.name,
+          email: editedClient.email,
+          phone: editedClient.phone,
+          birth_date: editedClient.birthDate,
+          address: editedClient.address,
+          photo: editedClient.photo,
+          status: editedClient.status,
+          observations: editedClient.observations,
+          cpf: editedClient.cpf,
+          updated_at: new Date().toISOString()
         };
         
-        onUpdate(updatedClient);
-        setIsEditingMode(false);
+        // Atualizar o cliente no Supabase
+        const { error } = await supabase
+          .from('clients')
+          .update(clientData)
+          .eq('id', editedClient.id);
+          
+        if (error) {
+          console.error('Erro ao atualizar cliente no Supabase:', error);
+          toast({
+            title: "Erro",
+            description: "Não foi possível atualizar os dados do cliente.",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Sucesso",
+            description: "Dados do cliente atualizados com sucesso.",
+            variant: "default",
+          });
+          
+          // Atualizar a interface com os dados salvos
+          if (onUpdate) {
+            onUpdate(editedClient);
+          }
+          
+          // Atualizar os dados locais com os dados do banco
+          fetchClientData();
+          setIsEditingMode(false);
+        }
       } catch (error) {
         console.error('Erro ao salvar alterações do cliente:', error);
+        toast({
+          title: "Erro",
+          description: "Ocorreu um erro ao processar a solicitação.",
+          variant: "destructive",
+        });
       } finally {
         setIsSubmitting(false);
       }
     }
   };
   
-  const handlePromoteToVIP = () => {
-    if (client && onUpdate) {
+  const handlePromoteToVIP = async () => {
+    if (client) {
       setIsSubmitting(true);
       
       try {
-        // Atualizar o cliente para status VIP
-        const vipClient: Client = {
-          ...client,
-          status: 'vip' as const,
-          updatedAt: new Date().toISOString()
-        };
-        
-        onUpdate(vipClient);
-        
-        toast({
-          title: "Cliente promovido para VIP",
-          description: "O status do cliente foi atualizado com sucesso.",
-          variant: "default",
-        });
+        // Atualizar o cliente para status VIP no Supabase
+        const { error } = await supabase
+          .from('clients')
+          .update({ 
+            status: 'vip', 
+            updated_at: new Date().toISOString() 
+          })
+          .eq('id', client.id);
+          
+        if (error) {
+          console.error('Erro ao promover cliente para VIP:', error);
+          toast({
+            title: "Erro ao promover cliente",
+            description: "Não foi possível atualizar o status do cliente.",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Cliente promovido para VIP",
+            description: "O status do cliente foi atualizado com sucesso.",
+            variant: "default",
+          });
+          
+          // Atualizar a interface
+          if (editedClient) {
+            setEditedClient({
+              ...editedClient,
+              status: 'vip'
+            });
+          }
+          
+          // Notificar o componente pai
+          if (onUpdate && editedClient) {
+            onUpdate({
+              ...editedClient,
+              status: 'vip'
+            });
+          }
+          
+          // Atualizar os dados locais
+          fetchClientData();
+        }
       } catch (error) {
         console.error('Erro ao promover cliente para VIP:', error);
         toast({
           title: "Erro ao promover cliente",
-          description: "Não foi possível atualizar o status do cliente.",
+          description: "Ocorreu um erro ao processar a solicitação.",
           variant: "destructive",
         });
       } finally {
@@ -468,7 +629,7 @@ export function ClientProfileDialog({
     });
   };
   
-  const handleSavePreference = () => {
+  const handleSavePreference = async () => {
     // Validação básica
     if (!newPreference.category || !newPreference.description) {
       toast({
@@ -479,21 +640,72 @@ export function ClientProfileDialog({
       return;
     }
     
-    // Aqui seria o código para salvar no banco de dados
-    // Por enquanto, apenas exibimos uma mensagem de sucesso
-    toast({
-      title: "Preferência adicionada",
-      description: "A preferência do cliente foi registrada com sucesso.",
-      variant: "default",
-    });
+    if (!client) return;
     
-    // Fechar o formulário
-    setShowPreferenceForm(false);
+    try {
+      // Salvar a preferência no banco de dados
+      const { data, error } = await supabase
+        .from('client_preferences')
+        .insert({
+          client_id: client.id,
+          category: newPreference.category,
+          description: newPreference.description,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .select();
+        
+      if (error) {
+        console.error('Erro ao salvar preferência:', error);
+        toast({
+          title: "Erro",
+          description: "Não foi possível salvar a preferência do cliente.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Preferência adicionada",
+          description: "A preferência do cliente foi registrada com sucesso.",
+          variant: "default",
+        });
+        
+        // Atualizar a lista de preferências
+        if (data && data[0]) {
+          const newPref: ClientPreference = {
+            id: Number(data[0].id),
+            clientId: Number(data[0].client_id),
+            category: data[0].category,
+            description: data[0].description
+          };
+          
+          setClientPreferences([...clientPreferences, newPref]);
+        }
+        
+        // Fechar o formulário e limpar os campos
+        setShowPreferenceForm(false);
+        setNewPreference({category: "", description: ""});
+      }
+    } catch (error) {
+      console.error('Erro ao processar a requisição:', error);
+      toast({
+        title: "Erro",
+        description: "Ocorreu um erro ao processar a solicitação.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col rounded-lg border-0 shadow-lg">
+        {isLoading ? (
+          <div className="flex items-center justify-center h-64">
+            <div className="flex flex-col items-center">
+              <div className="w-12 h-12 rounded-full border-4 border-primary border-t-transparent animate-spin"></div>
+              <p className="mt-4 text-sm text-gray-500">Carregando dados...</p>
+            </div>
+          </div>
+        ) : (<>
         <DialogHeader className="pb-4 pt-3 px-6 bg-gradient-to-r from-primary/5 to-primary/10 rounded-t-lg">
           <div className="flex items-center justify-between">
             <DialogTitle className="flex items-center gap-3 text-xl font-semibold">
@@ -505,25 +717,16 @@ export function ClientProfileDialog({
             </DialogTitle>
             
             <div className="flex items-center gap-3">
-              {/* Botão de WhatsApp com tooltip */}
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleWhatsApp}
-                      className="h-9 px-3 flex items-center gap-2 text-sm bg-green-50 text-green-700 border-green-200 hover:bg-green-100"
-                    >
-                      <MessageSquare className="h-4 w-4" />
-                      WhatsApp
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Enviar mensagem para o cliente</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+              {/* Botão de WhatsApp sem tooltip */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleWhatsApp}
+                className="h-9 px-3 flex items-center gap-2 text-sm bg-green-50 text-green-700 border-green-200 hover:bg-green-100"
+              >
+                <MessageSquare className="h-4 w-4" />
+                WhatsApp
+              </Button>
               
               {/* Botão de Promover para VIP (visível apenas para clientes que não são VIP) */}
               {client.status !== 'vip' && (
@@ -580,17 +783,7 @@ export function ClientProfileDialog({
                     </div>
                   </TabsTrigger>
             
-                  <TabsTrigger 
-                    value="orders" 
-                    className="data-[state=active]:bg-white data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:shadow-sm rounded-md transition-all duration-200 px-4 py-2"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className={`p-1.5 rounded-full ${activeTab === "orders" ? "bg-primary/10" : ""}`}>
-                        <ShoppingBag className={`h-4 w-4 ${activeTab === "orders" ? "text-primary" : "text-gray-500"}`} />
-                      </div>
-                      <span className="font-medium">Pedidos</span>
-                    </div>
-                  </TabsTrigger>
+
             
                   <TabsTrigger 
                     value="loyalty" 
@@ -653,7 +846,7 @@ export function ClientProfileDialog({
                             className="h-8 text-xs bg-primary hover:bg-primary/90 transition-all duration-200"
                           >
                             {isSubmitting ? (
-                              <RefreshCw className="h-3.5 w-3.5 mr-1 animate-spin" />
+                              <RefreshCw className="h-3.5 w-3.5 mr-1.5 animate-spin" />
                             ) : (
                               <Check className="h-3.5 w-3.5 mr-1" />
                             )}
@@ -1295,37 +1488,7 @@ export function ClientProfileDialog({
               </div>
             </TabsContent>
             
-            {/* Pedidos */}
-            <TabsContent value="orders">
-              <div className="space-y-6">
-                <Card>
-                  <CardHeader className="pb-2">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-lg font-medium">Histórico de Pedidos</CardTitle>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        className="h-8"
-                      >
-                        <Plus className="h-3.5 w-3.5 mr-1.5" />
-                        Novo Pedido
-                      </Button>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex flex-col items-center justify-center py-8 text-center">
-                      <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mb-3">
-                        <ShoppingBag className="h-6 w-6 text-slate-400" />
-                      </div>
-                      <h3 className="text-lg font-medium mb-1">Funcionalidade em desenvolvimento</h3>
-                      <p className="text-sm text-gray-500 max-w-md">
-                        O sistema de pedidos está sendo implementado e estará disponível em breve.
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </TabsContent>
+
             
             {/* Fidelidade */}
             <TabsContent value="loyalty">
@@ -1458,6 +1621,7 @@ export function ClientProfileDialog({
             
           </div>
         </Tabs>
+        </>)}
       </DialogContent>
     </Dialog>
   );

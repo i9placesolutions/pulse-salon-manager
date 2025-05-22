@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useClientManagement } from "@/hooks/useClientManagement";
@@ -96,6 +97,7 @@ export const AppointmentDialog = ({
   onSubmit,
   onCancel
 }: AppointmentDialogProps) => {
+  const navigate = useNavigate();
   console.log('[AppointmentDialog] Props recebidas:', { isOpen, initialDate, initialTime });
   const { toast } = useToast();
   const [formData, setFormData] = useState<AppointmentFormData>({
@@ -558,7 +560,17 @@ export const AppointmentDialog = ({
               )}
               
               <div className="flex justify-between items-center mt-2">
-                <Button type="button" variant="link" size="sm" className="text-primary p-0 h-auto">
+                <Button 
+                  type="button" 
+                  variant="link" 
+                  size="sm" 
+                  className="text-primary p-0 h-auto"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleOpenChange(false);
+                    navigate('/clientes');
+                  }}
+                >
                   <Plus className="h-3 w-3 mr-1" />
                   Cadastrar novo cliente
                 </Button>

@@ -13,7 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { Service } from "@/types/service";
-import { formatCurrency, parseCurrency } from "@/utils/currency";
+import { formatCurrency, parseCurrency, formatCurrencyInput } from "@/utils/currency";
 import { Clock, Scissors, X } from "lucide-react";
 import {
   Sheet,
@@ -23,6 +23,7 @@ import {
   SheetTitle,
   SheetClose
 } from "@/components/ui/sheet";
+import { supabase } from "@/lib/supabaseClient";
 
 interface ServiceFormProps {
   open: boolean;
@@ -51,6 +52,87 @@ export function ServiceForm({
 
   const [priceInput, setPriceInput] = useState("R$ 0,00");
   const [loadingSubmit, setLoadingSubmit] = useState(false);
+  const [customCategories, setCustomCategories] = useState<{id: number, name: string}[]>([]);
+  const [newCategory, setNewCategory] = useState("");
+  const [showNewCategoryInput, setShowNewCategoryInput] = useState(false);
+  const [loadingCategories, setLoadingCategories] = useState(false);
+  const [savingCategory, setSavingCategory] = useState(false);
+
+  // Função para carregar categorias do Supabase
+  const loadCategories = async () => {
+    try {
+      setLoadingCategories(true);
+      const { data, error } = await supabase
+        .from('service_categories')
+        .select('id, name')
+        .order('name', { ascending: true });
+
+      if (error) {
+        console.error('Erro ao carregar categorias:', error);
+        toast({
+          title: "Erro ao carregar categorias",
+          description: "Não foi possível carregar as categorias de serviços.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (data) {
+        setCustomCategories(data);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar categorias:', error);
+    } finally {
+      setLoadingCategories(false);
+    }
+  };
+
+  // Função para salvar uma nova categoria no Supabase
+  const saveCategory = async (categoryName: string) => {
+    try {
+      setSavingCategory(true);
+      
+      // Verificar se a categoria já existe
+      const { data: existingCategory } = await supabase
+        .from('service_categories')
+        .select('id, name')
+        .eq('name', categoryName.trim())
+        .single();
+
+      if (existingCategory) {
+        toast({
+          title: "Categoria já existe",
+          description: `A categoria "${categoryName.trim()}" já existe no sistema.`,
+          variant: "destructive",
+        });
+        return null;
+      }
+      
+      // Inserir nova categoria
+      const { data, error } = await supabase
+        .from('service_categories')
+        .insert({ name: categoryName.trim() })
+        .select('id, name')
+        .single();
+
+      if (error) {
+        console.error('Erro ao salvar categoria:', error);
+        toast({
+          title: "Erro ao salvar categoria",
+          description: "Não foi possível salvar a nova categoria no banco de dados.",
+          variant: "destructive",
+        });
+        return null;
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Erro ao salvar categoria:', error);
+      return null;
+    } finally {
+      setSavingCategory(false);
+    }
+  };
 
   // Efeito que inicializa o formulário quando o modal é aberto
   useEffect(() => {
@@ -74,18 +156,27 @@ export function ServiceForm({
         });
         setPriceInput("R$ 0,00");
       }
+      
+      // Carregar categorias do Supabase quando o modal é aberto
+      loadCategories();
     }
   }, [service, open]);
 
   const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     try {
-      const value = e.target.value || "R$ 0,00";
-      setPriceInput(value);
+      // Obter o valor digitado
+      const inputValue = e.target.value || "";
       
-      const numericValue = parseCurrency(value);
+      // Formatar o valor para o padrão brasileiro enquanto o usuário digita
+      const formattedValue = formatCurrencyInput(inputValue);
+      setPriceInput(formattedValue);
+      
+      // Converter para valor numérico
+      const numericValue = parseCurrency(formattedValue);
       setFormData((prev) => ({ ...prev, price: numericValue }));
     } catch (error) {
       console.error("Erro ao converter valor:", error);
+      setPriceInput("R$ 0,00");
       setFormData((prev) => ({ ...prev, price: 0 }));
     }
   };
@@ -184,23 +275,99 @@ export function ServiceForm({
                   <Label htmlFor="category" className="text-sm font-medium">
                     Categoria <span className="text-red-500">*</span>
                   </Label>
-                  <Select
-                    value={formData.category || ""}
-                    onValueChange={(value) =>
-                      setFormData({ ...formData, category: value })
-                    }
-                  >
-                    <SelectTrigger id="category">
-                      <SelectValue placeholder="Selecione" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Corte">Corte</SelectItem>
-                      <SelectItem value="Tintura">Tintura</SelectItem>
-                      <SelectItem value="Tratamento">Tratamento</SelectItem>
-                      <SelectItem value="Manicure">Manicure</SelectItem>
-                      <SelectItem value="Estética">Estética</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  {!showNewCategoryInput ? (
+                    <div className="space-y-2">
+                      <Select
+                        value={formData.category || ""}
+                        onValueChange={(value) => {
+                          if (value === "new_category") {
+                            setShowNewCategoryInput(true);
+                          } else {
+                            setFormData({ ...formData, category: value });
+                          }
+                        }}
+                      >
+                        <SelectTrigger id="category">
+                          <SelectValue placeholder="Selecione ou crie uma categoria" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="new_category">+ Criar nova categoria</SelectItem>
+                          {loadingCategories ? (
+                            <SelectItem value="loading" disabled>Carregando categorias...</SelectItem>
+                          ) : customCategories.length === 0 ? (
+                            <SelectItem value="empty" disabled>Nenhuma categoria disponível</SelectItem>
+                          ) : (
+                            customCategories.map((category) => (
+                              <SelectItem key={category.id} value={category.name}>
+                                {category.name}
+                              </SelectItem>
+                            ))
+                          )}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  ) : (
+                    <div className="flex items-start gap-2">
+                      <div className="flex-1">
+                        <Input
+                          placeholder="Nome da nova categoria"
+                          value={newCategory}
+                          onChange={(e) => setNewCategory(e.target.value)}
+                          className="w-full"
+                          disabled={savingCategory}
+                        />
+                      </div>
+                      <div className="flex gap-1">
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="default"
+                          className="mt-0"
+                          disabled={savingCategory}
+                          onClick={async () => {
+                            if (newCategory.trim()) {
+                              // Salvar no Supabase
+                              const savedCategory = await saveCategory(newCategory.trim());
+                              
+                              if (savedCategory) {
+                                // Adicionar à lista local
+                                setCustomCategories(prev => [...prev, savedCategory]);
+                                // Atualizar o form
+                                setFormData({ ...formData, category: savedCategory.name });
+                                setNewCategory("");
+                                setShowNewCategoryInput(false);
+                                toast({
+                                  title: "Categoria criada",
+                                  description: `A categoria "${savedCategory.name}" foi criada com sucesso.`,
+                                });
+                              }
+                            } else {
+                              toast({
+                                title: "Nome inválido",
+                                description: "Digite um nome para a categoria.",
+                                variant: "destructive",
+                              });
+                            }
+                          }}
+                        >
+                          {savingCategory ? "Salvando..." : "Salvar"}
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          className="mt-0"
+                          disabled={savingCategory}
+                          onClick={() => {
+                            setShowNewCategoryInput(false);
+                            setNewCategory("");
+                          }}
+                        >
+                          Cancelar
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-2">

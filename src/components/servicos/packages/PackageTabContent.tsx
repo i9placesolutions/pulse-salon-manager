@@ -6,6 +6,7 @@ import { ProductSelector } from "./ProductSelector";
 import { PackagePriceSummary } from "./PackagePriceSummary";
 import { Service } from "@/types/service";
 import { Product } from "@/types/product";
+import { Loader2 } from "lucide-react";
 
 interface PackageProduct {
   id: string;
@@ -34,6 +35,9 @@ interface PackageTabContentProps {
   calculateTotalPrice: () => number;
   calculateDiscountedPrice: () => number;
   discount: number;
+  isLoadingServices?: boolean;
+  isLoadingProducts?: boolean;
+  isLoadingPackageData?: boolean;
 }
 
 export function PackageTabContent({
@@ -49,7 +53,10 @@ export function PackageTabContent({
   handleRemoveProduct,
   calculateTotalPrice,
   calculateDiscountedPrice,
-  discount
+  discount,
+  isLoadingServices = false,
+  isLoadingProducts = false,
+  isLoadingPackageData = false
 }: PackageTabContentProps) {
   const showPriceSummary = selectedServices.length > 0 || selectedProducts.length > 0;
 
@@ -70,21 +77,39 @@ export function PackageTabContent({
         </div>
         
         <TabsContent value="services">
-          <ServiceSelector 
-            availableServices={availableServices}
-            selectedServices={selectedServices}
-            onAddService={handleAddService}
-            onRemoveService={handleRemoveService}
-          />
+          {isLoadingServices || isLoadingPackageData ? (
+            <div className="flex items-center justify-center p-8">
+              <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+              <span className="ml-2 text-sm text-muted-foreground">
+                Carregando serviços...
+              </span>
+            </div>
+          ) : (
+            <ServiceSelector 
+              availableServices={availableServices}
+              selectedServices={selectedServices}
+              onAddService={handleAddService}
+              onRemoveService={handleRemoveService}
+            />
+          )}
         </TabsContent>
         
         <TabsContent value="products">
-          <ProductSelector 
-            availableProducts={availableProducts}
-            selectedProducts={selectedProducts}
-            onAddProduct={handleAddProduct}
-            onRemoveProduct={handleRemoveProduct}
-          />
+          {isLoadingProducts || isLoadingPackageData ? (
+            <div className="flex items-center justify-center p-8">
+              <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+              <span className="ml-2 text-sm text-muted-foreground">
+                Carregando produtos...
+              </span>
+            </div>
+          ) : (
+            <ProductSelector 
+              availableProducts={availableProducts}
+              selectedProducts={selectedProducts}
+              onAddProduct={handleAddProduct}
+              onRemoveProduct={handleRemoveProduct}
+            />
+          )}
         </TabsContent>
       </Tabs>
       

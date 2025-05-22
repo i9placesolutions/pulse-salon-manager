@@ -1,8 +1,14 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Product } from "@/types/stock";
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { createClient } from '@supabase/supabase-js';
+
+// Configuração do cliente Supabase
+const supabaseUrl = "https://wtpmedifsfbxctlssefd.supabase.co";
+const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind0cG1lZGlmc2ZieGN0bHNzZWZkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQzMTMwNzUsImV4cCI6MjA1OTg4OTA3NX0.Mmro8vKbusSP_HNCqX9f5XlrotRbeA8-HIGvQE07mwU";
+const supabase = createClient(supabaseUrl, supabaseKey);
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetClose } from "@/components/ui/sheet";
 import { 
   Plus, 
@@ -34,6 +40,24 @@ interface ProductFormProps {
 
 export function ProductForm({ open, onOpenChange, onSubmit, product }: ProductFormProps) {
   const { toast } = useToast();
+  
+  // Função para formatar valor monetário no padrão brasileiro
+  const formatCurrency = useCallback((value: number): string => {
+    return value.toLocaleString('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).replace('R$', '').trim();
+  }, []);
+  
+  // Função para converter string formatada para número
+  const parseCurrency = useCallback((value: string): number => {
+    // Remove R$, pontos e substitui vírgula por ponto
+    const numericValue = value.replace('R$', '').replace(/\./g, '').replace(',', '.');
+    return parseFloat(numericValue) || 0;
+  }, []);
+  
   const defaultProduct: Partial<Product> = {
     name: '',
     description: '',
@@ -65,15 +89,12 @@ export function ProductForm({ open, onOpenChange, onSubmit, product }: ProductFo
     } : defaultProduct
   );
   const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
-  const [categories, setCategories] = useState<string[]>([
-    "Cabelo",
-    "Tratamento",
-    "Maquiagem",
-    "Perfumaria",
-    "Acessórios"
-  ]);
+  const [categories, setCategories] = useState<string[]>([]);
+  const [isLoadingCategories, setIsLoadingCategories] = useState<boolean>(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     // Garante que todos os campos obrigatórios estejam preenchidos
@@ -96,19 +117,130 @@ export function ProductForm({ open, onOpenChange, onSubmit, product }: ProductFo
       return;
     }
     
-    console.log('Enviando dados do produto:', formData);
-    onSubmit(formData);
+    setIsSubmitting(true);
     
-    toast({
-      title: product ? "Produto atualizado" : "Produto cadastrado",
-      description: product
-        ? "O produto foi atualizado com sucesso!"
-        : "O novo produto foi cadastrado com sucesso!",
-    });
-    
-    onOpenChange(false);
+    try {
+      // Prepara os dados para o formato do banco
+      const productData = {
+        name: formData.name,
+        description: formData.description || null,
+        barcode: formData.barcode || null,
+        category: formData.category,
+        measurement_unit: formData.measurementUnit,
+        measurement_value: formData.measurementValue,
+        supplier_id: formData.supplierId || null,
+        purchase_price: formData.purchasePrice,
+        sale_price: formData.salePrice,
+        quantity: formData.quantity,
+        min_quantity: formData.minQuantity,
+        expiration_date: formData.expirationDate ? new Date(formData.expirationDate).toISOString() : null,
+        commission_type: formData.commission?.type || 'percentage',
+        commission_value: formData.commission?.defaultValue || 0
+      };
+      
+      let result;
+      
+      if (product?.id) {
+        // Atualizar produto existente
+        const { data, error } = await supabase
+          .from('products')
+          .update(productData)
+          .eq('id', product.id)
+          .select()
+          .single();
+          
+        if (error) throw error;
+        result = data;
+      } else {
+        // Criar novo produto
+        const { data, error } = await supabase
+          .from('products')
+          .insert([productData])
+          .select()
+          .single();
+          
+        if (error) throw error;
+        result = data;
+      }
+      
+      // Formata o resultado para o formato usado na aplicação
+      if (result) {
+        const formattedProduct = {
+          id: result.id,
+          name: result.name,
+          description: result.description,
+          barcode: result.barcode,
+          category: result.category,
+          measurementUnit: result.measurement_unit,
+          measurementValue: result.measurement_value,
+          supplierId: result.supplier_id,
+          purchasePrice: result.purchase_price,
+          salePrice: result.sale_price,
+          quantity: result.quantity,
+          minQuantity: result.min_quantity,
+          expirationDate: result.expiration_date,
+          commission: {
+            type: result.commission_type,
+            defaultValue: result.commission_value
+          },
+          lastUpdated: result.updated_at
+        };
+        
+        // Chama o callback com os dados formatados
+        onSubmit(formattedProduct);
+      }
+      
+      toast({
+        title: product ? "Produto atualizado" : "Produto cadastrado",
+        description: product
+          ? "O produto foi atualizado com sucesso!"
+          : "O novo produto foi cadastrado com sucesso!",
+      });
+      
+      onOpenChange(false);
+    } catch (error: any) {
+      console.error('Erro ao salvar produto:', error);
+      toast({
+        title: "Erro",
+        description: error.message || "Não foi possível salvar o produto",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
+  // Carrega as categorias do Supabase
+  useEffect(() => {
+    const fetchCategories = async () => {
+      setIsLoadingCategories(true);
+      try {
+        const { data, error } = await supabase
+          .from('product_categories')
+          .select('name')
+          .order('name');
+          
+        if (error) throw error;
+        
+        if (data) {
+          const categoryNames = data.map(cat => cat.name);
+          setCategories(categoryNames);
+        }
+      } catch (error: any) {
+        console.error('Erro ao carregar categorias:', error);
+        toast({
+          title: "Erro",
+          description: "Não foi possível carregar as categorias",
+          variant: "destructive"
+        });
+      } finally {
+        setIsLoadingCategories(false);
+      }
+    };
+    
+    fetchCategories();
+  }, [toast]);
+  
   const handleAddCategory = (newCategory: string) => {
     if (!categories.includes(newCategory)) {
       setCategories([...categories, newCategory]);
@@ -210,18 +342,24 @@ export function ProductForm({ open, onOpenChange, onSubmit, product }: ProductFo
                   </label>
                   <div className="flex gap-2">
                     <select
-                      id="category"
+                      id="productCategory"
                       className="flex h-10 w-full rounded-md border border-blue-200 bg-background px-3 py-2 text-sm focus-visible:ring-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
                       value={formData.category}
-                      onChange={(e) =>
-                        setFormData((prev) => ({ ...prev, category: e.target.value }))
-                      }
+                      onChange={(e) => setFormData((prev) => ({ ...prev, category: e.target.value }))}
                       required
+                      disabled={isLoadingCategories}
                     >
-                      <option value="">Selecione uma categoria</option>
-                      {categories.map((category) => (
-                        <option key={category} value={category}>
-                          {category}
+                      <option value="" disabled>
+                        {isLoadingCategories ? "Carregando categorias..." : "Selecione uma categoria"}
+                      </option>
+                      {categories.length === 0 && !isLoadingCategories && (
+                        <option value="" disabled>
+                          Nenhuma categoria cadastrada
+                        </option>
+                      )}
+                      {categories.map((cat) => (
+                        <option key={cat} value={cat}>
+                          {cat}
                         </option>
                       ))}
                     </select>
@@ -334,21 +472,26 @@ export function ProductForm({ open, onOpenChange, onSubmit, product }: ProductFo
                     Preço de Compra
                     <span className="text-red-500">*</span>
                   </label>
-                  <Input
-                    id="purchasePrice"
-                    type="number"
-                    step="0.01"
-                    placeholder="R$ 0,00"
-                    value={formData.purchasePrice}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        purchasePrice: Number(e.target.value),
-                      }))
-                    }
-                    className="border-blue-200 focus-visible:ring-blue-400"
-                    required
-                  />
+                  <div className="relative">
+                    <Input
+                      id="purchasePrice"
+                      type="text"
+                      placeholder="0,00"
+                      value={formData.purchasePrice ? formatCurrency(formData.purchasePrice) : ''}
+                      onChange={(e) => {
+                        const value = parseCurrency(e.target.value);
+                        setFormData((prev) => ({
+                          ...prev,
+                          purchasePrice: value,
+                        }));
+                      }}
+                      className="border-blue-200 focus-visible:ring-blue-400 pl-8"
+                      required
+                    />
+                    <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                      R$
+                    </div>
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <label htmlFor="salePrice" className="font-medium flex items-center gap-1">
@@ -356,21 +499,26 @@ export function ProductForm({ open, onOpenChange, onSubmit, product }: ProductFo
                     Preço de Venda
                     <span className="text-red-500">*</span>
                   </label>
-                  <Input
-                    id="salePrice"
-                    type="number"
-                    step="0.01"
-                    placeholder="R$ 0,00"
-                    value={formData.salePrice}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        salePrice: Number(e.target.value),
-                      }))
-                    }
-                    className="border-blue-200 focus-visible:ring-blue-400"
-                    required
-                  />
+                  <div className="relative">
+                    <Input
+                      id="salePrice"
+                      type="text"
+                      placeholder="0,00"
+                      value={formData.salePrice ? formatCurrency(formData.salePrice) : ''}
+                      onChange={(e) => {
+                        const value = parseCurrency(e.target.value);
+                        setFormData((prev) => ({
+                          ...prev,
+                          salePrice: value,
+                        }));
+                      }}
+                      className="border-blue-200 focus-visible:ring-blue-400 pl-8"
+                      required
+                    />
+                    <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                      R$
+                    </div>
+                  </div>
                 </div>
               </div>
               
@@ -533,11 +681,18 @@ export function ProductForm({ open, onOpenChange, onSubmit, product }: ProductFo
         {/* Rodapé fixo */}
         <div className="sticky bottom-0 mt-auto bg-white border-t px-6 py-4 shadow-sm">
           <div className="flex justify-end gap-2">
-            <Button variant="outline" type="button" onClick={() => onOpenChange(false)}>
+            <Button variant="outline" type="button" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
               Cancelar
             </Button>
-            <Button type="submit" form="product-form">
-              {product ? "Salvar Alterações" : "Cadastrar Produto"}
+            <Button type="submit" form="product-form" disabled={isSubmitting}>
+              {isSubmitting ? (
+                <>
+                  <span className="mr-2 h-4 w-4 animate-spin">&#9696;</span>
+                  {product ? "Salvando..." : "Cadastrando..."}
+                </>
+              ) : (
+                product ? "Salvar Alterações" : "Cadastrar Produto"
+              )}
             </Button>
           </div>
         </div>
