@@ -480,6 +480,12 @@ export function ClientProfileDialog({
       setIsSubmitting(true);
       
       try {
+        // Fechar o modal primeiro para evitar problemas de interface
+        onClose();
+        
+        // Aguardar um momento para garantir que o modal seja fechado
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
         // Primeiro exclui as preferências do cliente
         await supabase
           .from('client_preferences')
@@ -511,12 +517,16 @@ export function ClientProfileDialog({
           onDelete(client.id);
         }
         
-        onClose();
         toast({
           title: "Cliente excluído",
           description: "O cliente foi removido com sucesso do banco de dados.",
           variant: "default",
         });
+        
+        // Forçar uma atualização da página para garantir que a UI seja atualizada
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000);
       } catch (error) {
         console.error('Erro ao excluir cliente:', error);
         toast({

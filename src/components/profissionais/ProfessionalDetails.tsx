@@ -95,16 +95,27 @@ export const ProfessionalDetails = ({
     
     try {
       setIsDeleting(true);
-      await deleteProfessional(professional.id);
       
-      // Fechar o diálogo de confirmação e o modal de detalhes
+      // Primeiro, fechar o diálogo de confirmação e o modal de detalhes para evitar problemas de UI
       setShowDeleteDialog(false);
       onOpenChange(false);
+      
+      // Depois, fazer a exclusão
+      await deleteProfessional(professional.id);
+      
+      // Aguardar um momento para garantir que a operação seja concluída
+      await new Promise(resolve => setTimeout(resolve, 500));
       
       toast({
         title: "Profissional excluído",
         description: "O profissional foi removido com sucesso.",
       });
+      
+      // Forçar uma atualização da página para garantir que a UI seja atualizada
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+      
     } catch (error) {
       console.error("Erro ao excluir profissional:", error);
       toast({
