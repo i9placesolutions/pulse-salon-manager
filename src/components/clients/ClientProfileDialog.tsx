@@ -110,6 +110,7 @@ export function ClientProfileDialog({
   onUpdate,
   onDelete
 }: ClientProfileDialogProps) {
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
   const [isEditingMode, setIsEditingMode] = useState(false);
   const [orderFilterDate, setOrderFilterDate] = useState<Date | undefined>(new Date());
@@ -470,6 +471,63 @@ export function ClientProfileDialog({
     setOrderFilterStatus("all");
     setOrderSearchTerm("");
     fetchClientData(); // Recarregar dados do cliente ao resetar filtros
+  };
+
+  // Função para excluir o cliente
+  const handleDeleteClient = async () => {
+    if (client) {
+      // Começar com um indicador de carregamento
+      setIsSubmitting(true);
+      
+      try {
+        // Primeiro exclui as preferências do cliente
+        await supabase
+          .from('client_preferences')
+          .delete()
+          .eq('client_id', client.id);
+        
+        // Exclui os cupons do cliente
+        await supabase
+          .from('client_coupons')
+          .delete()
+          .eq('client_id', client.id);
+        
+        // Exclui os serviços/pedidos do cliente
+        await supabase
+          .from('client_services')
+          .delete()
+          .eq('client_id', client.id);
+        
+        // Por fim, exclui o cliente
+        const { error } = await supabase
+          .from('clients')
+          .delete()
+          .eq('id', client.id);
+        
+        if (error) throw error;
+        
+        // Chamar o callback onDelete se existir
+        if (onDelete) {
+          onDelete(client.id);
+        }
+        
+        onClose();
+        toast({
+          title: "Cliente excluído",
+          description: "O cliente foi removido com sucesso do banco de dados.",
+          variant: "default",
+        });
+      } catch (error) {
+        console.error('Erro ao excluir cliente:', error);
+        toast({
+          title: "Erro ao excluir",
+          description: "Não foi possível excluir o cliente. Tente novamente mais tarde.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsSubmitting(false);
+      }
+    }
   };
 
   // Funções para edição do cliente
@@ -833,11 +891,38 @@ export function ClientProfileDialog({
                             variant="outline" 
                             size="sm"
                             onClick={handleEditToggle}
-                            className="h-8 text-xs border-red-200 bg-red-50 text-red-700 hover:bg-red-100 hover:text-red-800 transition-all duration-200"
+                            className="h-8 text-xs border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 hover:text-blue-800 transition-all duration-200"
                           >
-                            <X className="h-3.5 w-3.5 mr-1" />
-                            Cancelar
+                            <FileEdit className="h-3.5 w-3.5 mr-1" />
+                            Editar
                           </Button>
+
+                          <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+                            <AlertDialogTrigger asChild>
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="h-8 text-xs border-red-200 bg-red-50 text-red-700 hover:bg-red-100 hover:text-red-800 transition-all duration-200"
+                              >
+                                <Trash2 className="h-3.5 w-3.5 mr-1" />
+                                Excluir
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Excluir Cliente</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Tem certeza que deseja excluir este cliente? Esta ação não pode ser desfeita.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                <AlertDialogAction onClick={handleDeleteClient} className="bg-red-500 hover:bg-red-600">
+                                  Excluir
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
                           <Button 
                             variant="default" 
                             size="sm"

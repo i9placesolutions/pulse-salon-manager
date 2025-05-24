@@ -21,6 +21,17 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
 import { DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { 
   Calendar,
   Clock,
@@ -30,11 +41,14 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   TrendingUp,
-  History
+  History,
+  Trash2,
+  AlertTriangle
 } from "lucide-react";
 import { formatCurrency } from "@/utils/currency";
 import { PerformanceMetrics } from "./PerformanceMetrics";
 import { WorkingHoursForm } from "./WorkingHoursForm";
+import { useProfessionalManagement } from "@/hooks/useProfessionalManagement";
 
 interface ProfessionalDetailsProps {
   open: boolean;
@@ -57,6 +71,9 @@ export const ProfessionalDetails = ({
 }: ProfessionalDetailsProps) => {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("overview");
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const { deleteProfessional } = useProfessionalManagement();
 
   const handleRegisterPayment = (payment: ProfessionalPayment) => {
     toast({
@@ -70,6 +87,34 @@ export const ProfessionalDetails = ({
       title: "Configurações salvas",
       description: "As configurações de horário de trabalho foram salvas com sucesso.",
     });
+  };
+  
+  // Função para lidar com a exclusão do profissional
+  const handleDeleteProfessional = async () => {
+    if (!professional || !professional.id) return;
+    
+    try {
+      setIsDeleting(true);
+      await deleteProfessional(professional.id);
+      
+      // Fechar o diálogo de confirmação e o modal de detalhes
+      setShowDeleteDialog(false);
+      onOpenChange(false);
+      
+      toast({
+        title: "Profissional excluído",
+        description: "O profissional foi removido com sucesso.",
+      });
+    } catch (error) {
+      console.error("Erro ao excluir profissional:", error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível excluir o profissional. Tente novamente mais tarde.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const renderSpecialtiesBadges = () => {
@@ -100,15 +145,55 @@ export const ProfessionalDetails = ({
               {professional.name.charAt(0)}
             </span>
             {professional.name}
-            <span
-              className={`ml-auto inline-flex rounded-full px-2 py-1 text-xs font-medium ${
-                professional.status === "active"
-                  ? "bg-green-100 text-green-700"
-                  : "bg-red-100 text-red-700"
-              }`}
-            >
-              {professional.status === "active" ? "Ativo" : "Inativo"}
-            </span>
+            <div className="ml-auto flex items-center gap-2">
+              <span
+                className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
+                  professional.status === "active"
+                    ? "bg-green-100 text-green-700"
+                    : "bg-red-100 text-red-700"
+                }`}
+              >
+                {professional.status === "active" ? "Ativo" : "Inativo"}
+              </span>
+              
+              <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+                <AlertDialogTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="h-8 text-xs border-red-200 bg-red-50 text-red-700 hover:bg-red-100 hover:text-red-800 transition-all duration-200"
+                  >
+                    <Trash2 className="h-3.5 w-3.5 mr-1" />
+                    Excluir
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle className="flex items-center gap-2 text-red-600">
+                      <AlertTriangle className="h-5 w-5" />
+                      Excluir Profissional
+                    </AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Tem certeza que deseja excluir este profissional? Esta ação não pode ser desfeita.
+                      <div className="mt-2 p-3 bg-amber-50 border border-amber-200 rounded-md text-amber-800 text-sm">
+                        <p className="font-medium">Atenção:</p>
+                        <p>Esta ação removerá permanentemente o profissional {professional.name} e todos os dados associados.</p>
+                      </div>
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction 
+                      onClick={handleDeleteProfessional} 
+                      className="bg-red-500 hover:bg-red-600 text-white"
+                      disabled={isDeleting}
+                    >
+                      {isDeleting ? "Excluindo..." : "Excluir"}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
           </DialogTitle>
         </DialogHeader>
 
